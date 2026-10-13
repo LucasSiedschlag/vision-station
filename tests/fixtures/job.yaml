@@ -1,0 +1,34 @@
+format: 1
+job:
+  id: 3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10
+  name: "Caixa M — fita vermelha"
+  version: 7
+  parent_version: 6
+  author: lucas
+  created_at: 2026-10-02T15:40:00-03:00
+camera_profile: camera/profile.yaml
+trigger:
+  presence_roi: [0.10, 0.10, 0.90, 0.90]
+  still_ms: 400
+  rearm: box_absent
+quality:
+  brightness: {min: 90, max: 170}
+  sharpness_min_ratio: 0.7
+geometry:
+  locator: {type: box_outline, version: 1, params: {min_area: 0.15}}
+  rois:
+    seam: {relative_to: box, rect: [0.45, 0.0, 0.55, 1.0]}
+checks:
+  - id: tape
+    type: tape_color_coverage
+    version: 1
+    roi: seam
+    params: {hue: [170, 10], s_min: 120, v_min: 70, min_coverage: 0.90}
+    reason_fail: "Fita ausente em {missing:.0%} da emenda"
+  - id: closed
+    type: model_detect
+    version: 1
+    roi: box
+    params: {model: models/closure.onnx, class_fail: open_flap, conf: 0.5}
+    reason_fail: "Aba aberta"
+decision: all_pass

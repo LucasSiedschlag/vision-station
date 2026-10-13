@@ -1,0 +1,9 @@
+resolution: [1920, 1080]
+pixel_format: mjpeg
+exposure: {mode: manual, value_us: 8000}
+gain: {mode: manual, value: 0}
+white_balance: {mode: manual, kelvin: 4500}
+focus: {mode: manual, value: 30}
+zoom: {value: 1200}
+power_line_hz: 60
+low_light_compensation: false
