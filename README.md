@@ -2,7 +2,7 @@
 
 Packaging vision system. At the packing station, each box is placed on a scale in a fixed position. A fixed camera checks that the box leaves **closed and taped** and shows **PASS / FAIL / ERROR** with the reason (in Portuguese) on the operator screen.
 
-> **Status:** design phase. This repository currently contains the design documents only; there is no code yet.
+> **Status:** design phase. The first delivery (30/10/2026) runs with the Logitech C920; the Hikvision camera comes later. This repository currently contains the design documents only; there is no code yet.
 
 ## What it will do
 
