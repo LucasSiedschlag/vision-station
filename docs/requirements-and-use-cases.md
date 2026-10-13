@@ -472,15 +472,15 @@ Covers: NFR-REL-2.
 | Item | Where | Proposed |
 |---|---|---|
 | Result time after the box settles | NFR-PERF-1 | 1.5 s |
-| Boxes per minute | NFR-PERF-2 | — (client to inform) |
+| Boxes per minute | NFR-PERF-2 | **Agreed (2026-10-13):** manual process, about 1 per minute; not a design driver |
 | Detection rate | NFR-ACC-1 | 99 % |
 | False-reject rate | NFR-ACC-2 | 1 % |
 | Placement tolerance | NFR-ACC-4 | ±30 mm, ±10° |
-| Definition of "closed" | FR-INS-1 | Flaps meet along the seam and the seam is taped |
+| Definition of "closed" | FR-INS-1 | **Agreed (2026-10-13):** cardboard flaps closed and tape applied |
 | Minimum tape coverage of the seam | FR-INS-2/3 | 90 % of seam length |
-| Retention of records and images | FR-LOG-3 | 90 days |
-| External trigger available from the scale | FR-TRG-2 | — (client to inform) |
-| What happens on FAIL beyond the screen | FR-INT-2 | Screen + audible alert only |
+| Retention of records and images | FR-LOG-3 | **Decided (2026-10-13):** keep everything for now; disk limit is a future problem |
+| External trigger available from the scale | FR-TRG-2 | **Decided (2026-10-13):** assume none (the scale returns the weight only; to be checked). Image-based trigger |
+| What happens on FAIL beyond the screen | FR-INT-2 | Screen only for now. Discard or hold is undefined (first idea: missing material for the box); postponed, outside the vision system |
 | Order/batch number source | FR-LOG-6 | — (client to inform) |
 | Who is the Supervisor | Section 2 | — (client to name) |
 | Backup destination | FR-JOB-10 | Network share + USB drive |
