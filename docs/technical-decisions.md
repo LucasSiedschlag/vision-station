@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.2 (draft) — production camera selected: Hikvision DS-2CD3666G2T-IZS |
+| Version | 0.3 (draft) — adds TD-19, the general platform |
 | Date | 2026-10-02 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
@@ -36,6 +36,7 @@ Each decision follows the same format: **context → options → decision → co
 | TD-16 | Secrets | **Windows Credential Manager** via `keyring`, under the service account |
 | TD-17 | Testing | **pytest**, file camera driver, reference-set tests on every build (CI on Windows) |
 | TD-18 | Licence compliance | Only permissive licences in the shipped product; licence list generated at build |
+| TD-19 | General platform | **Vision Station is a general fixed-camera inspection platform**; the packaging application (box and tape) is its first application. Inspection steps are **tools** (color, code, pattern, detect), configured per job. |
 
 ---
 
@@ -477,6 +478,61 @@ Models are added only where the prototype shows the classical checks can't separ
 
 ---
 
+### TD-19 — General platform, packaging as the first application
+
+**Context.**
+- The first idea was a system for one job: check that a box is closed and taped (documents 01–03).
+- The decision (2026-10-13) is that `vision-station` is a base for any typical industrial **station**: a fixed camera that identifies **objects**, **colors** or **codes**. The packaging application is built on it, not the other way round.
+- The commercial tools the client's staff already know (Cognex In-Sight, Keyence) work like this: a *job* holds a camera setup and a list of *tools*, each tool looking at a region the user draws. The In-Sight Explorer reference lists the tool families Blob, Color, ID (bar codes and 2D codes), Pattern Match, Edge, Flaw Detection, Histogram and OCV/OCR ([Cognex](https://docs.cognex.com/is_611/web/EN/ise/Content/Reference/VisionTools.htm)).
+- A search for an open-source equivalent (no-code, jobs and tools, camera I/O) found none; the usual base is OpenCV plus own code. So the editor and the job model are ours to build, which is the main cost of this decision.
+
+**Options.**
+
+| Option | For | Against |
+|---|---|---|
+| A. Keep the specific design (box + tape checks) | Smallest scope; fastest to 30/10 | Every new application needs core changes; box and tape words leak into code, screens and files |
+| **B. General contract now, tools added by priority** | The job format, the tool contract and the vocabulary are right from the start; the first application only needs the tools it uses; each new tool is a new module, not a redesign | A little extra work now (renames, contract, docs); tools beyond the first application's need wait |
+| C. Full no-code editor and all tool families from the start | Closest to a commercial system | Largest scope by far; cannot be done by one developer by 30/10; most tools would be untested against a real use |
+
+**Decision: option B.**
+
+1. **Vocabulary.** A *check* is now a **tool**. A job has an ordered list of tools; each tool has a `type`, a `version`, a region (`roi`), `params`, a `reason_fail` text and returns pass/fail plus a score. The decision rule stays `all_pass`.
+2. **Regions.** `box` becomes **`anchor`**: the thing the **locator** finds in the image (a box, a part, a label). ROIs are relative to the `anchor` or to the `frame`. A job without a locator uses only the `frame`. The format is not released yet (`format: 1`), so this changes without a migrator.
+3. **First tool families** (in this order of delivery):
+
+| Tool `type` | What it does | Training | Library (licence) | Used by |
+|---|---|---|---|---|
+| `color` | Fraction of the region inside a color range (hue, saturation, value), or distance to a reference color. User draws the validation area. | none | OpenCV (Apache 2.0) | red tape, presence of a colored part |
+| `code` | Reads 1D bar codes and QR / Data Matrix codes in the region, optionally compares with an expected text or pattern. | none | **zxing-cpp** (Apache 2.0, Windows wheel for Python 3.12). OpenCV's own `barcode_BarcodeDetector` and `QRCodeDetector` are built into the wheel and stay as a fallback. | any station that reads a label |
+| `pattern` | Finds a template (logo) or counts repeats along a line. | none | OpenCV (Apache 2.0) | logo on transparent tape |
+| `detect` | Runs a trained object detector or anomaly model on the region. | **yes**, offline | ONNX Runtime (MIT), model per TD-08 | open flaps; "which objects are present" |
+
+   The packaging application needs `color` and `pattern` for the tape; `code` and `detect` are added when the platform needs them, not for the contract with Customer.
+4. **Trigger modes.** A job picks one: `image_presence` (object present and still, as today), `manual`, `external`, or `continuous` (no trigger; for stations that read codes or watch a conveyor). `continuous` is named now and built when an application needs it.
+5. **Screen text comes from the job and the language file**, not from code: "Aguardando caixa" becomes the job's `ui.waiting` text, with a neutral default.
+6. **Repository layout.**
+   - `src/vision_station/`: the platform (cameras, jobs, tools, station, API, screen). No customer words.
+   - `applications/<name>/`: jobs, reference images, notes and acceptance data of one application. The first is `applications/Customer/`.
+   - Customer context stays in this repository, which is **private**. If the platform is ever published, the `applications/` folder is split out first.
+7. **Cameras.** Unchanged: the camera is a plugin (TD-04, TD-05). The C920 is the camera for the first application; the Hikvision driver comes later and serves every application.
+8. **Documents.** Documents 01–03 describe the packaging application. They are kept, retitled as the application's documents, and the platform is described in 03 (architecture) and this document. Where they say "check" or "box", the platform meaning is "tool" and "anchor".
+
+**What the C920 means for the general tools.** The search for similar projects found the C920 used with OpenCV in real prototypes (for instance a firmware test rig for electricity meters, University of Ljubljana) and sold with C/CS-mount rework kits by Kurokesu; forum reports also warn about inconsistent frame rates and prefer fixed focus for vision work. On the bench PC the driver measured 30.7 fps in MJPG at 1920×1080 with every setting read back. For the tools it means:
+- **Codes:** the code must be sharp and large enough, and sit at the fixed focus distance. Rules of thumb (not measured here): at least about 2 px per bar for 1D codes and about 4 px per module for QR. At 1920 px across a 300 mm field (6.4 px/mm), bars of 0.5 mm give about 3 px (workable), while QR modules of 0.5 mm are borderline. To be tested with printed codes before promising anything.
+- **Objects and colors:** fine for a fixed scene with fixed light. Light matters more than the camera (TD-06). A webcam has a rolling shutter: moving objects blur, so the object must be still when captured.
+- **Limits:** no hardware trigger, a fixed wide lens (distortion at the edges), USB cable length limits. For stations with these needs the Hikvision camera or a GigE industrial camera is the next step.
+
+**Consequences and trade-offs.**
+- **Cost now:** about 3 h to rename and document, plus the contract work in the tool tasks; roughly +30 h to the plan for the platform pieces (code tool, a region editor, the detect tool), most of them after the first delivery.
+- **Risk to 30/10:** the editor (drawing regions on a live image) is the biggest new item. For the first delivery, regions can be edited in the job file and drawn in a small tool; the full screen comes after.
+- **Benefit:** the second application does not touch the core. The jobs, backup, verification, results and API are all application-independent from the start.
+- **Danger:** a platform with no second application can become over-built. Rule: a tool is written only when an application uses it, except `code`, which is cheap and testable without hardware.
+- **Licences:** all four tool families use Apache 2.0 or MIT components (TD-18). `pyzbar` is not used because it needs the LGPL ZBar library.
+
+**Revisit when:** a second application is defined, or the Hikvision camera replaces the C920, or the editor proves too large for one developer.
+
+---
+
 ## 3. PC specification (for the client to buy)
 
 | Item | Minimum | Recommended | Why |
@@ -573,3 +629,4 @@ Run these first, on the bench, in this order. Each one closes a decision above.
 - Model licences: [Ultralytics licence](https://www.ultralytics.com/request-license) · [RF-DETR on PyPI](https://pypi.org/project/rfdetr/) · [RF-DETR XL/2XL licence](https://discuss.roboflow.com/t/plan-required-for-new-rfdetrlarge-sizes/11827) · [YOLOX ONNX](https://huggingface.co/Heliosoph/yolox-onnx) · [Anomalib + OpenVINO (Intel)](https://www.intel.com/content/www/us/en/developer/articles/training/defect-detection-with-anomalib.html) · [Supervision](https://supervision.roboflow.com/latest/faq/)
 - Job/recipe vocabulary: [OPC UA Machine Vision](https://reference.opcfoundation.org/MachineVision/docs/13.2.2/)
 - Selected camera: [DS-2CD3666G2T-IZS(Y) datasheet (Hikvision, 2024)](https://pro-av.hikvision.com/content/dam/hikvision/en/support/regional-materials/mea/DS-2CD3666G2T-IZSYH_Datasheet_MEA_2024Q1.pdf)
+- General platform (TD-19): [Cognex In-Sight vision tools](https://docs.cognex.com/is_611/web/EN/ise/Content/Reference/VisionTools.htm) · [zxing-cpp on PyPI](https://pypi.org/project/zxing-cpp) · [OpenCV barcode module](https://docs.opencv.org/4.x/d7/d2a/group__objdetect__barcode.html) · [C920 + OpenCV test rig, Univ. of Ljubljana](https://repozitorij.uni-lj.si/IzpisGradiva.php?id=103811) · [Kurokesu C920 rework kit](https://www.kurokesu.com/shop/KITC920) · [OpenCV forum on camera choice](https://forum.opencv.org/t/which-cameras-are-compatible-with-opencv/7017)
