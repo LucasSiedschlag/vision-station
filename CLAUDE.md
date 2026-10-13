@@ -5,7 +5,7 @@
 
 **Vision Station**: the packaging vision system that checks every box on a scale leaves the station **closed and taped** (red tape, or transparent tape with a printed logo; box sizes P, M, G, GG). It gives PASS / FAIL / ERROR with a reason in Portuguese. Sole developer: Lucas.
 
-Current state: **design phase, no code yet.** Delivery of 30/10/2026 (implemented and validated) uses the **Logitech C920 only**; the Hikvision driver, ISAPI work and the trained model are postponed. The repository holds only the four design documents in `docs/`. Phases: 0 definition → 1 prototype (Logitech C920) → 2 model → 3 production camera (Hikvision DS-2CD3666G2T-IZS) → 4 acceptance.
+Current state: **design done; code just started** (`src/vision_station/` is a skeleton). Delivery of 30/10/2026 (implemented and validated) uses the **Logitech C920 only**; the Hikvision driver, ISAPI work and the trained model are postponed. The repository holds only the four design documents in `docs/`. Phases: 0 definition → 1 prototype (Logitech C920) → 2 model → 3 production camera (Hikvision DS-2CD3666G2T-IZS) → 4 acceptance.
 
 Sibling project: `../vision-sim` (Bancada Virtual de Visão, project VIS, public repo). A static ES-module web simulator used to choose camera, lens, height and lighting before buying hardware. It is not a dependency of this repo, but its camera catalog (`data/cameras.csv`) and models are the reference for hardware choices. **Nothing from the client may go into `vision-sim`**, it is public.
 
@@ -30,6 +30,16 @@ Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs s
 6. **The camera is a plugin** behind one interface (`open/capabilities/apply/read_back/frames/snapshot/health`). Drivers: UVC (C920), Hikvision (ISAPI + RTSP/snapshot), File (tests). Inspection and job code never name a camera.
 7. **Core is OS-independent**; OS-specific code only in camera drivers, service wrapper, installer.
 8. **Simple for one maintainer**: one process, SQLite + files, no brokers, containers or cloud.
+
+## Commands
+
+```bash
+uv sync              # create .venv with Python 3.12 and install deps
+uv run pytest        # run the tests
+uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
+```
+
+Layout: `src/vision_station/` (package), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 
 ## Chosen stack (TD-02..TD-18)
 

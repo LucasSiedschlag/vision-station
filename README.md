@@ -2,7 +2,7 @@
 
 Packaging vision system. At the packing station, each box is placed on a scale in a fixed position. A fixed camera checks that the box leaves **closed and taped** and shows **PASS / FAIL / ERROR** with the reason (in Portuguese) on the operator screen.
 
-> **Status:** design phase. The first delivery (30/10/2026) runs with the Logitech C920; the Hikvision camera comes later. This repository currently contains the design documents only; there is no code yet.
+> **Status:** design done, implementation starting. The first delivery (30/10/2026) runs with the Logitech C920; the Hikvision camera comes later.
 
 ## What it will do
 
@@ -24,6 +24,17 @@ Packaging vision system. At the packing station, each box is placed on a scale i
 ## Stack (planned)
 
 Python 3.12, OpenCV, ONNX Runtime (CPU, OpenVINO on Intel), FastAPI, SQLite, a local web UI in Edge kiosk mode, packaged as a Windows service with PyInstaller and Inno Setup. Only permissive licenses ship in the product (no Ultralytics/AGPL).
+
+## Development
+
+Needs [uv](https://docs.astral.sh/uv/). It installs Python 3.12 by itself.
+
+```bash
+uv sync
+uv run pytest
+```
+
+On Windows, `uv sync --extra uvc` adds the C920 controls (duvc-ctl).
 
 ## Related
 
