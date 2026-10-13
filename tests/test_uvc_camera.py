@@ -17,6 +17,8 @@ from vision_station.jobs import CameraProfile
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
+YUY2 = cv2.VideoWriter.fourcc(*"YUY2")
+
 C920_RANGES = {
     "exposure": ControlRange(-11, -2, 1),
     "gain": ControlRange(0, 255, 1),
@@ -61,22 +63,56 @@ class FakeControls:
 
 
 class FakeCapture:
-    def __init__(self, accept_size=True):
+    """A DirectShow capture. `works_with` names the only way of asking that makes it use MJPG."""
+
+    def __init__(self, params=None, works_with="params", accept_size=True):
         self.props = {}
         self.calls = []
         self.accept_size = accept_size
         self.released = False
         self.frames_left = 3
+        self.via_params = bool(params)
+        self.works_with = works_with
+        self.size_before_fourcc = False
+        self.fourcc_before_size = False
+        self.props[cv2.CAP_PROP_FOURCC] = YUY2
+        if params:
+            for prop, value in zip(params[::2], params[1::2]):
+                self._write(prop, value)
+        self._apply_rule()
+
+    def _write(self, prop, value):
+        if prop in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT):
+            if not self.accept_size:
+                return False
+            if cv2.CAP_PROP_FOURCC not in self.calls:
+                self.size_before_fourcc = True
+        if prop == cv2.CAP_PROP_FOURCC:
+            if cv2.CAP_PROP_FRAME_WIDTH not in self.calls:
+                self.fourcc_before_size = True
+            self.requested_fourcc = value
+            return True
+        self.props[prop] = value
+        return True
+
+    def _apply_rule(self):
+        ok = {
+            "params": self.via_params,
+            "fourcc-first": self.fourcc_before_size and not self.via_params,
+            "size-first": self.size_before_fourcc and not self.via_params,
+            "never": False,
+        }[self.works_with]
+        if ok and hasattr(self, "requested_fourcc"):
+            self.props[cv2.CAP_PROP_FOURCC] = self.requested_fourcc
 
     def isOpened(self):  # noqa: N802
         return not self.released
 
     def set(self, prop, value):
+        ok = self._write(prop, value)
         self.calls.append(prop)
-        if prop in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT) and not self.accept_size:
-            return False
-        self.props[prop] = value
-        return True
+        self._apply_rule()
+        return ok
 
     def get(self, prop):
         return self.props.get(prop, 0)
@@ -114,8 +150,9 @@ class Captures:
         self.kwargs = kwargs
         self.last = None
 
-    def __call__(self, index):
-        self.last = FakeCapture(**self.kwargs)
+    def __call__(self, index, params=None):
+        self.last = FakeCapture(params=params, **self.kwargs)
+        self.opened = getattr(self, "opened", 0) + 1
         return self.last
 
 
@@ -214,17 +251,33 @@ def test_auto_modes(profile):
     assert report.status["low_light_compensation"] is SettingStatus.NOT_SUPPORTED
 
 
-def test_format_is_forced_before_the_size(profile):
+def test_format_is_asked_for_while_opening_first(profile):
     cam, _, captures = make_camera()
-    cam.apply(profile)
-    assert captures.last.calls[:3] == [cv2.CAP_PROP_FOURCC, cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT]
+    assert cam.apply(profile).status["pixel_format"] is SettingStatus.APPLIED
+    assert cam.open_strategy == "params"
+
+
+@pytest.mark.parametrize("works_with", ["fourcc-first", "size-first"])
+def test_other_ways_of_asking_are_tried_until_mjpeg_sticks(profile, works_with):
+    cam, _, captures = make_camera(captures=Captures(works_with=works_with))
+    report = cam.apply(profile)
+    assert report.status["pixel_format"] is SettingStatus.APPLIED
+    assert report.status["resolution"] is SettingStatus.APPLIED
+    assert cam.open_strategy == works_with
+    assert cam.read_back()["pixel_format"] == "mjpeg"
+
+
+def test_format_that_never_sticks_is_reported(profile):
+    cam, _, _ = make_camera(captures=Captures(works_with="never"))
+    report = cam.apply(profile)
+    assert report.status["pixel_format"] is SettingStatus.REJECTED
+    assert "yuyv" in report.detail["pixel_format"]
 
 
 def test_size_the_camera_refuses_is_reported(profile):
     cam, _, _ = make_camera(captures=Captures(accept_size=False))
     report = cam.apply(profile)
     assert report.status["resolution"] is SettingStatus.REJECTED
-    assert report.status["pixel_format"] is SettingStatus.APPLIED
 
 
 def test_read_back_uses_profile_names(profile):
@@ -262,11 +315,11 @@ def test_snapshot_is_not_offered_and_capabilities_list_what_exists():
 
 
 def test_not_open_and_open_failure():
-    cam = UvcCamera(lambda c: (FakeControls(), 0), lambda i: FakeCapture())
+    cam = UvcCamera(lambda c: (FakeControls(), 0), lambda i, p=None: FakeCapture())
     with pytest.raises(CameraError, match="not open"):
         cam.read_back()
     closed = FakeCapture()
     closed.released = True
-    cam = UvcCamera(lambda c: (FakeControls(), 0), lambda i: closed)
+    cam = UvcCamera(lambda c: (FakeControls(), 0), lambda i, p=None: closed)
     with pytest.raises(CameraError, match="cannot open"):
         cam.open({"device_index": 0})

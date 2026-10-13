@@ -32,7 +32,7 @@ def list_devices() -> None:
         print(f"{i}: {device.name}\n   {device.path}")
 
 
-def run_once(connection: dict, profile: CameraProfile, frames: int, save: Path | None) -> bool:
+def run_once(connection: dict, profile: CameraProfile, frames: int, seconds: float, save: Path | None) -> bool:
     cam = create_camera("uvc")
     cam.open(connection)
     try:
@@ -41,14 +41,17 @@ def run_once(connection: dict, profile: CameraProfile, frames: int, save: Path |
             note = f"  ({report.detail[name]})" if name in report.detail else ""
             print(f"  {name:<24} {status.value}{note}")
         print("  read back:", cam.read_back())
+        print(f"  capture opened with strategy: {cam.open_strategy}")
         started = time.monotonic()
         last = None
-        for count, frame in enumerate(cam.frames(), 1):
+        count = 0
+        for frame in cam.frames():
             last = frame
-            if count >= frames:
+            count += 1
+            if count >= frames or time.monotonic() - started > seconds:
                 break
         elapsed = time.monotonic() - started
-        print(f"  {frames} frames in {elapsed:.2f} s = {frames / elapsed:.1f} fps, shape {last.image.shape}")
+        print(f"  {count} frames in {elapsed:.2f} s = {count / elapsed:.1f} fps, shape {last.image.shape}")
         if save and last is not None:
             cv2.imwrite(str(save), last.image)
         bad = {k: v for k, v in report.status.items() if v is SettingStatus.REJECTED}
@@ -66,6 +69,7 @@ def main() -> int:
     parser.add_argument("--profile", type=Path, default=DEFAULT_PROFILE)
     parser.add_argument("--repeat", type=int, default=1, help="open/apply/close this many times")
     parser.add_argument("--frames", type=int, default=60)
+    parser.add_argument("--seconds", type=float, default=5, help="stop measuring fps after this long")
     args = parser.parse_args()
 
     if args.list:
@@ -85,7 +89,7 @@ def main() -> int:
     failures = 0
     for n in range(1, args.repeat + 1):
         print(f"run {n}/{args.repeat}")
-        if not run_once(connection, profile, args.frames, Path("c920_last.png")):
+        if not run_once(connection, profile, args.frames, args.seconds, Path("c920_last.png")):
             failures += 1
     print(f"\n{args.repeat - failures}/{args.repeat} runs with every setting applied")
     return 1 if failures else 0

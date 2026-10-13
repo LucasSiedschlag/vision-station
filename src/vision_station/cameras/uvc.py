@@ -86,10 +86,13 @@ class Capture(Protocol):
 
 # connection -> (controls, device index for the capture)
 ControlsFactory = Callable[[Mapping[str, Any]], tuple[Controls, int]]
-CaptureFactory = Callable[[int], Capture]
+CaptureFactory = Callable[[int, list[int] | None], Capture]
 
 
-def open_directshow_capture(index: int) -> Capture:
+def open_directshow_capture(index: int, params: list[int] | None = None) -> Capture:
+    """`params` is a flat [prop, value, ...] list applied while opening (OpenCV 4.5.2+)."""
+    if params:
+        return cv2.VideoCapture(index, cv2.CAP_DSHOW, params)
     return cv2.VideoCapture(index, cv2.CAP_DSHOW)
 
 
@@ -128,6 +131,7 @@ class UvcCamera(Camera):
         self._capture: Capture | None = None
         self._stamps: deque[float] = deque(maxlen=30)
         self._ranges: dict[str, ControlRange] = {}
+        self.open_strategy = ""  # how the capture was last opened, for diagnostics
 
     # --- lifecycle -----------------------------------------------------------
 
@@ -274,18 +278,67 @@ class UvcCamera(Camera):
     # --- internals -----------------------------------------------------------
 
     def _open_capture(self, fourcc: str, size: tuple[int, int] | None) -> None:
-        """DirectShow only. The format is forced to MJPG *before* the size, or the C920 stays at low fps."""
+        """Open through DirectShow and get the wanted format.
+
+        With DirectShow the order of the settings decides whether the format sticks (the C920
+        stays on YUY2, about 5 fps at 1080p, if it does not), and what works depends on the
+        OpenCV build. So the ways of asking are tried in turn, each checked by reading the
+        format back, and the first that works is kept (`open_strategy` says which).
+        """
         if self._capture is not None:
             self._capture.release()
-        cap = self._capture_factory(self._index)
-        if not cap.isOpened():
-            raise CameraError(f"cannot open camera {self._index}")
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(*fourcc))
-        if size is not None:
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, size[0])
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, size[1])
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self._capture = cap
+            self._capture = None
+        code = cv2.VideoWriter.fourcc(*fourcc)
+        width, height = size if size is not None else (None, None)
+        P = cv2
+
+        def with_params() -> Capture:
+            params = [P.CAP_PROP_FOURCC, code]
+            if size is not None:
+                params += [P.CAP_PROP_FRAME_WIDTH, width, P.CAP_PROP_FRAME_HEIGHT, height]
+            return self._capture_factory(self._index, params)
+
+        def fourcc_first() -> Capture:
+            cap = self._capture_factory(self._index, None)
+            cap.set(P.CAP_PROP_FOURCC, code)
+            if size is not None:
+                cap.set(P.CAP_PROP_FRAME_WIDTH, width)
+                cap.set(P.CAP_PROP_FRAME_HEIGHT, height)
+            return cap
+
+        def size_first() -> Capture:
+            cap = self._capture_factory(self._index, None)
+            if size is not None:
+                cap.set(P.CAP_PROP_FRAME_WIDTH, width)
+                cap.set(P.CAP_PROP_FRAME_HEIGHT, height)
+            cap.set(P.CAP_PROP_FOURCC, code)
+            if size is not None:  # some builds restart the graph when the format changes
+                cap.set(P.CAP_PROP_FRAME_WIDTH, width)
+                cap.set(P.CAP_PROP_FRAME_HEIGHT, height)
+            return cap
+
+        best: Capture | None = None
+        for name, attempt in (("params", with_params), ("fourcc-first", fourcc_first), ("size-first", size_first)):
+            cap = attempt()
+            if not cap.isOpened():
+                cap.release()
+                raise CameraError(f"cannot open camera {self._index} (is another program using it?)")
+            cap.set(P.CAP_PROP_BUFFERSIZE, 1)
+            if best is not None:
+                best.release()
+            best = cap
+            self.open_strategy = name
+            if self._format_matches(cap, code, size):
+                break
+        self._capture = best
+
+    @staticmethod
+    def _format_matches(cap: Capture, code: int, size: tuple[int, int] | None) -> bool:
+        if int(cap.get(cv2.CAP_PROP_FOURCC)) != code:
+            return False
+        if size is None:
+            return True
+        return (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))) == tuple(size)
 
     def _apply_format(self, profile: CameraProfile, done: Callable[..., None]) -> None:
         fourcc = FOURCC[profile.pixel_format or "mjpeg"]
