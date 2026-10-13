@@ -36,6 +36,16 @@ uv run pytest
 
 On Windows, `uv sync --extra uvc` adds the C920 controls (duvc-ctl).
 
+### C920 bench check (Windows)
+
+```bash
+uv sync --extra uvc
+uv run python scripts/c920_check.py --list
+uv run python scripts/c920_check.py --name C920 --repeat 20
+```
+
+Opens the camera, applies `examples/c920-profile.yaml`, reads every setting back and measures fps. Exit code 1 if any setting was rejected.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.

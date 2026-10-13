@@ -11,8 +11,16 @@ from vision_station.cameras.base import (
 )
 from vision_station.cameras.file import FileCamera
 
+def _uvc() -> Camera:
+    # Imported here so other systems never need duvc-ctl
+    from vision_station.cameras.duvc_backend import open_duvc_controls
+    from vision_station.cameras.uvc import UvcCamera
+
+    return UvcCamera(open_duvc_controls)
+
+
 # Driver name (as written in the system config) -> factory (FR-ACQ-3)
-DRIVERS: dict[str, Callable[[], Camera]] = {"file": FileCamera}
+DRIVERS: dict[str, Callable[[], Camera]] = {"file": FileCamera, "uvc": _uvc}
 
 
 def create_camera(driver: str) -> Camera:
