@@ -128,7 +128,7 @@ Each decision follows the same format: **context → options → decision → co
 - **duvc-ctl:** MIT-licensed, Windows-only. It controls exposure, focus, white balance, gain, zoom and the other standard UVC properties, in both Auto and Manual modes, through DirectShow, with no vendor SDK.
 
 **Decision.**
-- **Frames:** OpenCV with the **`CAP_DSHOW`** backend only. Force the `MJPG` FOURCC **before** setting resolution and frame rate. Read in a dedicated thread that keeps only the latest frame (§3.2).
+- **Frames:** OpenCV with the **`CAP_DSHOW`** backend only. Ask for `MJPG`, the resolution and the format **while opening** (`cv2.VideoCapture(index, cv2.CAP_DSHOW, [CAP_PROP_FOURCC, ..., CAP_PROP_FRAME_WIDTH, ..., CAP_PROP_FRAME_HEIGHT, ...])`). Setting the FOURCC after opening did not stick on the bench PC (the C920 stayed on YUY2, about 5 fps at 1080p; 2026-10-13). The driver reads the format back and falls back to setting FOURCC before the size, then the size before FOURCC. Read in a dedicated thread that keeps only the latest frame (§3.2).
 - **Settings:** set through **duvc-ctl** in two passes:
   1. switch every auto mode to manual;
   2. wait about 200 ms, then write the values;
