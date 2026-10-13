@@ -24,7 +24,8 @@ GAP = round(8 / MM_PER_PX)
 ROWS = [
     ("QR", zxingcpp.BarcodeFormat.QRCode, "LOTE-2026-10", [8, 12, 16, 24, 36]),
     ("Data Matrix", zxingcpp.BarcodeFormat.DataMatrix, "DM-4711", [8, 12, 16, 24, 36]),
-    ("Code 128", zxingcpp.BarcodeFormat.Code128, "ABC-12345", [6, 8, 12, 18, 24]),
+    ("Code 128", zxingcpp.BarcodeFormat.Code128, "A-1", [8, 12, 18]),
+    ("Code 128", zxingcpp.BarcodeFormat.Code128, "A-1", [24, 36]),
 ]
 
 

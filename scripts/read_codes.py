@@ -32,6 +32,8 @@ def main() -> int:
     parser.add_argument("--index", type=int)
     parser.add_argument("--profile", type=Path, default=DEFAULT_PROFILE)
     parser.add_argument("--seconds", type=float, default=5)
+    parser.add_argument("--exposure-us", type=float, help="override the profile's exposure (e.g. 16000, 33000)")
+    parser.add_argument("--gain", type=float, help="override the profile's gain")
     parser.add_argument("--expect", help="accept only codes with exactly this text")
     parser.add_argument("--formats", nargs="*", help="e.g. QRCode Code128 DataMatrix (default: all)")
     args = parser.parse_args()
@@ -41,6 +43,10 @@ def main() -> int:
         parser.error("give --name, --path or --index")
 
     profile = CameraProfile.model_validate(yaml.safe_load(args.profile.read_text(encoding="utf-8")))
+    if args.exposure_us is not None:
+        profile = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"value_us": args.exposure_us})})
+    if args.gain is not None:
+        profile = profile.model_copy(update={"gain": profile.gain.model_copy(update={"value": args.gain})})
     params = {k: v for k, v in {"expect": args.expect, "formats": args.formats}.items() if v}
 
     cam = create_camera("uvc")
@@ -66,6 +72,9 @@ def main() -> int:
     finally:
         cam.close()
 
+    if last is not None:
+        gray = cv2.cvtColor(last[0], cv2.COLOR_BGR2GRAY)
+        print(f"brightness of the last frame: mean {gray.mean():.0f}, brightest 1% above {np.percentile(gray, 99):.0f} (of 255; a lit sheet should be well above 150)")
     print(f"{frames} frames in {elapsed:.1f} s ({frames / elapsed:.1f} per s), tool passed in {passed}")
     for (fmt, text), n in seen.most_common():
         print(f"  {fmt:<12} {text!r:<30} read in {n}/{frames} frames")
