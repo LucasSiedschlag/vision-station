@@ -3,10 +3,12 @@
 | | |
 |---|---|
 | Document | 03 — Architecture |
-| Version | 0.1 (draft) |
+| Version | 0.2 (draft) — tools and anchor (TD-19) |
 | Date | 2026-10-02 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
+
+> **Platform and application (TD-19).** Vision Station is a general fixed-camera inspection platform. This document describes the platform, with the packaging application (box and tape) as the first example: in the platform a *check* is a **tool** and the *box* the locator finds is the **anchor**. Product words (box, tape, P/M/G/GG) appear only in examples and in section 13, which are the application.
 
 Related documents: 01 — Project Scope · 02 — Requirements and Use Cases · 04 — Technical Decisions.
 
@@ -38,7 +40,7 @@ We don't implement OPC UA itself. Using the same concepts keeps a future OPC UA 
 
 ```mermaid
 flowchart LR
-    OP([Operator]) -->|places box, reads result| UI
+    OP([Operator]) -->|places the object, reads result| UI
     SUP([Supervisor / Maintainer]) -->|jobs, backup, review| UI
     subgraph PC["Inspection PC (Windows 11)"]
         UI[Operator & admin screen]
@@ -70,7 +72,7 @@ flowchart TB
         DRV{{Camera driver<br/>UVC / Hikvision}}
         TRG[Trigger]
         PIPE[Inspection pipeline]
-        CHK[[Check registry<br/>locator, tape, logo,<br/>closure, model]]
+        CHK[[Tool registry<br/>locator, color, pattern,<br/>code, detect]]
         INF[Model runtime]
         RES[Result recorder]
         RDB[(Results DB + images)]
@@ -106,9 +108,9 @@ flowchart TB
 | **Verifier** | Runs the verification procedure on activation, import and reconnect (section 7.3). | FR-JOB-9, FR-ACQ-4/7 |
 | **Acquisition** | Keeps the camera open. Holds only the **latest** frame, in a dedicated thread. Hands the station controller a frame captured after a given moment. Detects stalls and reconnects. | FR-ACQ-5/6, NFR-REL-3 |
 | **Camera driver** | Camera-specific code behind one interface (section 5). Applies and reads back settings, delivers frames, reports capabilities. | FR-ACQ-1..4/8, NFR-POR-4 |
-| **Trigger** | Decides when a box is present and still. Accepts external and manual triggers. Re-arms only after the box leaves. | FR-TRG-* |
-| **Inspection pipeline** | Runs the job's ordered list of checks on one frame and combines their results into PASS / FAIL / ERROR plus a reason. | FR-INS-* |
-| **Check registry** | Named check types, each with a parameter schema. A job refers to checks by type name and version. | FR-INS-5 |
+| **Trigger** | Decides when an object is present and still (or takes a manual, external or continuous trigger, per job). Re-arms only after the object leaves. | FR-TRG-* |
+| **Inspection pipeline** | Runs the job's ordered list of tools on one frame and combines their results into PASS / FAIL / ERROR plus a reason. | FR-INS-* |
+| **Tool registry** | Named tool types (`color`, `code`, `pattern`, `detect`, TD-19), each with a parameter schema. A job refers to tools by type name and version. | FR-INS-5 |
 | **Model runtime** | Loads the job's model file (ONNX), verifies its checksum, runs inference on the CPU. | FR-MDL-3, NFR-PERF-3 |
 | **Result recorder** | Writes the inspection record and decides which images to keep. Applies retention and disk limits. | FR-LOG-1..3 |
 | **Backup scheduler** | Makes scheduled and on-change backups, verifies them, rotates old ones. | FR-JOB-10 |
@@ -147,13 +149,13 @@ For the C920 prototype on Windows, opening a USB camera from a background servic
 | Metadata | id, name, version, author, created/changed dates, description, parent version | Identify and trace |
 | Camera profile | Driver type, resolution, format, exposure, gain, white balance, focus, zoom, and image-processing switches | Same image on any installation |
 | Camera raw settings | The driver's own full settings dump (e.g. the Hikvision image-settings XML) | Restores settings we don't model by name |
-| Geometry | Box locator settings; ROIs defined **relative to the located box** | Tolerates box placement (NFR-ACC-4) |
-| Checks | Ordered list: check type, type version, parameters, thresholds, reason messages | Same decision logic |
-| Decision rule | How check results combine into PASS / FAIL (default: all must pass) | Same final result |
-| Trigger settings | Presence area, stillness time, re-arm rule | Same inspection moment |
+| Geometry | Optional locator settings; ROIs defined **relative to the anchor** (what the locator found) or to the frame | Tolerates object placement (NFR-ACC-4) |
+| Tools | Ordered list: tool type, type version, parameters, thresholds, reason messages | Same decision logic |
+| Decision rule | How tool results combine into PASS / FAIL (default: all must pass) | Same final result |
+| Trigger settings | Mode (`image_presence`, `manual`, `external`, `continuous`), presence area, stillness time, re-arm rule | Same inspection moment |
 | Image-quality limits | Expected brightness and sharpness ranges vs. reference | Detect drift (FR-ACQ-7) |
 | Model(s) | ONNX file(s), checksum, input size, class names, model card (training data, date, metrics) | Same model, traceable |
-| Reference image | One image of a good box taken when the job was saved | Verify the camera view after restore |
+| Reference image | One image of a good object taken when the job was saved | Verify the camera view after restore |
 | Reference set | Labeled images with their expected results | Verify the decision logic after restore |
 
 What is **not** in a job: camera IP address and password, which PC folder to back up to, user accounts, licence keys. These belong to the **system configuration** (section 4.5), because they describe the installation, not the product.
@@ -165,7 +167,7 @@ A job file is a ZIP archive with a fixed layout. Text files are UTF-8, and all p
 ```
 caixa-M-fita-vermelha_v7.vjob
 ├── manifest.json            # format version, job id/version, file list with SHA-256, app version that wrote it
-├── job.yaml                 # metadata, geometry, checks, decision rule, trigger, quality limits
+├── job.yaml                 # metadata, geometry, tools, decision rule, trigger, quality limits, screen texts
 ├── camera/
 │   ├── profile.yaml         # normalized camera settings (driver-independent names)
 │   └── raw/                 # driver-specific dumps, used only by the same driver
@@ -174,8 +176,8 @@ caixa-M-fita-vermelha_v7.vjob
 │   ├── tape.onnx
 │   └── tape.card.yaml       # classes, input size, training date, dataset id, metrics
 ├── reference/
-│   ├── reference.png        # golden view of a good box
-│   └── reference.meta.yaml  # brightness, sharpness, box position measured on it
+│   ├── reference.png        # golden view of a good object
+│   └── reference.meta.yaml  # brightness, sharpness, anchor position measured on it
 └── tests/
     ├── expected.yaml        # list of image → expected result, with tolerance on scores
     └── images/*.png
@@ -196,15 +198,16 @@ camera_profile: camera/profile.yaml
 trigger:
   presence_roi: [0.10, 0.10, 0.90, 0.90]   # fractions of the frame
   still_ms: 400
-  rearm: box_absent
+  mode: image_presence
+  rearm: object_absent
 quality:
   brightness: {min: 90, max: 170}
   sharpness_min_ratio: 0.7                 # vs. reference
 geometry:
   locator: {type: box_outline, version: 1, params: {min_area: 0.15}}
   rois:
-    seam: {relative_to: box, rect: [0.45, 0.0, 0.55, 1.0]}
-checks:
+    seam: {relative_to: anchor, rect: [0.45, 0.0, 0.55, 1.0]}
+tools:
   - id: tape
     type: tape_color_coverage
     version: 1
@@ -214,16 +217,18 @@ checks:
   - id: closed
     type: model_detect
     version: 1
-    roi: box
+    roi: anchor
     params: {model: models/closure.onnx, class_fail: open_flap, conf: 0.5}
     reason_fail: "Aba aberta"
 decision: all_pass
+ui:
+  waiting: "Aguardando caixa"   # screen texts come from the job (TD-19)
 ```
 
 Rules:
 - **Checksums:** every file is listed in `manifest.json` with its SHA-256. Import refuses the file if anything is missing or different (FR-JOB-8).
 - **Format version:** `format` is an integer. Newer software includes a **migrator** for each older format and upgrades on import, never in place (NFR-MAI-1). Older software refuses a newer format with a clear message.
-- **Check versions:** each check type carries a version. If the software no longer supports that version of a check, the job is refused rather than run with different logic.
+- **Tool versions:** each tool type carries a version. If the software no longer supports that version of a tool, the job is refused rather than run with different logic.
 - **No secrets:** the writer refuses to include anything marked secret (NFR-SEC-1).
 
 ### 4.3 Backup file format (`.vbak`)
@@ -329,11 +334,11 @@ stateDiagram-v2
     Starting --> Preparing: system config loaded
     Preparing --> Ready: camera open + job verified
     Preparing --> Fault: verification failed / no camera
-    Ready --> WaitingStill: box present
-    WaitingStill --> Ready: box left before still
-    WaitingStill --> Inspecting: box still / external or manual trigger
+    Ready --> WaitingStill: object present
+    WaitingStill --> Ready: object left before still
+    WaitingStill --> Inspecting: object still / external or manual trigger
     Inspecting --> ShowingResult: PASS / FAIL / ERROR recorded
-    ShowingResult --> Ready: box removed (re-armed)
+    ShowingResult --> Ready: object removed (re-armed)
     Ready --> Preparing: job switched
     Ready --> CameraLost: no frames > timeout
     Inspecting --> CameraLost: no frames > timeout
@@ -349,11 +354,11 @@ stateDiagram-v2
 | Ready / WaitingStill | "Aguardando caixa" | none |
 | Inspecting | "Inspecionando…" | — |
 | ShowingResult | PASS / FAIL / ERROR + reason | yes |
-| CameraLost | "Câmera desconectada" (yellow) | ERROR if a box was being inspected |
+| CameraLost | "Câmera desconectada" (yellow) | ERROR if an object was being inspected |
 | Fault | "Falha na verificação — chamar manutenção" | none |
 | Paused | "Em manutenção" | none |
 
-Nothing outside the `Inspecting` → `ShowingResult` path can produce a PASS. This is how "never a false PASS" is enforced in the structure, not just in the checks.
+Nothing outside the `Inspecting` → `ShowingResult` path can produce a PASS. This is how "never a false PASS" is enforced in the structure, not just in the tools.
 
 The state names map to the OPC UA Machine Vision states (Preoperational ≈ Preparing, Initialized/Ready ≈ Ready, SingleExecution ≈ Inspecting, Error ≈ Fault), which keeps a later integration simple.
 
@@ -374,19 +379,19 @@ sequenceDiagram
     loop every frame
         ACQ->>TRG: latest frame
     end
-    TRG->>SC: box still (t0)
+    TRG->>SC: object still (t0)
     SC->>ACQ: frame captured after t0
     ACQ-->>SC: frame
     SC->>P: run(job, frame)
-    P->>P: quality check → locate box → place ROIs → checks → decision
+    P->>P: quality check → locate anchor → place ROIs → tools → decision
     P-->>SC: PASS/FAIL/ERROR, reason, scores, overlay
     SC->>R: record(result, frame)
     SC->>UI: result + overlay
-    TRG->>SC: box removed → re-arm
+    TRG->>SC: object removed → re-arm
 ```
 
 - **Fresh frame:** the controller asks for a frame **captured after** the trigger time, never the frame already buffered (FR-ACQ-6). For the Hikvision camera, the job can choose "snapshot on trigger" instead of the stream.
-- **Pipeline order:** image quality → box locator → checks in job order. The pipeline stops at the first ERROR (e.g. no box found) and runs all checks otherwise, so the reason lists every failing check.
+- **Pipeline order:** image quality → locator (if the job has one) → tools in job order. The pipeline stops at the first ERROR (e.g. no object found) and runs all tools otherwise, so the reason lists every failing tool.
 - **Timing budget:** each stage records its duration in the result row, to check against NFR-PERF-1.
 
 ### 7.2 Export and backup (UC-04)
@@ -413,7 +418,7 @@ flowchart TD
     subgraph VER["Verification"]
         F1["Apply camera profile + raw"] --> F2["Read back, compare"]
         F2 --> F3["Capture frame"]
-        F3 --> F4["Compare with reference:<br/>brightness, sharpness,<br/>box position, image similarity"]
+        F3 --> F4["Compare with reference:<br/>brightness, sharpness,<br/>anchor position, image similarity"]
         F4 --> F5["Run pipeline on reference set,<br/>compare with expected results"]
     end
     F5 --> G{"All within tolerance?"}
@@ -426,7 +431,7 @@ Verification has two parts that catch different problems:
 | Part | Catches | Uses |
 |---|---|---|
 | **Camera and view** (steps 1–4) | Settings not applied, camera moved, lens out of focus, lighting changed | The live camera + `reference/` |
-| **Decision logic** (step 5) | Different software version, different model, check behaving differently on a new PC | Only stored images (`tests/`), no camera needed |
+| **Decision logic** (step 5) | Different software version, different model, tool behaving differently on a new PC | Only stored images (`tests/`), no camera needed |
 
 Part 2 also runs in automated tests on every software build (NFR-MAI-3), using the file camera driver. This is how we prove that a restored job gives the same results (NFR-REL-5).
 
@@ -445,7 +450,7 @@ The same verification, without import, runs when a job is selected (UC-02), when
 
 | Store | Content |
 |---|---|
-| `results.db` (SQLite) | One row per inspection: id, timestamp, job id + version, result, reason, per-check scores (JSON), stage timings, image path or null, operator correction (if any) |
+| `results.db` (SQLite) | One row per inspection: id, timestamp, job id + version, result, reason, per-tool scores (JSON), stage timings, image path or null, operator correction (if any) |
 | `images/` | JPEG of the inspection frame for every FAIL and ERROR, and a sample of PASS (FR-LOG-2), with the overlay stored separately so the raw image stays usable for training |
 | `dataset/` | Frames saved by collection mode and corrected results, with labels, ready to export for training (FR-MDL-1/2) |
 | Audit log | Separate append-only table: who, when, what, before/after version |
@@ -508,7 +513,7 @@ The external trigger arrives through the same `POST /trigger` endpoint, or throu
 | Same behavior on another PC or camera | Settings come from the job, not the camera; read-back; reference image; reference set with expected results |
 | Swap C920 → Hikvision (NFR-POR-4) | Camera interface + normalized profile; only the driver changes |
 | Never a false PASS (FR-INS-6) | PASS only on the `Inspecting` path; quality gate; ERROR on any doubt |
-| Fresh frame per box (FR-ACQ-6) | Latest-frame acquisition thread; "frame after t0" request |
+| Fresh frame per inspection (FR-ACQ-6) | Latest-frame acquisition thread; "frame after t0" request |
 | Unattended operation (NFR-REL-1/2/6) | OS service with auto-restart; start-up verification; camera reconnect loop |
 | Windows now, Linux possible (NFR-POR-1/2) | OS-specific code only in camera drivers, the service wrapper and the installer |
 | One maintainer (NFR-MAI-4) | One process, SQLite and files, no external infrastructure |

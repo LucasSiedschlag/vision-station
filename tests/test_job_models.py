@@ -17,8 +17,8 @@ def test_architecture_example_job_is_valid():
     job = parse_job((FIXTURES / "job.yaml").read_text(encoding="utf-8"))
     assert job.job.name == "Caixa M — fita vermelha"
     assert job.job.version == 7
-    assert [c.id for c in job.checks] == ["tape", "closed"]
-    assert job.geometry.rois["seam"].relative_to == "box"
+    assert [t.id for t in job.tools] == ["tape", "closed"]
+    assert job.geometry.rois["seam"].relative_to == "anchor"
 
 
 def test_job_round_trips_through_yaml():
@@ -42,10 +42,13 @@ def test_architecture_example_profile_is_valid():
         lambda d: d["trigger"].update(presence_roi=[0.9, 0.1, 0.1, 0.9]),
         lambda d: d["trigger"].update(presence_roi=[0.1, 0.1, 1.5, 0.9]),
         lambda d: d["quality"]["brightness"].update(min=200),
-        lambda d: d["geometry"]["rois"].update(box={"relative_to": "frame", "rect": [0, 0, 1, 1]}),
-        lambda d: d["checks"][0].update(roi="nowhere"),
-        lambda d: d["checks"][1].update(id="tape"),
-        lambda d: d.update(checks=[]),
+        lambda d: d["geometry"]["rois"].update(anchor={"relative_to": "frame", "rect": [0, 0, 1, 1]}),
+        lambda d: d["tools"][0].update(roi="nowhere"),
+        lambda d: d["tools"][1].update(id="tape"),
+        lambda d: d.update(tools=[]),
+        lambda d: d["trigger"].update(mode="image_presence", presence_roi=None),
+        lambda d: d["trigger"].update(mode="sometimes"),
+        lambda d: d["geometry"].update(locator=None),  # ROIs and tools still refer to the anchor
     ],
 )
 def test_invalid_jobs_are_rejected(change):
@@ -71,3 +74,27 @@ def test_invalid_profiles_are_rejected(change):
     change(data)
     with pytest.raises(ValidationError):
         CameraProfile.model_validate(data)
+
+
+def test_job_without_locator_works_on_the_frame():
+    data = load_job_data()
+    data["geometry"] = {"rois": {"label": {"relative_to": "frame", "rect": [0.2, 0.2, 0.8, 0.5]}}}
+    data["tools"] = [
+        {"id": "read", "type": "code", "version": 1, "roi": "label", "reason_fail": "Código não lido"}
+    ]
+    job = Job.model_validate(data)
+    assert job.geometry.locator is None
+
+
+def test_trigger_modes_that_need_no_presence_settings():
+    data = load_job_data()
+    for mode in ("manual", "external", "continuous"):
+        data["trigger"] = {"mode": mode}
+        assert Job.model_validate(data).trigger.mode == mode
+
+
+def test_screen_text_is_optional_and_comes_from_the_job():
+    data = load_job_data()
+    assert Job.model_validate(data).ui.waiting == "Aguardando caixa"
+    del data["ui"]
+    assert Job.model_validate(data).ui.waiting is None

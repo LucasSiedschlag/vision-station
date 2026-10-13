@@ -3,7 +3,7 @@
 
 ## What this is
 
-**Vision Station**: the packaging vision system that checks every box on a scale leaves the station **closed and taped** (red tape, or transparent tape with a printed logo; box sizes P, M, G, GG). It gives PASS / FAIL / ERROR with a reason in Portuguese. Sole developer: Lucas.
+**Vision Station**: a general inspection platform for a **fixed station** (a fixed camera that identifies objects, colors or codes), in the style of commercial vision systems: a *job* holds the camera setup and an ordered list of *tools* (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws (TD-19). The first application, for Customer, checks that each box leaves the scale **closed and taped** (red tape, or transparent tape with a printed logo; sizes P, M, G, GG), giving PASS / FAIL / ERROR with a reason in Portuguese. The platform is the base; the application sits on top of it, never the other way round. Sole developer: Lucas.
 
 Current state: **design done; code just started** (`src/vision_station/` is a skeleton). Delivery of 30/10/2026 (implemented and validated) uses the **Logitech C920 only**; the Hikvision driver, ISAPI work and the trained model are postponed. The repository holds only the four design documents in `docs/`. Phases: 0 definition → 1 prototype (Logitech C920) → 2 model → 3 production camera (Hikvision DS-2CD3666G2T-IZS) → 4 acceptance.
 
@@ -39,7 +39,7 @@ uv run pytest        # run the tests
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 
-Layout: `src/vision_station/` (package), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
+Layout: `src/vision_station/` (platform, no customer words), `applications/<name>/` (jobs, reference images and notes of one application; first: `Customer`), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 
 ## Chosen stack (TD-02..TD-18)
 
@@ -49,6 +49,7 @@ Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `
 
 ## Conventions
 
+- Vocabulary (TD-19): a **tool** (not check) inspects a region; the **anchor** (not box) is what the locator finds; ROIs are relative to the `anchor` or the `frame`. Product words stay in `applications/` and in examples.
 - Operator-facing text is **Portuguese** (e.g. "Fita ausente em 40% da emenda", "Aguardando caixa"). Docs, code and identifiers are English.
 - Reference requirement/decision IDs in code comments and commits (`TD-04`, `FR-ACQ-4`).
 - Values marked **TBD** in the docs are waiting for the client; do not invent them in code, make them configuration.

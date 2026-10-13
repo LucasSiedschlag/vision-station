@@ -1,4 +1,4 @@
-# Packaging Vision System — Project Scope
+# Packaging Vision System — Project Scope (first application of Vision Station)
 
 | | |
 |---|---|
@@ -7,6 +7,8 @@
 | Date | 2026-10-02 |
 | Author | Lucas (developer and maintainer) |
 | Status | For review with the client |
+
+> **Platform and application (TD-19).** This scope is the packaging application (box and tape) for the first client. It is built on Vision Station, a general fixed-camera platform for objects, colors and codes. Items under "Out of scope" below refer to this contract, not to the platform.
 
 Related documents: 02 — Requirements and Use Cases · 03 — Architecture ("job" model) · 04 — Technical Decisions · Bancada Virtual de Visão (simulator).
 

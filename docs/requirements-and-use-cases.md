@@ -8,6 +8,8 @@
 | Author | Lucas (developer and maintainer) |
 | Status | For review with the client |
 
+> **Platform and application (TD-19).** Sections 3.1–3.9 and the use cases describe the packaging application (box and tape) on top of the platform; section 3.10 lists what the platform itself must offer. In the platform a *check* is a **tool**.
+
 Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 04 — Technical Decisions.
 
 ---
@@ -23,11 +25,11 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 - **TBD:** a value to be agreed with the client. Section 7 lists them all.
 - **Proposed:** a default value suggested by the developer. It becomes binding once the client approves it.
 - **Glossary:**
-  - **Job:** the full set of settings for inspecting one product or box type: camera settings, regions, checks, thresholds, model and reference images.
+  - **Job:** the full set of settings for inspecting one product or box type: camera settings, regions, tools, thresholds, model and reference images.
   - **Job file:** a single file containing one job, used for backup and restore.
   - **Backup file:** a single file containing all jobs plus the system settings.
   - **Trigger:** the event that starts one inspection.
-  - **ROI:** region of interest, the part of the image a check looks at.
+  - **ROI:** region of interest, the part of the image a tool looks at.
 
 ## 2. Actors
 
@@ -72,11 +74,11 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-INS-1 | The system shall decide whether the box is **closed** (flaps closed along the seam). Exact definition of "closed" TBD with the client. | M |
 | FR-INS-2 | For colored-tape jobs, the system shall check that tape covers the seam along a configurable minimum fraction of its length. | M |
 | FR-INS-3 | For logo-tape (transparent) jobs, the system shall check that the logo appears along the seam with a configurable minimum count or coverage. | M |
-| FR-INS-4 | Checks shall only look at the job's ROIs, so objects outside the box do not affect the result. | M |
-| FR-INS-5 | A job shall be able to combine classical checks and a trained model. Each check returns pass/fail plus a score. | M |
+| FR-INS-4 | Tools shall only look at the job's ROIs, so objects outside the anchor (the box, in this application) do not affect the result. | M |
+| FR-INS-5 | A job shall be able to combine classical tools and a trained model. Each tool returns pass/fail plus a score. | M |
 | FR-INS-6 | The final result shall be **PASS**, **FAIL** or **ERROR**. ERROR means the system could not inspect, for example no box found, image too dark or out of focus, or camera lost. ERROR shall never be shown as PASS. | M |
 | FR-INS-7 | Every FAIL and ERROR shall carry a human-readable reason in Portuguese, e.g. "Fita ausente em 40% da emenda". | M |
-| FR-INS-8 | The system shall locate the box in the image and place the ROIs relative to the box, tolerating the placement variation agreed in NFR-ACC-4. | S |
+| FR-INS-8 | The system shall locate the anchor (the box, in this application) in the image and place the ROIs relative to it, tolerating the placement variation agreed in NFR-ACC-4. | S |
 | FR-INS-9 | The system shall support the box sizes P, M, G and GG, either as separate jobs or as one job that detects the size. | M |
 
 ### 3.4 Jobs (JOB)
@@ -84,14 +86,14 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | ID | Requirement | Pri. |
 |---|---|---|
 | FR-JOB-1 | The system shall keep any number of jobs. Exactly one job is active at a time. | M |
-| FR-JOB-2 | A job shall contain everything needed to reproduce the inspection: camera settings, ROIs, checks and thresholds, model file, reference images, metadata (name, version, author, date, description). | M |
+| FR-JOB-2 | A job shall contain everything needed to reproduce the inspection: camera settings, ROIs, tools and thresholds, model file, reference images, metadata (name, version, author, date, description). | M |
 | FR-JOB-3 | The Supervisor shall be able to select the active job from a list. | M |
 | FR-JOB-4 | The Maintainer shall be able to create a job, duplicate it, edit it and delete it. | M |
 | FR-JOB-5 | Saving changes to a job shall create a new job version. Previous versions shall be kept and can be restored. | S |
 | FR-JOB-6 | A job shall be exportable as a **single file**. | M |
 | FR-JOB-7 | All jobs plus the system settings shall be exportable as a **single backup file**. | M |
 | FR-JOB-8 | Import shall check the file's integrity (checksums, format version) and refuse a damaged or incompatible file with a clear message. | M |
-| FR-JOB-9 | After import or restore, the system shall run a **verification**: apply camera settings, read them back, capture a frame, compare it with the reference image, and run the checks on the stored reference images. The job only becomes active if verification passes, or if the Maintainer explicitly overrides it. | M |
+| FR-JOB-9 | After import or restore, the system shall run a **verification**: apply camera settings, read them back, capture a frame, compare it with the reference image, and run the tools on the stored reference images. The job only becomes active if verification passes, or if the Maintainer explicitly overrides it. | M |
 | FR-JOB-10 | The system shall make an automatic backup on a schedule (proposed: daily) and every time a job changes, to a configurable folder (e.g. a network share or USB drive). It shall keep the last N backups (proposed: 30). | S |
 | FR-JOB-11 | A job created for one camera type shall be importable on the other camera type. Camera settings that do not apply shall be flagged for review rather than silently ignored. | C |
 
@@ -111,7 +113,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| FR-LOG-1 | Every inspection shall be recorded with: timestamp, job name and version, result, reason, per-check scores, and the inspection image. | M |
+| FR-LOG-1 | Every inspection shall be recorded with: timestamp, job name and version, result, reason, per-tool scores, and the inspection image. | M |
 | FR-LOG-2 | Images shall be kept for all FAIL and ERROR results. A configurable sample of PASS images shall also be kept (proposed: 1 in 20). | M |
 | FR-LOG-3 | Records older than the retention period (TBD) shall be deleted automatically. When the disk drops below a free-space threshold, the oldest PASS images shall be deleted first. | M |
 | FR-LOG-4 | The Supervisor shall be able to browse and filter results by date, job and result, and export them to CSV. | S |
@@ -142,6 +144,20 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-ADM-2 | The application shall start automatically when Windows starts and open the operator screen. | M |
 | FR-ADM-3 | The system shall show the application version, job versions and model versions on an "About" screen. | M |
 | FR-ADM-4 | Updates shall be installable by the Maintainer, by copying a file or remotely, without losing jobs or records. | M |
+
+### 3.10 Platform (PLT)
+
+Vision Station is a general fixed-camera inspection platform; this document's packaging requirements are its first application (TD-19 in document 04).
+
+| ID | Requirement | Pri. |
+|---|---|---|
+| FR-PLT-1 | The system shall offer inspection tools by type, each with its own parameters and a user-drawn region: `color` (color area or distance to a reference color), `pattern` (template or repeated logo), `code` (1D bar codes, QR and Data Matrix), `detect` (trained model). | M (`color`, `pattern`, `code`), S (`detect`) |
+| FR-PLT-2 | A new tool type shall be added without changing the job manager, the station controller, the API or the screen. | M |
+| FR-PLT-3 | A job shall choose its trigger mode: `image_presence`, `manual`, `external` or `continuous`. | M (`continuous` built when an application needs it) |
+| FR-PLT-4 | A job shall work without a locator, with regions relative to the frame. | M |
+| FR-PLT-5 | The texts the operator screen shows for a job shall come from the job and the language file, not from code. | M |
+| FR-PLT-6 | Customer jobs, reference images and notes shall live under `applications/<name>/`, apart from the platform code. | M |
+| FR-PLT-7 | The user shall be able to draw and test tool regions on the live image from the screen. | S |
 
 ---
 
@@ -199,7 +215,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 |---|---|---|
 | NFR-MAI-1 | The job file format shall be documented (deliverable D8) and versioned. Newer software shall read older job files. | M |
 | NFR-MAI-2 | Application logs shall be kept with rotation (proposed: 30 days) and be easy to collect for remote support. | M |
-| NFR-MAI-3 | The code shall have automated tests for job export/import and for the checks, run against stored reference images. | S |
+| NFR-MAI-3 | The code shall have automated tests for job export/import and for the tools, run against stored reference images. | S |
 | NFR-MAI-4 | The design shall stay simple enough for one developer to maintain. | M |
 
 ### 4.7 Security (SEC)
@@ -243,7 +259,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 3. The system captures a fresh frame.
 4. The system checks image quality (brightness, sharpness) against the job's reference.
 5. The system locates the box and places the ROIs.
-6. The system runs the job's checks.
+6. The system runs the job's tools.
 7. The system shows PASS, FAIL or ERROR with the reason, and highlights the problem area on FAIL.
 8. The system records the result (and the image, per FR-LOG-2).
 9. The Operator removes the box. The system waits for the next box.
@@ -296,7 +312,7 @@ Covers: FR-JOB-1/3, FR-ACQ-4/8, FR-JOB-9.
 2. The Maintainer sets the camera settings while watching the live image (exposure, white balance, focus, zoom).
 3. The Maintainer places a good box and captures the **reference image**.
 4. The Maintainer draws the ROIs on the reference (seam, tape area).
-5. The Maintainer chooses the checks (colored tape / logo tape / closure / model) and sets their thresholds.
+5. The Maintainer chooses the tools (color / pattern / code / detect; for tape: colored tape / logo tape / closure) and sets their thresholds.
 6. The Maintainer tests the job live with good and defective boxes and adjusts the thresholds.
 7. The Maintainer saves the reference set: the images used in step 6, with their expected results.
 8. The Maintainer saves the job. A new version is created and an automatic backup is made.
@@ -343,7 +359,7 @@ Covers: FR-JOB-6/7/10, NFR-USA-3.
 2. The system checks integrity and format version (FR-JOB-8).
 3. The system lists what the file contains and what it will replace. The user confirms.
 4. The system stores the jobs. Existing versions are kept, not overwritten.
-5. For the job to be activated, the system runs verification (FR-JOB-9): apply settings, read back, capture, compare with reference, run checks on reference images.
+5. For the job to be activated, the system runs verification (FR-JOB-9): apply settings, read back, capture, compare with reference, run tools on reference images.
 6. The system shows the verification report. If it passed, the job becomes active.
 
 **Exceptions**

@@ -1,10 +1,14 @@
 # Vision Station
 
-Packaging vision system. At the packing station, each box is placed on a scale in a fixed position. A fixed camera checks that the box leaves **closed and taped** and shows **PASS / FAIL / ERROR** with the reason (in Portuguese) on the operator screen.
+General inspection platform for a **fixed station**: a fixed camera identifies objects, colors or codes. Like commercial vision systems, a *job* holds the camera setup and a list of *tools* (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, and the screen shows **PASS / FAIL / ERROR** with the reason.
+
+The first application (for Customer) is the packing station: each box is placed on a scale, and the camera checks that it leaves **closed and taped**. Platform decisions are in [TD-19](docs/technical-decisions.md).
 
 > **Status:** design done, implementation starting. The first delivery (30/10/2026) runs with the Logitech C920; the Hikvision camera comes later.
 
 ## What it will do
+
+Platform: tools by type, jobs exportable to one backup file and restorable with automatic verification, a camera plugin (C920 now, Hikvision later), operator screen and results log. First application (box and tape):
 
 - Inspect every box (sizes P, M, G, GG) with red tape or transparent tape with a printed logo.
 - Keep all inspection settings in **jobs**: one per product or box type, exportable to a single backup file and restorable on a replacement PC or camera, with automatic verification that behavior is the same.
