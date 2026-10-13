@@ -6,3 +6,9 @@ __pycache__/
 
 # data root created by the app
 /data/
+
+# files written by the bench scripts
+c920_last.png
+codes_last.png
+test_codes.png
+test_codes.html

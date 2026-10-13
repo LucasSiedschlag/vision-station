@@ -50,6 +50,15 @@ uv run python scripts/c920_check.py --name C920 --repeat 20
 
 Opens the camera, applies `examples/c920-profile.yaml`, reads every setting back and measures fps. Exit code 1 if any setting was rejected.
 
+### Code tool (bar codes and QR)
+
+```bash
+uv run python scripts/make_test_codes.py   # test_codes.html: print at 100% to find the smallest readable code
+uv run python scripts/read_codes.py --name C920 --seconds 10   # Windows, camera plugged in
+```
+
+In a job: `{id: lote, type: code, version: 1, roi: label, params: {formats: [QRCode], pattern: 'LOTE-\d+'}, reason_fail: "Código não lido"}`. Parameters are in `src/vision_station/tools/code.py`.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.
