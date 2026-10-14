@@ -86,6 +86,8 @@ class Range(_Strict):
 class Quality(_Strict):
     brightness: Range
     sharpness_min_ratio: Annotated[float, Field(gt=0)]  # vs. the reference image
+    similarity_min: Annotated[float, Field(ge=0, le=1)] = 0.6  # live view vs. reference image (verification)
+    anchor_tolerance: Annotated[float, Field(gt=0, le=1)] = 0.05  # allowed anchor shift, as a fraction of the frame
 
 
 class Locator(_Strict):

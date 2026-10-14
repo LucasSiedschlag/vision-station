@@ -39,6 +39,7 @@ from vision_station.store.archive import (
 from vision_station.store.bundle import JobBundle, bundle_from_files
 from vision_station.store.errors import FormatError, IntegrityError, StoreError
 
+AUDIT_FILE = "audit.log"
 ACTIVE_FILE = "active.yaml"
 SYSTEM_FILE = "system.yaml"
 BACKUP_GLOB = "backup_*.vbak"
@@ -175,6 +176,11 @@ class JobStore:
         return self._import(original, files, manifest)
 
     def _import(self, original: JobRef, files: dict[str, bytes], manifest: dict[str, Any]) -> ImportResult:
+        result = self._import_files(original, files, manifest)
+        self.audit("import", job_id=original.job_id, original_version=original.version, stored_version=result.ref.version, status=result.status)
+        return result
+
+    def _import_files(self, original: JobRef, files: dict[str, bytes], manifest: dict[str, Any]) -> ImportResult:
         existing = self.versions(original.job_id)
         if original.version not in existing:
             ref = self._store(original, files, manifest.get("created_at"), manifest.get("app_version"))
@@ -188,6 +194,20 @@ class JobStore:
         renumbered = {**files, "job.yaml": dump_job(bundle.job.model_copy(update={"job": info})).encode("utf-8")}
         ref = self._store(JobRef(original.job_id, new_version), renumbered)
         return ImportResult(ref, original, "renumbered")
+
+    # --- audit log ---------------------------------------------------------
+
+    def audit(self, kind: str, **data: Any) -> None:
+        """Append one line to the append-only audit log: who changed what and when (FR-LOG-5)."""
+        line = json.dumps({"at": self._clock().isoformat(timespec="seconds"), "kind": kind, **data}, ensure_ascii=False, sort_keys=True)
+        with open(self.system_dir / AUDIT_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+    def read_audit(self) -> list[dict[str, Any]]:
+        path = self.system_dir / AUDIT_FILE
+        if not path.is_file():
+            return []
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     # --- the active job ----------------------------------------------------
 

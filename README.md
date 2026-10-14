@@ -81,6 +81,20 @@ uv run python scripts/run_station.py --name C920 --exposure-us 33000
 
 Starts the camera thread and the state machine with a stand-in inspection (reads a code in the picture). Put an object in the area, wait until it is still, and watch the states and the result; take it away to re-arm. Pictures go to `station_out/`.
 
+### Verification and activation
+
+```python
+from vision_station.verification import JobVerifier, activate, make_reference_files, verify_live, verify_stored_job
+
+extra = make_reference_files(image_of_a_good_object)           # reference/reference.png and .meta.yaml, for the job
+verifier = JobVerifier(inspect)                                 # StationController(..., verifier=verifier)
+report = verify_live(store, ref, acquisition, inspect)          # camera settings + live view vs reference + reference set
+report = verify_stored_job(store, ref, inspect)                 # reference set only, no camera (proves a restore)
+activate(store, ref, report)                                    # only if verified, or activate(..., override_reason="...")
+```
+
+The reference set is `tests/expected.yaml` (image, expected outcome, scores with a tolerance, reason text) and `tests/images/` inside the job. Every activation and override goes to `system/audit.log`.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.
