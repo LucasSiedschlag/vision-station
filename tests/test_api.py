@@ -81,6 +81,7 @@ def test_a_result_shows_in_state_last_result_counters_and_is_recorded(env):
     state = env.client.get("/state").json()
     assert state["state"] == "ShowingResult" and state["message"].startswith("PASS")
     assert state["counters"]["PASS"] == 1 and state["counters"]["total"] == 1
+    assert state["last_record_id"] == env.recorder.last_record_id  # a screen opened now can still mark it wrong
     last = env.client.get("/result/last").json()
     assert last["outcome"] == "PASS" and last["record_id"] == env.recorder.last_record_id
     assert env.results.get(last["record_id"]).job_version == 7
@@ -353,3 +354,43 @@ def test_collection_mode_and_station_commands(env):
     env.rig.tick(5)
     assert env.rig.state is State.READY
     assert env.client.post("/station/explode", headers=mnt).status_code == 404
+
+
+# --- the screens -----------------------------------------------------------------
+
+
+def test_the_page_and_its_files_are_served_and_the_import_map_points_at_real_files(env):
+    import re
+    from vision_station.api.app import WEB_DIR
+
+    page = env.client.get("/")
+    assert page.status_code == 200 and page.headers["content-type"].startswith("text/html")
+    assert page.headers["cache-control"] == "no-cache" and page.headers["x-content-type-options"] == "nosniff"
+    html = page.text
+    imports = json.loads(re.search(r'<script type="importmap">(.*?)</script>', html, re.S).group(1))["imports"]
+    for name, url in imports.items():
+        assert env.client.get(url).status_code == 200, f"{name} -> {url}"
+    for url in re.findall(r'(?:href|src)="(/static/[^"]+)"', html):
+        assert env.client.get(url).status_code == 200, url
+    # every module the screens import exists
+    for js in (WEB_DIR / "static").rglob("*.js"):
+        if "vendor" in js.parts:
+            continue
+        for rel in re.findall(r"from '(\.{1,2}/[^']+)'", js.read_text(encoding="utf-8")):
+            assert (js.parent / rel).resolve().is_file(), f"{js.name} imports {rel}"
+    assert env.client.get("/static/../index.html").status_code in (404, 200)  # no path outside static (checked below)
+    assert env.client.get("/static/%2e%2e/api/app.py").status_code == 404
+
+
+def test_the_content_security_policy_allows_only_this_server_and_the_one_import_map(env):
+    import base64, hashlib, re
+    from vision_station.api.app import WEB_DIR
+
+    csp = env.client.get("/").headers["content-security-policy"]
+    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+    inline = re.search(r'<script type="importmap">(.*?)</script>', html, re.S).group(1)
+    digest = base64.b64encode(hashlib.sha256(inline.encode()).digest()).decode()
+    assert f"script-src 'self' 'sha256-{digest}'" in csp
+    assert "default-src 'self'" in csp and "frame-ancestors 'none'" in csp and "unsafe-eval" not in csp
+    assert "script-src 'self' 'unsafe-inline'" not in csp
+    assert env.client.get("/state").headers["content-security-policy"] == csp

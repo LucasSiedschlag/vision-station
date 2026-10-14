@@ -111,6 +111,10 @@ store.export_dataset("E:/datasets")                            # images + labels
 
 By default every image is kept. `RecordingConfig` sets PASS sampling, retention days and a free-disk limit, applied by `store.housekeeping()` (run it hourly); it never deletes `dataset/` or the job store.
 
+### Web interface
+
+Open `http://127.0.0.1:8765/` while `run_api.py` is running. The operator screen needs no login: live image, state, result and reason, shift counters, "Inspecionar agora" and "Resultado incorreto?". **Entrar** gives the Supervisor and Maintainer screens as they are built (TD-20). The screens are plain modules in `src/vision_station/web/static/` (Preact + htm vendored, no build); tests for their logic run with `node --test tests/web/*.test.mjs`.
+
 ### API
 
 ```bash

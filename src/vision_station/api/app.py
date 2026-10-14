@@ -7,7 +7,9 @@ local Host headers, and refuses browser requests from other origins.
 """
 
 import asyncio
+import base64
 import dataclasses
+import hashlib
 import io
 import re
 from collections.abc import Callable
@@ -19,6 +21,7 @@ from typing import Any
 import cv2
 from fastapi import Depends, FastAPI, Header, HTTPException, Query as QueryParam, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -32,6 +35,7 @@ from vision_station.store.archive import kind_of
 from vision_station.verification import VerificationFailed, activate, verify_stored_job
 from vision_station.verification.verify import Inspector
 
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 MAX_UPLOAD = 256 * 1024 * 1024
 _BACKUP_NAME = re.compile(r"backup_[0-9_-]+\.vbak")
 
@@ -98,6 +102,7 @@ def status_json(deps: ApiDeps) -> dict[str, Any]:
         "warnings": list(status.warnings),
         "job": {"id": status.job_id, "name": status.job_name, "version": status.job_version},
         "last_result": _result_json(status.last_result),
+        "last_record_id": deps.recorder.last_record_id if deps.recorder else None,
         "camera": {"connected": acq.connected, "last_frame_age_s": None if age is None else round(age, 2), "last_error": acq.last_error},
         "counters": deps.results.counts(deps.shift_start()),
         "recording_failures": deps.recorder.failures if deps.recorder else 0,
@@ -135,6 +140,17 @@ class IncorrectBody(BaseModel):
 
 class CollectionBody(BaseModel):
     enabled: bool
+
+
+def content_security_policy(index_html: str) -> str:
+    """Scripts only from this server, plus the one inline import map of index.html (by its hash)."""
+    m = re.search(r'<script type="importmap">(.*?)</script>', index_html, re.S)
+    inline = f" 'sha256-{base64.b64encode(hashlib.sha256(m.group(1).encode()).digest()).decode()}'" if m else ""
+    return (
+        f"default-src 'self'; script-src 'self'{inline}; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' blob: data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:* ws://[::1]:*; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    )
 
 
 def create_app(deps: ApiDeps) -> FastAPI:
@@ -408,4 +424,24 @@ def create_app(deps: ApiDeps) -> FastAPI:
         actions[command]()
         return {"sent": command}
 
+    # --- the screens: a single page served from here, no build step ----------------------
+
+    index_path = WEB_DIR / "index.html"
+    csp = content_security_policy(index_path.read_text(encoding="utf-8"))
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("Content-Security-Policy", csp)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        if request.url.path == "/" or request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache"  # the screens update with the program, never from a stale copy
+        return response
+
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(index_path, media_type="text/html")
+
+    app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
     return app

@@ -13,3 +13,5 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
       - run: uv run pytest
+      - run: node --test tests/web/*.test.mjs
+        shell: bash

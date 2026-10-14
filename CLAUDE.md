@@ -39,7 +39,7 @@ uv run pytest        # run the tests
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 
-Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
+Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `web/` (the interface served by the API: Preact + htm vendored, no build step, TD-20; logic in `static/viewmodel.js`, tested with `node --test tests/web/*.test.mjs`), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
 
 Layout: `src/vision_station/` (platform, no customer words), `applications/<name>/` (jobs, reference images and notes of one application; first: `Customer`), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 

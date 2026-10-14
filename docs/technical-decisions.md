@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.3 (draft) — adds TD-19, the general platform |
+| Version | 0.4 (draft) — adds TD-20, the web interface |
 | Date | 2026-10-02 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
@@ -37,6 +37,7 @@ Each decision follows the same format: **context → options → decision → co
 | TD-17 | Testing | **pytest**, file camera driver, reference-set tests on every build (CI on Windows) |
 | TD-18 | Licence compliance | Only permissive licences in the shipped product; licence list generated at build |
 | TD-19 | General platform | **Vision Station is a general fixed-camera inspection platform**; the packaging application (box and tape) is its first application. Inspection steps are **tools** (color, code, pattern, detect), configured per job. |
+| TD-20 | Web interface | The system is **controlled from a web interface served by the API**: operator screen, jobs, editor, results, settings, access. **Preact + htm vendored** (no build step, no network), hash routes, forms drawn from the tools' JSON schemas. |
 
 ---
 
@@ -473,6 +474,7 @@ Models are added only where the prototype shows the classical checks can't separ
 | keyring | MIT |
 | SQLite | Public domain |
 | WinSW | MIT |
+| Preact / htm (vendored in the web interface) | MIT / Apache 2.0 |
 | PyInstaller | GPL with bootloader exception |
 | Inno Setup | Inno Setup licence (free, commercial use allowed) |
 | RF-DETR Nano–Large / YOLOX / Anomalib | Apache 2.0 |
@@ -536,6 +538,53 @@ Models are added only where the prototype shows the classical checks can't separ
 - **Licences:** all four tool families use Apache 2.0 or MIT components (TD-18). `pyzbar` is not used because it needs the LGPL ZBar library.
 
 **Revisit when:** a second application is defined, or the Hikvision camera replaces the C920, or the editor proves too large for one developer.
+
+---
+
+### TD-20 — The web interface controls the system
+
+**Context.**
+- TD-11 chose a local web UI in Edge kiosk mode, "plain HTML, CSS and JavaScript with no build step and no framework". At that point the UI was an operator screen plus a few admin pages.
+- The decision (2026-10-14) is that the interface is *how the system is operated*, like the software of a commercial vision system: parameters, settings, access, live view, job import and export, region drawing, results and training data. That is dozens of screens with shared state, forms and a canvas editor, which plain DOM code does not keep maintainable for one developer.
+- The station may have no internet, and the PC is Windows with Edge.
+
+**Options.**
+
+| Option | For | Against |
+|---|---|---|
+| A. Plain JS, no library (TD-11 as written) | Nothing to vendor | Hand-written DOM updates for every screen; the editor and forms become fragile |
+| **B. Preact + htm, vendored, no build** | Components, hooks and templates in about 16 KB; no Node, no bundler, no CDN; the files are served by the API and update with the program; MIT and Apache 2.0 licences | Two small third-party files to keep; no type checking; templates are strings (checked by tests and by running the screens) |
+| C. React/Vue with a build (Vite) | Largest ecosystem, TypeScript | A Node build chain in the installer and CI, a bundle to ship and debug, more than one developer's worth of tooling |
+| D. Desktop UI (Qt/PySide6) | Native widgets | LGPL obligations, remote support is harder, the web UI already exists (TD-11) |
+
+**Decision: option B.**
+
+1. **Served by the API.** `index.html`, `static/` (modules, styles, `vendor/preact`, `vendor/hooks`, `vendor/htm` with their licences) are served from `vision_station/web/`. An import map points the three libraries at the vendored files. Responses carry a Content-Security-Policy that allows scripts only from this server plus the one inline import map (by its hash), and `no-cache`, so the screens never come from a stale copy.
+2. **Roles decide what is shown, the server decides what is allowed.** The menu lists the screens a role may open; every endpoint checks the role again (FR-UI-6).
+3. **Screens.**
+
+| Screen | Role | Controls |
+|---|---|---|
+| Operator | none | live image, state, result and reason, shift counters, manual trigger, "wrong result?" |
+| Jobs | Supervisor | list, versions, activate with verification, import and export of `.vjob` and `.vbak`, backup |
+| Editor | Maintainer | camera settings seen live, trigger, tools and their parameters, regions drawn on the image, test on the current image, reference image and reference set |
+| Results | Supervisor | browse, filter, images and overlays, CSV, mark wrong, dataset and collection mode |
+| Settings | Maintainer | camera connection, backup folder, recording limits, language and station name |
+| Access | Maintainer | passwords of Supervisor and Maintainer |
+| Audit | Supervisor | activations, overrides, imports, backups |
+
+4. **Forms come from the tools.** The API lists every tool type with the JSON schema of its parameters (Pydantic), and the editor draws the form from it. A new tool type appears in the editor without any screen code (FR-PLT-2).
+5. **Live view.** One WebSocket carries state, results and JPEG frames at no more than 10 per second (NFR-PERF-4); the screen draws them on a canvas, which the editor also uses for regions.
+6. **Operator screen first.** Dark theme, words and colours together (NFR-USA-2), large touch targets, readable from 2 m (NFR-USA-1).
+7. **Tests.** The logic that decides what a screen shows lives in pure modules (`viewmodel.js`) tested with `node --test`; the server tests check that every file the page needs is served and that the policy matches the import map; and the screens are looked at in a real browser before a task is closed.
+
+**Consequences.**
+- The three vendored files (about 16 KB) are updated by hand; their licences are in `static/vendor/` and in the third-party list (TD-18).
+- Templates are strings, so a typo shows only when the screen runs. Mitigation: keep components small, keep logic in the tested modules, and look at each screen in the browser.
+- The editor (drawing regions on a canvas) is still the largest single UI task.
+- TD-11 is amended: "no framework" becomes "no build step and a vendored 16 KB view library".
+
+**Revisit when:** the interface needs a type system or a component library the vendored approach cannot give, or a second developer joins.
 
 ---
 
