@@ -113,7 +113,7 @@ By default every image is kept. `RecordingConfig` sets PASS sampling, retention 
 
 ### Web interface
 
-Open `http://127.0.0.1:8765/` while `run_api.py` is running. The operator screen needs no login: live image, state, result and reason, shift counters, "Inspecionar agora" and "Resultado incorreto?". **Entrar** gives the Supervisor and Maintainer screens as they are built (TD-20). The screens are plain modules in `src/vision_station/web/static/` (Preact + htm vendored, no build); tests for their logic run with `node --test tests/web/*.test.mjs`.
+To try it without the bench, on any computer: `uv run python scripts/demo_station.py` and open `http://127.0.0.1:8765/` (simulated camera, logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`). With the C920, open `http://127.0.0.1:8765/` while `run_api.py` is running. The operator screen needs no login: live image, state, result and reason, shift counters, "Inspecionar agora" and "Resultado incorreto?". **Entrar** gives the Supervisor and Maintainer screens as they are built (TD-20). The screens are plain modules in `src/vision_station/web/static/` (Preact + htm vendored, no build); tests for their logic run with `node --test tests/web/*.test.mjs`.
 
 ### API
 
