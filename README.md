@@ -73,6 +73,14 @@ store.restore_backup(open("backup.vbak", "rb").read())  # checks the whole file 
 
 Format and rules: `docs/architecture.md` §4. A saved version is never changed, a damaged or newer-format file is refused with a clear message, and no secrets are written.
 
+### Station controller (C920 bench run)
+
+```bash
+uv run python scripts/run_station.py --name C920 --exposure-us 33000
+```
+
+Starts the camera thread and the state machine with a stand-in inspection (reads a code in the picture). Put an object in the area, wait until it is still, and watch the states and the result; take it away to re-arm. Pictures go to `station_out/`.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.

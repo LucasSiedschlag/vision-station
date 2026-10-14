@@ -58,6 +58,10 @@ class Trigger(_Strict):
     presence_roi: tuple[Fraction, Fraction, Fraction, Fraction] | None = None  # fractions of the frame
     still_ms: Annotated[int, Field(gt=0)] | None = None
     rearm: Literal["object_absent"] = "object_absent"
+    # how the image is compared with the empty scene (presence) and with the previous frame (motion)
+    diff_threshold: Annotated[int, Field(ge=1, le=255)] = 25  # gray levels that count as a change
+    min_area: Annotated[float, Field(gt=0, le=1)] = 0.05  # fraction of the region that must differ to count as present
+    motion_area: Annotated[float, Field(gt=0, le=1)] = 0.01  # fraction that must change between frames to count as moving
 
     @model_validator(mode="after")
     def _presence_settings(self) -> Self:
