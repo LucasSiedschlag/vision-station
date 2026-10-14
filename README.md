@@ -111,6 +111,15 @@ store.export_dataset("E:/datasets")                            # images + labels
 
 By default every image is kept. `RecordingConfig` sets PASS sampling, retention days and a free-disk limit, applied by `store.housekeeping()` (run it hourly); it never deletes `dataset/` or the job store.
 
+### API
+
+```bash
+uv run python scripts/set_password.py supervisor          # once per role (supervisor, maintainer)
+uv run python scripts/run_api.py --name C920 --exposure-us 33000   # station + API on 127.0.0.1:8765, docs at /docs
+```
+
+Operator, no login: `GET /state`, `GET /result/last`, `GET /snapshot.jpg`, `POST /trigger`, `WS /live` (status, state and result events as JSON, JPEG frames as binary, at most 10 per second), `POST /results/{id}/incorrect`. Supervisor (`POST /login`, then `Authorization: Bearer ...`): jobs (list, verify and activate, export, import `.vjob`/`.vbak`), backups, results (browse, filter, images, CSV). Maintainer: collection mode, pause/resume/retry, and overriding a failed verification. It accepts only local Host headers and refuses browser requests from other origins.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.

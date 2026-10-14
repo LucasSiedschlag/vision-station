@@ -106,6 +106,15 @@ def pack(kind: str, files: Mapping[str, bytes], meta: Mapping[str, Any]) -> byte
     return out.getvalue()
 
 
+def kind_of(data: bytes) -> str:
+    """'job' or 'backup', read from the manifest without checking the rest."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            return str(json.loads(zf.read(MANIFEST).decode("utf-8"))["kind"])
+    except (zipfile.BadZipFile, KeyError, ValueError, TypeError) as exc:
+        raise FormatError("not a valid Vision Station file") from exc
+
+
 @dataclass(frozen=True)
 class Archive:
     manifest: dict[str, Any]

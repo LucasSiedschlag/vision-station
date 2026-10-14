@@ -106,6 +106,7 @@ class Status:
     job_name: str = ""
     job_version: int = 0
     last_result: InspectionResult | None = None
+    job_id: str = ""
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
 
@@ -185,6 +186,7 @@ class StationController:
             detail=self._detail,
             job_name=job.name if job else "",
             job_version=job.version if job else 0,
+            job_id=str(job.id) if job else "",
             last_result=self._last_result,
             warnings=self._warnings,
         )

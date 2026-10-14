@@ -431,6 +431,8 @@ Models are added only where the prototype shows the classical checks can't separ
 - `system.yaml` holds only the name of the credential.
 - Job and backup files never contain secrets (§4.2).
 
+**Clarification (2026-10-14).** Supervisor and Maintainer passwords are checked, never read back, so they are kept only as scrypt hashes in `system/users.json` (`vision_station.api.auth`), with a lock of 30 s after 5 wrong attempts. Credential Manager is used for the camera password, which the core has to send to the camera.
+
 **Consequence.** After a restore on a new PC, the Maintainer re-enters the camera password. This is part of UC-06, step 2.
 
 ---

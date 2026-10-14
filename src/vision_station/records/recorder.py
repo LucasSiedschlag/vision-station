@@ -20,14 +20,17 @@ class ResultRecorder:
         self._overlay = overlay  # optional: (frame image, result) -> image with the problem marked
         self.failures = 0
         self.last_error: str | None = None
+        self.last_record_id: str | None = None  # of the result recorded last, for the screen
 
     def __call__(self, event: StationEvent) -> None:
         if event.kind != "result" or event.result is None:
             return
+        self.last_record_id = None
         try:
             image = event.frame.image if event.frame is not None else None
             overlay = self._overlay(image, event.result) if self._overlay and image is not None else None
-            self.store.record(event.result, image, job_id=event.job_id, job_name=event.job_name, job_version=event.job_version, overlay=overlay)
+            record = self.store.record(event.result, image, job_id=event.job_id, job_name=event.job_name, job_version=event.job_version, overlay=overlay)
+            self.last_record_id = record.id
         except Exception as exc:
             self.failures += 1
             self.last_error = f"{type(exc).__name__}: {exc}"

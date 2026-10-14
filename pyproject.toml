@@ -5,10 +5,12 @@ description = "Packaging vision system: checks that each box leaves the station 
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "fastapi>=0.143.0",
     "numpy",
     "opencv-python-headless",
     "pydantic>=2",
     "pyyaml",
+    "uvicorn[standard]>=0.54.0",
     "zxing-cpp>=3.1.1",
 ]
 
@@ -17,7 +19,10 @@ dependencies = [
 uvc = ["duvc-ctl; sys_platform == 'win32'"]
 
 [dependency-groups]
-dev = ["pytest"]
+dev = [
+    "httpx>=0.28.1",
+    "pytest",
+]
 
 [build-system]
 requires = ["hatchling"]
