@@ -59,6 +59,20 @@ uv run python scripts/read_codes.py --name C920 --seconds 10   # Windows, camera
 
 In a job: `{id: lote, type: code, version: 1, roi: label, params: {formats: [QRCode], pattern: 'LOTE-\d+'}, reason_fail: "Código não lido"}`. Parameters are in `src/vision_station/tools/code.py`.
 
+### Jobs, versions and backups
+
+```python
+from vision_station.store import JobStore, JobBundle, JobRef
+
+store = JobStore("C:/ProgramData/VisionSystem")      # <root>/jobs/<job-id>/v<n>/, <root>/system/active.yaml
+ref = store.save(JobBundle(job, profile, extra={"reference/reference.png": png}))
+store.write_vjob(ref, "E:/")                          # .vjob, read back and checked before it counts
+store.make_backup("E:/backups", keep=30)              # .vbak with every version, rotated
+store.restore_backup(open("backup.vbak", "rb").read())  # checks the whole file first; stores nothing if damaged
+```
+
+Format and rules: `docs/architecture.md` §4. A saved version is never changed, a damaged or newer-format file is refused with a clear message, and no secrets are written.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.

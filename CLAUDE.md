@@ -39,6 +39,8 @@ uv run pytest        # run the tests
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 
+Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store).
+
 Layout: `src/vision_station/` (platform, no customer words), `applications/<name>/` (jobs, reference images and notes of one application; first: `Customer`), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 
 ## Chosen stack (TD-02..TD-18)
