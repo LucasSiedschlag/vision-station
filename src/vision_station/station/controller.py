@@ -10,6 +10,7 @@ Other threads talk to the controller through commands (`request_trigger`, `switc
 `step()` applies in order.
 """
 
+import logging
 import queue
 import threading
 import time
@@ -23,6 +24,9 @@ from vision_station.results import InspectionResult, Outcome
 from vision_station.station.acquisition import Acquisition
 from vision_station.station.trigger import PresenceDetector
 from vision_station.store import JobBundle
+
+
+log = logging.getLogger(__name__)
 
 
 class State(StrEnum):
@@ -82,6 +86,10 @@ class StationEvent:
     message: str = ""
     result: InspectionResult | None = None
     frame: Frame | None = None
+    # the job that was active, on "result" events, so a recorder needs nothing else
+    job_id: str = ""
+    job_name: str = ""
+    job_version: int = 0
 
 
 @dataclass
@@ -367,7 +375,19 @@ class StationController:
             result = InspectionResult(result.outcome, result.reason, result.scores, result.details, self._clock() - started)
         self._last_result = result
         self._shown_at = self._clock()
-        self._emit(StationEvent("result", self._state, result=result, frame=frame, message=result.reason))
+        job = self._bundle.job.job if self._bundle else None
+        self._emit(
+            StationEvent(
+                "result",
+                self._state,
+                result=result,
+                frame=frame,
+                message=result.reason,
+                job_id=str(job.id) if job else "",
+                job_name=job.name if job else "",
+                job_version=job.version if job else 0,
+            )
+        )
         if self._state is State.INSPECTING:
             self._go(State.SHOWING_RESULT)
 
@@ -377,5 +397,9 @@ class StationController:
             self._emit(StationEvent("state", new, previous=previous, message=self._message()))
 
     def _emit(self, event: StationEvent) -> None:
-        if self._on_event is not None:
+        if self._on_event is None:
+            return
+        try:
             self._on_event(event)
+        except Exception:  # a recorder or screen that fails must not stop the station
+            log.exception("event handler failed")

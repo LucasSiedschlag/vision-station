@@ -95,6 +95,22 @@ activate(store, ref, report)                                    # only if verifi
 
 The reference set is `tests/expected.yaml` (image, expected outcome, scores with a tolerance, reason text) and `tests/images/` inside the job. Every activation and override goes to `system/audit.log`.
 
+### Results and training data
+
+```python
+from vision_station.records import ResultStore, ResultRecorder, RecordingConfig, Query
+
+store = ResultStore("C:/ProgramData/VisionSystem")            # results/results.db, results/images/, dataset/
+controller = StationController(acq, inspect, on_event=ResultRecorder(store))   # every result, with its frame
+store.find(Query(outcome="FAIL"), limit=50)                    # browse; store.counts(since) for the shift totals
+store.export_csv("resultados.csv", Query(job_id=job_id))       # ';' separated, opens in Excel
+store.set_collection(job_id, True)                             # collection mode: every frame also goes to dataset/
+store.mark_incorrect(record_id, "FAIL", by="supervisor")       # a wrong result becomes labeled training data
+store.export_dataset("E:/datasets")                            # images + labels.csv + manifest.json with SHA-256
+```
+
+By default every image is kept. `RecordingConfig` sets PASS sampling, retention days and a free-disk limit, applied by `store.housekeeping()` (run it hourly); it never deletes `dataset/` or the job store.
+
 ## Related
 
 - [`vision-sim`](../vision-sim): the *Bancada Virtual de Visão* simulator, used to choose camera, lens, height and lighting before buying hardware.
