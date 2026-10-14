@@ -1,0 +1,64 @@
+/*
+ * Design tokens (docs/frontend.md §6). The only place where colours, sizes and shapes are written.
+ * Components use the Tailwind names mapped in globals.css, never raw values.
+ *
+ * One definition per token: light-dark(<light>, <dark>) follows the used colour scheme, which is the
+ * system's unless <html data-theme="dark|light"> forces it. Dark is the default look at the station.
+ * Every text/background pair below is checked against WCAG AA by src/styles/tokens.test.ts.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* neutrals: layout only, never colour */
+  --bg-0: light-dark(#f4f6f9, #0e1116); /* page */
+  --bg-1: light-dark(#ffffff, #151a21); /* panels, cards */
+  --bg-2: light-dark(#eef1f5, #1b222b); /* inputs, secondary buttons, table stripes */
+  --bg-3: light-dark(#e3e8ee, #242d38); /* hover, selected */
+  --border: light-dark(#cbd3dd, #2d3743); /* hairlines */
+  --border-strong: light-dark(#9aa6b4, #3d4957); /* emphasised separators */
+  --border-control: light-dark(
+    #6b7787,
+    #738091
+  ); /* edges of form controls: at least 3:1 (WCAG 1.4.11) */
+  --fg: light-dark(#14181d, #e8edf3);
+  --fg-muted: light-dark(#4b5766, #a3afbd);
+
+  /* accent: the primary action and the focus ring */
+  --accent: light-dark(#1f5fd6, #2f6feb);
+  --accent-text: light-dark(#1f5fd6, #7db0ff);
+  --on-accent: #ffffff;
+
+  /* status: colour means status and nothing else, and always comes with an icon and a word */
+  --ok: light-dark(#14754a, #188257);
+  --ok-text: light-dark(#0f6a41, #4cc38a);
+  --ok-surface: light-dark(#ddf3e8, #0f2e22);
+  --on-ok: #ffffff;
+  --fail: light-dark(#b42328, #c93338);
+  --fail-text: light-dark(#a81e23, #ff7c80);
+  --fail-surface: light-dark(#fbe0e1, #3a1316);
+  --on-fail: #ffffff;
+  --warn: #f2b01e;
+  --warn-text: light-dark(#7a5200, #f7c948);
+  --warn-surface: light-dark(#fcefc7, #3b2e0a);
+  --on-warn: #14181d;
+  --busy-text: light-dark(#1f5fd6, #7db0ff);
+  --busy-surface: light-dark(#dce9ff, #10284a);
+
+  /* density: admin screens are compact, the operator screen is kiosk (docs/frontend.md §6.3) */
+  --control-h: 36px;
+  --control-font: 14px;
+  --target-min: 36px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-density='kiosk'] {
+  --control-h: 56px;
+  --control-font: 18px;
+  --target-min: 56px;
+}

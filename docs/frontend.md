@@ -149,7 +149,8 @@ Neutrals (8 steps) carry the layout; **four status hues** carry meaning; one acc
 | `--bg-2` | `#1B222B` | `#EEF1F5` | inputs, table stripes, secondary buttons |
 | `--bg-3` | `#242D38` | `#E3E8EE` | hover, selected row |
 | `--border` | `#2D3743` | `#CBD3DD` | hairlines |
-| `--border-strong` | `#3D4957` | `#9AA6B4` | input borders, focus-adjacent edges |
+| `--border-strong` | `#3D4957` | `#9AA6B4` | emphasised separators |
+| `--border-control` | `#738091` | `#6B7787` | edges of form controls: at least 3:1 on every surface (WCAG 1.4.11), which `--border-strong` is not |
 | `--fg` | `#E8EDF3` | `#14181D` | text (16.1:1 on bg-0 dark, 16.5:1 light) |
 | `--fg-muted` | `#A3AFBD` | `#4B5766` | secondary text (7.8:1 on bg-1 dark, 7.4:1 light) |
 | `--accent` | `#2F6FEB` | `#1F5FD6` | primary button, links, focus ring (white text 4.6:1 / 5.7:1) |
@@ -161,6 +162,8 @@ Neutrals (8 steps) carry the layout; **four status hues** carry meaning; one acc
 | `--warn` | `#F2B01E` | `#F2B01E` | ERROR/attention solid (dark text `#14181D`, 9.3:1) |
 | `--warn-text` / `--warn-surface` | `#F7C948` / `#3B2E0A` | `#7A5200` / `#FCEFC7` | (8.5:1 / 6.0:1) |
 | `--busy-surface` / `--busy-text` | `#10284A` / `#7DB0FF` | `#DCE9FF` / `#1F5FD6` | inspecting, preparing (6.7:1 / 4.7:1) |
+
+Implementation (task VIA-0032): `src/styles/tokens.css` is the only place with values, written once per token with `light-dark(<light>, <dark>)` so the theme follows `prefers-color-scheme` or `<html data-theme="dark|light">`; `globals.css` maps them to Tailwind names (`bg-surface-0..3`, `border-line`, `border-line-control`, `text-fg`, `text-fg-muted`, `bg-accent`, `text-ok-text`, `bg-ok-surface`, `text-on-fail`…) and switches the default Tailwind palette, sizes and radii **off**. `tokens.test.ts` reads the file and checks every text pair at 4.5:1 and the control edges at 3:1 in both themes; `design-rules.test.ts` fails the build on a colour value outside `tokens.css`, an arbitrary pixel value in a class name, or a default palette class.
 
 Rules: neutral surfaces never carry colour; a status colour is **always** paired with an icon and a word (never colour alone, NFR-USA-2); no more than one solid status surface visible at a time on the operator screen.
 

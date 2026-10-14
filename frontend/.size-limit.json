@@ -1,8 +1,14 @@
 [
   {
-    "name": "initial JavaScript (all entry chunks)",
+    "name": "initial JavaScript (the operator screen)",
+    "path": "../src/vision_station/web/dist/assets/index-*.js",
+    "limit": "150 kB",
+    "gzip": true
+  },
+  {
+    "name": "all JavaScript, including screens loaded on demand",
     "path": "../src/vision_station/web/dist/assets/*.js",
-    "limit": "300 kB",
+    "limit": "500 kB",
     "gzip": true
   },
   {

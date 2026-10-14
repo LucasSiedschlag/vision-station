@@ -1,0 +1,156 @@
+import { X } from 'lucide-react'
+import { AlertDialog, Dialog as RadixDialog } from 'radix-ui'
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/cn'
+import { Button } from './button'
+
+const overlay = 'fixed inset-0 z-40 bg-surface-0/80 backdrop-blur-sm'
+
+export const Dialog = RadixDialog.Root
+export const DialogTrigger = RadixDialog.Trigger
+export const DialogClose = RadixDialog.Close
+
+/** A dialog always has a title (read by screen readers); the focus is trapped inside and returns to the opener. */
+export function DialogContent({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <RadixDialog.Portal>
+      <RadixDialog.Overlay className={overlay} />
+      <RadixDialog.Content
+        {...(description ? {} : { 'aria-describedby': undefined })}
+        className={cn(
+          'fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-dialog -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-auto rounded-card border border-line bg-surface-1 p-6 shadow-overlay',
+          className,
+        )}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <RadixDialog.Title className="text-lg font-semibold">{title}</RadixDialog.Title>
+            {description ? (
+              <RadixDialog.Description className="text-sm text-fg-muted">
+                {description}
+              </RadixDialog.Description>
+            ) : null}
+          </div>
+          <RadixDialog.Close asChild>
+            <Button variant="ghost" aria-label="Fechar" className="-mr-2 -mt-2 px-0">
+              <X aria-hidden className="size-4" />
+            </Button>
+          </RadixDialog.Close>
+        </div>
+        {children}
+      </RadixDialog.Content>
+    </RadixDialog.Portal>
+  )
+}
+
+export function DialogFooter({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap justify-end gap-2">{children}</div>
+}
+
+/**
+ * For actions that matter (activate a job, override a verification, change a password): says exactly what
+ * will happen and asks for it by name. Cancel is the default focus, so Enter never confirms by accident.
+ */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel,
+  cancelLabel = 'Cancelar',
+  tone = 'primary',
+  loading = false,
+  onConfirm,
+  children,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  description: string
+  confirmLabel: string
+  cancelLabel?: string
+  tone?: 'primary' | 'danger'
+  loading?: boolean
+  onConfirm: () => void
+  children?: ReactNode
+}) {
+  return (
+    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className={overlay} />
+        <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 flex w-confirm -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-line bg-surface-1 p-6 shadow-overlay">
+          <div className="flex flex-col gap-2">
+            <AlertDialog.Title className="text-lg font-semibold">{title}</AlertDialog.Title>
+            <AlertDialog.Description className="text-sm text-fg-muted">
+              {description}
+            </AlertDialog.Description>
+          </div>
+          {children}
+          <DialogFooter>
+            <AlertDialog.Cancel asChild>
+              <Button>{cancelLabel}</Button>
+            </AlertDialog.Cancel>
+            <Button
+              variant={tone === 'danger' ? 'danger' : 'primary'}
+              loading={loading}
+              onClick={onConfirm}
+            >
+              {confirmLabel}
+            </Button>
+          </DialogFooter>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  )
+}
+
+/** A panel that slides in from the right, for the detail of a row without leaving the list. */
+export function Sheet({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  description?: string
+  children: ReactNode
+}) {
+  return (
+    <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
+      <RadixDialog.Portal>
+        <RadixDialog.Overlay className={overlay} />
+        <RadixDialog.Content className="fixed inset-y-0 right-0 z-50 flex w-sheet flex-col gap-4 overflow-auto border-l border-line bg-surface-1 p-6 shadow-overlay">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <RadixDialog.Title className="text-xl font-semibold">{title}</RadixDialog.Title>
+              {description ? (
+                <RadixDialog.Description className="text-sm text-fg-muted">
+                  {description}
+                </RadixDialog.Description>
+              ) : null}
+            </div>
+            <RadixDialog.Close asChild>
+              <Button variant="ghost" aria-label="Fechar" className="-mr-2 -mt-2 px-0">
+                <X aria-hidden className="size-4" />
+              </Button>
+            </RadixDialog.Close>
+          </div>
+          {children}
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
+  )
+}
