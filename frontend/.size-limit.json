@@ -1,0 +1,14 @@
+[
+  {
+    "name": "initial JavaScript (all entry chunks)",
+    "path": "../src/vision_station/web/dist/assets/*.js",
+    "limit": "300 kB",
+    "gzip": true
+  },
+  {
+    "name": "styles",
+    "path": "../src/vision_station/web/dist/assets/*.css",
+    "limit": "40 kB",
+    "gzip": true
+  }
+]

@@ -39,7 +39,7 @@ export async function request(method, path, body, { raw = false } = {}) {
     payload = JSON.stringify(body);
     headers['Content-Type'] = 'application/json';
   }
-  const res = await fetch(path, { method, headers, body: payload });
+  const res = await fetch(`/api${path}`, { method, headers, body: payload });
   if (!res.ok) {
     let detail = res.statusText;
     try { detail = (await res.json()).detail ?? detail; } catch (e) { /* not JSON */ }
@@ -70,7 +70,7 @@ export function connectLive({ onMessage, onFrame, onConnection }) {
   let ws = null;
   let closed = false;
   let delay = 500;
-  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/live`;
+  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/live`;
 
   function open() {
     ws = new WebSocket(url);

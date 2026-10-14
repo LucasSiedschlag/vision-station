@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/* The design system (tokens, themes, fonts) arrives in VIA-0032; this is only a readable base until then. */
+:root {
+  color-scheme: dark light;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #0e1116;
+  color: #e8edf3;
+}

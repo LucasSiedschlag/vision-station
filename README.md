@@ -116,6 +116,19 @@ By default every image is kept. `RecordingConfig` sets PASS sampling, retention 
 
 To try it without the bench, on any computer: `uv run python scripts/demo_station.py` and open `http://127.0.0.1:8765/` (simulated camera, logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`). With the C920, open `http://127.0.0.1:8765/` while `run_api.py` is running. The operator screen needs no login: live image, state, result and reason, shift counters, "Inspecionar agora" and "Resultado incorreto?". **Entrar** gives the Supervisor and Maintainer screens as they are built (TD-20). This is a **prototype** (Preact + htm) that stays until the React interface of document 05 reaches parity; its logic tests run with `node --test tests/web/*.test.mjs`.
 
+### The React interface (in progress)
+
+```bash
+cd frontend
+npm ci
+npm run dev        # http://localhost:5173, proxies /api to 127.0.0.1:8765 (run scripts/demo_station.py --port 8765 beside it)
+npm run build      # writes src/vision_station/web/dist/, which the API then serves instead of the prototype
+npm test           # unit and component tests;  npm run lint;  npm run typecheck
+npm run gen:api    # regenerates the TypeScript types from the API after any change to src/vision_station/api/
+```
+
+Details, design system and screens: [docs/frontend.md](docs/frontend.md). All API paths are under `/api`; the typed client is generated from `GET /api/openapi.json`.
+
 ### API
 
 ```bash

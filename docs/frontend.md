@@ -43,7 +43,7 @@ Contexts that shape the design: shop-floor light (dark theme default, strong con
 
 | Area | Choice | Why | Instead of |
 |---|---|---|---|
-| Language | **TypeScript** (strict) | Types across 20+ screens and the API client; refactors stay safe for one developer | JavaScript |
+| Language | **TypeScript** (strict; version 5.9 because `openapi-typescript` and `typescript-eslint` do not yet accept a newer one) | Types across 20+ screens and the API client; refactors stay safe for one developer | JavaScript |
 | UI library | **React** (current stable, pinned by lockfile) | The decision of the owner; the largest ecosystem for forms, tables, canvas and accessibility primitives | Preact + htm (prototype) |
 | Build | **Vite** | Fast dev server with proxy, one hashed bundle with route-level splitting, no custom tooling | Webpack, no build |
 | Styling | **Tailwind CSS** with design tokens as CSS variables | One visible system (audit principle #3); utilities keep components consistent; no runtime | CSS-in-JS, hand-written CSS |
@@ -59,7 +59,8 @@ Contexts that shape the design: shop-floor light (dark theme default, strong con
 | Toasts | **sonner** | Accessible live-region toasts | Custom |
 | Region editor | HTML `<canvas>` for the image + **SVG overlay** for shapes, pointer events, own reducer for undo/redo (section 10) | Handles, keyboard control and hit-testing are easier on SVG than on canvas | Konva, Fabric |
 | Tests | **Vitest**, **Testing Library**, **MSW**, **Playwright**, **axe-core** (dev only) | Section 13 | — |
-| Lint/format | ESLint (+ `typescript-eslint`, `jsx-a11y`, `react-hooks`) and Prettier | Catches accessibility and hook mistakes at commit time | — |
+| Lint/format | ESLint 9 (+ `typescript-eslint`, `jsx-a11y`, `react-hooks`; version 9 because `jsx-a11y` does not yet accept 10) and Prettier | Catches accessibility and hook mistakes at commit time | — |
+| Language of the interface | **Portuguese (pt-BR) only**; every string in one module, `src/texts.ts`, no translation library | The software is not multilingual (owner, 2026-10-14) | i18n framework |
 
 Licences (TD-18): React, Radix, Tailwind, shadcn/ui code, TanStack, Zustand, sonner, Zod, React Hook Form, Vite: MIT. lucide-react: ISC. IBM Plex: SIL OFL. axe-core is MPL-2.0 and is used only in tests, never shipped. A `THIRD_PARTY_LICENSES` list for the bundle is generated in CI and fails on a disallowed licence.
 
@@ -79,13 +80,13 @@ frontend/                       # source (needs Node only to build)
       ui/           shadcn-based primitives (Button, Dialog, Select, Tabs, Table, Badge, Tooltip, ...)
       domain/       VerdictPanel  LiveCanvas  StatusIndicator  RoiEditor  SchemaForm  ReportList  ImageCompare
     lib/            format.ts  units.ts  keyboard.ts  geometry.ts
-    i18n/           pt-BR.ts        # every user-facing string, typed keys
+    texts.ts                        # every user-facing string, in pt-BR (the software is not multilingual)
     styles/         tokens.css  globals.css
     test/           setup.ts  msw/  fixtures/
   e2e/              *.spec.ts       # Playwright, against scripts/demo_station.py
 ```
 
-Rules: a feature folder owns its screens, queries and components; `components/domain` holds pieces shared by two or more features; nothing in `components/ui` knows the domain. No user-facing string outside `i18n/pt-BR.ts`.
+Rules: a feature folder owns its screens, queries and components; `components/domain` holds pieces shared by two or more features; nothing in `components/ui` knows the domain. No user-facing string outside `texts.ts`.
 
 ---
 
@@ -438,7 +439,7 @@ Used by the editor steps 2, 4 and 5 and by the camera screen.
 
 ## 11. Language and copy
 
-- **One language now (pt-BR), prepared for more:** all strings live in `i18n/pt-BR.ts` with typed keys and a tiny `t()` with interpolation and plural support. Reasons the jobs define (`reason_fail`) arrive already in the job's language.
+- **Portuguese (pt-BR) only.** The software is not multilingual: all strings live in `src/texts.ts` as plain typed constants (functions for the ones that take values), with no translation library. Reasons the jobs define (`reason_fail`) arrive already written in Portuguese.
 - **Voice:** short, plain, active; numbers and units instead of adjectives; no jargon for the operator; no exclamation marks; no blame ("Câmera desconectada. Reconectando automaticamente.").
 - **Glossary (one concept, one word):**
 
@@ -473,7 +474,7 @@ Used by the editor steps 2, 4 and 5 and by the camera screen.
 
 | Level | Tool | What |
 |---|---|---|
-| Unit | Vitest | view-model functions (state → what the screen shows; ported from `viewmodel.js` and its tests), geometry, formatting, schema-form mapping, i18n |
+| Unit | Vitest | view-model functions (state → what the screen shows; ported from `viewmodel.js` and its tests), geometry, formatting, schema-form mapping |
 | Component | Testing Library + MSW | each screen against a mocked API in loading, empty, error, success and forbidden states; dialogs (focus trap and return); the verdict panel for every station state |
 | Contract | CI script | regenerate `schema.d.ts` from the running API and fail if it differs; every endpoint the client uses exists in the OpenAPI document |
 | End to end | Playwright against `scripts/demo_station.py` | operator cycle (box in, verdict, box out), login and role menus, activate a job (verified and refused), import and export, results filter and mark incorrect, editor: draw a region, test a tool, save a version, camera apply report |
@@ -489,7 +490,8 @@ Used by the editor steps 2, 4 and 5 and by the camera screen.
 ## 14. Build, serving and CI
 
 - **Node** is needed to build, not to run: `frontend/` builds with `npm run build` into `src/vision_station/web/dist/`; the Python package serves it (and includes it in the wheel and in the PyInstaller bundle, task VIA-0017). The built files are **not** committed; CI builds them and the installer includes them.
-- **Dev:** `npm run dev` (Vite, hot reload) with a proxy of `/api` and the WebSocket to `127.0.0.1:8765`; run `uv run python scripts/demo_station.py` next to it.
+- **Dev:** `npm run dev` (Vite, hot reload, port 5173) with a proxy of `/api` and the WebSocket to `127.0.0.1:8765`; run `uv run python scripts/demo_station.py --port 8765` next to it.
+- **Commands** (in `frontend/`): `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run gen:api` (regenerates `src/api/openapi.json` and `schema.d.ts` from the API; commit both), `npm run build`, `npm run size`.
 - **Without a build:** the server answers `/` with a clear page ("A interface não foi compilada. Rode `npm run build` em `frontend/`.") and keeps the API working.
 - **Serving:** `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`; `index.html` with `no-cache`; fallback for client routes. CSP becomes stricter than the prototype's: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'` (for the style attributes Radix sets), `img-src 'self' blob: data:`, `connect-src 'self'` plus the same-host WebSocket, `frame-ancestors 'none'`. No inline script, so the import-map hash of the prototype goes away.
 - **CI** (GitHub Actions, Windows and Linux): `npm ci`, lint, typecheck, unit and component tests, API contract check, build, size budget, then the Python tests against the built files, then Playwright (Linux).

@@ -37,6 +37,7 @@ Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs s
 ```bash
 uv sync              # create .venv with Python 3.12 and install deps
 uv run pytest        # run the tests
+(cd frontend && npm ci && npm test && npm run build)   # the React interface; after changing the API: npm run gen:api
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 

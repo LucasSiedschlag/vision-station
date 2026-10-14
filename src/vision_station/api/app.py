@@ -1,14 +1,14 @@
-"""The local API (architecture §10.1): the operator and admin screens talk to the core only through it.
+"""The local API (architecture §10.1, docs/frontend.md §9): the screens talk to the core only through it.
 
-HTTP for commands and queries, one WebSocket (`/live`) for the reduced live view and for state and
-result events. Operator endpoints need no login; the rest need a Supervisor or Maintainer token
-(`POST /login`, then `Authorization: Bearer <token>`). It listens on 127.0.0.1 by default, accepts only
-local Host headers, and refuses browser requests from other origins.
+Everything the program offers lives under `/api`: HTTP for commands and queries, one WebSocket (`/api/live`)
+for the reduced live view and for state and result events. Every other path belongs to the web interface.
+Operator endpoints need no login; the rest need a Supervisor or Maintainer token (`POST /api/login`, then
+`Authorization: Bearer <token>`). It listens on 127.0.0.1 by default, accepts only local Host headers, and
+refuses browser requests from other origins.
 """
 
 import asyncio
 import base64
-import dataclasses
 import hashlib
 import io
 import re
@@ -19,13 +19,16 @@ from pathlib import Path
 from typing import Any
 
 import cv2
-from fastapi import Depends, FastAPI, Header, HTTPException, Query as QueryParam, Request, Response, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import APIRouter, Depends, FastAPI, Header, Query as QueryParam, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import TypeAdapter
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from vision_station import __version__
+from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
@@ -38,6 +41,7 @@ from vision_station.verification.verify import Inspector
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 MAX_UPLOAD = 256 * 1024 * 1024
 _BACKUP_NAME = re.compile(r"backup_[0-9_-]+\.vbak")
+_DEFAULT_CODES = {400: "bad_request", 401: "login_required", 403: "forbidden", 404: "not_found", 409: "conflict", 413: "too_large", 422: "validation_error", 429: "locked", 503: "unavailable"}
 
 
 def _start_of_today() -> datetime:
@@ -54,6 +58,7 @@ class ApiDeps:
     inspect: Inspector
     recorder: ResultRecorder | None = None
     backup_dir: Path | None = None
+    web_dist: Path = WEB_DIR / "dist"  # the built interface; without it the prototype in web/ is served
     shift_start: Callable[[], datetime] = _start_of_today  # counters for "the current shift": since this moment
     frame_fps: float = 10.0  # the live view is reduced to at most this (NFR-PERF-4)
     frame_width: int = 960
@@ -61,6 +66,15 @@ class ApiDeps:
     heartbeat_s: float = 2.0
     allowed_hosts: tuple[str, ...] = ("localhost", "127.0.0.1", "[::1]")
     hub: EventHub = field(default_factory=EventHub)
+
+
+class Problem(StarletteHTTPException):
+    """An error the interface can show: a Portuguese message plus a machine code and optional details."""
+
+    def __init__(self, status_code: int, detail: str, code: str | None = None, headers: dict[str, str] | None = None, **extra: Any):
+        super().__init__(status_code, detail, headers=headers)
+        self.code = code or _DEFAULT_CODES.get(status_code, "error")
+        self.extra = extra
 
 
 def make_event_handler(deps: ApiDeps) -> Callable[[StationEvent], None]:
@@ -74,44 +88,49 @@ def make_event_handler(deps: ApiDeps) -> Callable[[StationEvent], None]:
     return handle
 
 
-def _result_json(result: Any) -> dict[str, Any] | None:
+def _result(result: Any) -> m.ResultOut | None:
     if result is None:
         return None
-    return {"outcome": str(result.outcome), "reason": result.reason, "scores": dict(result.scores), "duration_ms": round(result.duration_s * 1000)}
+    return m.ResultOut(outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000))
 
 
 def event_message(deps: ApiDeps, event: StationEvent) -> dict[str, Any]:
     if event.kind == "result":
-        return {
-            "type": "result",
-            **_result_json(event.result),
-            "job": {"id": event.job_id, "name": event.job_name, "version": event.job_version},
-            "record_id": deps.recorder.last_record_id if deps.recorder else None,
-        }
-    return {"type": "state", "state": str(event.state), "previous": str(event.previous) if event.previous else None, "message": event.message}
+        message = m.ResultMessage(
+            **_result(event.result).model_dump(),
+            job=m.JobRefOut(id=event.job_id, name=event.job_name, version=event.job_version),
+            record_id=deps.recorder.last_record_id if deps.recorder else None,
+        )
+    else:
+        message = m.StateMessage(state=str(event.state), previous=str(event.previous) if event.previous else None, message=event.message)
+    return message.model_dump(mode="json")
 
 
-def status_json(deps: ApiDeps) -> dict[str, Any]:
+def status_model(deps: ApiDeps) -> m.StateOut:
     status = deps.controller.status()
     acq = deps.acquisition
     age = acq.age_s()
-    return {
-        "state": str(status.state),
-        "message": status.message,
-        "detail": status.detail,
-        "warnings": list(status.warnings),
-        "job": {"id": status.job_id, "name": status.job_name, "version": status.job_version},
-        "last_result": _result_json(status.last_result),
-        "last_record_id": deps.recorder.last_record_id if deps.recorder else None,
-        "camera": {"connected": acq.connected, "last_frame_age_s": None if age is None else round(age, 2), "last_error": acq.last_error},
-        "counters": deps.results.counts(deps.shift_start()),
-        "recording_failures": deps.recorder.failures if deps.recorder else 0,
-        "version": __version__,
-    }
+    return m.StateOut(
+        state=str(status.state),
+        message=status.message,
+        detail=status.detail,
+        warnings=list(status.warnings),
+        job=m.JobRefOut(id=status.job_id, name=status.job_name, version=status.job_version),
+        last_result=_result(status.last_result),
+        last_record_id=deps.recorder.last_record_id if deps.recorder else None,
+        camera=m.CameraOut(connected=acq.connected, last_frame_age_s=None if age is None else round(age, 2), last_error=acq.last_error),
+        counters=m.Counters(**deps.results.counts(deps.shift_start())),
+        recording_failures=deps.recorder.failures if deps.recorder else 0,
+        version=__version__,
+    )
 
 
-def _record_json(r: InspectionRecord) -> dict[str, Any]:
-    return dataclasses.asdict(r)
+def status_json(deps: ApiDeps) -> dict[str, Any]:
+    return status_model(deps).model_dump(mode="json")
+
+
+def _record(r: InspectionRecord) -> m.RecordOut:
+    return m.RecordOut(**{k: getattr(r, k) for k in m.RecordOut.model_fields})
 
 
 def encode_jpeg(image: Any, width: int, quality: int) -> bytes:
@@ -124,28 +143,10 @@ def encode_jpeg(image: Any, width: int, quality: int) -> bytes:
     return data.tobytes()
 
 
-class LoginBody(BaseModel):
-    role: str
-    password: str
-
-
-class ActivateBody(BaseModel):
-    override_reason: str | None = None
-
-
-class IncorrectBody(BaseModel):
-    correct: str
-    by: str = ""
-
-
-class CollectionBody(BaseModel):
-    enabled: bool
-
-
 def content_security_policy(index_html: str) -> str:
-    """Scripts only from this server, plus the one inline import map of index.html (by its hash)."""
-    m = re.search(r'<script type="importmap">(.*?)</script>', index_html, re.S)
-    inline = f" 'sha256-{base64.b64encode(hashlib.sha256(m.group(1).encode()).digest()).decode()}'" if m else ""
+    """Scripts only from this server, plus one inline import map if the page has one (by its hash)."""
+    found = re.search(r'<script type="importmap">(.*?)</script>', index_html, re.S)
+    inline = f" 'sha256-{base64.b64encode(hashlib.sha256(found.group(1).encode()).digest()).decode()}'" if found else ""
     return (
         f"default-src 'self'; script-src 'self'{inline}; style-src 'self' 'unsafe-inline'; "
         "img-src 'self' blob: data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:* ws://[::1]:*; "
@@ -153,9 +154,44 @@ def content_security_policy(index_html: str) -> str:
     )
 
 
+NO_BUILD_PAGE = (
+    '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Vision Station</title>'
+    "<body style=\"font-family:system-ui;max-width:40rem;margin:4rem auto;padding:0 1rem\">"
+    "<h1>A interface não foi compilada</h1>"
+    "<p>Rode <code>npm ci &amp;&amp; npm run build</code> na pasta <code>frontend/</code> e recarregue esta página. "
+    "A API continua funcionando em <code>/api</code>.</p></body></html>"
+)
+
+
 def create_app(deps: ApiDeps) -> FastAPI:
-    app = FastAPI(title="Vision Station", version=__version__)
+    app = FastAPI(
+        title="Vision Station",
+        version=__version__,
+        openapi_url="/api/openapi.json",
+        docs_url="/api/docs",
+        redoc_url=None,
+        generate_unique_id_function=lambda route: route.name,  # operation ids the generated client can use as names
+    )
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(deps.allowed_hosts))
+    api = APIRouter(
+        prefix="/api",
+        responses={401: {"model": m.Problem, "description": "needs a login"}, 403: {"model": m.Problem, "description": "needs another role"}},
+    )
+
+    # --- errors: always {detail, code, ...} ----------------------------------------------------
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_problem(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        code = getattr(exc, "code", None) or _DEFAULT_CODES.get(exc.status_code, "error")
+        body = {"detail": exc.detail if isinstance(exc.detail, str) else str(exc.detail), "code": code, **getattr(exc, "extra", {})}
+        return JSONResponse(body, status_code=exc.status_code, headers=getattr(exc, "headers", None))
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_problem(request: Request, exc: RequestValidationError) -> JSONResponse:
+        fields = {".".join(str(p) for p in e["loc"][1:]) or str(e["loc"][0]): e["msg"] for e in exc.errors()}
+        return JSONResponse({"detail": "Dados inválidos", "code": "validation_error", "fields": fields}, status_code=422)
+
+    # --- same-machine rules ----------------------------------------------------------------------
 
     def origin_allowed(origin: str | None) -> bool:
         """No Origin header (not a browser page) or one of this machine's own addresses."""
@@ -169,7 +205,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
     async def refuse_other_origins(request: Request, call_next):
         # a web page on another site must not drive the station through the browser
         if not origin_allowed(request.headers.get("origin")):
-            return JSONResponse({"detail": "origin not allowed"}, status_code=403)
+            return JSONResponse({"detail": "Origem não permitida", "code": "origin_not_allowed"}, status_code=403)
         return await call_next(request)
 
     def token_of(authorization: str | None) -> str | None:
@@ -183,7 +219,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
     def need(minimum: str):
         def check(current: str = Depends(role)) -> str:
             if not at_least(current, minimum):
-                raise HTTPException(401 if current == "operator" else 403, f"needs a {minimum} login")
+                if current == "operator":
+                    raise Problem(401, "É preciso entrar como " + ("Mantenedor" if minimum == "maintainer" else "Supervisor"), "login_required")
+                raise Problem(403, "Este perfil não tem permissão para isso", "forbidden")
             return current
 
         return check
@@ -191,49 +229,50 @@ def create_app(deps: ApiDeps) -> FastAPI:
     def jobref(job_id: str, version: int) -> JobRef:
         ref = JobRef(job_id, version)
         if version not in deps.jobs.versions(job_id):
-            raise HTTPException(404, "no such job version")
+            raise Problem(404, "Essa versão do job não existe", "job_not_found")
         return ref
 
-    # --- operator: no login ----------------------------------------------------------
+    # --- operator: no login ------------------------------------------------------------------------
 
-    @app.get("/state")
-    def state() -> dict[str, Any]:
-        return status_json(deps)
+    @api.get("/state", response_model=m.StateOut)
+    def state() -> m.StateOut:
+        return status_model(deps)
 
-    @app.get("/result/last")
-    def last_result() -> dict[str, Any]:
-        result = deps.controller.last_result
+    @api.get("/result/last", response_model=m.LastResultOut, responses={404: {"model": m.Problem}})
+    def last_result() -> m.LastResultOut:
+        result = _result(deps.controller.last_result)
         if result is None:
-            raise HTTPException(404, "no result yet")
-        return {**_result_json(result), "record_id": deps.recorder.last_record_id if deps.recorder else None}
+            raise Problem(404, "Ainda não há resultado", "no_result")
+        return m.LastResultOut(**result.model_dump(), record_id=deps.recorder.last_record_id if deps.recorder else None)
 
-    @app.get("/snapshot.jpg")
+    @api.get("/snapshot.jpg", responses={200: {"content": {"image/jpeg": {}}}, 503: {"model": m.Problem}})
     def snapshot() -> Response:
         frame = deps.acquisition.latest()
         if frame is None:
-            raise HTTPException(503, "no image from the camera")
+            raise Problem(503, "Sem imagem da câmera", "no_frame")
         return Response(encode_jpeg(frame.image, deps.frame_width, deps.jpeg_quality), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
-    @app.post("/trigger", status_code=202)
-    def trigger() -> dict[str, Any]:
+    @api.post("/trigger", status_code=202, response_model=m.Accepted, responses={409: {"model": m.Problem}})
+    def trigger() -> m.Accepted:
         """Manual (FR-TRG-3) and external (FR-TRG-2) trigger."""
         if deps.controller.state.value not in ("Ready", "WaitingStill"):
-            raise HTTPException(409, f"the station is not ready ({deps.controller.state.value})")
+            raise Problem(409, "A estação não está pronta", "station_not_ready")
         deps.controller.request_trigger()
-        return {"accepted": True}
+        return m.Accepted(accepted=True)
 
-    @app.post("/results/{record_id}/incorrect")
-    def mark_incorrect(record_id: str, body: IncorrectBody) -> dict[str, Any]:
+    @api.post("/results/{record_id}/incorrect", response_model=m.RecordOut, responses={404: {"model": m.Problem}, 400: {"model": m.Problem}})
+    def mark_incorrect(record_id: str, body: m.IncorrectBody) -> m.RecordOut:
         """The operator or supervisor says a result was wrong; the image becomes labeled training data (FR-MDL-2)."""
         try:
-            return _record_json(deps.results.mark_incorrect(record_id, body.correct, body.by))
+            return _record(deps.results.mark_incorrect(record_id, body.correct, body.by))
         except ResultsError as exc:
-            raise HTTPException(404 if "no such result" in str(exc) else 400, str(exc)) from exc
+            missing = "no such result" in str(exc)
+            raise Problem(404 if missing else 400, "Esse resultado não existe" if missing else "A imagem desse resultado não foi guardada", "result_not_found" if missing else "no_image") from exc
 
-    @app.websocket("/live")
+    @api.websocket("/live")
     async def live(ws: WebSocket) -> None:
-        """Text messages: the state at connect and every few seconds, then state and result events.
-        Binary messages: JPEG frames, at most `frame_fps` per second."""
+        """Text messages (JSON, see LiveMessage): the status at connect and every few seconds, then state and result
+        events. Binary messages: JPEG frames, at most `frame_fps` per second."""
         if not origin_allowed(ws.headers.get("origin")):  # the same rule for the WebSocket handshake
             await ws.close(code=1008)
             return
@@ -268,106 +307,110 @@ def create_app(deps: ApiDeps) -> FastAPI:
         finally:
             deps.hub.unsubscribe(queue)
 
-    # --- login -----------------------------------------------------------------------
+    # --- login -----------------------------------------------------------------------------------------
 
-    @app.post("/login")
-    def login(body: LoginBody) -> dict[str, Any]:
+    @api.post("/login", response_model=m.LoginOut, responses={429: {"model": m.Problem}})
+    def login(body: m.LoginBody) -> m.LoginOut:
         try:
             token, seconds = deps.auth.login(body.role, body.password)
         except LockedOut as exc:
-            raise HTTPException(429, str(exc), headers={"Retry-After": str(int(exc.seconds) + 1)}) from exc
+            raise Problem(429, f"Muitas tentativas. Tente de novo em {int(exc.seconds) + 1} s", "locked", headers={"Retry-After": str(int(exc.seconds) + 1)}) from exc
         except AuthError as exc:
-            raise HTTPException(401, "wrong role or password") from exc
-        return {"token": token, "role": body.role, "expires_in_s": seconds}
+            raise Problem(401, "Perfil ou senha incorretos", "wrong_credentials") from exc
+        return m.LoginOut(token=token, role=body.role, expires_in_s=seconds)
 
-    @app.post("/logout")
-    def logout(authorization: str | None = Header(default=None)) -> dict[str, bool]:
+    @api.post("/logout", response_model=m.Ok)
+    def logout(authorization: str | None = Header(default=None)) -> m.Ok:
         deps.auth.logout(token_of(authorization))
-        return {"ok": True}
+        return m.Ok(ok=True)
 
-    @app.get("/whoami")
-    def whoami(current: str = Depends(role)) -> dict[str, str]:
-        return {"role": current}
+    @api.get("/whoami", response_model=m.WhoAmI)
+    def whoami(current: str = Depends(role)) -> m.WhoAmI:
+        return m.WhoAmI(role=current)
 
-    # --- supervisor: jobs ------------------------------------------------------------
+    # --- supervisor: jobs ----------------------------------------------------------------------------
 
-    @app.get("/jobs")
-    def list_jobs(_: str = Depends(need("supervisor"))) -> dict[str, Any]:
+    @api.get("/jobs", response_model=m.JobsOut)
+    def list_jobs(_: str = Depends(need("supervisor"))) -> m.JobsOut:
         active = deps.jobs.get_active()
         out = []
         for job_id in deps.jobs.job_ids():
             latest = deps.jobs.latest(job_id)
             info = deps.jobs.load(JobRef(job_id, latest)).job.job  # type: ignore[arg-type]
-            out.append({"id": job_id, "name": info.name, "versions": deps.jobs.versions(job_id), "latest": latest})
-        return {"jobs": out, "active": {"id": active.job_id, "version": active.version} if active else None}
+            out.append(m.JobListItem(id=job_id, name=info.name, versions=deps.jobs.versions(job_id), latest=latest))  # type: ignore[arg-type]
+        return m.JobsOut(jobs=out, active=m.ActiveRef(id=active.job_id, version=active.version) if active else None)
 
-    @app.post("/jobs/{job_id}/versions/{version}/activate")
-    def activate_job(job_id: str, version: int, body: ActivateBody | None = None, current: str = Depends(need("supervisor"))) -> dict[str, Any]:
+    @api.post("/jobs/{job_id}/versions/{version}/activate", response_model=m.ActivateOut, responses={409: {"model": m.Problem}, 404: {"model": m.Problem}})
+    def activate_job(job_id: str, version: int, body: m.ActivateBody | None = None, current: str = Depends(need("supervisor"))) -> m.ActivateOut:
         """Verify the job's decision logic on its reference set, record it as active and switch the station to it.
         The camera part of the verification runs on the station itself (a failure shows as a fault on the screen)."""
         ref = jobref(job_id, version)
         reason = (body.override_reason if body else None) or None
         if reason and not at_least(current, "maintainer"):
-            raise HTTPException(403, "only a maintainer can override a failed verification")
+            raise Problem(403, "Só o Mantenedor pode liberar um job que não passou na verificação", "forbidden")
         report = verify_stored_job(deps.jobs, ref, deps.inspect)
         try:
             activate(deps.jobs, ref, report, reason)
         except VerificationFailed as exc:
-            raise HTTPException(409, {"verified": False, "problems": [c.message for c in report.failures()], "message": str(exc)}) from exc
+            raise Problem(409, "O job não passou na verificação", "verification_failed", problems=[c.message for c in report.failures()], verified=False) from exc
         deps.controller.switch_job(deps.jobs.load(ref))
-        return {"activated": True, "verified": report.ok, "warnings": list(report.warnings), "override": bool(reason) and not report.ok}
+        return m.ActivateOut(activated=True, verified=report.ok, warnings=list(report.warnings), override=bool(reason) and not report.ok)
 
-    @app.get("/jobs/{job_id}/versions/{version}/export")
+    @api.get("/jobs/{job_id}/versions/{version}/export", responses={200: {"content": {"application/octet-stream": {}}}, 404: {"model": m.Problem}})
     def export_job(job_id: str, version: int, _: str = Depends(need("supervisor"))) -> Response:
         ref = jobref(job_id, version)
         return Response(deps.jobs.export_vjob(ref), media_type="application/octet-stream", headers={"Content-Disposition": f'attachment; filename="{job_id}_v{version}.vjob"'})
 
-    @app.post("/jobs/import")
-    async def import_file(request: Request, _: str = Depends(need("supervisor"))) -> dict[str, Any]:
+    @api.post("/jobs/import", response_model=m.ImportOut, responses={400: {"model": m.Problem}, 413: {"model": m.Problem}})
+    async def import_file(request: Request, _: str = Depends(need("supervisor"))) -> m.ImportOut:
         """A `.vjob` or a `.vbak`, as the raw request body. Stores new versions; activating is a separate, verified step."""
         data = await request.body()
         if len(data) > MAX_UPLOAD:
-            raise HTTPException(413, "file too large")
+            raise Problem(413, "Arquivo grande demais", "too_large")
 
-        def work() -> dict[str, Any]:
+        def item(r: Any) -> m.ImportItem:
+            return m.ImportItem(id=r.ref.job_id, version=r.ref.version, status=r.status, original_version=r.original.version)
+
+        def work() -> m.ImportOut:
             kind = kind_of(data)
             if kind == "job":
-                r = deps.jobs.import_vjob(data)
-                return {"kind": "job", "imported": [_import_json(r)]}
+                return m.ImportOut(kind="job", imported=[item(deps.jobs.import_vjob(data))])
             if kind == "backup":
                 report = deps.jobs.restore_backup(data)
-                return {"kind": "backup", "imported": [_import_json(r) for r in report.imported], "active_was": {"id": report.active.job_id, "version": report.active.version} if report.active else None, "has_system_config": report.system_yaml is not None}
+                return m.ImportOut(
+                    kind="backup",
+                    imported=[item(r) for r in report.imported],
+                    active_was=m.ActiveRef(id=report.active.job_id, version=report.active.version) if report.active else None,
+                    has_system_config=report.system_yaml is not None,
+                )
             raise FormatError(f"unknown file kind '{kind}'")
 
         try:
             return await asyncio.get_running_loop().run_in_executor(None, work)
         except StoreError as exc:
-            raise HTTPException(400, str(exc)) from exc
+            raise Problem(400, f"Arquivo recusado: {exc}", "file_refused") from exc
 
-    def _import_json(r: Any) -> dict[str, Any]:
-        return {"id": r.ref.job_id, "version": r.ref.version, "status": r.status, "original_version": r.original.version}
-
-    @app.post("/backup")
-    def make_backup(_: str = Depends(need("supervisor"))) -> dict[str, Any]:
+    @api.post("/backup", response_model=m.BackupOut, responses={409: {"model": m.Problem}})
+    def make_backup(_: str = Depends(need("supervisor"))) -> m.BackupOut:
         if deps.backup_dir is None:
-            raise HTTPException(409, "no backup folder is configured")
+            raise Problem(409, "Nenhuma pasta de backup foi configurada", "no_backup_folder")
         path = deps.jobs.make_backup(deps.backup_dir)
-        return {"name": path.name, "size": path.stat().st_size}
+        return m.BackupOut(name=path.name, size=path.stat().st_size)
 
-    @app.get("/backup/{name}")
+    @api.get("/backup/{name}", responses={200: {"content": {"application/octet-stream": {}}}, 404: {"model": m.Problem}})
     def download_backup(name: str, _: str = Depends(need("supervisor"))) -> FileResponse:
         if deps.backup_dir is None or not _BACKUP_NAME.fullmatch(name) or not (deps.backup_dir / name).is_file():
-            raise HTTPException(404, "no such backup")
+            raise Problem(404, "Esse backup não existe", "backup_not_found")
         return FileResponse(deps.backup_dir / name, media_type="application/octet-stream", filename=name)
 
-    # --- supervisor: results ---------------------------------------------------------
+    # --- supervisor: results ---------------------------------------------------------------------------
 
     def query_of(since: datetime | None, until: datetime | None, job_id: str | None, outcome: str | None, incorrect_only: bool) -> Query:
         if outcome and outcome not in ("PASS", "FAIL", "ERROR"):
-            raise HTTPException(422, "outcome must be PASS, FAIL or ERROR")
+            raise Problem(422, "O resultado deve ser PASS, FAIL ou ERROR", "validation_error", fields={"outcome": "PASS, FAIL ou ERROR"})
         return Query(since=since, until=until, job_id=job_id, outcome=outcome, incorrect_only=incorrect_only)
 
-    @app.get("/results")
+    @api.get("/results", response_model=m.ResultsOut)
     def results(
         since: datetime | None = None,
         until: datetime | None = None,
@@ -377,11 +420,11 @@ def create_app(deps: ApiDeps) -> FastAPI:
         limit: int = QueryParam(100, ge=1, le=1000),
         offset: int = QueryParam(0, ge=0),
         _: str = Depends(need("supervisor")),
-    ) -> dict[str, Any]:
+    ) -> m.ResultsOut:
         q = query_of(since, until, job_id, outcome, incorrect_only)
-        return {"total": deps.results.count(q), "results": [_record_json(r) for r in deps.results.find(q, limit, offset)]}
+        return m.ResultsOut(total=deps.results.count(q), results=[_record(r) for r in deps.results.find(q, limit, offset)])
 
-    @app.get("/results.csv")
+    @api.get("/results.csv", responses={200: {"content": {"text/csv": {}}}})
     def results_csv(
         since: datetime | None = None,
         until: datetime | None = None,
@@ -394,54 +437,102 @@ def create_app(deps: ApiDeps) -> FastAPI:
         deps.results.export_csv(buffer, query_of(since, until, job_id, outcome, incorrect_only))
         return Response("﻿" + buffer.getvalue(), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="resultados.csv"'})
 
-    @app.get("/results/{record_id}")
-    def one_result(record_id: str, _: str = Depends(need("supervisor"))) -> dict[str, Any]:
+    @api.get("/results/{record_id}", response_model=m.RecordOut, responses={404: {"model": m.Problem}})
+    def one_result(record_id: str, _: str = Depends(need("supervisor"))) -> m.RecordOut:
         record = deps.results.get(record_id)
         if record is None:
-            raise HTTPException(404, "no such result")
-        return _record_json(record)
+            raise Problem(404, "Esse resultado não existe", "result_not_found")
+        return _record(record)
 
-    @app.get("/results/{record_id}/image")
+    @api.get("/results/{record_id}/image", responses={200: {"content": {"image/jpeg": {}}}, 404: {"model": m.Problem}})
     def result_image(record_id: str, overlay: bool = False, _: str = Depends(need("supervisor"))) -> FileResponse:
         record = deps.results.get(record_id)
         rel = (record.overlay_path if overlay else record.image_path) if record else None
         if rel is None or not (deps.results.root / rel).is_file():
-            raise HTTPException(404, "no image kept for this result")
+            raise Problem(404, "Nenhuma imagem foi guardada para esse resultado", "no_image")
         return FileResponse(deps.results.root / rel, media_type="image/jpeg")
 
-    # --- maintainer ------------------------------------------------------------------
+    # --- maintainer ----------------------------------------------------------------------------------------
 
-    @app.post("/collection/{job_id}")
-    def collection(job_id: str, body: CollectionBody, _: str = Depends(need("maintainer"))) -> dict[str, Any]:
+    @api.post("/collection/{job_id}", response_model=m.CollectionOut)
+    def collection(job_id: str, body: m.CollectionBody, _: str = Depends(need("maintainer"))) -> m.CollectionOut:
         deps.results.set_collection(job_id, body.enabled)
-        return {"job_id": job_id, "enabled": body.enabled, "dataset_images": deps.results.dataset_count(job_id)}
+        return m.CollectionOut(job_id=job_id, enabled=body.enabled, dataset_images=deps.results.dataset_count(job_id))
 
-    @app.post("/station/{command}")
-    def station_command(command: str, _: str = Depends(need("maintainer"))) -> dict[str, str]:
+    @api.post("/station/{command}", response_model=m.Sent, responses={404: {"model": m.Problem}})
+    def station_command(command: str, _: str = Depends(need("maintainer"))) -> m.Sent:
         actions = {"pause": deps.controller.pause, "resume": deps.controller.resume, "retry": deps.controller.retry, "reset-background": deps.controller.reset_background}
         if command not in actions:
-            raise HTTPException(404, "unknown command")
+            raise Problem(404, "Comando desconhecido", "unknown_command")
         actions[command]()
-        return {"sent": command}
+        return m.Sent(sent=command)
 
-    # --- the screens: a single page served from here, no build step ----------------------
+    @api.get("/{rest:path}", include_in_schema=False)
+    def unknown_api(rest: str) -> Response:
+        raise Problem(404, "Esse caminho da API não existe", "not_found")
 
-    index_path = WEB_DIR / "index.html"
-    csp = content_security_policy(index_path.read_text(encoding="utf-8"))
+    app.include_router(api)
+
+    # --- OpenAPI: add the live socket's messages, which are not REST paths ---------------------------------
+
+    def custom_openapi() -> dict[str, Any]:
+        if app.openapi_schema:
+            return app.openapi_schema
+        from fastapi.openapi.utils import get_openapi
+
+        schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+        live = TypeAdapter(m.LiveMessage).json_schema(ref_template="#/components/schemas/{model}")
+        components = schema.setdefault("components", {}).setdefault("schemas", {})
+        components.update(live.pop("$defs", {}))
+        components["LiveMessage"] = live
+        app.openapi_schema = schema
+        return schema
+
+    app.openapi = custom_openapi  # type: ignore[method-assign]
+
+    # --- the screens -------------------------------------------------------------------------------------------
+
+    dist = deps.web_dist
+    built = (dist / "index.html").is_file()
+    prototype_index = WEB_DIR / "index.html"
+    index_html = (dist / "index.html").read_text(encoding="utf-8") if built else prototype_index.read_text(encoding="utf-8") if prototype_index.is_file() else NO_BUILD_PAGE
+    csp = content_security_policy(index_html)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
         response = await call_next(request)
+        path = request.url.path
         response.headers.setdefault("Content-Security-Policy", csp)
+        if path.startswith("/assets/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"  # hashed file names
+        elif not path.startswith("/api"):
+            response.headers["Cache-Control"] = "no-cache"  # the page updates with the program, never from a stale copy
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        if request.url.path == "/" or request.url.path.startswith("/static/"):
-            response.headers["Cache-Control"] = "no-cache"  # the screens update with the program, never from a stale copy
         return response
 
-    @app.get("/", include_in_schema=False)
-    def index() -> FileResponse:
-        return FileResponse(index_path, media_type="text/html")
+    if built:
+        if (dist / "assets").is_dir():
+            app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
-    app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
+        @app.get("/{path:path}", include_in_schema=False)
+        def spa(path: str) -> Response:
+            candidate = (dist / path).resolve()
+            if path and candidate.is_file() and dist.resolve() in candidate.parents:
+                return FileResponse(candidate)  # favicon and the like
+            return FileResponse(dist / "index.html", media_type="text/html")  # any client route: reload and deep links work
+
+    elif prototype_index.is_file():
+
+        @app.get("/", include_in_schema=False)
+        def index() -> FileResponse:
+            return FileResponse(prototype_index, media_type="text/html")
+
+        app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
+    else:
+
+        @app.get("/", include_in_schema=False)
+        def no_build() -> HTMLResponse:
+            return HTMLResponse(NO_BUILD_PAGE, status_code=503)
+
     return app
