@@ -115,7 +115,8 @@ def test_unsafe_paths_are_refused_on_pack_and_on_read(name):
     with pytest.raises(FormatError):
         arc.pack("job", {name: b"x"}, {})
     data = arc.pack("job", {"ok.txt": b"x"}, {})
-    with pytest.raises(FormatError):
+    # on Windows the zip library itself turns "a\\b.txt" into "a/b.txt", which is then an unlisted file
+    with pytest.raises(StoreError):
         arc.unpack(rezip(data, lambda e: e.update({name: b"x"})), "job")
 
 

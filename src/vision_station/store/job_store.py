@@ -147,7 +147,7 @@ class JobStore:
                 os.chmod(path, stat.S_IREAD)
             os.rename(tmp, final)
         except BaseException:
-            shutil.rmtree(tmp, ignore_errors=True)
+            _remove_tree(tmp)
             raise
         return ref
 
@@ -295,6 +295,20 @@ class JobStore:
     def _folder(self, ref: JobRef) -> Path:
         check_path(ref.job_id)
         return self.jobs_dir / ref.job_id / f"v{ref.version}"
+
+
+def _remove_tree(path: Path) -> None:
+    """Delete a folder whose files were made read-only (Windows refuses to delete those)."""
+
+    def writable_then_retry(func: Callable[[str], Any], name: str, _exc: BaseException) -> None:
+        try:
+            os.chmod(name, stat.S_IWRITE)
+            func(name)
+        except OSError:
+            pass
+
+    if path.exists():
+        shutil.rmtree(path, onexc=writable_then_retry)
 
 
 def _backup_order(path: Path) -> tuple[str, int]:
