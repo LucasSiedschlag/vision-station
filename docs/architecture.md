@@ -475,6 +475,8 @@ The same verification, without import, runs when a job is selected (UC-02), when
 
 ### 10.1 Local API (core ↔ screens, future integration)
 
+All endpoints live under `/api` (the WebSocket is `/api/live`); every other path is the web interface (document 05, TD-20). The table below lists the first endpoints; the full contract, including the management endpoints, is in document 05 §9.
+
 | Endpoint (proposed) | Purpose |
 |---|---|
 | `GET /state` | Station state, active job, camera health |

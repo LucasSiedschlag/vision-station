@@ -23,7 +23,8 @@ Platform: tools by type, jobs exportable to one backup file and restorable with 
 | 01 | [Project scope](docs/project-scope.md) | Purpose, scope, deliverables, phases, risks, open client questions |
 | 02 | [Requirements and use cases](docs/requirements-and-use-cases.md) | Functional and non-functional requirements, use cases UC-01..10 |
 | 03 | [Architecture](docs/architecture.md) | Components, the job model, `.vjob` / `.vbak` formats, camera abstraction, station state machine |
-| 04 | [Technical decisions](docs/technical-decisions.md) | Decisions TD-01..18, PC spec, network, known problems, bench tests |
+| 04 | [Technical decisions](docs/technical-decisions.md) | Decisions TD-01..20, PC spec, network, known problems, bench tests |
+| 05 | [Frontend](docs/frontend.md) | The web interface: stack, design system, screens by role, API contract, editor, tests, build |
 
 ## Stack (planned)
 
@@ -113,7 +114,7 @@ By default every image is kept. `RecordingConfig` sets PASS sampling, retention 
 
 ### Web interface
 
-To try it without the bench, on any computer: `uv run python scripts/demo_station.py` and open `http://127.0.0.1:8765/` (simulated camera, logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`). With the C920, open `http://127.0.0.1:8765/` while `run_api.py` is running. The operator screen needs no login: live image, state, result and reason, shift counters, "Inspecionar agora" and "Resultado incorreto?". **Entrar** gives the Supervisor and Maintainer screens as they are built (TD-20). The screens are plain modules in `src/vision_station/web/static/` (Preact + htm vendored, no build); tests for their logic run with `node --test tests/web/*.test.mjs`.
+To try it without the bench, on any computer: `uv run python scripts/demo_station.py` and open `http://127.0.0.1:8765/` (simulated camera, logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`). With the C920, open `http://127.0.0.1:8765/` while `run_api.py` is running. The operator screen needs no login: live image, state, result and reason, shift counters, "Inspecionar agora" and "Resultado incorreto?". **Entrar** gives the Supervisor and Maintainer screens as they are built (TD-20). This is a **prototype** (Preact + htm) that stays until the React interface of document 05 reaches parity; its logic tests run with `node --test tests/web/*.test.mjs`.
 
 ### API
 

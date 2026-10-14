@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.4 (draft) — adds TD-20, the web interface |
+| Version | 0.5 (draft) — TD-20 revised: React + Vite |
 | Date | 2026-10-02 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
@@ -37,7 +37,7 @@ Each decision follows the same format: **context → options → decision → co
 | TD-17 | Testing | **pytest**, file camera driver, reference-set tests on every build (CI on Windows) |
 | TD-18 | Licence compliance | Only permissive licences in the shipped product; licence list generated at build |
 | TD-19 | General platform | **Vision Station is a general fixed-camera inspection platform**; the packaging application (box and tape) is its first application. Inspection steps are **tools** (color, code, pattern, detect), configured per job. |
-| TD-20 | Web interface | The system is **controlled from a web interface served by the API**: operator screen, jobs, editor, results, settings, access. **Preact + htm vendored** (no build step, no network), hash routes, forms drawn from the tools' JSON schemas. |
+| TD-20 | Web interface | The system is **controlled from a web interface served by the API**. **React + TypeScript + Vite**, Tailwind and shadcn/ui (Radix), TanStack Query, generated API types; design system with tokens. Details in document 05 (`docs/frontend.md`). |
 
 ---
 
@@ -340,6 +340,8 @@ Models are added only where the prototype shows the classical checks can't separ
 
 ### TD-11 — Operator screen
 
+> **Superseded in part by TD-20 (2026-10-14):** the interface is a React + Vite application described in `docs/frontend.md`; the choices of a local web UI served by the core and of Edge kiosk mode stand.
+
 **Context.** The screen only talks to the core through the API (§3.1, §10.1). It must be:
 - full-screen;
 - impossible for the operator to close by accident;
@@ -474,7 +476,8 @@ Models are added only where the prototype shows the classical checks can't separ
 | keyring | MIT |
 | SQLite | Public domain |
 | WinSW | MIT |
-| Preact / htm (vendored in the web interface) | MIT / Apache 2.0 |
+| React, Radix UI, Tailwind CSS, shadcn/ui, TanStack, Zustand, Zod, Vite (web interface, built into the bundle) | MIT |
+| lucide-react / IBM Plex fonts (web interface) | ISC / SIL OFL |
 | PyInstaller | GPL with bootloader exception |
 | Inno Setup | Inno Setup licence (free, commercial use allowed) |
 | RF-DETR Nano–Large / YOLOX / Anomalib | Apache 2.0 |
@@ -545,46 +548,36 @@ Models are added only where the prototype shows the classical checks can't separ
 
 **Context.**
 - TD-11 chose a local web UI in Edge kiosk mode, "plain HTML, CSS and JavaScript with no build step and no framework". At that point the UI was an operator screen plus a few admin pages.
-- The decision (2026-10-14) is that the interface is *how the system is operated*, like the software of a commercial vision system: parameters, settings, access, live view, job import and export, region drawing, results and training data. That is dozens of screens with shared state, forms and a canvas editor, which plain DOM code does not keep maintainable for one developer.
+- The decision (2026-10-14) is that the interface is *how the system is operated*, like the software of a commercial vision system: parameters, settings, access, live view, job import and export, region drawing, results and training data. That is more than twenty screens with shared state, forms, tables and a canvas editor.
+- A first prototype with Preact + htm (vendored, no build) was written the same day (VIA-0013). The Rams audit of it scored 18/30 (`docs/design/DESIGN-IS-2026-10-14/`), and the owner decided on **React with a build tool and a proper design system**.
 - The station may have no internet, and the PC is Windows with Edge.
 
 **Options.**
 
 | Option | For | Against |
 |---|---|---|
-| A. Plain JS, no library (TD-11 as written) | Nothing to vendor | Hand-written DOM updates for every screen; the editor and forms become fragile |
-| **B. Preact + htm, vendored, no build** | Components, hooks and templates in about 16 KB; no Node, no bundler, no CDN; the files are served by the API and update with the program; MIT and Apache 2.0 licences | Two small third-party files to keep; no type checking; templates are strings (checked by tests and by running the screens) |
-| C. React/Vue with a build (Vite) | Largest ecosystem, TypeScript | A Node build chain in the installer and CI, a bundle to ship and debug, more than one developer's worth of tooling |
-| D. Desktop UI (Qt/PySide6) | Native widgets | LGPL obligations, remote support is harder, the web UI already exists (TD-11) |
+| A. Plain JS (TD-11 as written) | Nothing to build | Hand-written DOM updates for every screen |
+| B. Preact + htm, vendored, no build (the prototype) | 16 KB, no Node | Small ecosystem for tables, forms, accessibility primitives; templates are strings; no types; the design system would be hand-built |
+| **C. React + TypeScript + Vite** | Largest ecosystem (Radix, TanStack, testing tools); strict types across screens and API; hashed, split bundle; the owner's choice | A Node build step (CI and installer), more dependencies to keep |
+| D. Desktop UI (Qt/PySide6) | Native widgets | LGPL obligations, harder remote support, the web interface is already the plan |
 
-**Decision: option B.**
+**Decision: option C.** The details are in document 05 (`docs/frontend.md`); the points that shape the rest of the system are:
 
-1. **Served by the API.** `index.html`, `static/` (modules, styles, `vendor/preact`, `vendor/hooks`, `vendor/htm` with their licences) are served from `vision_station/web/`. An import map points the three libraries at the vendored files. Responses carry a Content-Security-Policy that allows scripts only from this server plus the one inline import map (by its hash), and `no-cache`, so the screens never come from a stale copy.
-2. **Roles decide what is shown, the server decides what is allowed.** The menu lists the screens a role may open; every endpoint checks the role again (FR-UI-6).
-3. **Screens.**
-
-| Screen | Role | Controls |
-|---|---|---|
-| Operator | none | live image, state, result and reason, shift counters, manual trigger, "wrong result?" |
-| Jobs | Supervisor | list, versions, activate with verification, import and export of `.vjob` and `.vbak`, backup |
-| Editor | Maintainer | camera settings seen live, trigger, tools and their parameters, regions drawn on the image, test on the current image, reference image and reference set |
-| Results | Supervisor | browse, filter, images and overlays, CSV, mark wrong, dataset and collection mode |
-| Settings | Maintainer | camera connection, backup folder, recording limits, language and station name |
-| Access | Maintainer | passwords of Supervisor and Maintainer |
-| Audit | Supervisor | activations, overrides, imports, backups |
-
-4. **Forms come from the tools.** The API lists every tool type with the JSON schema of its parameters (Pydantic), and the editor draws the form from it. A new tool type appears in the editor without any screen code (FR-PLT-2).
-5. **Live view.** One WebSocket carries state, results and JPEG frames at no more than 10 per second (NFR-PERF-4); the screen draws them on a canvas, which the editor also uses for regions.
-6. **Operator screen first.** Dark theme, words and colours together (NFR-USA-2), large touch targets, readable from 2 m (NFR-USA-1).
-7. **Tests.** The logic that decides what a screen shows lives in pure modules (`viewmodel.js`) tested with `node --test`; the server tests check that every file the page needs is served and that the policy matches the import map; and the screens are looked at in a real browser before a task is closed.
+1. **Stack.** React, TypeScript (strict), Vite, Tailwind CSS with design tokens, shadcn/ui components on Radix primitives, lucide icons, IBM Plex fonts self-hosted, React Router, TanStack Query (REST), Zustand (live state), React Hook Form + Zod, TanStack Table. All permissive licences (TD-18); axe-core (MPL-2.0) only in tests.
+2. **API contract.** All API paths move under `/api` (`/api/live` for the WebSocket); every endpoint has Pydantic request and response models; TypeScript types and the client are **generated** from the OpenAPI document and CI fails if they are stale.
+3. **Serving.** `npm run build` writes to `src/vision_station/web/dist/`; the API serves it with a fallback to `index.html`, hashed assets cached as immutable, a strict Content-Security-Policy. The build is not committed; CI builds it and the installer includes it. Node is needed to build, never to run.
+4. **Roles decide what is shown, the server decides what is allowed** (FR-UI-6): the same permission table in the router and on every endpoint.
+5. **Forms come from the tools.** The API lists every tool type with the JSON Schema of its parameters and the editor draws the form from it, so a new tool needs no screen code (FR-PLT-2).
+6. **Design system.** One token set (8 neutrals, 4 status hues, 8 type sizes, 4 px grid, 2 radii plus pill), dark default and light, contrast checked; colour means status only and always comes with an icon and a word (NFR-USA-2).
+7. **Quality gates.** Component and end-to-end tests (Playwright against the demo station), axe with zero serious violations, a size budget in CI, and a definition of done that includes every state and a look in a real browser.
 
 **Consequences.**
-- The three vendored files (about 16 KB) are updated by hand; their licences are in `static/vendor/` and in the third-party list (TD-18).
-- Templates are strings, so a typo shows only when the screen runs. Mitigation: keep components small, keep logic in the tested modules, and look at each screen in the browser.
-- The editor (drawing regions on a canvas) is still the largest single UI task.
-- TD-11 is amended: "no framework" becomes "no build step and a vendored 16 KB view library".
+- The prototype (`src/vision_station/web/`) stays until the new operator screen reaches parity (VIA-0033), then is deleted. TD-11's "no framework" and the Preact + htm choice are superseded.
+- A Node toolchain enters CI and the build of the installer. The lockfile pins every dependency; updating means re-running the tests.
+- The server needs the work in VIA-0031 and VIA-0026 (prefix, response models, new endpoints) before the screens beyond the operator screen can be built.
+- The region editor (drawing on a canvas, with undo, zoom and keyboard control) is still the largest single UI task.
 
-**Revisit when:** the interface needs a type system or a component library the vendored approach cannot give, or a second developer joins.
+**Revisit when:** the bundle budget cannot be met, or the team grows and a component library with a stronger ecosystem is worth the weight.
 
 ---
 

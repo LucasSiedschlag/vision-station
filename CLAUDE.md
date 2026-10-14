@@ -16,7 +16,8 @@ Sibling project: `../vision-sim` (Bancada Virtual de Visão, project VIS, public
 | `docs/project-scope.md` | 01: purpose, in/out of scope, deliverables D1–D10, phases, risks, open client questions |
 | `docs/requirements-and-use-cases.md` | 02: `FR-*` / `NFR-*` requirements (MoSCoW), use cases `UC-01..10`, values to agree with the client |
 | `docs/architecture.md` | 03: components, the **job** model, `.vjob` / `.vbak` formats, camera abstraction, state machine, flows |
-| `docs/technical-decisions.md` | 04: decisions `TD-01..18`, PC spec, network, known problems, bench tests |
+| `docs/technical-decisions.md` | 04: decisions `TD-01..20`, PC spec, network, known problems, bench tests |
+| `docs/frontend.md` | 05: the web interface (React + Vite + TypeScript): design system, screens by role, API contract, editor, tests, build |
 
 Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs stable; when a decision changes, update the TD record and every place that cites it.
 
@@ -39,7 +40,7 @@ uv run pytest        # run the tests
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 
-Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `web/` (the interface served by the API: Preact + htm vendored, no build step, TD-20; logic in `static/viewmodel.js`, tested with `node --test tests/web/*.test.mjs`), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
+Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `web/` (a Preact + htm **prototype** of the interface, to be replaced by the React app in `frontend/` described in `docs/frontend.md`, TD-20; do not extend it), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
 
 Layout: `src/vision_station/` (platform, no customer words), `applications/<name>/` (jobs, reference images and notes of one application; first: `Customer`), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 
