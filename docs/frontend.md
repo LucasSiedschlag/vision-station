@@ -480,11 +480,13 @@ Used by the editor steps 2, 4 and 5 and by the camera screen.
 | Unit | Vitest | view-model functions (state → what the screen shows; ported from `viewmodel.js` and its tests), geometry, formatting, schema-form mapping |
 | Component | Testing Library + MSW | each screen against a mocked API in loading, empty, error, success and forbidden states; dialogs (focus trap and return); the verdict panel for every station state |
 | Contract | CI script | regenerate `schema.d.ts` from the running API and fail if it differs; every endpoint the client uses exists in the OpenAPI document |
-| End to end | Playwright against `scripts/demo_station.py` | operator cycle (box in, verdict, box out), login and role menus, activate a job (verified and refused), import and export, results filter and mark incorrect, editor: draw a region, test a tool, save a version, camera apply report |
+| End to end | Playwright against `scripts/e2e_station.py` (the demo with controls: `POST /__e2e/box/on`, `/__e2e/outcome/FAIL`…) | operator cycle (box in, verdict, box out), login and role menus, activate a job (verified and refused), import and export, results filter and mark incorrect, editor: draw a region, test a tool, save a version, camera apply report |
 | Accessibility | `@axe-core/playwright` | zero serious or critical violations on every route in both themes |
-| Visual | Playwright screenshots of `/design` only | catches token and component regressions without brittle screen snapshots |
+| Tokens and components in the browser | Playwright on `/design`, in four theme situations (dark and light by the system, and each forced over the other) | computed styles equal the tokens (background, density 36/56 px, bundled fonts, reduced motion); screenshot baselines are not used because text rendering differs between Windows, macOS and Linux, so they would fail on every other machine |
 | Budget | `size-limit` | initial JS for the operator route ≤ 150 KB gzip, total initial ≤ 300 KB gzip; editor loaded lazily |
 | Lint/type | ESLint (`jsx-a11y`, hooks), `tsc --noEmit` | zero warnings |
+
+Run locally: `cd frontend && npm run build && npm run e2e` (starts the simulated station by itself; `npm run e2e:ui` for the debugger, `npm run e2e:report` after a failure). The first run needs `npx playwright install chromium`. Every page load is also checked to be free of console errors and of requests that leave this machine, which is how the invalid `ws://[::1]` source in the content policy was found.
 
 **Definition of done for a screen:** all states designed and tested (loading, empty, error, success, disabled, focus, offline, forbidden); keyboard-only run-through; axe clean in both themes; strings in `pt-BR.ts`; seen in a real browser at 1920×1080 and at 1280×720; budget respected.
 

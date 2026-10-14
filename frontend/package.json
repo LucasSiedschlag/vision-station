@@ -17,7 +17,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:api": "uv run --project .. python ../scripts/export_openapi.py > src/api/openapi.json && openapi-typescript src/api/openapi.json -o src/api/schema.d.ts && prettier --write src/api/openapi.json src/api/schema.d.ts",
-    "size": "size-limit"
+    "size": "size-limit",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
@@ -36,7 +39,9 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.64.1",
     "@size-limit/file": "^14.2.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",

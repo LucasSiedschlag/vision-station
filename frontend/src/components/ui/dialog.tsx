@@ -3,6 +3,7 @@ import { AlertDialog, Dialog as RadixDialog } from 'radix-ui'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from './button'
+import { useReturnFocus } from './use-return-focus'
 
 const overlay = 'fixed inset-0 z-40 bg-surface-0/80 backdrop-blur-sm'
 
@@ -84,11 +85,15 @@ export function ConfirmDialog({
   onConfirm: () => void
   children?: ReactNode
 }) {
+  const returnFocus = useReturnFocus(open)
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className={overlay} />
-        <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 flex w-confirm -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-line bg-surface-1 p-6 shadow-overlay">
+        <AlertDialog.Content
+          onCloseAutoFocus={returnFocus}
+          className="fixed left-1/2 top-1/2 z-50 flex w-confirm -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-line bg-surface-1 p-6 shadow-overlay"
+        >
           <div className="flex flex-col gap-2">
             <AlertDialog.Title className="text-lg font-semibold">{title}</AlertDialog.Title>
             <AlertDialog.Description className="text-sm text-fg-muted">
@@ -128,11 +133,15 @@ export function Sheet({
   description?: string
   children: ReactNode
 }) {
+  const returnFocus = useReturnFocus(open)
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className={overlay} />
-        <RadixDialog.Content className="fixed inset-y-0 right-0 z-50 flex w-sheet flex-col gap-4 overflow-auto border-l border-line bg-surface-1 p-6 shadow-overlay">
+        <RadixDialog.Content
+          onCloseAutoFocus={returnFocus}
+          className="fixed inset-y-0 right-0 z-50 flex w-sheet flex-col gap-4 overflow-auto border-l border-line bg-surface-1 p-6 shadow-overlay"
+        >
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <RadixDialog.Title className="text-xl font-semibold">{title}</RadixDialog.Title>

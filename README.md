@@ -124,6 +124,8 @@ npm ci
 npm run dev        # http://localhost:5173, proxies /api to 127.0.0.1:8765 (run scripts/demo_station.py --port 8765 beside it)
 npm run build      # writes src/vision_station/web/dist/, which the API then serves instead of the prototype
 npm test           # unit and component tests;  npm run lint;  npm run typecheck
+npx playwright install chromium   # once
+npm run e2e        # end-to-end tests and accessibility (axe) against scripts/e2e_station.py; needs `npm run build` first
 npm run gen:api    # regenerates the TypeScript types from the API after any change to src/vision_station/api/
 ```
 

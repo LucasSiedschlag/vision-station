@@ -145,6 +145,25 @@ describe('NumberInput', () => {
   })
 })
 
+describe('NumberInput inside a Field', () => {
+  it('still flags an out-of-range value (the Field passes aria-invalid down and must not hide it)', async () => {
+    function Host() {
+      const [value, setValue] = useState<number | null>(8000)
+      return (
+        <Field label="Exposição">
+          {(p) => <NumberInput {...p} value={value} onChange={setValue} min={100} max={33000} />}
+        </Field>
+      )
+    }
+    render(<Host />)
+    const input = screen.getByLabelText('Exposição')
+    expect(input).not.toHaveAttribute('aria-invalid')
+    await userEvent.clear(input)
+    await userEvent.type(input, '999999')
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+  })
+})
+
 describe('Dialog', () => {
   it('opens with a title, closes on Escape and gives the focus back to its opener', async () => {
     render(
@@ -205,6 +224,32 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus() // Enter would cancel, not confirm
     await userEvent.keyboard('{Enter}')
     expect(onConfirm).not.toHaveBeenCalled()
+  })
+
+  it('gives the focus back to the button that opened it, even without a trigger (opened from state)', async () => {
+    function Opener() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <Button onClick={() => setOpen(true)}>Ativar</Button>
+          <ConfirmDialog
+            open={open}
+            onOpenChange={setOpen}
+            title="Ativar?"
+            description="Isto muda a estação."
+            confirmLabel="Ativar"
+            onConfirm={() => setOpen(false)}
+          />
+        </>
+      )
+    }
+    render(<Opener />)
+    const opener = screen.getByRole('button', { name: 'Ativar' })
+    await userEvent.click(opener)
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    expect(opener).toHaveFocus()
   })
 
   it('confirms only when the named button is pressed', async () => {

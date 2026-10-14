@@ -149,7 +149,7 @@ def content_security_policy(index_html: str) -> str:
     inline = f" 'sha256-{base64.b64encode(hashlib.sha256(found.group(1).encode()).digest()).decode()}'" if found else ""
     return (
         f"default-src 'self'; script-src 'self'{inline}; style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' blob: data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:* ws://[::1]:*; "
+        "img-src 'self' blob: data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:*; "
         "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     )
 

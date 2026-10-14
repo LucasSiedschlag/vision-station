@@ -56,6 +56,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
     className,
     onBlur,
     onKeyDown,
+    'aria-invalid': ariaInvalid,
     ...props
   },
   ref,
@@ -91,7 +92,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
           className,
         )}
         value={text}
-        aria-invalid={invalid || props['aria-invalid'] || undefined}
+        aria-invalid={invalid || ariaInvalid === true || ariaInvalid === 'true' || undefined}
         onFocus={() => setFocused(true)}
         onChange={(event) => {
           setText(event.target.value)

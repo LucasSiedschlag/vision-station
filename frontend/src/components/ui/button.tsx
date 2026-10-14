@@ -41,7 +41,7 @@ export function Button({
       className={cn(buttonVariants({ variant }), className)}
       {...props}
     >
-      <span className={cn('inline-flex items-center gap-2', loading && 'invisible')}>
+      <span className={cn('inline-flex items-center gap-2', loading && 'opacity-0')}>
         {children}
       </span>
       {loading ? (
