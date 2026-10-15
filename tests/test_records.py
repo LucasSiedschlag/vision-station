@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 import pytest
 
-from test_station import Rig, State, empty_scene, scene_with_box
+from test_station import Rig, State, empty_scene, scene_with_object
 from vision_station.records import (
     Query,
     RecordingConfig,
@@ -19,7 +19,7 @@ from vision_station.records import (
 )
 from vision_station.results import InspectionResult, Outcome
 
-JOB = {"job_id": "3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10", "job_name": "Caixa M", "job_version": 3}
+JOB = {"job_id": "3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10", "job_name": "Tampa azul", "job_version": 3}
 OTHER = {"job_id": "9b2d4c60-1a3e-4f5b-8c7d-0e1f2a3b4c5d", "job_name": "Etiqueta", "job_version": 1}
 TZ = timezone(timedelta(hours=-3))
 
@@ -65,13 +65,13 @@ def store(tmp_path, clock):
 
 def test_a_result_is_recorded_with_everything_the_requirement_lists(store):
     r = store.record(
-        res(Outcome.FAIL, "Fita ausente em 40% da emenda", scores={"fita": 0.6}, duration_s=0.42, details={"timings": {"locate": 0.1, "tools": 0.3}}),
+        res(Outcome.FAIL, "Tampa fora da cor em 40% da área", scores={"tampa": 0.6}, duration_s=0.42, details={"timings": {"locate": 0.1, "tools": 0.3}}),
         frame(),
         **JOB,
     )
-    assert r.outcome == "FAIL" and r.reason.startswith("Fita ausente")
-    assert (r.job_name, r.job_version, r.job_id) == ("Caixa M", 3, JOB["job_id"])
-    assert r.scores == {"fita": 0.6} and r.timings == {"locate": 0.1, "tools": 0.3}
+    assert r.outcome == "FAIL" and r.reason.startswith("Tampa fora da cor")
+    assert (r.job_name, r.job_version, r.job_id) == ("Tampa azul", 3, JOB["job_id"])
+    assert r.scores == {"tampa": 0.6} and r.timings == {"locate": 0.1, "tools": 0.3}
     assert r.duration_ms == pytest.approx(420)
     assert r.at.startswith("2026-10-14T08:") and r.at.endswith("-03:00")
     assert r.image_path.startswith("results/images/2026/10/14/") and r.image_path.endswith(".jpg")
@@ -288,15 +288,15 @@ def test_the_station_records_each_result_with_its_job_and_frame(tmp_path):
         rig = Rig()
         rig.controller._on_event = recorder
         rig.boot()
-        rig.camera.scene = scene_with_box(40)
+        rig.camera.scene = scene_with_object(40)
         rig.tick(10)
         rig.camera.scene = empty_scene()
         rig.tick(6)
-        rig.camera.scene = scene_with_box(60)
+        rig.camera.scene = scene_with_object(60)
         rig.tick(12)
         rows = s.find()
         assert len(rows) == 2 and recorder.failures == 0
-        assert {(r.job_name, r.job_version) for r in rows} == {("Caixa M — fita vermelha", 7)}
+        assert {(r.job_name, r.job_version) for r in rows} == {("Tampa azul — etiqueta de lote", 7)}
         assert all(r.image_path and (s.root / r.image_path).is_file() and r.outcome == "PASS" for r in rows)
 
 
@@ -307,13 +307,13 @@ def test_a_failing_recorder_or_handler_does_not_stop_the_station(tmp_path, caplo
     rig = Rig()
     rig.controller._on_event = recorder
     rig.boot()
-    rig.camera.scene = scene_with_box(40)
+    rig.camera.scene = scene_with_object(40)
     with caplog.at_level(logging.ERROR):
         rig.tick(10)
     assert rig.state is State.SHOWING_RESULT and recorder.failures == 1 and "ProgrammingError" in recorder.last_error
     rig2 = Rig()
     rig2.controller._on_event = lambda event: 1 / 0
     rig2.boot()
-    rig2.camera.scene = scene_with_box(40)
+    rig2.camera.scene = scene_with_object(40)
     rig2.tick(10)
     assert rig2.state is State.SHOWING_RESULT

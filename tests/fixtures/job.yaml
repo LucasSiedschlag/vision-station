@@ -1,7 +1,7 @@
 format: 1
 job:
   id: 3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10
-  name: "Caixa M — fita vermelha"
+  name: "Tampa azul — etiqueta de lote"
   version: 7
   parent_version: 6
   author: lucas
@@ -16,22 +16,22 @@ quality:
   brightness: {min: 90, max: 170}
   sharpness_min_ratio: 0.7
 geometry:
-  locator: {type: box_outline, version: 1, params: {min_area: 0.15}}
+  locator: {type: outline, version: 1, params: {min_area: 0.15}}
   rois:
-    seam: {relative_to: anchor, rect: [0.45, 0.0, 0.55, 1.0]}
+    cap: {relative_to: anchor, rect: [0.30, 0.0, 0.70, 0.20]}
 tools:
-  - id: tape
-    type: tape_color_coverage
+  - id: tampa
+    type: color
     version: 1
-    roi: seam
-    params: {hue: [170, 10], s_min: 120, v_min: 70, min_coverage: 0.90}
-    reason_fail: "Fita ausente em {missing:.0%} da emenda"
-  - id: closed
-    type: model_detect
+    roi: cap
+    params: {hue: [100, 130], s_min: 120, v_min: 70, min_fraction: 0.80}
+    reason_fail: "Tampa ausente ou de outra cor ({fraction:.0%} azul)"
+  - id: defeitos
+    type: detect
     version: 1
     roi: anchor
-    params: {model: models/closure.onnx, class_fail: open_flap, conf: 0.5}
-    reason_fail: "Aba aberta"
+    params: {model: models/defects.onnx, class_fail: [risco], conf: 0.5}
+    reason_fail: "Defeito na peça"
 decision: all_pass
 ui:
-  waiting: "Aguardando caixa"
+  waiting: "Aguardando peça"

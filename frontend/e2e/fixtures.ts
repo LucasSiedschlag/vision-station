@@ -5,8 +5,8 @@ import { expect, test as base, type APIRequestContext, type Page } from '@playwr
 export class Station {
   constructor(private readonly request: APIRequestContext) {}
 
-  box(state: 'on' | 'off') {
-    return this.request.post(`/__e2e/box/${state}`)
+  object(state: 'on' | 'off') {
+    return this.request.post(`/__e2e/object/${state}`)
   }
 
   outcome(value: 'PASS' | 'FAIL' | 'ERROR') {
@@ -20,7 +20,7 @@ export class Station {
     return (await this.request.get('/api/state')).json()
   }
 
-  /** Empty table, outcome PASS, and wait until the station is ready for the next box. */
+  /** Empty bench, outcome PASS, and wait until the station is ready for the next object. */
   async reset() {
     await this.request.post('/__e2e/reset')
     await expect.poll(async () => (await this.state()).state, { timeout: 15_000 }).toBe('Ready')

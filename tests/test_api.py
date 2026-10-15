@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from test_records import JOB, frame, res
-from test_station import Rig, State, empty_scene, scene_with_box
+from test_station import Rig, State, empty_scene, scene_with_object
 from test_verification import inspect_code, make_bundle as job_bundle
 from vision_station.api import ApiDeps, AuthError, AuthService, LockedOut, create_app, make_event_handler
 from vision_station.records import RecordingConfig, ResultRecorder, ResultStore
@@ -68,14 +68,14 @@ def login(env, role="supervisor", password=None):
 def test_state_shows_the_station_the_job_the_camera_and_the_counters(env):
     body = env.client.get("/api/state").json()
     assert body["state"] == "Ready" and body["message"] == "Aguardando objeto"
-    assert body["job"]["name"] == "Caixa M — fita vermelha" and body["job"]["version"] == 7 and body["job"]["id"]
+    assert body["job"]["name"] == "Tampa azul — etiqueta de lote" and body["job"]["version"] == 7 and body["job"]["id"]
     assert body["camera"]["connected"] is True and body["camera"]["last_frame_age_s"] is not None
     assert body["counters"] == {"PASS": 0, "FAIL": 0, "ERROR": 0, "total": 0}
     assert body["last_result"] is None and body["recording_failures"] == 0
 
 
 def run_one_box(env):
-    env.rig.camera.scene = scene_with_box(40)
+    env.rig.camera.scene = scene_with_object(40)
     env.rig.tick(10)
 
 
@@ -104,7 +104,7 @@ def test_manual_trigger_only_when_the_station_is_ready(env):
     assert env.client.post("/api/trigger").status_code == 202
     env.rig.tick(3)
     assert len(env.rig.inspected) == 1
-    env.rig.camera.scene = scene_with_box(40)  # an object stays on the scale: the result stays on screen
+    env.rig.camera.scene = scene_with_object(40)  # an object stays on the scale: the result stays on screen
     env.rig.tick(15)
     assert env.rig.state is State.SHOWING_RESULT
     assert env.client.post("/api/trigger").status_code == 409
@@ -133,7 +133,7 @@ def test_live_sends_the_status_then_frames_and_events(env):
         assert first["type"] == "status" and first["state"] == "Ready"
         frame_bytes = ws.receive_bytes()
         assert frame_bytes[:2] == b"\xff\xd8"
-        env.rig.camera.scene = scene_with_box(40)
+        env.rig.camera.scene = scene_with_object(40)
         seen = []
         for _ in range(60):
             if not (len(seen) and any(m.get("type") == "result" for m in seen)):
@@ -322,19 +322,19 @@ def test_backup_is_made_in_the_configured_folder_and_downloaded(env):
 def test_browse_filter_download_and_export_results(env):
     sup = login(env)
     store = env.results
-    a = store.record(res(Outcome.FAIL, "Fita ausente"), frame(), overlay=frame(10), **JOB)
+    a = store.record(res(Outcome.FAIL, "Tampa ausente"), frame(), overlay=frame(10), **JOB)
     store.record(res(), frame(), **JOB)
     body = env.client.get("/api/results?outcome=FAIL", headers=sup).json()
-    assert body["total"] == 1 and body["results"][0]["id"] == a.id and body["results"][0]["reason"] == "Fita ausente"
+    assert body["total"] == 1 and body["results"][0]["id"] == a.id and body["results"][0]["reason"] == "Tampa ausente"
     assert env.client.get("/api/results?limit=1", headers=sup).json()["total"] == 2
     assert env.client.get("/api/results?outcome=BAD", headers=sup).status_code == 422
-    assert env.client.get(f"/api/results/{a.id}", headers=sup).json()["job_name"] == "Caixa M"
+    assert env.client.get(f"/api/results/{a.id}", headers=sup).json()["job_name"] == "Tampa azul"
     assert env.client.get("/api/results/nope", headers=sup).status_code == 404
     image = env.client.get(f"/api/results/{a.id}/image", headers=sup)
     assert image.headers["content-type"] == "image/jpeg" and image.content[:2] == b"\xff\xd8"
     assert env.client.get(f"/api/results/{a.id}/image?overlay=true", headers=sup).status_code == 200
     csv = env.client.get("/api/results.csv?outcome=FAIL", headers=sup)
-    assert csv.status_code == 200 and csv.content.startswith(b"\xef\xbb\xbf") and "Fita ausente" in csv.content.decode("utf-8-sig")
+    assert csv.status_code == 200 and csv.content.startswith(b"\xef\xbb\xbf") and "Tampa ausente" in csv.content.decode("utf-8-sig")
     assert env.client.get("/api/results").status_code == 401
 
 
@@ -423,7 +423,7 @@ def test_what_the_socket_sends_matches_the_documented_messages(env):
     adapter = TypeAdapter(LiveMessage)
     with env.client.websocket_connect("/api/live") as ws:
         assert adapter.validate_python(ws.receive_json()).type == "status"
-        env.rig.camera.scene = scene_with_box(40)
+        env.rig.camera.scene = scene_with_object(40)
         seen = set()
         for _ in range(60):
             env.rig.tick(1)

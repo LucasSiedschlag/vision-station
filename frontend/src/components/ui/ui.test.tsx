@@ -207,7 +207,7 @@ describe('ConfirmDialog', () => {
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title="Ativar versão 7 de Caixa M?"
+        title="Ativar versão 7 de Tampa azul?"
         description="A estação passa a usar esta versão."
         confirmLabel="Ativar versão 7"
         onConfirm={onConfirm}
@@ -219,7 +219,7 @@ describe('ConfirmDialog', () => {
     const onConfirm = vi.fn()
     render(<Host onConfirm={onConfirm} />)
     expect(
-      screen.getByRole('alertdialog', { name: 'Ativar versão 7 de Caixa M?' }),
+      screen.getByRole('alertdialog', { name: 'Ativar versão 7 de Tampa azul?' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus() // Enter would cancel, not confirm
     await userEvent.keyboard('{Enter}')
@@ -328,8 +328,8 @@ describe('FileDrop', () => {
   it('passes on a file with an accepted extension', async () => {
     const onFiles = vi.fn()
     render(<FileDrop accept=".vjob,.vbak" label="Escolher arquivo" onFiles={onFiles} />)
-    await userEvent.upload(screen.getByLabelText('Escolher arquivo'), file('Caixa_v7.vjob'))
-    expect(onFiles).toHaveBeenCalledWith([expect.objectContaining({ name: 'Caixa_v7.vjob' })])
+    await userEvent.upload(screen.getByLabelText('Escolher arquivo'), file('Tampa_v7.vjob'))
+    expect(onFiles).toHaveBeenCalledWith([expect.objectContaining({ name: 'Tampa_v7.vjob' })])
   })
 
   it('refuses another type with a message and passes nothing on', async () => {

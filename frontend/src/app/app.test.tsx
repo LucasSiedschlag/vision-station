@@ -26,9 +26,9 @@ describe('the operator screen, without a login', () => {
   it('stands alone as a kiosk: job, lock button, the verdict, counters, the strip, and no menu', () => {
     setLive({ counters: { PASS: 2, FAIL: 1, ERROR: 0, total: 3 } })
     renderApp('/')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Caixa M — fita vermelha')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tampa azul — etiqueta de lote')
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'Resultado' })).toHaveTextContent('Aguardando caixa')
+    expect(screen.getByRole('status', { name: 'Resultado' })).toHaveTextContent('Aguardando peça')
     expect(screen.getByText('Hoje')).toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Estado do sistema' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
@@ -80,7 +80,7 @@ describe('the operator screen, without a login', () => {
       state: 'ShowingResult',
       last_result: {
         outcome: 'FAIL',
-        reason: 'Fita ausente em 40% da emenda',
+        reason: 'Tampa fora da cor em 40% da área',
         scores: {},
         duration_ms: 290,
         at: '2026-10-14T14:31:02-03:00',
@@ -90,7 +90,7 @@ describe('the operator screen, without a login', () => {
       recent: [
         {
           outcome: 'FAIL',
-          reason: 'Fita ausente em 40% da emenda',
+          reason: 'Tampa fora da cor em 40% da área',
           at: '2026-10-14T14:31:02-03:00',
         },
       ],
@@ -98,7 +98,7 @@ describe('the operator screen, without a login', () => {
     renderApp('/')
     const panel = screen.getByRole('status', { name: 'Resultado' })
     expect(panel).toHaveTextContent('REPROVADO')
-    expect(panel).toHaveTextContent('Fita ausente em 40% da emenda')
+    expect(panel).toHaveTextContent('Tampa fora da cor em 40% da área')
     expect(panel).toHaveTextContent('290 ms')
     await userEvent.click(screen.getByRole('button', { name: 'Resultado incorreto?' }))
     const dialog = await screen.findByRole('dialog', { name: 'Este resultado estava errado?' })
@@ -124,7 +124,7 @@ describe('the operator screen, without a login', () => {
     setLive({
       recent: [
         { outcome: 'PASS', reason: '', at: '2026-10-14T14:30:00-03:00' },
-        { outcome: 'FAIL', reason: 'Fita ausente', at: '2026-10-14T14:31:00-03:00' },
+        { outcome: 'FAIL', reason: 'Tampa ausente', at: '2026-10-14T14:31:00-03:00' },
       ],
     })
     renderApp('/')
@@ -133,7 +133,7 @@ describe('the operator screen, without a login', () => {
       within(strip).getByRole('button', { name: /^Aprovado às \d\d:\d\d:\d\d$/ }),
     ).toBeInTheDocument()
     expect(
-      within(strip).getByRole('button', { name: /^Reprovado às \d\d:\d\d:\d\d: Fita ausente$/ }),
+      within(strip).getByRole('button', { name: /^Reprovado às \d\d:\d\d:\d\d: Tampa ausente$/ }),
     ).toBeInTheDocument()
   })
 
@@ -330,7 +330,7 @@ describe('the shell', () => {
     setLive({}, false)
     renderApp('/')
     expect(screen.getByRole('alert')).toHaveTextContent('Sem conexão com o programa da estação')
-    expect(screen.getByText('Caixa M — fita vermelha')).toBeInTheDocument()
+    expect(screen.getByText('Tampa azul — etiqueta de lote')).toBeInTheDocument()
     expect(screen.getByText('v7')).toBeInTheDocument()
   })
 

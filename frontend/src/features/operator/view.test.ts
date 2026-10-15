@@ -31,12 +31,12 @@ describe('verdictOf', () => {
       'APROVADO',
       'display',
     ])
-    const fail = verdictOf(showing('FAIL', 'Fita ausente em 40% da emenda'), 'connected')
+    const fail = verdictOf(showing('FAIL', 'Tampa fora da cor em 40% da área'), 'connected')
     expect([fail.tone, fail.icon, fail.headline, fail.reason]).toEqual([
       'fail',
       'cross',
       'REPROVADO',
-      'Fita ausente em 40% da emenda',
+      'Tampa fora da cor em 40% da área',
     ])
     const error = verdictOf(showing('ERROR', 'Câmera desconectada durante a inspeção'), 'connected')
     expect([error.tone, error.icon, error.headline]).toEqual(['warn', 'alert', 'ERRO'])
@@ -55,7 +55,7 @@ describe('verdictOf', () => {
   })
 
   it('the other states, with a word each', () => {
-    expect(verdictOf(status(), 'connected').headline).toBe('Aguardando caixa') // the text comes from the job
+    expect(verdictOf(status(), 'connected').headline).toBe('Aguardando peça') // the text comes from the job
     expect(verdictOf(status({ state: 'WaitingStill' }), 'connected').tone).toBe('neutral')
     expect(verdictOf(status({ state: 'Inspecting' }), 'connected')).toMatchObject({
       tone: 'busy',

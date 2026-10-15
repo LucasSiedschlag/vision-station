@@ -15,10 +15,10 @@ def load_job_data() -> dict:
 
 def test_architecture_example_job_is_valid():
     job = parse_job((FIXTURES / "job.yaml").read_text(encoding="utf-8"))
-    assert job.job.name == "Caixa M — fita vermelha"
+    assert job.job.name == "Tampa azul — etiqueta de lote"
     assert job.job.version == 7
-    assert [t.id for t in job.tools] == ["tape", "closed"]
-    assert job.geometry.rois["seam"].relative_to == "anchor"
+    assert [t.id for t in job.tools] == ["tampa", "defeitos"]
+    assert job.geometry.rois["cap"].relative_to == "anchor"
 
 
 def test_job_round_trips_through_yaml():
@@ -44,7 +44,7 @@ def test_architecture_example_profile_is_valid():
         lambda d: d["quality"]["brightness"].update(min=200),
         lambda d: d["geometry"]["rois"].update(anchor={"relative_to": "frame", "rect": [0, 0, 1, 1]}),
         lambda d: d["tools"][0].update(roi="nowhere"),
-        lambda d: d["tools"][1].update(id="tape"),
+        lambda d: d["tools"][1].update(id="tampa"),
         lambda d: d.update(tools=[]),
         lambda d: d["trigger"].update(mode="image_presence", presence_roi=None),
         lambda d: d["trigger"].update(mode="sometimes"),
@@ -95,6 +95,6 @@ def test_trigger_modes_that_need_no_presence_settings():
 
 def test_screen_text_is_optional_and_comes_from_the_job():
     data = load_job_data()
-    assert Job.model_validate(data).ui.waiting == "Aguardando caixa"
+    assert Job.model_validate(data).ui.waiting == "Aguardando peça"
     del data["ui"]
     assert Job.model_validate(data).ui.waiting is None

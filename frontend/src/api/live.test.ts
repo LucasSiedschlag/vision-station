@@ -6,7 +6,7 @@ const status = (over: Partial<StateOut> = {}): StateOut => ({
   message: 'Aguardando objeto',
   detail: '',
   warnings: [],
-  job: { id: 'j', name: 'Caixa M', version: 7 },
+  job: { id: 'j', name: 'Tampa azul', version: 7 },
   last_result: null,
   last_record_id: null,
   camera: { connected: true, last_frame_age_s: 0.1, last_error: null },
@@ -55,19 +55,19 @@ describe('applyMessage', () => {
     const after = applyMessage(before, {
       type: 'result',
       outcome: 'FAIL',
-      reason: 'Fita ausente',
-      scores: { fita: 0.5 },
+      reason: 'Tampa ausente',
+      scores: { tampa: 0.5 },
       duration_ms: 120,
       at: '2026-10-14T14:32:07-03:00',
-      job: { id: 'j', name: 'Caixa M', version: 7 },
+      job: { id: 'j', name: 'Tampa azul', version: 7 },
       record_id: 'r1',
     })
     expect(after?.counters).toEqual({ PASS: 0, FAIL: 1, ERROR: 0, total: 1 })
-    expect(after?.last_result).toMatchObject({ outcome: 'FAIL', reason: 'Fita ausente' })
+    expect(after?.last_result).toMatchObject({ outcome: 'FAIL', reason: 'Tampa ausente' })
     expect(after?.last_record_id).toBe('r1')
     expect(after?.last_result?.at).toBe('2026-10-14T14:32:07-03:00')
     expect(after?.recent).toEqual([
-      { outcome: 'FAIL', reason: 'Fita ausente', at: '2026-10-14T14:32:07-03:00' },
+      { outcome: 'FAIL', reason: 'Tampa ausente', at: '2026-10-14T14:32:07-03:00' },
     ])
     expect(before.counters.total).toBe(0)
   })

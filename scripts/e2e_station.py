@@ -4,7 +4,7 @@ no camera, and controls so a test decides what happens.
     uv run python scripts/e2e_station.py --port 8780
 
 Besides the normal API it adds, on this machine only:
-    POST /__e2e/box/{on|off}               put a box on the scale, or take it away
+    POST /__e2e/object/{on|off}            put an object at the station, or take it away
     POST /__e2e/outcome/{PASS|FAIL|ERROR}  what the next inspections return
     POST /__e2e/reset                      empty table, outcome PASS
 Logins: supervisor / supervisor-pass and maintainer / maintainer-pass. Data goes to a temporary folder.
@@ -34,15 +34,15 @@ from vision_station.station import Acquisition, StationController
 from vision_station.store import JobBundle, JobStore
 
 
-def scene(box_x: int | None) -> np.ndarray:
-    """The station seen from above: a table, and a box with red tape when `box_x` is given."""
+def scene(object_x: int | None) -> np.ndarray:
+    """The station seen from above: a bench, and a part with a blue cap when `object_x` is given."""
     img = np.zeros((540, 960, 3), np.uint8)
     img[:] = (70, 78, 84)
     cv2.rectangle(img, (0, 380), (960, 540), (50, 56, 62), -1)
     cv2.putText(img, "Vision Station demo", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 200), 2)
-    if box_x is not None:
-        cv2.rectangle(img, (box_x, 160), (box_x + 340, 400), (60, 90, 170), -1)
-        cv2.rectangle(img, (box_x, 270), (box_x + 340, 300), (30, 30, 220), -1)
+    if object_x is not None:
+        cv2.rectangle(img, (object_x, 160), (object_x + 340, 400), (150, 150, 150), -1)
+        cv2.rectangle(img, (object_x + 110, 120), (object_x + 230, 170), (200, 90, 30), -1)
     return img
 
 
@@ -71,27 +71,27 @@ class _SimulatedCamera(Camera):
     def health(self) -> Health:
         return Health(self._open, 30.0, 0.0)
 
-    def _box_x(self) -> int | None:  # overridden
+    def _object_x(self) -> int | None:  # overridden
         return None
 
     def frames(self) -> Iterator[Frame]:
         while self._open:
-            yield Frame(scene(self._box_x()), time.monotonic())
+            yield Frame(scene(self._object_x()), time.monotonic())
             time.sleep(1 / 30)
 
 
 class ControlledCamera(_SimulatedCamera):
-    """Shows an empty table or a box, as set: `camera.box = True` puts a box on the scale."""
+    """Shows an empty bench or a part, as set: `camera.present = True` puts the part at the station."""
 
     def __init__(self) -> None:
         super().__init__()
-        self.box = False
+        self.present = False
 
-    def _box_x(self) -> int | None:
-        return 300 if self.box else None
+    def _object_x(self) -> int | None:
+        return 300 if self.present else None
 
 
-def demo_job(name: str = "Caixa M — fita vermelha (demo)") -> JobBundle:
+def demo_job(name: str = "Tampa azul — etiqueta de lote (demo)") -> JobBundle:
     data = {
         "format": 1,
         "job": {"id": "00000000-0000-4000-8000-0000000000d0", "name": name, "version": 1, "author": "demo", "created_at": "2026-10-14T00:00:00-03:00"},
@@ -100,7 +100,7 @@ def demo_job(name: str = "Caixa M — fita vermelha (demo)") -> JobBundle:
         "quality": {"brightness": {"min": 0, "max": 255}, "sharpness_min_ratio": 0.5},
         "geometry": {"rois": {"all": {"relative_to": "frame", "rect": [0, 0, 1, 1]}}},
         "tools": [{"id": "code", "type": "code", "version": 1, "roi": "all", "reason_fail": "Código não lido"}],
-        "ui": {"waiting": "Aguardando caixa"},
+        "ui": {"waiting": "Aguardando peça"},
     }
     profile = CameraProfile.model_validate(
         {
@@ -124,9 +124,9 @@ def main() -> int:
 
     def inspect(bundle, frame) -> InspectionResult:
         if outcome["next"] is Outcome.PASS:
-            return InspectionResult(Outcome.PASS, scores={"fita": 0.97}, duration_s=0.3)
+            return InspectionResult(Outcome.PASS, scores={"tampa": 0.97}, duration_s=0.3)
         if outcome["next"] is Outcome.FAIL:
-            return InspectionResult(Outcome.FAIL, "Fita ausente em 40% da emenda", scores={"fita": 0.58}, duration_s=0.3)
+            return InspectionResult(Outcome.FAIL, "Tampa fora da cor em 40% da área", scores={"tampa": 0.58}, duration_s=0.3)
         return InspectionResult(Outcome.ERROR, "Imagem fora do padrão", duration_s=0.3)
 
     data = Path(tempfile.mkdtemp(prefix="vision-station-e2e-"))
@@ -140,12 +140,12 @@ def main() -> int:
     controller._on_event = make_event_handler(deps)
     app = create_app(deps)
 
-    @app.post("/__e2e/box/{state}")
-    def box(state: str) -> dict[str, bool]:
+    @app.post("/__e2e/object/{state}")
+    def place(state: str) -> dict[str, bool]:
         if state not in ("on", "off"):
             raise HTTPException(404)
-        camera.box = state == "on"
-        return {"box": camera.box}
+        camera.present = state == "on"
+        return {"present": camera.present}
 
     @app.post("/__e2e/outcome/{value}")
     def set_outcome(value: str) -> dict[str, str]:
@@ -156,7 +156,7 @@ def main() -> int:
 
     @app.post("/__e2e/reset")
     def reset() -> dict[str, bool]:
-        camera.box = False
+        camera.present = False
         outcome["next"] = Outcome.PASS
         return {"ok": True}
 

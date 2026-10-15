@@ -81,7 +81,7 @@ def empty_scene():
     return np.full((120, 160, 3), 90, np.uint8)
 
 
-def scene_with_box(x=40):
+def scene_with_object(x=40):
     img = empty_scene()
     img[30:90, x : x + 60] = (20, 20, 25)  # dark enough to differ in gray level
     return img
@@ -121,7 +121,7 @@ class Rig:
             raise self.outcome
         if callable(self.outcome):
             return self.outcome(frame)
-        return InspectionResult(self.outcome, "Fita ausente" if self.outcome is Outcome.FAIL else "")
+        return InspectionResult(self.outcome, "Tampa ausente" if self.outcome is Outcome.FAIL else "")
 
     def tick(self, n=1, dt=0.1):
         for _ in range(n):
@@ -242,12 +242,12 @@ def trigger(**kw):
 def test_presence_motion_and_stillness():
     det = PresenceDetector(trigger())
     assert not det.update(empty_scene(), 0.0).present
-    p = det.update(scene_with_box(40), 0.1)
+    p = det.update(scene_with_object(40), 0.1)
     assert p.present and p.moving and p.still_for_s == 0.0
-    p = det.update(scene_with_box(42), 0.2)  # sliding into place
+    p = det.update(scene_with_object(42), 0.2)  # sliding into place
     assert p.moving and p.still_for_s == 0.0
-    det.update(scene_with_box(42), 0.3)
-    p = det.update(scene_with_box(42), 0.8)
+    det.update(scene_with_object(42), 0.3)
+    p = det.update(scene_with_object(42), 0.8)
     assert p.present and not p.moving and p.still_for_s == pytest.approx(0.5)
     p = det.update(empty_scene(), 0.9)
     assert not p.present
@@ -257,22 +257,22 @@ def test_presence_motion_and_stillness():
 def test_presence_uses_only_the_region_and_follows_slow_light_changes():
     det = PresenceDetector(trigger(presence_roi=[0.0, 0.0, 0.2, 1.0]))
     det.update(empty_scene(), 0.0)
-    assert not det.update(scene_with_box(100), 0.1).present  # the box is outside the region
+    assert not det.update(scene_with_object(100), 0.1).present  # the object is outside the region
     det2 = PresenceDetector(trigger())
     scene = empty_scene()
     det2.update(scene, 0.0)
     for i in range(1, 200):  # the light gets brighter by 1 level every few frames
         brighter = np.clip(scene.astype(int) + i // 4, 0, 255).astype(np.uint8)
         assert not det2.update(brighter, i * 0.1).present
-    assert det2.update(scene_with_box(40), 30.0).present
+    assert det2.update(scene_with_object(40), 30.0).present
 
 
 def test_a_small_change_is_not_presence_and_reset_forgets_the_scene():
     det = PresenceDetector(trigger(min_area=0.3))
     det.update(empty_scene(), 0.0)
-    assert not det.update(scene_with_box(40), 0.1).present  # the box covers about 19%
+    assert not det.update(scene_with_object(40), 0.1).present  # the object covers about 19%
     det.reset_background()
-    assert not det.update(scene_with_box(40), 0.2).present  # taken as the empty scene
+    assert not det.update(scene_with_object(40), 0.2).present  # taken as the empty scene
 
 
 # --- the controller ----------------------------------------------------------
@@ -282,18 +282,18 @@ def test_one_inspection_per_box_through_the_whole_cycle():
     rig = Rig()
     rig.boot()
     assert rig.controller.status().message == "Aguardando objeto"
-    rig.camera.scene = scene_with_box(40)
+    rig.camera.scene = scene_with_object(40)
     rig.tick(2)
     assert rig.state is State.WAITING_STILL
     rig.tick(8)  # still for 0.8 s
     assert rig.state is State.SHOWING_RESULT and len(rig.inspected) == 1
     assert rig.controller.last_result.outcome is Outcome.PASS
-    rig.tick(30)  # the box stays on the scale for 3 s
+    rig.tick(30)  # the object stays in place for 3 s
     assert len(rig.inspected) == 1 and rig.state is State.SHOWING_RESULT  # not inspected again (FR-TRG-4)
     rig.camera.scene = empty_scene()
     rig.tick(6)
     assert rig.state is State.READY
-    rig.camera.scene = scene_with_box(60)  # the next box
+    rig.camera.scene = scene_with_object(60)  # the next object
     rig.tick(12)
     assert len(rig.inspected) == 2
     assert rig.states()[:6] == [State.PREPARING, State.READY, State.WAITING_STILL, State.INSPECTING, State.SHOWING_RESULT, State.READY]
@@ -306,7 +306,7 @@ def test_the_inspected_frame_was_captured_after_the_trigger():
     rig._inspect = lambda bundle, frame: (triggers.append(rig.controller._t0), original(bundle, frame))[1]
     rig.controller._inspect = rig._inspect
     rig.boot()
-    rig.camera.scene = scene_with_box(40)
+    rig.camera.scene = scene_with_object(40)
     rig.tick(10)
     assert len(rig.inspected) == 1
     assert rig.inspected[0].timestamp > triggers[0]
@@ -315,7 +315,7 @@ def test_the_inspected_frame_was_captured_after_the_trigger():
 def test_a_box_that_leaves_before_it_is_still_is_not_inspected():
     rig = Rig()
     rig.boot()
-    rig.camera.scene = scene_with_box(40)
+    rig.camera.scene = scene_with_object(40)
     rig.tick(2)
     assert rig.state is State.WAITING_STILL
     rig.camera.scene = empty_scene()
@@ -326,10 +326,10 @@ def test_a_box_that_leaves_before_it_is_still_is_not_inspected():
 def test_fail_and_error_results_are_shown_with_the_reason():
     rig = Rig(outcome=Outcome.FAIL)
     rig.boot()
-    rig.camera.scene = scene_with_box()
+    rig.camera.scene = scene_with_object()
     rig.tick(10)
     assert rig.state is State.SHOWING_RESULT
-    assert rig.controller.status().message == "FAIL: Fita ausente"
+    assert rig.controller.status().message == "FAIL: Tampa ausente"
 
 
 @pytest.mark.parametrize(
@@ -339,7 +339,7 @@ def test_fail_and_error_results_are_shown_with_the_reason():
 def test_an_internal_error_or_bad_result_is_an_error_never_a_pass(outcome):
     rig = Rig(outcome=outcome)
     rig.boot()
-    rig.camera.scene = scene_with_box()
+    rig.camera.scene = scene_with_object()
     rig.tick(10)
     assert rig.controller.last_result.outcome is Outcome.ERROR
     assert Outcome.PASS not in [r.outcome for r in rig.results()]
@@ -353,7 +353,7 @@ def test_the_camera_lost_during_an_inspection_is_an_error():
 
     rig = Rig(outcome=lose_camera)
     rig.boot()
-    rig.camera.scene = scene_with_box()
+    rig.camera.scene = scene_with_object()
     rig.tick(10)
     assert rig.controller.last_result.outcome is Outcome.ERROR
     assert "Câmera" in rig.controller.last_result.reason
@@ -405,7 +405,7 @@ def test_a_setting_the_camera_refused_stops_in_fault_until_retry():
     assert rig.state is State.FAULT
     assert "exposure" in rig.controller.status().detail
     assert rig.controller.status().message == "Falha na verificação — chamar manutenção"
-    rig.camera.scene = scene_with_box()
+    rig.camera.scene = scene_with_object()
     rig.tick(20)
     assert rig.state is State.FAULT and rig.inspected == []  # no inspection while faulted
     rig.camera.status = {"exposure": SettingStatus.APPLIED}
@@ -476,7 +476,7 @@ def test_pause_and_resume():
     rig.controller.pause()
     rig.tick(1)
     assert rig.state is State.PAUSED and rig.controller.status().message == "Em manutenção"
-    rig.camera.scene = scene_with_box()
+    rig.camera.scene = scene_with_object()
     rig.tick(15)
     assert rig.inspected == []
     rig.controller.resume()
@@ -487,7 +487,7 @@ def test_pause_and_resume():
 def test_a_pass_only_ever_comes_with_the_inspecting_to_showing_result_path():
     rig = Rig()
     rig.boot()
-    for scene in (scene_with_box(30), empty_scene(), scene_with_box(70), empty_scene()):
+    for scene in (scene_with_object(30), empty_scene(), scene_with_object(70), empty_scene()):
         rig.camera.scene = scene
         rig.tick(12)
     passes = [i for i, e in enumerate(rig.events) if e.kind == "result" and e.result.outcome is Outcome.PASS]

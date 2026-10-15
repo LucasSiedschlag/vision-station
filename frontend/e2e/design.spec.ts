@@ -99,7 +99,7 @@ test.describe('gallery behaviour', () => {
   }) => {
     const opener = page.getByRole('button', { name: 'Confirmar ação' })
     await opener.click()
-    const dialog = page.getByRole('alertdialog', { name: 'Ativar versão 7 de Caixa M?' })
+    const dialog = page.getByRole('alertdialog', { name: 'Ativar versão 7 de Tampa azul?' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused()
     await page.keyboard.press('Escape')
@@ -139,11 +139,11 @@ test.describe('gallery behaviour', () => {
       .setInputFiles({ name: 'notas.txt', mimeType: 'text/plain', buffer: Buffer.from('x') })
     await expect(page.getByRole('alert').filter({ hasText: 'notas.txt' })).toBeVisible()
     await page.getByLabel('Escolher arquivo de job').setInputFiles({
-      name: 'Caixa_v7.vjob',
+      name: 'Tampa_v7.vjob',
       mimeType: 'application/octet-stream',
       buffer: Buffer.from('x'),
     })
-    await expect(page.getByText('Arquivo recebido: Caixa_v7.vjob')).toBeVisible()
+    await expect(page.getByText('Arquivo recebido: Tampa_v7.vjob')).toBeVisible()
   })
 
   test('everything is reachable with the keyboard alone', async ({ page }) => {

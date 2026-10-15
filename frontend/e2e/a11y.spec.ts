@@ -15,7 +15,7 @@ for (const scheme of themes) {
       void station
       await page.goto('/')
       await expect(page.getByRole('status', { name: 'Resultado' })).toContainText(
-        'Aguardando caixa',
+        'Aguardando peça',
       )
       expect(await accessibilityProblems(page)).toEqual([])
     })
@@ -24,7 +24,7 @@ for (const scheme of themes) {
       test(`${word} has no accessibility violations`, async ({ page, station }) => {
         await page.goto('/')
         await station.outcome(outcome)
-        await station.box('on')
+        await station.object('on')
         await expect(page.getByRole('status', { name: 'Resultado' })).toContainText(word, {
           timeout: 15_000,
         })

@@ -15,7 +15,7 @@ describe('VerdictPanel', () => {
         state: 'ShowingResult',
         last_result: {
           outcome: 'FAIL',
-          reason: 'Fita ausente em 40% da emenda',
+          reason: 'Tampa fora da cor em 40% da área',
           scores: {},
           duration_ms: 290,
           at: null,
@@ -27,7 +27,7 @@ describe('VerdictPanel', () => {
     const panel = screen.getByRole('status', { name: 'Resultado' })
     expect(panel).toHaveAttribute('aria-live', 'assertive')
     expect(panel).toHaveTextContent('REPROVADO')
-    expect(panel).toHaveTextContent('Fita ausente em 40% da emenda')
+    expect(panel).toHaveTextContent('Tampa fora da cor em 40% da área')
     expect(panel.querySelector('svg')).toHaveAttribute('aria-hidden', 'true') // the icon is decoration; the word carries the meaning
   })
 

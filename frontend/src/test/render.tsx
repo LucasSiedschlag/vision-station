@@ -47,10 +47,10 @@ export function renderApp(path = '/') {
 
 export const stateFixture = (over: Record<string, unknown> = {}) => ({
   state: 'Ready' as const,
-  message: 'Aguardando caixa',
+  message: 'Aguardando peça',
   detail: '',
   warnings: [],
-  job: { id: 'j', name: 'Caixa M — fita vermelha', version: 7 },
+  job: { id: 'j', name: 'Tampa azul — etiqueta de lote', version: 7 },
   last_result: null,
   last_record_id: null,
   camera: { connected: true, last_frame_age_s: 0.2, last_error: null },

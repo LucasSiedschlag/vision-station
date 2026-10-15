@@ -12,20 +12,20 @@ test('shows the job, the connection and what the station is waiting for', async 
   void station
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    'Caixa M — fita vermelha (demo)',
+    'Tampa azul — etiqueta de lote (demo)',
   )
   await expect(page.getByRole('button', { name: 'Sistema: conectado' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Câmera: ok' })).toBeVisible()
-  await expect(verdict(page)).toContainText('Aguardando caixa')
+  await expect(verdict(page)).toContainText('Aguardando peça')
 })
 
-test('a box that passes is APROVADO, counted once, and the screen waits again when it is taken away', async ({
+test('an object that passes is APROVADO, counted once, and the screen waits again when it is taken away', async ({
   page,
   station,
 }) => {
   await page.goto('/')
   const before = (await station.state()).counters
-  await station.box('on')
+  await station.object('on')
   await expect(verdict(page)).toContainText('APROVADO', { timeout: 15_000 })
   await expect(
     page
@@ -33,8 +33,8 @@ test('a box that passes is APROVADO, counted once, and the screen waits again wh
       .getByRole('button', { name: /^Aprovado/ })
       .last(),
   ).toBeVisible()
-  await station.box('off')
-  await expect(verdict(page)).toContainText('Aguardando caixa', { timeout: 15_000 })
+  await station.object('off')
+  await expect(verdict(page)).toContainText('Aguardando peça', { timeout: 15_000 })
   const after = (await station.state()).counters
   expect(after.PASS).toBe(before.PASS + 1) // inspected once, not once per frame
   expect(after.total).toBe(before.total + 1)
@@ -43,15 +43,15 @@ test('a box that passes is APROVADO, counted once, and the screen waits again wh
 test('a failure is REPROVADO with its reason', async ({ page, station }) => {
   await page.goto('/')
   await station.outcome('FAIL')
-  await station.box('on')
+  await station.object('on')
   await expect(verdict(page)).toContainText('REPROVADO', { timeout: 15_000 })
-  await expect(verdict(page)).toContainText('Fita ausente em 40% da emenda')
+  await expect(verdict(page)).toContainText('Tampa fora da cor em 40% da área')
 })
 
 test('an error is ERRO and never shown as a pass', async ({ page, station }) => {
   await page.goto('/')
   await station.outcome('ERROR')
-  await station.box('on')
+  await station.object('on')
   await expect(verdict(page)).toContainText('ERRO', { timeout: 15_000 })
   await expect(verdict(page)).toContainText('Imagem fora do padrão')
   await expect(verdict(page)).not.toContainText('APROVADO')
@@ -63,7 +63,7 @@ test('a result can be marked as wrong from the screen, with no login', async ({
 }) => {
   await page.goto('/')
   await station.outcome('FAIL')
-  await station.box('on')
+  await station.object('on')
   await expect(verdict(page)).toContainText('REPROVADO', { timeout: 15_000 })
   await page.getByRole('button', { name: 'Resultado incorreto?' }).click()
   const dialog = page.getByRole('dialog', { name: 'Este resultado estava errado?' })

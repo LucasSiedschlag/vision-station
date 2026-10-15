@@ -206,7 +206,7 @@ export function DesignPage() {
               <code className="w-36 shrink-0 text-xs text-fg-muted">
                 {name} · {spec}
               </code>
-              <span className={cls}>Fita ausente em 40% da emenda</span>
+              <span className={cls}>Tampa fora da cor em 40% da área</span>
             </div>
           ))}
           <div className="flex items-baseline gap-4">
@@ -275,7 +275,7 @@ export function DesignPage() {
       <Section id="forms" title="Formulários">
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Nome do job" hint="Aparece na tela do operador.">
-            {(p) => <Input {...p} defaultValue="Caixa M — fita vermelha" />}
+            {(p) => <Input {...p} defaultValue="Tampa azul — etiqueta de lote" />}
           </Field>
           <Field label="Nome do job" error="O nome não pode ficar vazio.">
             {(p) => <Input {...p} defaultValue="" />}
@@ -318,7 +318,7 @@ export function DesignPage() {
           </Field>
         </div>
         <SliderField
-          label="Cobertura mínima da fita"
+          label="Cobertura mínima da cor"
           value={thr}
           onValueChange={setThr}
           min={0}
@@ -402,7 +402,7 @@ export function DesignPage() {
         <ConfirmDialog
           open={confirm}
           onOpenChange={setConfirm}
-          title="Ativar versão 7 de Caixa M?"
+          title="Ativar versão 7 de Tampa azul?"
           description="A estação passa a inspecionar com esta versão depois da verificação."
           confirmLabel="Ativar versão 7"
           onConfirm={() => setConfirm(false)}
@@ -438,7 +438,7 @@ export function DesignPage() {
               <TBody>
                 <TR>
                   <TD>14:32:07</TD>
-                  <TD>Caixa M v7</TD>
+                  <TD>Tampa azul v7</TD>
                   <TD>
                     <StatusIndicator tone="ok" label="Aprovado" />
                   </TD>
@@ -446,15 +446,15 @@ export function DesignPage() {
                 </TR>
                 <TR>
                   <TD>14:31:02</TD>
-                  <TD>Caixa M v7</TD>
+                  <TD>Tampa azul v7</TD>
                   <TD>
-                    <StatusIndicator tone="fail" label="Reprovado" detail="Fita ausente" />
+                    <StatusIndicator tone="fail" label="Reprovado" detail="Tampa ausente" />
                   </TD>
                   <TD numeric>290 ms</TD>
                 </TR>
                 <TR aria-selected>
                   <TD>14:29:48</TD>
-                  <TD>Caixa M v7</TD>
+                  <TD>Tampa azul v7</TD>
                   <TD>
                     <StatusIndicator tone="warn" label="Erro" detail="Câmera desconectada" />
                   </TD>
