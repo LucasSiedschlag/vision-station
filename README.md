@@ -138,6 +138,8 @@ The interface is the React app in `frontend/` (below). The operator screen needs
 
 ### The React interface
 
+Needs **Node 24 LTS** (`frontend/.nvmrc`; on Windows `winget install OpenJS.NodeJS.LTS` or `nvm use 24`). Node is only for building: the installed program serves `frontend/dist`.
+
 ```bash
 cd frontend
 npm ci
