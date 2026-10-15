@@ -114,14 +114,14 @@ By default every image is kept. `RecordingConfig` sets PASS sampling, retention 
 
 ### Web interface
 
-To try it without the bench, on any computer: build the interface once (below), then `uv run python scripts/demo_station.py` and open `http://127.0.0.1:8765/` (simulated camera, logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`; the component gallery is at `/design`). The operator screen needs no login; **Entrar** opens the Supervisor and Maintainer screens as they are built (TD-20). Without a build, `/` says how to build it and the API keeps working.
+The interface is the React app in `frontend/` (below). The operator screen needs no login; **Entrar** opens the Supervisor and Maintainer screens as they are built (TD-20). To work on it without the bench, run the simulated station of the tests, `uv run python scripts/e2e_station.py --port 8765` (logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`). Without a build, `/` says how to build it and the API keeps working.
 
 ### The React interface
 
 ```bash
 cd frontend
 npm ci
-npm run dev        # http://localhost:5173, proxies /api to 127.0.0.1:8765 (run scripts/demo_station.py --port 8765 beside it)
+npm run dev        # http://localhost:5173, proxies /api to 127.0.0.1:8765 (run `uv run python scripts/e2e_station.py --port 8765` beside it)
 npm run build      # writes frontend/dist/, which the API serves (set VISION_STATION_WEB to serve another folder)
 npm test           # unit and component tests;  npm run lint;  npm run typecheck
 npx playwright install chromium   # once

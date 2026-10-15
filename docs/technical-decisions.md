@@ -569,7 +569,7 @@ Models are added only where the prototype shows the classical checks can't separ
 4. **Roles decide what is shown, the server decides what is allowed** (FR-UI-6): the same permission table in the router and on every endpoint.
 5. **Forms come from the tools.** The API lists every tool type with the JSON Schema of its parameters and the editor draws the form from it, so a new tool needs no screen code (FR-PLT-2).
 6. **Design system.** One token set (8 neutrals, 4 status hues, 8 type sizes, 4 px grid, 2 radii plus pill), dark default and light, contrast checked; colour means status only and always comes with an icon and a word (NFR-USA-2).
-7. **Quality gates.** Component and end-to-end tests (Playwright against the demo station), axe with zero serious violations, a size budget in CI, and a definition of done that includes every state and a look in a real browser.
+7. **Quality gates.** Component and end-to-end tests (Playwright against a simulated station), axe with zero serious violations, a size budget in CI, and a definition of done that includes every state and a look in a real browser.
 
 **Consequences.**
 - The prototype was deleted when the new operator screen reached parity (VIA-0033), and nothing of the interface lives in the Python package. TD-11's "no framework" and the Preact + htm choice are superseded.
