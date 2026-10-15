@@ -285,7 +285,10 @@ backup_2026-10-02_1800.vbak
 | Camera password, user passwords | OS secret store, referenced by name |
 | Backup destinations, schedule, retention | `system.yaml` |
 | Results retention, PASS-image sampling, disk limit | `system.yaml` |
-| Language, station name | `system.yaml` |
+| Language, station name, shift starts | `system.yaml` |
+| Listening address and port | `system.yaml` |
+
+`system.yaml` is validated on load (a damaged file stops the program with the reason; a missing one means the defaults) and refused if any key looks like a secret. Recording limits, backups and the station's settings apply at once when changed; the camera and the network after a restart, which the settings screen says. The file goes into every `.vbak`, so a restore brings the installation's settings back too.
 
 ---
 

@@ -151,14 +151,37 @@ npm run gen:api    # regenerates the TypeScript types from the API after any cha
 
 Details, design system and screens: [docs/frontend.md](docs/frontend.md). All API paths are under `/api`; the typed client is generated from `GET /api/openapi.json`.
 
-### API
+### Running the station
 
 ```bash
-uv run python scripts/set_password.py supervisor          # once per role (supervisor, maintainer)
-uv run python scripts/run_api.py --name C920 --exposure-us 33000   # station + API on 127.0.0.1:8765, docs at /docs
+uv run vision-station --data C:/ProgramData/VisionSystem   # or python -m vision_station; default data folder per OS
 ```
 
-Operator, no login: `GET /state`, `GET /result/last`, `GET /snapshot.jpg`, `POST /trigger`, `WS /live` (status, state and result events as JSON, JPEG frames as binary, at most 10 per second), `POST /results/{id}/incorrect`. Supervisor (`POST /login`, then `Authorization: Bearer ...`): jobs (list, verify and activate, export, import `.vjob`/`.vbak`), backups, results (browse, filter, images, CSV). Maintainer: collection mode, pause/resume/retry, and overriding a failed verification. It accepts only local Host headers and refuses browser requests from other origins.
+One process: camera, station, inspection pipeline, records (with the overlay image), hourly housekeeping, automatic backups and the API with the web interface on `127.0.0.1:8765`. The active job is loaded and verified on start; with none, the screen says "Nenhum job ativo". Logs rotate daily in `<data>/logs/`.
+
+The installation's settings are in `<data>/system/system.yaml` (architecture §4.5), edited on the screen (Configurações) or by hand; a missing file means the defaults:
+
+```yaml
+station: {name: Linha 2, shift_starts: ['06:00', '14:00', '22:00'], idle_logout_min: 10, fail_sound: false}
+camera: {driver: uvc, connection: {device_name: C920}}            # file: {path: folder, loop: true, fps: 10}
+recording: {pass_sample_every: 1, retention_days: null, min_free_gb: null}
+backup: {folder: 'E:/backups', every_hours: 24, keep: 30, include: all}
+network: {host: 127.0.0.1, port: 8765, allowed_hosts: []}       # another host opens it to the network
+```
+
+No password ever goes in it (a camera names an OS secret store entry in `keyring_entry`). Recording, backup and station settings apply at once; camera and network after a restart. Opening the API to the network needs a Supervisor or Maintainer password first.
+
+On the bench, with the C920:
+
+```bash
+uv run python scripts/setup_bench.py --name C920 --exposure-us 33000   # system.yaml + a code-reading job, active
+uv run python scripts/set_password.py maintainer                       # once per role (supervisor, maintainer)
+uv run vision-station --data bench_data
+```
+
+### API
+
+Operator, no login: `GET /state`, `GET /result/last`, `GET /snapshot.jpg`, `POST /trigger`, `WS /live` (status, state and result events as JSON, JPEG frames as binary, at most 10 per second), `POST /results/{id}/incorrect`. Supervisor (`POST /login`, then `Authorization: Bearer ...`): jobs (list, verify and activate, export, import `.vjob`/`.vbak`), backups, results (browse, filter, images, CSV). Maintainer: collection mode, pause/resume/retry, overriding a failed verification, and the system configuration (`GET/PUT /system`, `POST /system/test-camera`, `POST /system/test-folder`). It accepts only local Host headers and refuses browser requests from other origins.
 
 ## Related
 

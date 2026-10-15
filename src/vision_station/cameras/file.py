@@ -30,8 +30,9 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp"}
 class FileCamera(Camera):
     """Delivers the images of a folder in name order.
 
-    connection: {"path": folder}. With `loop=True` the sequence repeats forever,
-    otherwise `frames()` ends after the last image.
+    connection: {"path": folder, "loop": bool, "fps": number}. With `loop` the sequence repeats forever,
+    otherwise `frames()` ends after the last image; `fps` paces the frames like a camera (a station run
+    from a folder needs both; tests usually want neither).
     """
 
     def __init__(self, loop: bool = False, clock: Callable[[], float] = time.monotonic):
@@ -40,9 +41,15 @@ class FileCamera(Camera):
         self._paths: list[Path] = []
         self._open = False
         self._stamps: deque[float] = deque(maxlen=30)
+        self._period = 0.0
 
     def open(self, connection: Mapping[str, Any]) -> None:
+        if "path" not in connection:
+            raise CameraError("the file camera needs a folder: connection.path")
         folder = Path(connection["path"])
+        self._loop = bool(connection.get("loop", self._loop))
+        fps = connection.get("fps")
+        self._period = 1.0 / float(fps) if fps else 0.0
         if not folder.is_dir():
             raise CameraError(f"folder not found: {folder}")
         self._paths = sorted(p for p in folder.iterdir() if p.suffix.lower() in IMAGE_SUFFIXES)
@@ -74,6 +81,8 @@ class FileCamera(Camera):
             for path in self._paths:
                 if not self._open:
                     return
+                if self._period:
+                    time.sleep(self._period)
                 yield self._read(path)
             if not self._loop:
                 return

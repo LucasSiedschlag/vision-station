@@ -5,6 +5,8 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel as _BaseModel, ConfigDict, Field
 
+from vision_station.system.config import CameraSettings, SystemConfig
+
 Outcome = Literal["PASS", "FAIL", "ERROR"]
 Role = Literal["operator", "supervisor", "maintainer"]
 StationState = Literal["Starting", "Preparing", "Ready", "WaitingStill", "Inspecting", "ShowingResult", "CameraLost", "Fault", "Paused"]
@@ -190,6 +192,38 @@ class ImportOut(BaseModel):
     imported: list[ImportItem]
     active_was: ActiveRef | None = None
     has_system_config: bool | None = None
+
+
+# --- system configuration (maintainer) -------------------------------------------------------------
+
+
+class SystemOut(BaseModel):
+    config: SystemConfig
+    data_root: str  # read-only on the screen
+    restart_pending: list[str]  # sections saved but not in effect until the program restarts
+    camera_drivers: list[str]
+    last_backup_error: str | None = None
+
+
+class SystemSaved(BaseModel):
+    changed: list[str]
+    restart_required: list[str]
+
+
+class FolderCheckBody(BaseModel):
+    path: Annotated[str, Field(min_length=1)]
+
+
+class CameraCheckBody(CameraSettings):
+    pass
+
+
+class CheckOut(BaseModel):
+    ok: bool
+    message: str
+    width: int | None = None
+    height: int | None = None
+    free_gb: float | None = None
 
 
 class BackupOut(BaseModel):

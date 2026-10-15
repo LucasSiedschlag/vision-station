@@ -32,10 +32,13 @@ from vision_station import __version__
 from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
+from vision_station.cameras import DRIVERS
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
 from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import FormatError, JobRef, JobStore, StoreError
 from vision_station.store.archive import FORMAT, kind_of
+from vision_station.system import Maintenance, SystemConfig, SystemService, check_camera, check_folder, dump_config
+from vision_station.system.config import CameraSettings
 from vision_station.tools import tool_types
 from vision_station.verification import VerificationFailed, activate, verify_stored_job
 from vision_station.verification.verify import Inspector
@@ -76,6 +79,8 @@ class ApiDeps:
     heartbeat_s: float = 2.0
     allowed_hosts: tuple[str, ...] = ("localhost", "127.0.0.1", "[::1]")
     hub: EventHub = field(default_factory=EventHub)
+    system: SystemService | None = None  # the system configuration; without it /api/system answers 503
+    maintenance: Maintenance | None = None  # reports the last automatic backup error, when there is one
 
 
 class Problem(StarletteHTTPException):
@@ -411,7 +416,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
     def make_backup(_: str = Depends(need("supervisor"))) -> m.BackupOut:
         if deps.backup_dir is None:
             raise Problem(409, "Nenhuma pasta de backup foi configurada", "no_backup_folder")
-        path = deps.jobs.make_backup(deps.backup_dir)
+        path = deps.jobs.make_backup(deps.backup_dir, system_yaml=dump_config(deps.system.config) if deps.system else None)
         return m.BackupOut(name=path.name, size=path.stat().st_size)
 
     @api.get("/backup/{name}", responses={200: {"content": {"application/octet-stream": {}}}, 404: {"model": m.Problem}})
@@ -487,6 +492,58 @@ def create_app(deps: ApiDeps) -> FastAPI:
             raise Problem(404, "Comando desconhecido", "unknown_command")
         actions[command]()
         return m.Sent(sent=command)
+
+    # --- system configuration (maintainer) -----------------------------------------------------------
+
+    def system() -> SystemService:
+        if deps.system is None:
+            raise Problem(503, "A configuração do sistema não está disponível nesta execução", "no_system_config")
+        return deps.system
+
+    def system_out() -> m.SystemOut:
+        svc = system()
+        return m.SystemOut(
+            config=svc.config,
+            data_root=str(svc.root),
+            restart_pending=svc.restart_pending,
+            camera_drivers=sorted(DRIVERS),
+            last_backup_error=getattr(deps.maintenance, "last_backup_error", None),
+        )
+
+    @api.get("/system", response_model=m.SystemOut, responses={503: {"model": m.Problem}})
+    def get_system(_: str = Depends(need("maintainer"))) -> m.SystemOut:
+        return system_out()
+
+    @api.put("/system", response_model=m.SystemSaved, responses={400: {"model": m.Problem}, 503: {"model": m.Problem}})
+    def put_system(body: SystemConfig, current: str = Depends(need("maintainer"))) -> m.SystemSaved:
+        """Save the system configuration. Recording limits, backups and the station's settings apply at once;
+        camera and network changes after a restart (`restart_required`)."""
+        svc = system()
+        if not body.network.local_only and not (deps.auth.has_password("supervisor") or deps.auth.has_password("maintainer")):
+            raise Problem(400, "Para abrir a API na rede é preciso ter senha de Supervisor ou Mantenedor", "password_required")
+        changed = svc.update(body)
+        if changed:
+            deps.jobs.audit("settings", by=current, changed=changed)
+        return m.SystemSaved(changed=changed, restart_required=[s for s in changed if s in svc.restart_pending])
+
+    @api.post("/system/test-folder", response_model=m.CheckOut)
+    def test_folder(body: m.FolderCheckBody, _: str = Depends(need("maintainer"))) -> m.CheckOut:
+        return m.CheckOut(**vars(check_folder(body.path)))
+
+    @api.post("/system/test-camera", response_model=m.CheckOut)
+    def test_camera(body: m.CameraCheckBody, _: str = Depends(need("maintainer"))) -> m.CheckOut:
+        """Open the camera described and wait for one frame. The camera the station is using is not opened a
+        second time (a USB camera serves one program): its current state is reported instead."""
+        svc = system()
+        running = svc.started_with.camera
+        if body.driver == running.driver and body.connection == running.connection:
+            acq = deps.acquisition
+            frame = acq.latest()
+            if acq.connected and frame is not None and not acq.stalled():
+                h, w = frame.image.shape[:2]
+                return m.CheckOut(ok=True, message=f"É a câmera em uso pela estação e está mandando imagem de {w}×{h}", width=w, height=h)
+            return m.CheckOut(ok=False, message="É a câmera em uso pela estação e ela não está mandando imagem" + (f": {acq.last_error}" if acq.last_error else ""))
+        return m.CheckOut(**vars(check_camera(CameraSettings.model_validate(body.model_dump()))))
 
     @api.get("/{rest:path}", include_in_schema=False)
     def unknown_api(rest: str) -> Response:

@@ -107,6 +107,79 @@
         "title": "BackupOut",
         "type": "object"
       },
+      "BackupSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "every_hours": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 24.0,
+            "title": "Every Hours"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder"
+          },
+          "include": {
+            "default": "all",
+            "enum": ["all", "latest"],
+            "title": "Include",
+            "type": "string"
+          },
+          "keep": {
+            "default": 30,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Keep",
+            "type": "integer"
+          }
+        },
+        "title": "BackupSettings",
+        "type": "object"
+      },
+      "CameraCheckBody": {
+        "additionalProperties": false,
+        "properties": {
+          "connection": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Connection",
+            "type": "object"
+          },
+          "driver": {
+            "default": "uvc",
+            "title": "Driver",
+            "type": "string"
+          },
+          "keyring_entry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyring Entry"
+          }
+        },
+        "title": "CameraCheckBody",
+        "type": "object"
+      },
       "CameraOut": {
         "properties": {
           "connected": {
@@ -140,6 +213,83 @@
         },
         "required": ["connected"],
         "title": "CameraOut",
+        "type": "object"
+      },
+      "CameraSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "connection": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Connection",
+            "type": "object"
+          },
+          "driver": {
+            "default": "uvc",
+            "title": "Driver",
+            "type": "string"
+          },
+          "keyring_entry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyring Entry"
+          }
+        },
+        "title": "CameraSettings",
+        "type": "object"
+      },
+      "CheckOut": {
+        "properties": {
+          "free_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Gb"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": ["ok", "message", "width", "height", "free_gb"],
+        "title": "CheckOut",
         "type": "object"
       },
       "CollectionBody": {
@@ -196,6 +346,18 @@
           }
         },
         "title": "Counters",
+        "type": "object"
+      },
+      "FolderCheckBody": {
+        "properties": {
+          "path": {
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": ["path"],
+        "title": "FolderCheckBody",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -467,6 +629,33 @@
         "title": "LoginOut",
         "type": "object"
       },
+      "NetworkSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_hosts": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Hosts",
+            "type": "array"
+          },
+          "host": {
+            "default": "127.0.0.1",
+            "title": "Host",
+            "type": "string"
+          },
+          "port": {
+            "default": 8765,
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "Port",
+            "type": "integer"
+          }
+        },
+        "title": "NetworkSettings",
+        "type": "object"
+      },
       "Ok": {
         "properties": {
           "ok": {
@@ -682,6 +871,55 @@
           "corrected_by"
         ],
         "title": "RecordOut",
+        "type": "object"
+      },
+      "RecordingSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "min_free_gb": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Free Gb"
+          },
+          "pass_sample_every": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Pass Sample Every",
+            "type": "integer"
+          },
+          "retention_days": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Days"
+          },
+          "unsampled_pass_hours": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unsampled Pass Hours"
+          }
+        },
+        "title": "RecordingSettings",
         "type": "object"
       },
       "ResultMessage": {
@@ -962,6 +1200,42 @@
         "title": "StateOut",
         "type": "object"
       },
+      "StationSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "fail_sound": {
+            "default": false,
+            "title": "Fail Sound",
+            "type": "boolean"
+          },
+          "idle_logout_min": {
+            "default": 10,
+            "maximum": 240.0,
+            "minimum": 1.0,
+            "title": "Idle Logout Min",
+            "type": "integer"
+          },
+          "name": {
+            "default": "Estação de visão",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "shift_starts": {
+            "default": ["00:00"],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Shift Starts",
+            "type": "array"
+          }
+        },
+        "title": "StationSettings",
+        "type": "object"
+      },
       "StatusMessage": {
         "properties": {
           "camera": {
@@ -1061,6 +1335,123 @@
           "version"
         ],
         "title": "StatusMessage",
+        "type": "object"
+      },
+      "SystemConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "backup": {
+            "$ref": "#/components/schemas/BackupSettings",
+            "default": {
+              "every_hours": 24.0,
+              "include": "all",
+              "keep": 30
+            }
+          },
+          "camera": {
+            "$ref": "#/components/schemas/CameraSettings",
+            "default": {
+              "connection": {},
+              "driver": "uvc"
+            }
+          },
+          "format": {
+            "const": 1,
+            "default": 1,
+            "title": "Format",
+            "type": "integer"
+          },
+          "network": {
+            "$ref": "#/components/schemas/NetworkSettings",
+            "default": {
+              "allowed_hosts": [],
+              "host": "127.0.0.1",
+              "port": 8765
+            }
+          },
+          "recording": {
+            "$ref": "#/components/schemas/RecordingSettings",
+            "default": {
+              "pass_sample_every": 1
+            }
+          },
+          "station": {
+            "$ref": "#/components/schemas/StationSettings",
+            "default": {
+              "fail_sound": false,
+              "idle_logout_min": 10,
+              "name": "Estação de visão",
+              "shift_starts": ["00:00"]
+            }
+          }
+        },
+        "title": "SystemConfig",
+        "type": "object"
+      },
+      "SystemOut": {
+        "properties": {
+          "camera_drivers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Camera Drivers",
+            "type": "array"
+          },
+          "config": {
+            "$ref": "#/components/schemas/SystemConfig"
+          },
+          "data_root": {
+            "title": "Data Root",
+            "type": "string"
+          },
+          "last_backup_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Backup Error"
+          },
+          "restart_pending": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Restart Pending",
+            "type": "array"
+          }
+        },
+        "required": [
+          "config",
+          "data_root",
+          "restart_pending",
+          "camera_drivers",
+          "last_backup_error"
+        ],
+        "title": "SystemOut",
+        "type": "object"
+      },
+      "SystemSaved": {
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
+          "restart_required": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Restart Required",
+            "type": "array"
+          }
+        },
+        "required": ["changed", "restart_required"],
+        "title": "SystemSaved",
         "type": "object"
       },
       "ToolInfo": {
@@ -2738,6 +3129,330 @@
           }
         },
         "summary": "Station Command"
+      }
+    },
+    "/api/system": {
+      "get": {
+        "operationId": "get_system",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get System"
+      },
+      "put": {
+        "description": "Save the system configuration. Recording limits, backups and the station's settings apply at once;\ncamera and network changes after a restart (`restart_required`).",
+        "operationId": "put_system",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Put System"
+      }
+    },
+    "/api/system/test-camera": {
+      "post": {
+        "description": "Open the camera described and wait for one frame. The camera the station is using is not opened a\nsecond time (a USB camera serves one program): its current state is reported instead.",
+        "operationId": "test_camera",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraCheckBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Camera"
+      }
+    },
+    "/api/system/test-folder": {
+      "post": {
+        "operationId": "test_folder",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderCheckBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Folder"
       }
     },
     "/api/trigger": {

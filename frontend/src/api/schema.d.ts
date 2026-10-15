@@ -337,6 +337,66 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/system': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get System */
+    get: operations['get_system']
+    /**
+     * Put System
+     * @description Save the system configuration. Recording limits, backups and the station's settings apply at once;
+     *     camera and network changes after a restart (`restart_required`).
+     */
+    put: operations['put_system']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/system/test-camera': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Test Camera
+     * @description Open the camera described and wait for one frame. The camera the station is using is not opened a
+     *     second time (a USB camera serves one program): its current state is reported instead.
+     */
+    post: operations['test_camera']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/system/test-folder': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Test Folder */
+    post: operations['test_folder']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/trigger': {
     parameters: {
       query?: never
@@ -422,6 +482,44 @@ export interface components {
       /** Size */
       size: number
     }
+    /** BackupSettings */
+    BackupSettings: {
+      /**
+       * Every Hours
+       * @default 24
+       */
+      every_hours: number | null
+      /** Folder */
+      folder?: string | null
+      /**
+       * Include
+       * @default all
+       * @enum {string}
+       */
+      include: 'all' | 'latest'
+      /**
+       * Keep
+       * @default 30
+       */
+      keep: number
+    }
+    /** CameraCheckBody */
+    CameraCheckBody: {
+      /**
+       * Connection
+       * @default {}
+       */
+      connection: {
+        [key: string]: unknown
+      }
+      /**
+       * Driver
+       * @default uvc
+       */
+      driver: string
+      /** Keyring Entry */
+      keyring_entry?: string | null
+    }
     /** CameraOut */
     CameraOut: {
       /** Connected */
@@ -436,6 +534,36 @@ export interface components {
        * @default null
        */
       last_frame_age_s: number | null
+    }
+    /** CameraSettings */
+    CameraSettings: {
+      /**
+       * Connection
+       * @default {}
+       */
+      connection: {
+        [key: string]: unknown
+      }
+      /**
+       * Driver
+       * @default uvc
+       */
+      driver: string
+      /** Keyring Entry */
+      keyring_entry?: string | null
+    }
+    /** CheckOut */
+    CheckOut: {
+      /** Free Gb */
+      free_gb: number | null
+      /** Height */
+      height: number | null
+      /** Message */
+      message: string
+      /** Ok */
+      ok: boolean
+      /** Width */
+      width: number | null
     }
     /** CollectionBody */
     CollectionBody: {
@@ -473,6 +601,11 @@ export interface components {
        * @default 0
        */
       total: number
+    }
+    /** FolderCheckBody */
+    FolderCheckBody: {
+      /** Path */
+      path: string
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -591,6 +724,24 @@ export interface components {
       /** Token */
       token: string
     }
+    /** NetworkSettings */
+    NetworkSettings: {
+      /**
+       * Allowed Hosts
+       * @default []
+       */
+      allowed_hosts: string[]
+      /**
+       * Host
+       * @default 127.0.0.1
+       */
+      host: string
+      /**
+       * Port
+       * @default 8765
+       */
+      port: number
+    }
     /** Ok */
     Ok: {
       /** Ok */
@@ -667,6 +818,20 @@ export interface components {
       timings: {
         [key: string]: number
       }
+    }
+    /** RecordingSettings */
+    RecordingSettings: {
+      /** Min Free Gb */
+      min_free_gb?: number | null
+      /**
+       * Pass Sample Every
+       * @default 1
+       */
+      pass_sample_every: number
+      /** Retention Days */
+      retention_days?: number | null
+      /** Unsampled Pass Hours */
+      unsampled_pass_hours?: number | null
     }
     /** ResultMessage */
     ResultMessage: {
@@ -809,6 +974,31 @@ export interface components {
       /** Warnings */
       warnings: string[]
     }
+    /** StationSettings */
+    StationSettings: {
+      /**
+       * Fail Sound
+       * @default false
+       */
+      fail_sound: boolean
+      /**
+       * Idle Logout Min
+       * @default 10
+       */
+      idle_logout_min: number
+      /**
+       * Name
+       * @default Estação de visão
+       */
+      name: string
+      /**
+       * Shift Starts
+       * @default [
+       *       "00:00"
+       *     ]
+       */
+      shift_starts: string[]
+    }
     /** StatusMessage */
     StatusMessage: {
       camera: components['schemas']['CameraOut']
@@ -852,6 +1042,74 @@ export interface components {
       version: string
       /** Warnings */
       warnings: string[]
+    }
+    /** SystemConfig */
+    SystemConfig: {
+      /**
+       * @default {
+       *       "every_hours": 24,
+       *       "include": "all",
+       *       "keep": 30
+       *     }
+       */
+      backup: components['schemas']['BackupSettings']
+      /**
+       * @default {
+       *       "connection": {},
+       *       "driver": "uvc"
+       *     }
+       */
+      camera: components['schemas']['CameraSettings']
+      /**
+       * Format
+       * @default 1
+       * @constant
+       */
+      format: 1
+      /**
+       * @default {
+       *       "allowed_hosts": [],
+       *       "host": "127.0.0.1",
+       *       "port": 8765
+       *     }
+       */
+      network: components['schemas']['NetworkSettings']
+      /**
+       * @default {
+       *       "pass_sample_every": 1
+       *     }
+       */
+      recording: components['schemas']['RecordingSettings']
+      /**
+       * @default {
+       *       "fail_sound": false,
+       *       "idle_logout_min": 10,
+       *       "name": "Estação de visão",
+       *       "shift_starts": [
+       *         "00:00"
+       *       ]
+       *     }
+       */
+      station: components['schemas']['StationSettings']
+    }
+    /** SystemOut */
+    SystemOut: {
+      /** Camera Drivers */
+      camera_drivers: string[]
+      config: components['schemas']['SystemConfig']
+      /** Data Root */
+      data_root: string
+      /** Last Backup Error */
+      last_backup_error: string | null
+      /** Restart Pending */
+      restart_pending: string[]
+    }
+    /** SystemSaved */
+    SystemSaved: {
+      /** Changed */
+      changed: string[]
+      /** Restart Required */
+      restart_required: string[]
     }
     /** ToolInfo */
     ToolInfo: {
@@ -1956,6 +2214,241 @@ export interface operations {
       }
       /** @description Not Found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_system: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SystemOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  put_system: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SystemConfig']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SystemSaved']
+        }
+      }
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  test_camera: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CameraCheckBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CheckOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  test_folder: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FolderCheckBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CheckOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
         headers: {
           [name: string]: unknown
         }

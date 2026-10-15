@@ -37,11 +37,12 @@ Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs s
 ```bash
 uv sync              # create .venv with Python 3.12 and install deps
 uv run pytest        # run the tests
+uv run vision-station --data bench_data   # the program (setup: scripts/setup_bench.py, scripts/set_password.py)
 (cd frontend && npm ci && npm test && npm run build)   # the React interface; after changing the API: npm run gen:api
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 
-Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry; `code`, `color`, `pattern`; `measures.py` for scores and strip gaps), `locators/` (locator registry; `fixed`, `template`, `blob`), `colors.py` (color ranges shared by tools and locators), `jobfiles.py` (job files a tool or locator needs, checked on load), `pipeline.py` (`inspect_job`: brightness → locator → sharpness → regions → all tools → PASS/FAIL/ERROR), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
+Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry; `code`, `color`, `pattern`; `measures.py` for scores and strip gaps), `locators/` (locator registry; `fixed`, `template`, `blob`), `colors.py` (color ranges shared by tools and locators), `jobfiles.py` (job files a tool or locator needs, checked on load), `pipeline.py` (`inspect_job`: brightness → locator → sharpness → regions → all tools → PASS/FAIL/ERROR), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR), `system/` (`system.yaml`, applying settings, scheduled backup and housekeeping, camera and folder checks), `runtime.py` (the `vision-station` entry point that wires everything).
 
 Layout: `src/vision_station/` (platform, no customer words), `frontend/`, `tests/`, `scripts/`, `docs/`. No customer project lives here (no `applications/`). CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 

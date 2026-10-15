@@ -41,6 +41,8 @@ class State(StrEnum):
     PAUSED = "Paused"
 
 
+NO_JOB = "Nenhum job ativo — ativar um job na tela Jobs"
+
 # What the operator screen shows (architecture §6). "waiting" can be replaced by the job (`ui.waiting`).
 MESSAGES = {
     State.STARTING: "Preparando…",
@@ -96,6 +98,7 @@ class StationEvent:
 class _Command:
     name: str
     bundle: JobBundle | None = None
+    detail: str = ""
 
 
 @dataclass
@@ -152,6 +155,10 @@ class StationController:
     def switch_job(self, bundle: JobBundle) -> None:
         self._commands.put(_Command("load", bundle))
 
+    def fault(self, detail: str) -> None:
+        """Stop in Fault with this reason, e.g. the active job could not be loaded."""
+        self._commands.put(_Command("fault", detail=detail))
+
     def request_trigger(self) -> None:
         """Manual or external trigger (FR-TRG-2/3)."""
         self._commands.put(_Command("trigger"))
@@ -195,6 +202,8 @@ class StationController:
         if self._state is State.SHOWING_RESULT and self._last_result is not None:
             r = self._last_result
             return f"{r.outcome}: {r.reason}" if r.reason else str(r.outcome)
+        if self._state is State.STARTING and self._bundle is None:
+            return NO_JOB
         if self._state in (State.READY, State.WAITING_STILL) and self._bundle and self._bundle.job.ui.waiting:
             return self._bundle.job.ui.waiting
         return MESSAGES[self._state]
@@ -244,8 +253,11 @@ class StationController:
             self._go(State.PAUSED)
         elif command.name == "resume" and self._state is State.PAUSED:
             self._prepare()
-        elif command.name == "retry" and self._state is State.FAULT:
+        elif command.name == "retry" and self._state is State.FAULT and self._bundle is not None:
             self._prepare()
+        elif command.name == "fault":
+            self._detail = command.detail
+            self._go(State.FAULT)
         elif command.name == "reset_background" and self._detector is not None:
             self._detector.reset_background()
 
