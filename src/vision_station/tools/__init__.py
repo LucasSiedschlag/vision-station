@@ -6,6 +6,7 @@ from vision_station.jobfiles import JobFileError, check_files
 from vision_station.jobs import Job
 from vision_station.tools import code as _code  # noqa: F401  (registers the tool)
 from vision_station.tools import color as _color  # noqa: F401
+from vision_station.tools import pattern as _pattern  # noqa: F401
 from vision_station.tools.base import (
     ToolError,
     ToolResult,

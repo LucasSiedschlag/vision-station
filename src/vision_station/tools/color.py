@@ -22,6 +22,7 @@ from pydantic import Field, model_validator
 from vision_station.colors import ColorRange, color_mask
 from vision_station.jobfiles import JobFiles
 from vision_station.tools.base import ToolResult, ToolType, register
+from vision_station.tools.measures import at_least, at_most, strip_profile
 
 Share = Annotated[float, Field(ge=0, le=1)]
 
@@ -45,25 +46,10 @@ class ColorParams(ColorRange):
         return self
 
 
-def _longest_run(flags: np.ndarray) -> tuple[int, int]:
-    """Start and length of the longest run of True."""
-    best_start, best_len, start = 0, 0, None
-    for i, f in enumerate(np.append(flags, False)):
-        if f and start is None:
-            start = i
-        elif not f and start is not None:
-            if i - start > best_len:
-                best_start, best_len = start, i - start
-            start = None
-    return best_start, best_len
 
 
-def _at_least(value: float, limit: float) -> float:
-    return 1.0 if value >= limit else (value / limit if limit > 0 else 1.0)
 
 
-def _at_most(value: float, limit: float) -> float:
-    return 1.0 if value <= limit else max(0.0, (1 - value) / (1 - limit)) if limit < 1 else 1.0
 
 
 def run(region: np.ndarray, params: ColorParams, files: JobFiles) -> ToolResult:
@@ -79,22 +65,19 @@ def run(region: np.ndarray, params: ColorParams, files: JobFiles) -> ToolResult:
     details: dict = {"fraction": fraction}
     scores: list[float] = []
     if params.min_fraction is not None:
-        scores.append(_at_least(fraction, params.min_fraction))
+        scores.append(at_least(fraction, params.min_fraction))
     if params.max_fraction is not None:
-        scores.append(_at_most(fraction, params.max_fraction))
+        scores.append(at_most(fraction, params.max_fraction))
     if params.axis != "none":
         per_line = mask.mean(axis=0 if params.axis == "x" else 1) if mask.size else np.zeros(0)
-        covered = per_line >= params.line_min
-        length = len(covered)
-        coverage = float(covered.mean()) if length else 0.0
-        gap_start, gap_len = _longest_run(~covered)
-        gap = gap_len / length if length else 1.0
+        profile = strip_profile(per_line >= params.line_min)
+        coverage, gap = profile["coverage"], profile["gap"]
         values.update(coverage=coverage, missing=1.0 - coverage, gap=gap)
-        details.update(axis=params.axis, coverage=coverage, gap=gap, gap_at=[gap_start / length, (gap_start + gap_len) / length] if gap_len else None)
+        details.update(axis=params.axis, **profile)
         if params.min_coverage is not None:
-            scores.append(_at_least(coverage, params.min_coverage))
+            scores.append(at_least(coverage, params.min_coverage))
         if params.max_gap is not None:
-            scores.append(_at_most(gap, params.max_gap))
+            scores.append(at_most(gap, params.max_gap))
     score = min(scores)
     return ToolResult(passed=score >= 1.0, score=score, values=values, details=details)
 
