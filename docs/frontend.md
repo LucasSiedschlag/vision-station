@@ -419,6 +419,8 @@ Purpose: the installation's configuration (system configuration, architecture §
 | `POST /api/dataset/export`, `GET /api/dataset` | dataset counts and export | maintainer |
 | `GET /api/about` | versions, tool types, driver, licences; `POST /api/support-bundle` | supervisor |
 
+**Status (15/10/2026):** implemented in VIA-0025 and VIA-0026, with the request and response models in `src/vision_station/api/schemas.py`. Details that differ from the table: `GET /api/tools` returns tools and locators (`TypesOut`); a saved version's files are served by `GET /api/jobs/{id}/versions/{v}/files/{path}`; a draft (`JobDraft`) names a saved `base` version whose files it keeps, plus `add_files` (base64) and `remove_files`; `POST /api/jobs/{id}/versions` answers 409 `stale_draft` if the draft's base is not the latest version; the camera endpoints are `GET /api/camera/state` and `POST /api/camera/apply`. Not yet: `POST /api/support-bundle`, the licences in `/api/about`, and `camera_settings` events on the live socket.
+
 ### 9.4 Live socket (`/api/live`)
 
 Text messages (JSON): `status` (full state, camera, counters, job — at connect and every 2 s), `state`, `result` (with `record_id`), and new `camera_settings` events during tuning. Binary messages: JPEG frames, at most 10 per second, 960 px wide by default (a query parameter asks for another width in the editor). The client reconnects with backoff and drops frames older than the newest.

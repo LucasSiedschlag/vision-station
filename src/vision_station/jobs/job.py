@@ -38,6 +38,7 @@ class JobInfo(_Strict):
     author: str
     created_at: datetime
     description: str = ""
+    notes: str = ""  # what changed in this version (asked on save)
 
     @model_validator(mode="after")
     def _parent_is_older(self) -> Self:

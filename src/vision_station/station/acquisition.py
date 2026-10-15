@@ -77,6 +77,17 @@ class Acquisition:
 
     # --- configuration ------------------------------------------------------
 
+    @property
+    def profile(self) -> CameraProfile | None:
+        """The camera profile in use (the active job's, or one being tuned)."""
+        with self._lock:
+            return self._profile
+
+    @property
+    def applied(self) -> bool:
+        """The profile in use has been written to the camera since it was set."""
+        return self.applied_serial == self.profile_serial
+
     def configure(self, profile: CameraProfile, raw: Mapping[str, bytes] | None = None) -> None:
         """Use this camera profile from now on: applied at once if connected, and on every reconnect."""
         with self._lock:

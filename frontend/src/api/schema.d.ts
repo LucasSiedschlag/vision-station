@@ -21,6 +21,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/audit': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Audit */
+    get: operations['audit']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/audit.csv': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Audit Csv */
+    get: operations['audit_csv']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/backup': {
     parameters: {
       query?: never
@@ -28,7 +62,8 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /** List Backups */
+    get: operations['list_backups']
     put?: never
     /** Make Backup */
     post: operations['make_backup']
@@ -55,6 +90,44 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/camera/apply': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Apply Camera
+     * @description Write these settings to the camera while watching the live view. The station is paused first; resuming
+     *     it (`POST /api/station/resume`) writes the active job's settings back.
+     */
+    post: operations['apply_camera']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/camera/state': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Camera */
+    get: operations['get_camera']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/collection/{job_id}': {
     parameters: {
       query?: never
@@ -66,6 +139,43 @@ export interface paths {
     put?: never
     /** Collection */
     post: operations['collection']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/dataset': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Dataset */
+    get: operations['dataset']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/dataset/export': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Export Dataset
+     * @description Images and labels for training, into <data>/exports/ (training happens offline, TD-08).
+     */
+    post: operations['export_dataset']
     delete?: never
     options?: never
     head?: never
@@ -139,7 +249,8 @@ export interface paths {
     /** List Jobs */
     get: operations['list_jobs']
     put?: never
-    post?: never
+    /** Create Job */
+    post: operations['create_job']
     delete?: never
     options?: never
     head?: never
@@ -160,6 +271,121 @@ export interface paths {
      * @description A `.vjob` or a `.vbak`, as the raw request body. Stores new versions; activating is a separate, verified step.
      */
     post: operations['import_file']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/test': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Test Draft
+     * @description Run a draft on the camera's newest frame (or a given image) without saving or activating it.
+     */
+    post: operations['test_draft']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/validate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Validate Draft
+     * @description Check a draft without saving it: field errors, or why it could not run.
+     */
+    post: operations['validate_draft']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/{job_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Job Detail */
+    get: operations['job_detail']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/{job_id}/duplicate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Duplicate Job
+     * @description A new job (new id, version 1) from a saved version, with all its files.
+     */
+    post: operations['duplicate_job']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/{job_id}/versions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Save Version
+     * @description Save the draft as version n+1. `draft.base` must be the latest version: if someone saved meanwhile,
+     *     409 instead of silently building on a version the editor did not see.
+     */
+    post: operations['save_version']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/{job_id}/versions/{version}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Job Version */
+    get: operations['job_version']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -187,6 +413,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/jobs/{job_id}/versions/{version}/diff': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Diff Versions */
+    get: operations['diff_versions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/jobs/{job_id}/versions/{version}/export': {
     parameters: {
       query?: never
@@ -196,6 +439,26 @@ export interface paths {
     }
     /** Export Job */
     get: operations['export_job']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/jobs/{job_id}/versions/{version}/files/{path}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Job File
+     * @description One file of a saved version (a reference image, a template), for the editor to show.
+     */
+    get: operations['job_file']
     put?: never
     post?: never
     delete?: never
@@ -232,6 +495,46 @@ export interface paths {
     put?: never
     /** Logout */
     post: operations['logout']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/reference/capture': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Capture Reference
+     * @description The reference image and its measures from the live view (or an upload), to add to a draft.
+     */
+    post: operations['capture_reference']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/reference/cases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Capture Case
+     * @description A reference-set image, with what the draft says about it now (the editor records the expected result).
+     */
+    post: operations['capture_case']
     delete?: never
     options?: never
     head?: never
@@ -454,6 +757,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/tools': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Types
+     * @description Tool and locator types with the JSON Schema of their parameters, for the editor's forms.
+     */
+    get: operations['list_types']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/trigger': {
     parameters: {
       query?: never
@@ -468,6 +791,63 @@ export interface paths {
      * @description Manual (FR-TRG-3) and external (FR-TRG-2) trigger.
      */
     post: operations['trigger']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/users': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Users */
+    get: operations['list_users']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/users/sessions/revoke': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Revoke Sessions
+     * @description End every session, this one included.
+     */
+    post: operations['revoke_sessions']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/users/{role}/password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Set Password
+     * @description The maintainer sets either password; a supervisor only their own, confirming the old one.
+     */
+    put: operations['set_password']
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -532,6 +912,33 @@ export interface components {
       /** Version */
       version: number
     }
+    /** AuditEvent */
+    AuditEvent: {
+      /** At */
+      at: string
+      /** Data */
+      data: {
+        [key: string]: unknown
+      }
+      /** Kind */
+      kind: string
+    }
+    /** AuditOut */
+    AuditOut: {
+      /** Events */
+      events: components['schemas']['AuditEvent'][]
+      /** Total */
+      total: number
+    }
+    /** BackupItem */
+    BackupItem: {
+      /** Created At */
+      created_at: string
+      /** Name */
+      name: string
+      /** Size */
+      size: number
+    }
     /** BackupOut */
     BackupOut: {
       /** Name */
@@ -559,6 +966,13 @@ export interface components {
        * @default 30
        */
       keep: number
+    }
+    /** BackupsOut */
+    BackupsOut: {
+      /** Backups */
+      backups: components['schemas']['BackupItem'][]
+      /** Folder */
+      folder: string | null
     }
     /** CameraCheckBody */
     CameraCheckBody: {
@@ -609,6 +1023,25 @@ export interface components {
       /** Keyring Entry */
       keyring_entry?: string | null
     }
+    /** CameraStateOut */
+    CameraStateOut: {
+      /** Applied */
+      applied: boolean
+      /** Connected */
+      connected: boolean
+      /** Last Error */
+      last_error: string | null
+      /** Profile */
+      profile: {
+        [key: string]: unknown
+      } | null
+      /** Settings */
+      settings: {
+        [key: string]: components['schemas']['SettingResult']
+      }
+      /** Station Paused */
+      station_paused: boolean
+    }
     /** CheckOut */
     CheckOut: {
       /** Free Gb */
@@ -658,6 +1091,98 @@ export interface components {
        * @default 0
        */
       total: number
+    }
+    /** DatasetExportBody */
+    DatasetExportBody: {
+      /** Job Id */
+      job_id?: string | null
+    }
+    /** DatasetExportOut */
+    DatasetExportOut: {
+      /** Count */
+      count: number
+      /** Dataset Id */
+      dataset_id: string
+      /** Folder */
+      folder: string
+    }
+    /** DatasetJob */
+    DatasetJob: {
+      /** Collecting */
+      collecting: boolean
+      /** Images */
+      images: number
+      /** Job Id */
+      job_id: string
+      /** Name */
+      name: string
+    }
+    /** DatasetOut */
+    DatasetOut: {
+      /** Jobs */
+      jobs: components['schemas']['DatasetJob'][]
+      /** Total */
+      total: number
+    }
+    /** DiffOut */
+    DiffOut: {
+      /** Against */
+      against: number
+      /** Diff */
+      diff: string
+      /** Id */
+      id: string
+      /** Version */
+      version: number
+    }
+    /** DraftCheckOut */
+    DraftCheckOut: {
+      /**
+       * Fields
+       * @default {}
+       */
+      fields: {
+        [key: string]: string
+      }
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+    }
+    /** DraftTestBody */
+    DraftTestBody: {
+      draft: components['schemas']['JobDraft']
+      /** Image */
+      image?: string | null
+    }
+    /** DraftTestOut */
+    DraftTestOut: {
+      /** Anchor */
+      anchor: number[] | null
+      /** Height */
+      height: number
+      /** Overlay */
+      overlay: string
+      /** Regions */
+      regions: components['schemas']['RegionOut'][]
+      result: components['schemas']['ResultOut']
+      /** Timings */
+      timings: {
+        [key: string]: unknown
+      }
+      /** Tools */
+      tools: {
+        [key: string]: unknown
+      }
+      /** Width */
+      width: number
+    }
+    /** DuplicateBody */
+    DuplicateBody: {
+      /** Name */
+      name: string
+      /** Version */
+      version: number
     }
     /** FolderCheckBody */
     FolderCheckBody: {
@@ -744,6 +1269,58 @@ export interface components {
        */
       reference: string
     }
+    /** JobDetailOut */
+    JobDetailOut: {
+      /** Description */
+      description: string
+      /** Id */
+      id: string
+      /** Name */
+      name: string
+      /** Versions */
+      versions: components['schemas']['VersionInfo'][]
+    }
+    /**
+     * JobDraft
+     * @description A job being edited. Identity, version, author and date are set by the server on save.
+     */
+    JobDraft: {
+      /**
+       * Add Files
+       * @default {}
+       */
+      add_files: {
+        [key: string]: string
+      }
+      base?: components['schemas']['ActiveRef'] | null
+      /** Job */
+      job: {
+        [key: string]: unknown
+      }
+      /**
+       * Notes
+       * @default
+       */
+      notes: string
+      /** Profile */
+      profile: {
+        [key: string]: unknown
+      }
+      /**
+       * Remove Files
+       * @default []
+       */
+      remove_files: string[]
+    }
+    /** JobFileOut */
+    JobFileOut: {
+      /** Path */
+      path: string
+      /** Sha256 */
+      sha256: string
+      /** Size */
+      size: number
+    }
     /** JobListItem */
     JobListItem: {
       /** Id */
@@ -761,6 +1338,34 @@ export interface components {
       id: string
       /** Name */
       name: string
+      /** Version */
+      version: number
+    }
+    /**
+     * JobVersionOut
+     * @description One saved version, whole: what the editor opens.
+     */
+    JobVersionOut: {
+      /** Expected */
+      expected: {
+        [key: string]: unknown
+      } | null
+      /** Files */
+      files: components['schemas']['JobFileOut'][]
+      /** Id */
+      id: string
+      /** Job */
+      job: {
+        [key: string]: unknown
+      }
+      /** Profile */
+      profile: {
+        [key: string]: unknown
+      }
+      /** Reference */
+      reference: {
+        [key: string]: unknown
+      } | null
       /** Version */
       version: number
     }
@@ -843,6 +1448,13 @@ export interface components {
     Ok: {
       /** Ok */
       ok: boolean
+    }
+    /** PasswordBody */
+    PasswordBody: {
+      /** Current Password */
+      current_password?: string | null
+      /** Password */
+      password: string
     }
     /**
      * Problem
@@ -930,6 +1542,53 @@ export interface components {
       /** Unsampled Pass Hours */
       unsampled_pass_hours?: number | null
     }
+    /** ReferenceBody */
+    ReferenceBody: {
+      /** Image */
+      image?: string | null
+    }
+    /** ReferenceCaseBody */
+    ReferenceCaseBody: {
+      draft: components['schemas']['JobDraft']
+      /** Image */
+      image?: string | null
+      /** Name */
+      name: string
+    }
+    /** ReferenceCaseOut */
+    ReferenceCaseOut: {
+      /** Image */
+      image: string
+      /** Path */
+      path: string
+      result: components['schemas']['ResultOut']
+    }
+    /** ReferenceOut */
+    ReferenceOut: {
+      /** Brightness */
+      brightness: number
+      /** Files */
+      files: {
+        [key: string]: string
+      }
+      /** Height */
+      height: number
+      /** Sharpness */
+      sharpness: number
+      /** Width */
+      width: number
+    }
+    /** RegionOut */
+    RegionOut: {
+      /** Passed */
+      passed: boolean
+      /** Rect */
+      rect: number[]
+      /** Roi */
+      roi: string
+      /** Tool */
+      tool: string
+    }
     /** ResultMessage */
     ResultMessage: {
       /**
@@ -990,10 +1649,32 @@ export interface components {
       /** Total */
       total: number
     }
+    /** RevokedOut */
+    RevokedOut: {
+      /** Revoked */
+      revoked: number
+    }
+    /** SavedVersion */
+    SavedVersion: {
+      /** Id */
+      id: string
+      /** Version */
+      version: number
+    }
     /** Sent */
     Sent: {
       /** Sent */
       sent: string
+    }
+    /** SettingResult */
+    SettingResult: {
+      /**
+       * Detail
+       * @default
+       */
+      detail: string
+      /** Status */
+      status: string
     }
     /** StateMessage */
     StateMessage: {
@@ -1216,6 +1897,48 @@ export interface components {
       /** Version */
       version: number
     }
+    /**
+     * TypeInfo
+     * @description A tool or locator type the editor can offer, with the JSON Schema of its parameters.
+     */
+    TypeInfo: {
+      /** Description */
+      description: string
+      /** Name */
+      name: string
+      /** Params Schema */
+      params_schema: {
+        [key: string]: unknown
+      }
+      /** Version */
+      version: number
+    }
+    /** TypesOut */
+    TypesOut: {
+      /** Builtin Rois */
+      builtin_rois: string[]
+      /** Locators */
+      locators: components['schemas']['TypeInfo'][]
+      /** Tools */
+      tools: components['schemas']['TypeInfo'][]
+    }
+    /** UserOut */
+    UserOut: {
+      /** Changed At */
+      changed_at: string | null
+      /** Has Password */
+      has_password: boolean
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: 'supervisor' | 'maintainer'
+    }
+    /** UsersOut */
+    UsersOut: {
+      /** Users */
+      users: components['schemas']['UserOut'][]
+    }
     /** ValidationError */
     ValidationError: {
       /** Context */
@@ -1228,6 +1951,21 @@ export interface components {
       msg: string
       /** Error Type */
       type: string
+    }
+    /** VersionInfo */
+    VersionInfo: {
+      /** Active */
+      active: boolean
+      /** Author */
+      author: string
+      /** Created At */
+      created_at: string
+      /** Notes */
+      notes: string
+      /** Parent Version */
+      parent_version: number | null
+      /** Version */
+      version: number
     }
     /** WhoAmI */
     WhoAmI: {
@@ -1264,6 +2002,162 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['AboutOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  audit: {
+    parameters: {
+      query?: {
+        kind?: string | null
+        job_id?: string | null
+        limit?: number
+        offset?: number
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AuditOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  audit_csv: {
+    parameters: {
+      query?: {
+        kind?: string | null
+        job_id?: string | null
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+          'text/csv': unknown
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_backups: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BackupsOut']
         }
       }
       /** @description needs a login */
@@ -1414,6 +2308,112 @@ export interface operations {
       }
     }
   }
+  apply_camera: {
+    parameters: {
+      query?: {
+        wait_s?: number
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          [key: string]: unknown
+        }
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CameraStateOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  get_camera: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CameraStateOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   collection: {
     parameters: {
       query?: never
@@ -1451,6 +2451,117 @@ export interface operations {
       }
       /** @description needs another role */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  dataset: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatasetOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  export_dataset: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DatasetExportBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatasetExportOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
         headers: {
           [name: string]: unknown
         }
@@ -1698,6 +2809,68 @@ export interface operations {
       }
     }
   }
+  create_job: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SavedVersion']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
   import_file: {
     parameters: {
       query?: never
@@ -1747,6 +2920,370 @@ export interface operations {
       }
       /** @description Request Entity Too Large */
       413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  test_draft: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DraftTestBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DraftTestOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  validate_draft: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DraftCheckOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  job_detail: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['JobDetailOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  duplicate_job: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DuplicateBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SavedVersion']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  save_version: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SavedVersion']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  job_version: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+        version: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['JobVersionOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -1839,6 +3376,69 @@ export interface operations {
       }
     }
   }
+  diff_versions: {
+    parameters: {
+      query: {
+        against: number
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+        version: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DiffOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   export_job: {
     parameters: {
       query?: never
@@ -1848,6 +3448,69 @@ export interface operations {
       path: {
         job_id: string
         version: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+          'application/octet-stream': unknown
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  job_file: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+        version: number
+        path: string
       }
       cookie?: never
     }
@@ -2006,6 +3669,130 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  capture_reference: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReferenceBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReferenceOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  capture_case: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReferenceCaseBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReferenceCaseOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
         }
       }
     }
@@ -2745,6 +4532,55 @@ export interface operations {
       }
     }
   }
+  list_types: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TypesOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   trigger: {
     parameters: {
       query?: never
@@ -2788,6 +4624,177 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  list_users: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UsersOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  revoke_sessions: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RevokedOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  set_password: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        role: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserOut']
+        }
+      }
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }

@@ -30,6 +30,50 @@ Vision Station is not built around any product. Each customer project (for examp
 
 Python 3.12, OpenCV, ONNX Runtime (CPU, OpenVINO on Intel), FastAPI, SQLite, a local web UI in Edge kiosk mode, packaged as a Windows service with PyInstaller and Inno Setup. Only permissive licenses ship in the product (no Ultralytics/AGPL).
 
+## Run everything (quick start)
+
+**Needs:** [uv](https://docs.astral.sh/uv/) (installs Python 3.12 by itself) and **Node 24 LTS** (only to build the screens; `frontend/.nvmrc`). On Windows: `winget install astral-sh.uv` and `winget install OpenJS.NodeJS.LTS`.
+
+**1. Install and build (once, and after each `git pull`)**
+
+```bash
+uv sync                      # Python and the dependencies; on Windows with the C920: uv sync --extra uvc
+cd frontend && npm ci && npm run build && cd ..     # the web interface, into frontend/dist/
+```
+
+**2. Prepare a data folder (once)**
+
+```bash
+# with the C920 (Windows):
+uv run python scripts/setup_bench.py --name C920 --exposure-us 33000
+# without a camera (any OS): a folder with a few PNG/JPG pictures plays as the camera
+uv run python scripts/setup_bench.py --folder path/to/pictures
+
+uv run python scripts/set_password.py maintainer      # asks for the password (8+ characters)
+uv run python scripts/set_password.py supervisor
+```
+
+`setup_bench.py` writes `bench_data/system/system.yaml` (the camera) and creates and activates a code-reading job. Use `--data <folder>` on both scripts for another folder.
+
+**3. Run**
+
+```bash
+uv run vision-station --data bench_data
+```
+
+Open http://127.0.0.1:8765: the operator screen. **Entrar** opens the Supervisor and Maintainer screens; the API's own page is http://127.0.0.1:8765/api/docs. Stop with Ctrl+C. Logs: `bench_data/logs/`.
+
+**4. Check that all is well**
+
+```bash
+uv run pytest                                  # Python tests
+cd frontend && npm test && npm run e2e         # interface tests (e2e once needs: npx playwright install chromium)
+```
+
+**Working on the screens without the bench:** `uv run python scripts/e2e_station.py --port 8765` (a simulated station with logins `supervisor` / `supervisor-pass` and `maintainer` / `maintainer-pass`) and, beside it, `cd frontend && npm run dev` (http://localhost:5173, reloads on save).
+
+**Another program using the vision system** (a station's own software): see [docs/integration.md](docs/integration.md).
+
 ## Development
 
 Needs [uv](https://docs.astral.sh/uv/). It installs Python 3.12 by itself.
@@ -184,7 +228,7 @@ uv run vision-station --data bench_data
 
 ### API
 
-Operator, no login: `GET /state`, `GET /result/last`, `GET /snapshot.jpg`, `POST /trigger`, `WS /live` (status, state and result events as JSON, JPEG frames as binary, at most 10 per second), `POST /results/{id}/incorrect`. Supervisor (`POST /login`, then `Authorization: Bearer ...`): jobs (list, verify and activate, export, import `.vjob`/`.vbak`), backups, results (browse, filter, images, CSV). Maintainer: collection mode, pause/resume/retry, overriding a failed verification, and the system configuration (`GET/PUT /system`, `POST /system/test-camera`, `POST /system/test-folder`). It accepts only local Host headers and refuses browser requests from other origins.
+Every path is under `/api`; the full list is in `/api/docs` and [docs/frontend.md](docs/frontend.md) §9. Operator, no login: `GET /state`, `GET /result/last`, `GET /snapshot.jpg`, `POST /trigger`, `WS /live` (status, state and result events as JSON, JPEG frames as binary, at most 10 per second), `POST /results/{id}/incorrect`. Supervisor (`POST /login`, then `Authorization: Bearer ...`): jobs (list, verify and activate, export, import `.vjob`/`.vbak`), backups, results (browse, filter, images, CSV). Maintainer: collection mode, pause/resume/retry, overriding a failed verification, the system configuration (`GET/PUT /system`, `POST /system/test-camera`, `POST /system/test-folder`), and the job editor's endpoints: tool and locator types with their parameter schemas (`GET /tools`), jobs as drafts (`POST /jobs/validate`, `POST /jobs`, `POST /jobs/{id}/versions`, `POST /jobs/{id}/duplicate`, `POST /jobs/test` on the live frame or an image, `GET /jobs/{id}/versions/{v}` and its files, `GET .../diff?against=`), camera tuning (`GET /camera/state`, `POST /camera/apply`, which pauses the station), reference image and reference-set cases (`POST /reference/capture`, `POST /reference/cases`), passwords and sessions (`/users`), audit (`GET /audit`, `/audit.csv`) and dataset (`GET /dataset`, `POST /dataset/export`). Other programs: `POST /inspections` and `GET /inspections/{id}` ([docs/integration.md](docs/integration.md)). It accepts only local Host headers and refuses browser requests from other origins.
 
 ## Related
 

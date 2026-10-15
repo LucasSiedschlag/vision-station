@@ -51,7 +51,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.folder:
-        driver, connection = "file", {"path": args.folder, "loop": True, "fps": 10}
+        driver, connection = "file", {"path": str(Path(args.folder).resolve()), "loop": True, "fps": 10}
     else:
         driver = "uvc"
         connection = {"device_path": args.path} if args.path else {"device_name": args.name} if args.name else {"device_index": args.index}

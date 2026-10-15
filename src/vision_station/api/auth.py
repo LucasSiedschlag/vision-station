@@ -14,7 +14,9 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 ROLES = ("operator", "supervisor", "maintainer")  # in increasing order of rights
 MIN_PASSWORD_LENGTH = 8
@@ -71,7 +73,7 @@ class AuthService:
             raise AuthError(f"the password needs at least {MIN_PASSWORD_LENGTH} characters")
         users = self._read()
         salt = os.urandom(16)
-        users[role] = {"salt": salt.hex(), "hash": _hash(password, salt).hex(), **_SCRYPT}
+        users[role] = {"salt": salt.hex(), "hash": _hash(password, salt).hex(), **_SCRYPT, "changed_at": datetime.now().astimezone().isoformat(timespec="seconds")}
         self._file.parent.mkdir(parents=True, exist_ok=True)
         tmp = self._file.with_name(f".{self._file.name}.{secrets.token_hex(4)}")
         tmp.write_text(json.dumps(users, indent=2), encoding="utf-8")
@@ -81,6 +83,29 @@ class AuthService:
 
     def has_password(self, role: str) -> bool:
         return role in self._read()
+
+    def users(self) -> list[dict[str, Any]]:
+        """The protected roles: whether a password is set and when it last changed. Never the hash."""
+        stored = self._read()
+        return [{"role": r, "has_password": r in stored, "changed_at": stored.get(r, {}).get("changed_at")} for r in ROLES[1:]]
+
+    def check_password(self, role: str, password: str) -> bool:
+        """Like a login (failures count towards the lock) but opens no session."""
+        try:
+            token, _ = self.login(role, password)
+        except LockedOut:
+            raise
+        except AuthError:
+            return False
+        self.logout(token)
+        return True
+
+    def revoke_all(self) -> int:
+        """End every session; returns how many there were."""
+        with self._lock:
+            n = len(self._sessions)
+            self._sessions = {}
+        return n
 
     def login(self, role: str, password: str) -> tuple[str, float]:
         """Returns (token, seconds the session lasts). Raises AuthError, or LockedOut after repeated failures."""

@@ -291,3 +291,213 @@ class CollectionOut(BaseModel):
     enabled: bool
     dataset_images: int
 
+
+
+# --- management: tools, jobs, camera, reference, users, audit, dataset (VIA-0026) ----------------------
+
+
+class TypeInfo(BaseModel):
+    """A tool or locator type the editor can offer, with the JSON Schema of its parameters."""
+
+    name: str
+    version: int
+    description: str
+    params_schema: dict[str, Any]
+
+
+class TypesOut(BaseModel):
+    tools: list[TypeInfo]
+    locators: list[TypeInfo]
+    builtin_rois: list[str]  # ROI names every job has without declaring them
+
+
+class VersionInfo(BaseModel):
+    version: int
+    created_at: str
+    author: str
+    notes: str
+    parent_version: int | None = None
+    active: bool
+
+
+class JobDetailOut(BaseModel):
+    id: str
+    name: str
+    description: str
+    versions: list[VersionInfo]  # newest first
+
+
+class JobFileOut(BaseModel):
+    path: str
+    size: int
+    sha256: str
+
+
+class JobVersionOut(BaseModel):
+    """One saved version, whole: what the editor opens."""
+
+    id: str
+    version: int
+    job: dict[str, Any]  # job.yaml as JSON
+    profile: dict[str, Any]  # the camera profile as JSON
+    files: list[JobFileOut]  # the other files (reference, templates, models, reference set)
+    reference: dict[str, Any] | None = None  # reference/reference.meta.yaml, when there is one
+    expected: dict[str, Any] | None = None  # tests/expected.yaml, when there is one
+
+
+class JobDraft(BaseModel):
+    """A job being edited. Identity, version, author and date are set by the server on save."""
+
+    job: dict[str, Any]
+    profile: dict[str, Any]
+    base: ActiveRef | None = None  # copy the other files from this saved version
+    add_files: dict[str, str] = {}  # path -> base64 content (added or replaced)
+    remove_files: list[str] = []
+    notes: Annotated[str, Field(max_length=500)] = ""
+
+
+class DraftCheckOut(BaseModel):
+    ok: bool
+    message: str | None = None  # Portuguese, for the whole draft
+    fields: dict[str, str] = {}  # path.to.field -> message
+
+
+class SavedVersion(BaseModel):
+    id: str
+    version: int
+
+
+class DuplicateBody(BaseModel):
+    version: Annotated[int, Field(ge=1)]
+    name: Annotated[str, Field(min_length=1, max_length=120)]
+
+
+class DraftTestBody(BaseModel):
+    draft: JobDraft
+    image: str | None = None  # base64 PNG or JPEG; None: the camera's newest frame
+
+
+class RegionOut(BaseModel):
+    tool: str
+    roi: str
+    rect: list[int]  # x0, y0, x1, y1 in pixels of the frame
+    passed: bool
+
+
+class DraftTestOut(BaseModel):
+    result: ResultOut
+    regions: list[RegionOut]
+    anchor: list[float] | None = None  # x0, y0, x1, y1 as fractions of the frame
+    tools: dict[str, Any]  # each tool's details (measures, codes read, matches)
+    timings: dict[str, Any]
+    width: int
+    height: int
+    overlay: str  # base64 JPEG of the frame with the regions drawn
+
+
+class DiffOut(BaseModel):
+    id: str
+    version: int
+    against: int
+    diff: str  # unified diff of job.yaml and the camera profile
+
+
+class SettingResult(BaseModel):
+    status: str  # applied, not_supported, out_of_range, failed...
+    detail: str = ""
+
+
+class CameraStateOut(BaseModel):
+    connected: bool
+    last_error: str | None = None
+    profile: dict[str, Any] | None = None  # the profile in use
+    applied: bool  # the profile in use was written to the camera
+    settings: dict[str, SettingResult]  # per setting, from the last write
+    station_paused: bool
+
+
+class ReferenceBody(BaseModel):
+    image: str | None = None  # base64 PNG or JPEG; None: the camera's newest frame
+
+
+class ReferenceOut(BaseModel):
+    files: dict[str, str]  # path -> base64, to add to the draft (reference image and its measures)
+    brightness: float
+    sharpness: float
+    width: int
+    height: int
+
+
+class ReferenceCaseBody(BaseModel):
+    draft: JobDraft
+    image: str | None = None
+    name: Annotated[str, Field(min_length=1, max_length=60, pattern=r"^[A-Za-z0-9_-]+$")]
+
+
+class ReferenceCaseOut(BaseModel):
+    path: str  # tests/images/<name>.png
+    image: str  # base64 PNG, to add to the draft
+    result: ResultOut  # what the draft says about it now: the editor confirms or corrects it as the expected one
+
+
+class BackupItem(BaseModel):
+    name: str
+    size: int
+    created_at: str
+
+
+class BackupsOut(BaseModel):
+    folder: str | None
+    backups: list[BackupItem]  # newest first
+
+
+class UserOut(BaseModel):
+    role: Literal["supervisor", "maintainer"]
+    has_password: bool
+    changed_at: str | None = None
+
+
+class UsersOut(BaseModel):
+    users: list[UserOut]
+
+
+class PasswordBody(BaseModel):
+    password: Annotated[str, Field(min_length=8, max_length=200)]
+    current_password: str | None = None  # a supervisor changing their own password confirms the old one
+
+
+class RevokedOut(BaseModel):
+    revoked: int
+
+
+class AuditEvent(BaseModel):
+    at: str
+    kind: str
+    data: dict[str, Any]
+
+
+class AuditOut(BaseModel):
+    events: list[AuditEvent]  # newest first
+    total: int
+
+
+class DatasetJob(BaseModel):
+    job_id: str
+    name: str
+    collecting: bool
+    images: int
+
+
+class DatasetOut(BaseModel):
+    jobs: list[DatasetJob]
+    total: int
+
+
+class DatasetExportBody(BaseModel):
+    job_id: str | None = None  # None: every job
+
+
+class DatasetExportOut(BaseModel):
+    dataset_id: str
+    folder: str
+    count: int

@@ -35,6 +35,7 @@ from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
 from vision_station.api.inspections import InspectionRegistry, Requested
+from vision_station.api.manage import add_management_routes
 from vision_station.cameras import DRIVERS
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
 from vision_station.station import Acquisition, StationController, StationEvent
@@ -627,6 +628,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 return m.CheckOut(ok=True, message=f"É a câmera em uso pela estação e está mandando imagem de {w}×{h}", width=w, height=h)
             return m.CheckOut(ok=False, message="É a câmera em uso pela estação e ela não está mandando imagem" + (f": {acq.last_error}" if acq.last_error else ""))
         return m.CheckOut(**vars(check_camera(CameraSettings.model_validate(body.model_dump()))))
+
+    add_management_routes(api, deps, need, Problem, _result)
 
     @api.get("/{rest:path}", include_in_schema=False)
     def unknown_api(rest: str) -> Response:
