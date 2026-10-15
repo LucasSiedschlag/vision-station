@@ -281,6 +281,7 @@ Jobs                                   [Importar arquivo]  [Fazer backup]  [Back
 - **Backup:** "Fazer backup" writes to the configured folder and shows name and size; "Backups…" lists the folder with download; restore = import of a `.vbak`.
 - States: loading skeleton rows; empty ("Nenhum job ainda…"); import error with the server's reason; offline.
 - Data: `GET /api/jobs`, `GET /api/jobs/{id}`, `POST /api/jobs/{id}/versions/{v}/activate`, `GET …/export`, `POST /api/jobs/import`, `POST /api/backup`, `GET /api/backup`.
+- **Built (VIA-0027, 15/10/2026):** `/jobs` (list, row menu, import, backup, backups with download, new job and edit for the maintainer) and `/jobs/:id` (versions newest first with notes and parent; activate, export, compare, open in editor, duplicate). Differences from the sketch above: activating is one call that verifies and activates, and a failed verification opens the report with the maintainer's override; the import does not preview the file before storing it (it only adds versions, never activates or replaces), it shows what was added afterwards. Exports and backups are downloaded with the login (`src/api/download.ts`).
 
 ### 7.3 Job editor (`/jobs/:id/edit`, maintainer) and Camera setup (`/camera`)
 

@@ -71,6 +71,7 @@
   /* widths of overlays: never wider than the screen */
   --width-dialog: min(32rem, calc(100vw - 2rem));
   --width-confirm: min(30rem, calc(100vw - 2rem));
+  --width-wide: min(48rem, calc(100vw - 2rem)); /* dialogs with a table or a diff */
   --width-sheet: min(34rem, 100vw);
   --width-toast: min(24rem, calc(100vw - 2rem));
   --width-side: clamp(22rem, 34vw, 40rem); /* the verdict column of the operator screen */
@@ -84,6 +85,9 @@
 }
 @utility w-confirm {
   width: var(--width-confirm);
+}
+@utility w-wide {
+  width: var(--width-wide);
 }
 @utility w-sheet {
   width: var(--width-sheet);

@@ -1323,12 +1323,16 @@ export interface components {
     }
     /** JobListItem */
     JobListItem: {
+      /** Author */
+      author: string
       /** Id */
       id: string
       /** Latest */
       latest: number
       /** Name */
       name: string
+      /** Updated At */
+      updated_at: string
       /** Versions */
       versions: number[]
     }

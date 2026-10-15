@@ -176,6 +176,8 @@ class JobListItem(BaseModel):
     name: str
     versions: list[int]
     latest: int
+    updated_at: str  # when the latest version was saved
+    author: str  # who saved it
 
 
 class ActiveRef(BaseModel):

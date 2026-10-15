@@ -205,7 +205,7 @@ describe('login', () => {
       within(nav)
         .getAllByRole('link')
         .map((l) => l.textContent),
-    ).toEqual(['Estação', 'Sobre'])
+    ).toEqual(['Estação', 'Jobs', 'Sobre'])
     expect(screen.getByRole('button', { name: 'Conta: Supervisor' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Entrar' })).not.toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Estado do sistema' })).toBeInTheDocument() // the strip is now in the shell footer, once

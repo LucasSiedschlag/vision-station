@@ -1025,6 +1025,10 @@
       },
       "JobListItem": {
         "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1037,6 +1041,10 @@
             "title": "Name",
             "type": "string"
           },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
           "versions": {
             "items": {
               "type": "integer"
@@ -1045,7 +1053,7 @@
             "type": "array"
           }
         },
-        "required": ["id", "name", "versions", "latest"],
+        "required": ["id", "name", "versions", "latest", "updated_at", "author"],
         "title": "JobListItem",
         "type": "object"
       },

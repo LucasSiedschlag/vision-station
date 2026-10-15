@@ -443,7 +443,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
         for job_id in deps.jobs.job_ids():
             latest = deps.jobs.latest(job_id)
             info = deps.jobs.load(JobRef(job_id, latest)).job.job  # type: ignore[arg-type]
-            out.append(m.JobListItem(id=job_id, name=info.name, versions=deps.jobs.versions(job_id), latest=latest))  # type: ignore[arg-type]
+            out.append(m.JobListItem(id=job_id, name=info.name, versions=deps.jobs.versions(job_id), latest=latest, updated_at=info.created_at.isoformat(), author=info.author))  # type: ignore[arg-type]
         return m.JobsOut(jobs=out, active=m.ActiveRef(id=active.job_id, version=active.version) if active else None)
 
     @api.post("/jobs/{job_id}/versions/{version}/activate", response_model=m.ActivateOut, responses={409: {"model": m.Problem}, 404: {"model": m.Problem}})

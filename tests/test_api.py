@@ -258,7 +258,7 @@ def test_list_activate_export_and_import_jobs(env, tmp_path):
     sup = login(env)
     ref = env.jobs.save(job_bundle())
     listing = env.client.get("/api/jobs", headers=sup).json()
-    assert listing["jobs"] == [{"id": ref.job_id, "name": "Etiqueta de lote", "versions": [1], "latest": 1}] and listing["active"] is None
+    assert listing["jobs"] == [{"id": ref.job_id, "name": "Etiqueta de lote", "versions": [1], "latest": 1, "updated_at": "2026-10-02T15:40:00-03:00", "author": "lucas"}] and listing["active"] is None
 
     r = env.client.post(f"/api/jobs/{ref.job_id}/versions/1/activate", headers=sup, json={})
     assert r.status_code == 200 and r.json()["verified"] is True

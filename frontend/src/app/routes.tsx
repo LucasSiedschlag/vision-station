@@ -1,4 +1,4 @@
-import { Info, MonitorPlay, type LucideIcon } from 'lucide-react'
+import { Info, Layers, MonitorPlay, type LucideIcon } from 'lucide-react'
 import { lazy, Suspense, type ReactNode } from 'react'
 import type { RouteObject } from 'react-router'
 import type { Role } from '@/api/session'
@@ -13,6 +13,10 @@ import { RootLayout } from './RootLayout'
 const AboutPage = lazy(() =>
   import('@/features/about/AboutPage').then((m) => ({ default: m.AboutPage })),
 )
+const JobsPage = lazy(() =>
+  import('@/features/jobs/JobsPage').then((m) => ({ default: m.JobsPage })),
+)
+const JobPage = lazy(() => import('@/features/jobs/JobPage').then((m) => ({ default: m.JobPage })))
 const DesignPage = lazy(() =>
   import('@/features/design/DesignPage').then((m) => ({ default: m.DesignPage })),
 )
@@ -36,6 +40,17 @@ export const screens: Screen[] = [
     element: <OperatorPage />,
   },
   {
+    path: '/jobs',
+    label: text.nav.jobs,
+    icon: Layers,
+    min: 'supervisor',
+    element: (
+      <Suspense fallback={null}>
+        <JobsPage />
+      </Suspense>
+    ),
+  },
+  {
     path: '/about',
     label: text.nav.about,
     icon: Info,
@@ -46,6 +61,10 @@ export const screens: Screen[] = [
       </Suspense>
     ),
   },
+]
+
+const inner: { path: string; min: Role; element: ReactNode }[] = [
+  { path: '/jobs/:id', min: 'supervisor', element: <JobPage /> },
 ]
 
 export const routes: RouteObject[] = [
@@ -61,6 +80,15 @@ export const routes: RouteObject[] = [
           ) : (
             <RequireRole min={screen.min}>{screen.element}</RequireRole>
           ),
+      })),
+      // screens reached from another screen, not from the menu
+      ...inner.map((route): RouteObject => ({
+        path: route.path,
+        element: (
+          <RequireRole min={route.min}>
+            <Suspense fallback={null}>{route.element}</Suspense>
+          </RequireRole>
+        ),
       })),
       {
         path: '/design',

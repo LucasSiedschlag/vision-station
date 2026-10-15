@@ -160,7 +160,10 @@ def main() -> int:
         outcome["next"] = Outcome.PASS
         return {"ok": True}
 
-    controller.start(demo_job())
+    jobs = deps.jobs
+    ref = jobs.save(demo_job())  # in the store too, so the Jobs screen has something to list
+    jobs.set_active(ref)
+    controller.start(jobs.load(ref))
     acq.start()
     threading.Thread(target=controller.run, daemon=True).start()
     try:

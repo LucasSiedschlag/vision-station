@@ -85,7 +85,7 @@ test('without a connection the screen says so instead of showing an old verdict'
 })
 
 test('a wrong address says so and offers the way back', async ({ page }) => {
-  await page.goto('/jobs/abc')
+  await page.goto('/nao-existe/abc')
   await expect(page.getByRole('heading', { name: 'Página não encontrada' })).toBeVisible()
   await page.getByRole('link', { name: 'Voltar para a estação' }).click()
   await expect(page).toHaveURL('/')
