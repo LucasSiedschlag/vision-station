@@ -25,5 +25,6 @@ export default defineConfig({
     testTimeout: 20_000, // whole-app tests mount the router, Radix and the query cache
 
     exclude: ['e2e/**', 'node_modules/**'],
+    env: { TZ: 'America/Sao_Paulo' }, // dates show in the station's time zone, the same on every machine and in CI
   },
 })
