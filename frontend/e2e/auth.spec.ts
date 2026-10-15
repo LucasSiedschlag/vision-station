@@ -14,7 +14,14 @@ test('a wrong password says so; the right one opens the menu of the role; logout
   await dialog.getByLabel('Senha').fill('supervisor-pass')
   await dialog.getByRole('button', { name: 'Entrar' }).click()
   const nav = page.getByRole('navigation', { name: 'Menu' })
-  await expect(nav.getByRole('link')).toHaveText(['Estação', 'Jobs', 'Sobre'])
+  await expect(nav.getByRole('link')).toHaveText([
+    'Estação',
+    'Jobs',
+    'Resultados',
+    'Auditoria',
+    'Acessos',
+    'Sobre',
+  ])
   await page.getByRole('button', { name: 'Conta: Supervisor' }).click()
   await page.getByRole('menuitem', { name: 'Sair' }).click()
   await expect(nav).toBeHidden()

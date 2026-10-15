@@ -26,7 +26,9 @@ describe('the operator screen, without a login', () => {
   it('stands alone as a kiosk: job, lock button, the verdict, counters, the strip, and no menu', () => {
     setLive({ counters: { PASS: 2, FAIL: 1, ERROR: 0, total: 3 } })
     renderApp('/')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tampa azul — etiqueta de lote')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Tampa azul — etiqueta de lote',
+    )
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
     expect(screen.getByRole('status', { name: 'Resultado' })).toHaveTextContent('Aguardando peça')
     expect(screen.getByText('Hoje')).toBeInTheDocument()
@@ -205,7 +207,7 @@ describe('login', () => {
       within(nav)
         .getAllByRole('link')
         .map((l) => l.textContent),
-    ).toEqual(['Estação', 'Jobs', 'Sobre'])
+    ).toEqual(['Estação', 'Jobs', 'Resultados', 'Auditoria', 'Acessos', 'Sobre'])
     expect(screen.getByRole('button', { name: 'Conta: Supervisor' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Entrar' })).not.toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Estado do sistema' })).toBeInTheDocument() // the strip is now in the shell footer, once

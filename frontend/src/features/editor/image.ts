@@ -1,6 +1,7 @@
-import { ApiError } from '@/api/client'
-import { useSession } from '@/api/session'
+import { fetchBlob } from '@/api/download'
 import type { Rect } from './geometry'
+
+export { fetchBlob }
 
 /** An image the editor draws on: a URL the <img> can show, and its size in pixels. */
 export interface EditorImage {
@@ -9,16 +10,6 @@ export interface EditorImage {
   height: number
   /** where it came from: the job's reference image (full size) or a live snapshot (reduced) */
   source: 'reference' | 'live'
-}
-
-export async function fetchBlob(path: string): Promise<Blob> {
-  const { token } = useSession.getState()
-  const response = await fetch(`${location.origin}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  if (!response.ok)
-    throw new ApiError(response.status, (await response.json().catch(() => undefined)) as never)
-  return response.blob()
 }
 
 export function base64ToBlob(b64: string, type = 'image/png'): Blob {

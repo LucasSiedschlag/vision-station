@@ -1,4 +1,14 @@
-import { Info, Layers, MonitorPlay, type LucideIcon } from 'lucide-react'
+import {
+  Database,
+  Info,
+  KeyRound,
+  Layers,
+  ListChecks,
+  MonitorPlay,
+  ScrollText,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react'
 import { lazy, Suspense, type ReactNode } from 'react'
 import type { RouteObject } from 'react-router'
 import type { Role } from '@/api/session'
@@ -19,6 +29,21 @@ const JobsPage = lazy(() =>
 const JobPage = lazy(() => import('@/features/jobs/JobPage').then((m) => ({ default: m.JobPage })))
 const EditorPage = lazy(() =>
   import('@/features/editor/EditorPage').then((m) => ({ default: m.EditorPage })),
+)
+const ResultsPage = lazy(() =>
+  import('@/features/results/ResultsPage').then((m) => ({ default: m.ResultsPage })),
+)
+const DatasetPage = lazy(() =>
+  import('@/features/dataset/DatasetPage').then((m) => ({ default: m.DatasetPage })),
+)
+const AuditPage = lazy(() =>
+  import('@/features/audit/AuditPage').then((m) => ({ default: m.AuditPage })),
+)
+const AccessPage = lazy(() =>
+  import('@/features/access/AccessPage').then((m) => ({ default: m.AccessPage })),
+)
+const SettingsPage = lazy(() =>
+  import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
 const DesignPage = lazy(() =>
   import('@/features/design/DesignPage').then((m) => ({ default: m.DesignPage })),
@@ -50,6 +75,61 @@ export const screens: Screen[] = [
     element: (
       <Suspense fallback={null}>
         <JobsPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/results',
+    label: text.nav.results,
+    icon: ListChecks,
+    min: 'supervisor',
+    element: (
+      <Suspense fallback={null}>
+        <ResultsPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/dataset',
+    label: text.nav.dataset,
+    icon: Database,
+    min: 'maintainer',
+    element: (
+      <Suspense fallback={null}>
+        <DatasetPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/audit',
+    label: text.nav.audit,
+    icon: ScrollText,
+    min: 'supervisor',
+    element: (
+      <Suspense fallback={null}>
+        <AuditPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/access',
+    label: text.nav.access,
+    icon: KeyRound,
+    min: 'supervisor',
+    element: (
+      <Suspense fallback={null}>
+        <AccessPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/settings',
+    label: text.nav.settings,
+    icon: Settings,
+    min: 'maintainer',
+    element: (
+      <Suspense fallback={null}>
+        <SettingsPage />
       </Suspense>
     ),
   },

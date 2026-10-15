@@ -343,7 +343,9 @@ Purpose: the installation's configuration (system configuration, architecture §
 - Fields that need a restart are marked, and a **Reiniciar o sistema** banner appears after saving them. Saving shows what changed and asks to confirm.
 - Data: `GET/PUT /api/system`, `POST /api/system/test-camera`, `POST /api/system/test-folder`.
 
-### 7.7 Access (`/access`, maintainer)
+- **Built (VIA-0028, 15/10/2026):** results (`/results`: period, job, result and "só incorretos" in the URL; 100 per page; CSV of the filtered set; side panel with the original or marked image, scores, timings, mark as incorrect, download), dataset (`/dataset`: collection switch per job, counts, export per job or all to `<data>/exports/`; no image grid yet), settings (`/settings`: station, camera by driver with **Testar câmera**, recording, backup with **Testar pasta**, network; sections that need a restart are announced). Fields that need a restart are listed after saving, not marked one by one.
+
+### 7.7 Access (`/access`, supervisor+)
 
 - Table of the two protected roles (Supervisor, Mantenedor): whether a password is set, last change; **Definir/trocar senha** dialog (twice, minimum 8 characters, strength hint, never shown again); **Encerrar todas as sessões**.
 - A supervisor can change only their own password; the maintainer both.
@@ -353,6 +355,8 @@ Purpose: the installation's configuration (system configuration, architecture §
 
 - Table of events (when, what — activate, activate with override, import, backup, password change, settings change — job and version, role, reason); filters by kind and job; detail drawer with the raw record; **Exportar CSV**.
 - Data: `GET /api/audit`.
+
+- **Built (VIA-0028):** `/access` (both roles listed; a supervisor changes only their own password, confirming the current one; a new password ends that role's sessions; the maintainer ends every session) and `/audit` (events in plain words, filter by kind, 100 per page, CSV; no detail drawer yet: the details are on the row).
 
 ### 7.9 About (`/about`, supervisor+)
 

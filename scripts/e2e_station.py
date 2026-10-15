@@ -32,6 +32,7 @@ from vision_station.records import ResultRecorder, ResultStore
 from vision_station.results import InspectionResult, Outcome
 from vision_station.station import Acquisition, StationController
 from vision_station.store import JobBundle, JobStore
+from vision_station.system import SystemConfig, SystemService
 
 
 def scene(object_x: int | None) -> np.ndarray:
@@ -136,7 +137,7 @@ def main() -> int:
     results = ResultStore(data)
     acq = Acquisition(camera, {})
     controller = StationController(acq, inspect, absent_s=0.3)
-    deps = ApiDeps(controller=controller, acquisition=acq, jobs=JobStore(data), results=results, auth=auth, inspect=inspect, recorder=ResultRecorder(results), backup_dir=data / "backups")
+    deps = ApiDeps(controller=controller, acquisition=acq, jobs=JobStore(data), results=results, auth=auth, inspect=inspect, recorder=ResultRecorder(results), backup_dir=data / "backups", system=SystemService(data, SystemConfig()))
     controller._on_event = make_event_handler(deps)
     app = create_app(deps)
 
