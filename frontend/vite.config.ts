@@ -11,8 +11,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: {
-    // the Python package serves this folder; it is not committed (CI builds it, the installer includes it)
-    outDir: '../src/vision_station/web/dist',
+    // the API serves this folder (frontend/dist); it is not committed: CI builds it and the installer copies it
+    outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
   },

@@ -565,14 +565,14 @@ Models are added only where the prototype shows the classical checks can't separ
 
 1. **Stack.** React, TypeScript (strict), Vite, Tailwind CSS with design tokens, shadcn/ui components on Radix primitives, lucide icons, IBM Plex fonts self-hosted, React Router, TanStack Query (REST), Zustand (live state), React Hook Form + Zod, TanStack Table. All permissive licences (TD-18); axe-core (MPL-2.0) only in tests.
 2. **API contract.** All API paths move under `/api` (`/api/live` for the WebSocket); every endpoint has Pydantic request and response models; TypeScript types and the client are **generated** from the OpenAPI document and CI fails if they are stale.
-3. **Serving.** `npm run build` writes to `src/vision_station/web/dist/`; the API serves it with a fallback to `index.html`, hashed assets cached as immutable, a strict Content-Security-Policy. The build is not committed; CI builds it and the installer includes it. Node is needed to build, never to run.
+3. **Serving.** `npm run build` writes to `frontend/dist/`; the API serves it with a fallback to `index.html`, hashed assets cached as immutable, a strict Content-Security-Policy. The build is not committed; CI builds it and the installer includes it. Node is needed to build, never to run.
 4. **Roles decide what is shown, the server decides what is allowed** (FR-UI-6): the same permission table in the router and on every endpoint.
 5. **Forms come from the tools.** The API lists every tool type with the JSON Schema of its parameters and the editor draws the form from it, so a new tool needs no screen code (FR-PLT-2).
 6. **Design system.** One token set (8 neutrals, 4 status hues, 8 type sizes, 4 px grid, 2 radii plus pill), dark default and light, contrast checked; colour means status only and always comes with an icon and a word (NFR-USA-2).
 7. **Quality gates.** Component and end-to-end tests (Playwright against the demo station), axe with zero serious violations, a size budget in CI, and a definition of done that includes every state and a look in a real browser.
 
 **Consequences.**
-- The prototype (`src/vision_station/web/`) stays until the new operator screen reaches parity (VIA-0033), then is deleted. TD-11's "no framework" and the Preact + htm choice are superseded.
+- The prototype was deleted when the new operator screen reached parity (VIA-0033), and nothing of the interface lives in the Python package. TD-11's "no framework" and the Preact + htm choice are superseded.
 - A Node toolchain enters CI and the build of the installer. The lockfile pins every dependency; updating means re-running the tests.
 - The server needs the work in VIA-0031 and VIA-0026 (prefix, response models, new endpoints) before the screens beyond the operator screen can be built.
 - The region editor (drawing on a canvas, with undo, zoom and keyboard control) is still the largest single UI task.

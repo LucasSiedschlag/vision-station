@@ -494,13 +494,13 @@ Run locally: `cd frontend && npm run build && npm run e2e` (starts the simulated
 
 ## 14. Build, serving and CI
 
-- **Node** is needed to build, not to run: `frontend/` builds with `npm run build` into `src/vision_station/web/dist/`; the Python package serves it (and includes it in the wheel and in the PyInstaller bundle, task VIA-0017). The built files are **not** committed; CI builds them and the installer includes them.
+- **Node** is needed to build, not to run: `frontend/` builds with `npm run build` into `frontend/dist/`; the API serves that folder (`VISION_STATION_WEB` points it elsewhere), and the installer copies it next to the program (task VIA-0017). Nothing of the interface lives inside the Python package. The built files are **not** committed; CI builds them and the installer includes them.
 - **Dev:** `npm run dev` (Vite, hot reload, port 5173) with a proxy of `/api` and the WebSocket to `127.0.0.1:8765`; run `uv run python scripts/demo_station.py --port 8765` next to it.
 - **Commands** (in `frontend/`): `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run gen:api` (regenerates `src/api/openapi.json` and `schema.d.ts` from the API; commit both), `npm run build`, `npm run size`.
 - **Without a build:** the server answers `/` with a clear page ("A interface não foi compilada. Rode `npm run build` em `frontend/`.") and keeps the API working.
 - **Serving:** `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`; `index.html` with `no-cache`; fallback for client routes. CSP becomes stricter than the prototype's: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'` (for the style attributes Radix sets), `img-src 'self' blob: data:`, `connect-src 'self'` plus the same-host WebSocket, `frame-ancestors 'none'`. No inline script, so the import-map hash of the prototype goes away.
 - **CI** (GitHub Actions, Windows and Linux): `npm ci`, lint, typecheck, unit and component tests, API contract check, build, size budget, then the Python tests against the built files, then Playwright (Linux).
-- **Prototype removal:** done in VIA-0033 (the Preact files and `tests/web/` are gone).
+- **Prototype removal:** done in VIA-0033 (the Preact files and `tests/web/` are gone); `src/vision_station/web/` is gone too, the interface lives only in `frontend/`.
 
 ---
 

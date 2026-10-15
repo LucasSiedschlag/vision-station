@@ -122,7 +122,7 @@ To try it without the bench, on any computer: build the interface once (below), 
 cd frontend
 npm ci
 npm run dev        # http://localhost:5173, proxies /api to 127.0.0.1:8765 (run scripts/demo_station.py --port 8765 beside it)
-npm run build      # writes src/vision_station/web/dist/, which the API serves
+npm run build      # writes frontend/dist/, which the API serves (set VISION_STATION_WEB to serve another folder)
 npm test           # unit and component tests;  npm run lint;  npm run typecheck
 npx playwright install chromium   # once
 npm run e2e        # end-to-end tests and accessibility (axe) against scripts/e2e_station.py; needs `npm run build` first

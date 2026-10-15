@@ -11,6 +11,7 @@ import asyncio
 import base64
 import hashlib
 import io
+import os
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -39,7 +40,15 @@ from vision_station.tools import tool_types
 from vision_station.verification import VerificationFailed, activate, verify_stored_job
 from vision_station.verification.verify import Inspector
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+
+
+def default_web_dist() -> Path:
+    """Where the built interface is: `VISION_STATION_WEB` if set (an installed program), else `frontend/dist`
+    of this checkout. The interface lives only in `frontend/`; nothing of it is kept inside the Python package."""
+    configured = os.environ.get("VISION_STATION_WEB")
+    return Path(configured) if configured else Path(__file__).resolve().parents[3] / "frontend" / "dist"
+
+
 MAX_UPLOAD = 256 * 1024 * 1024
 _BACKUP_NAME = re.compile(r"backup_[0-9_-]+\.vbak")
 _DEFAULT_CODES = {400: "bad_request", 401: "login_required", 403: "forbidden", 404: "not_found", 409: "conflict", 413: "too_large", 422: "validation_error", 429: "locked", 503: "unavailable"}
@@ -59,7 +68,7 @@ class ApiDeps:
     inspect: Inspector
     recorder: ResultRecorder | None = None
     backup_dir: Path | None = None
-    web_dist: Path = WEB_DIR / "dist"  # the built interface (cd frontend && npm run build)
+    web_dist: Path = field(default_factory=default_web_dist)  # the built interface (cd frontend && npm run build)
     shift_start: Callable[[], datetime] = _start_of_today  # counters for "the current shift": since this moment
     frame_fps: float = 10.0  # the live view is reduced to at most this (NFR-PERF-4)
     frame_width: int = 960

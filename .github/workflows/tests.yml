@@ -57,4 +57,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist
-          path: src/vision_station/web/dist
+          path: frontend/dist

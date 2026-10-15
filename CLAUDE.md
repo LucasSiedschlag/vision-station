@@ -41,13 +41,13 @@ uv run pytest        # run the tests
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 ```
 
-Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `web/` (holds only the built interface, `web/dist/`, produced from `frontend/`, see `docs/frontend.md`, TD-20), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
+Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry, `code` tool), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR).
 
 Layout: `src/vision_station/` (platform, no customer words), `applications/<name>/` (jobs, reference images and notes of one application; first: `Customer`), `tests/`, `docs/`. CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 
 ## Chosen stack (TD-02..TD-18)
 
-Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `requests` Digest + ISAPI (Hikvision, no SDK) · ONNX Runtime CPU (OpenVINO on Intel) · FastAPI + Uvicorn (localhost) · web UI in Edge kiosk (React + TypeScript + Vite, built from `frontend/`) · SQLite · YAML + Pydantic · WinSW service · PyInstaller + Inno Setup · pytest.
+Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `requests` Digest + ISAPI (Hikvision, no SDK) · ONNX Runtime CPU (OpenVINO on Intel) · FastAPI + Uvicorn (localhost) · web UI in Edge kiosk (React + TypeScript + Vite, all of it in `frontend/`; the API serves `frontend/dist`) · SQLite · YAML + Pydantic · WinSW service · PyInstaller + Inno Setup · pytest.
 
 **Licensing is a hard constraint (NFR-LIC-1, TD-08, TD-18):** no AGPL/GPL in the shipped product. **Never use Ultralytics/YOLOv8/11.** RF-DETR only Nano–Large (XL/2XL are not Apache). Training stack (CVAT, Supervision, Anomalib, PyTorch) stays offline and out of the install.
 

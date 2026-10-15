@@ -15,8 +15,6 @@ test_codes.html
 station_out/
 bench_data/
 
-# built web interface (CI builds it, the installer includes it)
-src/vision_station/web/dist/
 
 # output of the Playwright MCP plugin
 .playwright-mcp/

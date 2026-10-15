@@ -1,19 +1,19 @@
 [
   {
     "name": "initial JavaScript (the operator screen)",
-    "path": "../src/vision_station/web/dist/assets/index-*.js",
+    "path": "dist/assets/index-*.js",
     "limit": "150 kB",
     "gzip": true
   },
   {
     "name": "all JavaScript, including screens loaded on demand",
-    "path": "../src/vision_station/web/dist/assets/*.js",
+    "path": "dist/assets/*.js",
     "limit": "500 kB",
     "gzip": true
   },
   {
     "name": "styles",
-    "path": "../src/vision_station/web/dist/assets/*.css",
+    "path": "dist/assets/*.css",
     "limit": "40 kB",
     "gzip": true
   }

@@ -464,11 +464,11 @@ def test_the_built_interface_is_served_with_a_fallback_for_client_routes(env, tm
     assert "script-src 'self';" in csp and "sha256" not in csp  # a built page has no inline script
 
 
-@pytest.mark.skipif(not (Path(__file__).parent.parent / "src/vision_station/web/dist/index.html").is_file(), reason="the interface is not built (cd frontend && npm run build)")
+@pytest.mark.skipif(not (Path(__file__).parent.parent / "frontend/dist/index.html").is_file(), reason="the interface is not built (cd frontend && npm run build)")
 def test_the_real_build_is_served_by_the_api(env):
-    from vision_station.api.app import WEB_DIR
+    from vision_station.api.app import default_web_dist
 
-    env.deps.web_dist = WEB_DIR / "dist"
+    env.deps.web_dist = default_web_dist()
     client = TestClient(create_app(env.deps))
     html = client.get("/").text
     assets = re.findall(r'(?:src|href)="(/assets/[^"]+)"', html)
@@ -492,3 +492,12 @@ def test_about_is_for_supervisors_and_lists_the_tools_this_software_can_run(env)
     body = env.client.get("/api/about", headers=login(env)).json()
     assert body["job_format"] == 1 and body["version"]
     assert {"name": "code", "version": 1} in body["tools"]
+
+
+def test_the_built_interface_is_looked_for_in_frontend_dist_unless_told_otherwise(monkeypatch, tmp_path):
+    from vision_station.api.app import default_web_dist
+
+    monkeypatch.delenv("VISION_STATION_WEB", raising=False)
+    assert default_web_dist() == Path(__file__).parent.parent / "frontend" / "dist"
+    monkeypatch.setenv("VISION_STATION_WEB", str(tmp_path))
+    assert default_web_dist() == tmp_path
