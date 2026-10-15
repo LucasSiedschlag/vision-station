@@ -16,7 +16,7 @@ quality:
   brightness: {min: 90, max: 170}
   sharpness_min_ratio: 0.7
 geometry:
-  locator: {type: outline, version: 1, params: {min_area: 0.15}}
+  locator: {type: blob, version: 1, params: {mode: dark, min_area: 0.15}}
   rois:
     cap: {relative_to: anchor, rect: [0.30, 0.0, 0.70, 0.20]}
 tools:

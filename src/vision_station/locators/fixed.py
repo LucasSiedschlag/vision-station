@@ -8,6 +8,7 @@ from typing import Self
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from vision_station.jobfiles import JobFiles
 from vision_station.locators.base import Anchor, LocatorType, register
 
 
@@ -24,7 +25,7 @@ class FixedParams(BaseModel):
         return self
 
 
-def locate(frame: np.ndarray, params: FixedParams) -> Anchor:
+def locate(frame: np.ndarray, params: FixedParams, files: JobFiles) -> Anchor:
     return Anchor(rect=params.rect)
 
 

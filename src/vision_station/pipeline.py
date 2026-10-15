@@ -1,6 +1,6 @@
 """The inspection pipeline: frame in, PASS / FAIL / ERROR out (architecture §7.1, FR-INS-*).
 
-    quality gate -> locator -> regions -> every tool -> decision (all_pass)
+    brightness -> locator -> sharpness -> regions -> every tool -> decision (all_pass)
 
 It never raises and never answers PASS on doubt: a dark or blurred picture, an object not found, a region
 outside the picture, a tool that breaks or a job the software cannot run are all ERROR (FR-INS-6).
@@ -15,6 +15,7 @@ import cv2
 import numpy as np
 
 from vision_station.cameras import Frame
+from vision_station.jobfiles import JobFileError, JobFiles
 from vision_station.jobs import Job
 from vision_station.locators import Anchor, LocatorError, run_locator
 from vision_station.results import InspectionResult, Outcome
@@ -37,31 +38,37 @@ def _error(reason: str, started: float, timings: dict[str, Any]) -> InspectionRe
     return InspectionResult(Outcome.ERROR, reason, details={"timings": {**timings, "total": total}}, duration_s=total)
 
 
-def _quality_gate(bundle: JobBundle, image: np.ndarray) -> None:
+NOT_FOUND = "Objeto não encontrado na posição esperada"
+OUT_OF_FOCUS = "Imagem fora de foco, verificar a lente e a câmera"
+
+
+def _brightness_gate(bundle: JobBundle, image: np.ndarray) -> None:
     quality = bundle.job.quality
     level = metrics.brightness(image)
     if level < quality.brightness.min:
         raise _Stop("Imagem escura demais, verificar a iluminação")
     if level > quality.brightness.max:
         raise _Stop("Imagem clara demais, verificar a iluminação")
+
+
+def _sharp_enough(bundle: JobBundle, image: np.ndarray) -> bool:
     raw = bundle.extra.get(REFERENCE_META)
     if raw is None:
-        return  # a job without a reference has nothing to compare sharpness with; verification asks for it
+        return True  # a job without a reference has nothing to compare sharpness with; verification asks for it
     reference = parse_meta(raw).sharpness
-    if reference > 0 and metrics.sharpness(image) < quality.sharpness_min_ratio * reference:
-        raise _Stop("Imagem fora de foco, verificar a lente e a câmera")
+    return not (reference > 0 and metrics.sharpness(image) < bundle.job.quality.sharpness_min_ratio * reference)
 
 
-def _locate(job: Job, image: np.ndarray) -> Anchor | None:
+def _locate(job: Job, image: np.ndarray, files: JobFiles) -> Anchor | None:
     locator = job.geometry.locator
     if locator is None:
         return None
     try:
-        anchor = run_locator(locator.type, locator.version, image, locator.params)
-    except LocatorError as exc:
+        anchor = run_locator(locator.type, locator.version, image, locator.params, files)
+    except (LocatorError, JobFileError) as exc:
         raise _Stop(f"Localizador não pode rodar: {exc}") from exc
     if anchor is None:
-        raise _Stop("Objeto não encontrado na posição esperada")
+        raise _Stop(NOT_FOUND)
     return anchor
 
 
@@ -105,16 +112,29 @@ def inspect_job(bundle: JobBundle, frame: Frame) -> InspectionResult:
 
 def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, Any]) -> InspectionResult:
     job = bundle.job
+    files = JobFiles(bundle.extra)
     if not isinstance(image, np.ndarray) or image.ndim not in (2, 3) or image.size == 0:
         raise _Stop("Imagem inválida da câmera")
 
+    # Brightness first; then the locator, before sharpness: an empty station is also "not sharp", and
+    # "object not found" is the better reason for it. When both fail they cannot be told apart.
     t = time.perf_counter()
-    _quality_gate(bundle, image)
+    _brightness_gate(bundle, image)
     timings["quality"] = time.perf_counter() - t
 
     t = time.perf_counter()
-    anchor = _locate(job, image)
+    try:
+        anchor = _locate(job, image, files)
+    except _Stop as stop:
+        if str(stop) == NOT_FOUND and not _sharp_enough(bundle, image):
+            raise _Stop("Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera") from None
+        raise
     timings["locate"] = time.perf_counter() - t
+
+    t = time.perf_counter()
+    if not _sharp_enough(bundle, image):
+        raise _Stop(OUT_OF_FOCUS)
+    timings["quality"] += time.perf_counter() - t
 
     t_tools = time.perf_counter()
     scores: dict[str, float] = {}
@@ -127,8 +147,8 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         x0, y0, x1, y1 = px
         t = time.perf_counter()
         try:
-            result = run_tool(tool.type, tool.version, image[y0:y1, x0:x1], tool.params)
-        except ToolError as exc:
+            result = run_tool(tool.type, tool.version, image[y0:y1, x0:x1], tool.params, files)
+        except (ToolError, JobFileError) as exc:
             raise _Stop(f"Ferramenta '{tool.id}' não pode rodar: {exc}") from exc
         except Exception as exc:
             log.exception("tool %s failed", tool.id)

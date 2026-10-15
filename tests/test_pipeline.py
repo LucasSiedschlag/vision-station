@@ -103,11 +103,11 @@ def test_broken_tool_and_bad_score_are_errors():
     class P(BaseModel):
         pass
 
-    def boom(region, params):
+    def boom(region, params, files):
         raise RuntimeError("x")
 
     register(ToolType("test_boom", 1, P, boom))
-    register(ToolType("test_nan", 1, P, lambda r, p: ToolResult(True, float("nan"))))
+    register(ToolType("test_nan", 1, P, lambda r, p, f: ToolResult(True, float("nan"))))
     bundle = make_bundle()
     for name in ("test_boom", "test_nan"):
         job = bundle.job.model_dump(mode="json")

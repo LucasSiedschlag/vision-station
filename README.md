@@ -68,7 +68,17 @@ result = inspect_job(bundle, frame)          # never raises; any doubt is ERROR
 StationController(acq, inspect_job, on_event=ResultRecorder(store, overlay=draw_overlay))
 ```
 
-Order: quality gate (brightness range, sharpness vs. the reference) → locator (`geometry.locator`, e.g. `fixed`) → regions in pixels (relative to `frame` or `anchor`) → every tool in order → `all_pass`. The reason lists every tool that failed; `details` has the timings, the anchor and each region's rectangle.
+Order: brightness range → locator (`geometry.locator`) → sharpness vs. the reference → regions in pixels (relative to `frame` or `anchor`) → every tool in order → `all_pass`. The locator runs before the sharpness check so an empty station says "Objeto não encontrado", not "fora de foco". The reason lists every tool that failed; `details` has the timings, the anchor and each region's rectangle.
+
+Locators (`src/vision_station/locators/`):
+
+| Type | Finds the anchor by | Main parameters |
+|---|---|---|
+| `fixed` | a rectangle written in the job (a jig holds the object) | `rect` |
+| `template` | a taught picture inside the job, normalized correlation (light changes and shifts, not rotation or size) | `template` (path in the job), `search`, `min_score` |
+| `blob` | the largest region of a color, or darker / lighter than the background | `mode` (`color`, `dark`, `light`), `color`, `threshold`, `min_area`, `max_area`, `search` |
+
+Tools (`src/vision_station/tools/`): `code` (bar codes and 2D codes, above) and `color`: the fraction of the region in a color (HSV range, or a reference RGB with a ΔE distance), and optionally the coverage along `x` or `y` with the longest gap, e.g. `{id: faixa, type: color, version: 1, roi: seam, params: {hue: [170, 10], s_min: 100, v_min: 70, axis: x, min_coverage: 0.9, max_gap: 0.05}, reason_fail: "Faixa ausente em {missing:.0%} da emenda"}`. Files a tool or locator needs (a template) travel inside the job; a job without them is refused when loaded.
 
 ### Jobs, versions and backups
 

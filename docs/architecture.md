@@ -398,7 +398,8 @@ sequenceDiagram
 ```
 
 - **Fresh frame:** the controller asks for a frame **captured after** the trigger time, never the frame already buffered (FR-ACQ-6). For the Hikvision camera, the job can choose "snapshot on trigger" instead of the stream.
-- **Pipeline order:** image quality → locator (if the job has one) → tools in job order. The pipeline stops at the first ERROR (e.g. no object found) and runs all tools otherwise, so the reason lists every failing tool.
+- **Pipeline order:** brightness → locator (if the job has one) → sharpness against the reference → tools in job order. The locator runs before sharpness because an empty station also looks "not sharp"; when the object is not found and the image is not sharp, the reason says both. The pipeline stops at the first ERROR (e.g. no object found) and runs all tools otherwise, so the reason lists every failing tool.
+- **Job files:** a tool or locator that needs a file (a template, a model) names it in its parameters; the job is refused on load if the file is missing.
 - **Timing budget:** each stage records its duration in the result row, to check against NFR-PERF-1.
 
 ### 7.2 Export and backup (UC-04)

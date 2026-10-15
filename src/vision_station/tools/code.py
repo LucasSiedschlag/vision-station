@@ -14,6 +14,7 @@ import numpy as np
 import zxingcpp
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from vision_station.jobfiles import JobFiles
 from vision_station.tools.base import ToolResult, ToolType, register
 
 
@@ -64,7 +65,7 @@ def _accepts(params: CodeParams, text: str) -> bool:
     return params.pattern is not None and re.fullmatch(params.pattern, text) is not None
 
 
-def run(region: np.ndarray, params: CodeParams) -> ToolResult:
+def run(region: np.ndarray, params: CodeParams, files: JobFiles) -> ToolResult:
     read: list[Any] = []
     if region.size:
         kwargs: dict[str, Any] = dict(

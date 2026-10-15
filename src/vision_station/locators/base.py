@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, ValidationError
 
+from vision_station.jobfiles import JobFileError, JobFiles, check_files
 from vision_station.jobs import Job
 
 
@@ -29,7 +30,8 @@ class LocatorType:
     name: str
     version: int
     params: type[BaseModel]
-    locate: Callable[[np.ndarray, Any], Anchor | None]  # (frame, validated params) -> anchor, or None if not found
+    locate: Callable[[np.ndarray, Any, JobFiles], Anchor | None]  # (frame, validated params, job files) -> anchor, or None
+    needs: Callable[[Any], list[str]] = lambda params: []  # job files the validated params refer to
 
 
 _REGISTRY: dict[tuple[str, int], LocatorType] = {}
@@ -65,13 +67,19 @@ def validate_params(name: str, version: int, params: Mapping[str, Any]) -> BaseM
         raise LocatorError(f"invalid parameters for locator '{name}' v{version}: {exc}") from exc
 
 
-def run_locator(name: str, version: int, frame: np.ndarray, params: Mapping[str, Any]) -> Anchor | None:
+def run_locator(name: str, version: int, frame: np.ndarray, params: Mapping[str, Any], files: JobFiles | Mapping[str, bytes] | None = None) -> Anchor | None:
     locator = get_locator(name, version)
-    return locator.locate(frame, validate_params(name, version, params))
+    return locator.locate(frame, validate_params(name, version, params), files if isinstance(files, JobFiles) else JobFiles(files))
 
 
-def check_job_locator(job: Job) -> None:
-    """Refuse a job whose locator this software cannot run."""
+def check_job_locator(job: Job, files: Mapping[str, bytes] | None = None) -> None:
+    """Refuse a job whose locator this software cannot run, or (when the job's files are given) whose
+    locator needs a file that is not there."""
     locator = job.geometry.locator
     if locator is not None:
-        validate_params(locator.type, locator.version, locator.params)
+        params = validate_params(locator.type, locator.version, locator.params)
+        if files is not None:
+            try:
+                check_files(f"locator '{locator.type}'", get_locator(locator.type, locator.version).needs(params), files)
+            except JobFileError as exc:
+                raise LocatorError(str(exc)) from exc

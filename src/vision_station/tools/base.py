@@ -2,7 +2,8 @@
 
 A tool looks at one region of a frame and answers pass/fail with a score. The
 pipeline crops the region from the job's ROI and calls the tool, so a tool never
-sees the whole frame, the camera or the job. A job refers to a tool by type name
+sees the whole frame, the camera or the job; only the job's files it names in its
+parameters (a template, a model), through `JobFiles`. A job refers to a tool by type name
 and version; a version that is no longer supported refuses the job instead of
 running different logic.
 """
@@ -13,6 +14,8 @@ from typing import Any
 
 import numpy as np
 from pydantic import BaseModel, ValidationError
+
+from vision_station.jobfiles import JobFiles
 
 
 class ToolError(Exception):
@@ -39,7 +42,8 @@ class ToolType:
     name: str
     version: int
     params: type[BaseModel]
-    run: Callable[[np.ndarray, Any], ToolResult]  # (region image, validated params)
+    run: Callable[[np.ndarray, Any, JobFiles], ToolResult]  # (region image, validated params, job files)
+    needs: Callable[[Any], list[str]] = lambda params: []  # job files the validated params refer to
 
 
 _REGISTRY: dict[tuple[str, int], ToolType] = {}
@@ -75,6 +79,6 @@ def validate_params(name: str, version: int, params: Mapping[str, Any]) -> BaseM
         raise ToolError(f"invalid parameters for '{name}' v{version}: {exc}") from exc
 
 
-def run_tool(name: str, version: int, region: np.ndarray, params: Mapping[str, Any]) -> ToolResult:
+def run_tool(name: str, version: int, region: np.ndarray, params: Mapping[str, Any], files: JobFiles | Mapping[str, bytes] | None = None) -> ToolResult:
     tool = get_tool(name, version)
-    return tool.run(region, validate_params(name, version, params))
+    return tool.run(region, validate_params(name, version, params), files if isinstance(files, JobFiles) else JobFiles(files))

@@ -52,8 +52,8 @@ def bundle_from_files(files: Mapping[str, bytes], check_tools: bool = True) -> J
         raise FormatError(f"{profile_path} is not valid: {exc}") from exc
     if check_tools:
         try:
-            check_job_locator(job)
-            check_job_tools(job)
+            check_job_locator(job, files)
+            check_job_tools(job, files)
         except (ToolError, LocatorError) as exc:
             raise FormatError(f"job cannot run on this software: {exc}") from exc
     extra = {n: d for n, d in files.items() if n not in (JOB_FILE, profile_path)}
