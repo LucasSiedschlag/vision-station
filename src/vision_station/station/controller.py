@@ -92,6 +92,7 @@ class StationEvent:
     job_id: str = ""
     job_name: str = ""
     job_version: int = 0
+    reference: str = ""  # on "result" events: what the caller gave with the trigger that started it (FR-INT-1)
 
 
 @dataclass
@@ -142,6 +143,8 @@ class StationController:
         self._warnings: tuple[str, ...] = ()
         self._last_result: InspectionResult | None = None
         self._trigger_requested = False
+        self._trigger_reference = ""
+        self._reference = ""  # of the inspection running now
         self._t0 = 0.0  # when the current inspection was triggered
         self._shown_at = 0.0
         self._last_frame_ts = -1.0
@@ -159,9 +162,10 @@ class StationController:
         """Stop in Fault with this reason, e.g. the active job could not be loaded."""
         self._commands.put(_Command("fault", detail=detail))
 
-    def request_trigger(self) -> None:
-        """Manual or external trigger (FR-TRG-2/3)."""
-        self._commands.put(_Command("trigger"))
+    def request_trigger(self, reference: str = "") -> None:
+        """Manual or external trigger (FR-TRG-2/3). `reference` comes back on the result event, so another
+        program can tell which result answers its request (FR-INT-1)."""
+        self._commands.put(_Command("trigger", detail=reference))
 
     def pause(self) -> None:
         self._commands.put(_Command("pause"))
@@ -249,6 +253,7 @@ class StationController:
             self._load(command.bundle)
         elif command.name == "trigger":
             self._trigger_requested = True
+            self._trigger_reference = command.detail
         elif command.name == "pause" and self._state in (State.READY, State.WAITING_STILL, State.SHOWING_RESULT):
             self._go(State.PAUSED)
         elif command.name == "resume" and self._state is State.PAUSED:
@@ -272,6 +277,7 @@ class StationController:
     def _prepare(self) -> None:
         assert self._bundle is not None
         self._trigger_requested = False
+        self._trigger_reference = ""
         self._acq.configure(self._bundle.profile)
         self._detail = ""
         self._go(State.PREPARING)
@@ -328,6 +334,8 @@ class StationController:
             self._begin_inspection()
 
     def _begin_inspection(self) -> None:
+        # a pending reference goes with the inspection that starts now, whatever started it
+        self._reference, self._trigger_reference = self._trigger_reference, ""
         self._trigger_requested = False
         self._t0 = self._clock()
         self._go(State.INSPECTING)
@@ -400,8 +408,10 @@ class StationController:
                 job_id=str(job.id) if job else "",
                 job_name=job.name if job else "",
                 job_version=job.version if job else 0,
+                reference=self._reference,
             )
         )
+        self._reference = ""
         if self._state is State.INSPECTING:
             self._go(State.SHOWING_RESULT)
 

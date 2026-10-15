@@ -105,6 +105,8 @@ def build_runtime(root: Path | str, config: SystemConfig | None = None, camera: 
         shift_start=lambda: shift_start(system.config, datetime.now().astimezone()),
         allowed_hosts=LOCAL_HOSTS + tuple(config.network.allowed_hosts),
         system=system,
+        overlay=draw_overlay,
+        cors_origins=tuple(config.network.allowed_origins),
         **extra,
     )
 

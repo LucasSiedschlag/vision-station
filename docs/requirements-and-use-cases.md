@@ -129,7 +129,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| FR-INT-1 | The system shall expose the last result and the system state through a documented local interface (proposed: HTTP/JSON) for future integration. | S |
+| FR-INT-1 | The system shall let another program on the same PC request an inspection, follow it by id and get its result and pictures, the system state and the live view, through a documented local interface (HTTP/JSON and WebSocket; document 06). | M |
 | FR-INT-2 | The system shall signal the result to an external device (digital output, PLC, tower light) through an I/O plugin. Project integrations are outside the platform scope. | W |
 
 ### 3.8 Data collection and model (MDL)

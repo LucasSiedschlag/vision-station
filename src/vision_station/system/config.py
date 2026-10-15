@@ -93,6 +93,16 @@ class NetworkSettings(_Strict):
     host: str = "127.0.0.1"  # anything else opens the API to the network (NFR-SEC-3)
     port: Annotated[int, Field(ge=1, le=65535)] = 8765
     allowed_hosts: list[str] = []  # extra Host names accepted when open to the network
+    # web pages of other programs allowed to call the API from a browser (CORS), e.g. http://localhost:8800
+    allowed_origins: list[str] = []
+
+    @field_validator("allowed_origins")
+    @classmethod
+    def _origins(cls, origins: list[str]) -> list[str]:
+        bad = [o for o in origins if not re.fullmatch(r"https?://[^/\s]+", o)]
+        if bad:
+            raise ValueError(f"origins must look like http://host:port, without a path: {bad}")
+        return origins
 
     @property
     def local_only(self) -> bool:

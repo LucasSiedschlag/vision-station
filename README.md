@@ -24,6 +24,7 @@ Vision Station is not built around any product. Each customer project (for examp
 | 03 | [Architecture](docs/architecture.md) | Components, the job model, `.vjob` / `.vbak` formats, camera abstraction, station state machine |
 | 04 | [Technical decisions](docs/technical-decisions.md) | Decisions TD-01..20, PC spec, network, known problems, bench tests |
 | 05 | [Frontend](docs/frontend.md) | The web interface: stack, design system, screens by role, API contract, editor, tests, build |
+| 06 | [Integration](docs/integration.md) | How another program on the same PC uses Vision Station: request an inspection, get the result and pictures, live view |
 
 ## Stack
 

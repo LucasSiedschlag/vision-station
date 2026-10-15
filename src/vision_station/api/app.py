@@ -13,6 +13,7 @@ import hashlib
 import io
 import os
 import re
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -26,12 +27,14 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import TypeAdapter
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from vision_station import __version__
 from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
+from vision_station.api.inspections import InspectionRegistry, Requested
 from vision_station.cameras import DRIVERS
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
 from vision_station.station import Acquisition, StationController, StationEvent
@@ -81,6 +84,10 @@ class ApiDeps:
     hub: EventHub = field(default_factory=EventHub)
     system: SystemService | None = None  # the system configuration; without it /api/system answers 503
     maintenance: Maintenance | None = None  # reports the last automatic backup error, when there is one
+    inspections: InspectionRegistry = field(default_factory=InspectionRegistry)  # requested by other programs (FR-INT-1)
+    overlay: Callable[[Any, Any], Any] | None = None  # (frame image, result) -> image with the regions drawn
+    cors_origins: tuple[str, ...] = ()  # web pages of other programs on this machine allowed to call the API
+    result_image_width: int = 1920  # images of requested inspections are kept up to this width
 
 
 class Problem(StarletteHTTPException):
@@ -98,6 +105,8 @@ def make_event_handler(deps: ApiDeps) -> Callable[[StationEvent], None]:
     def handle(event: StationEvent) -> None:
         if deps.recorder is not None:
             deps.recorder(event)
+        if event.kind == "result" and event.reference and event.result is not None:
+            _complete_request(deps, event)
         deps.hub.publish(event_message(deps, event))
 
     return handle
@@ -107,6 +116,27 @@ def _result(result: Any, at: str | None = None) -> m.ResultOut | None:
     if result is None:
         return None
     return m.ResultOut(outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000), at=at)
+
+
+def _complete_request(deps: ApiDeps, event: StationEvent) -> None:
+    frame = overlay = None
+    image = event.frame.image if event.frame is not None else None
+    if image is not None:
+        try:
+            frame = encode_jpeg(image, deps.result_image_width, 90)
+            if deps.overlay is not None:
+                overlay = encode_jpeg(deps.overlay(image, event.result), deps.result_image_width, 90)
+        except Exception:  # a picture that cannot be made must not lose the result
+            pass
+    deps.inspections.complete(
+        event.reference,
+        event.result,  # type: ignore[arg-type]
+        record_id=deps.recorder.last_record_id if deps.recorder else None,
+        at=_recorded_at(deps) or datetime.now().astimezone().isoformat(timespec="milliseconds"),
+        job=(event.job_id, event.job_name, event.job_version),
+        frame_jpeg=frame,
+        overlay_jpeg=overlay,
+    )
 
 
 def _recorded_at(deps: ApiDeps) -> str | None:
@@ -195,6 +225,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
         generate_unique_id_function=lambda route: route.name,  # operation ids the generated client can use as names
     )
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(deps.allowed_hosts))
+    if deps.cors_origins:  # only the pages of other programs listed in system.yaml (network.allowed_origins)
+        app.add_middleware(CORSMiddleware, allow_origins=list(deps.cors_origins), allow_methods=["GET", "POST"], allow_headers=["Content-Type", "Authorization"])
     api = APIRouter(
         prefix="/api",
         responses={401: {"model": m.Problem, "description": "needs a login"}, 403: {"model": m.Problem, "description": "needs another role"}},
@@ -216,8 +248,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
     # --- same-machine rules ----------------------------------------------------------------------
 
     def origin_allowed(origin: str | None) -> bool:
-        """No Origin header (not a browser page) or one of this machine's own addresses."""
-        if not origin:
+        """No Origin header (not a browser page), one of this machine's own addresses, or a page of another
+        program listed in `cors_origins`."""
+        if not origin or origin in deps.cors_origins:
             return True
         host = re.sub(r"^https?://", "", origin).split("/")[0]
         host = host.rsplit(":", 1)[0] if not host.endswith("]") else host
@@ -281,6 +314,56 @@ def create_app(deps: ApiDeps) -> FastAPI:
             raise Problem(409, "A estação não está pronta", "station_not_ready")
         deps.controller.request_trigger()
         return m.Accepted(accepted=True)
+
+    # --- inspections requested by another program (FR-INT-1); no login, like the trigger -------------------
+
+    def inspection_out(item: Requested) -> m.InspectionOut:
+        status = deps.inspections.status(item)
+        done = status == "done" and item.result is not None
+        base = f"/api/inspections/{item.id}"
+        return m.InspectionOut(
+            id=item.id,
+            reference=item.reference,
+            status=status,
+            requested_at=datetime.fromtimestamp(item.requested_at).astimezone().isoformat(timespec="milliseconds"),
+            result=_result(item.result, item.at) if done else None,
+            record_id=item.record_id if done else None,
+            job=m.JobRefOut(id=item.job[0], name=item.job[1], version=item.job[2]) if done and item.job else None,
+            frame_url=f"{base}/frame.jpg" if done and item.frame_jpeg else None,
+            overlay_url=f"{base}/overlay.jpg" if done and item.overlay_jpeg else None,
+            message=f"A inspeção não aconteceu: {deps.controller.status().message}" if status == "expired" else None,
+        )
+
+    def requested(id: str) -> Requested:
+        item = deps.inspections.get(id)
+        if item is None:
+            raise Problem(404, "Essa inspeção não existe ou já saiu da memória", "inspection_not_found")
+        return item
+
+    @api.post("/inspections", status_code=202, response_model=m.InspectionOut, responses={409: {"model": m.Problem}})
+    def request_inspection(body: m.InspectionRequest | None = None) -> m.InspectionOut:
+        """Trigger an inspection and get an id to follow it (FR-INT-1). Only when the station is ready."""
+        if deps.controller.state.value not in ("Ready", "WaitingStill"):
+            raise Problem(409, "A estação não está pronta", "station_not_ready", state=deps.controller.state.value, message=deps.controller.status().message)
+        item = deps.inspections.new((body or m.InspectionRequest()).reference)
+        deps.controller.request_trigger(item.id)
+        return inspection_out(item)
+
+    @api.get("/inspections/{id}", response_model=m.InspectionOut, responses={404: {"model": m.Problem}})
+    def get_inspection(id: str, wait_s: float = QueryParam(0.0, ge=0, le=30)) -> m.InspectionOut:
+        """The request and, when done, its result. `wait_s` waits up to that many seconds for it."""
+        item = requested(id)
+        if wait_s and not item.done.is_set():
+            item.done.wait(min(wait_s, max(0.0, deps.inspections.expire_s - (time.time() - item.requested_at))))
+        return inspection_out(item)
+
+    @api.get("/inspections/{id}/{kind}.jpg", responses={200: {"content": {"image/jpeg": {}}}, 404: {"model": m.Problem}})
+    def inspection_image(id: str, kind: str) -> Response:
+        item = requested(id)
+        data = {"frame": item.frame_jpeg, "overlay": item.overlay_jpeg}.get(kind)
+        if data is None:
+            raise Problem(404, "Essa imagem não existe", "image_not_found")
+        return Response(data, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
     @api.post("/results/{record_id}/incorrect", response_model=m.RecordOut, responses={404: {"model": m.Problem}, 400: {"model": m.Problem}})
     def mark_incorrect(record_id: str, body: m.IncorrectBody) -> m.RecordOut:

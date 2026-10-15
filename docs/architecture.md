@@ -498,6 +498,7 @@ All endpoints live under `/api` (the WebSocket is `/api/live`); every other path
 | `GET /results…` | Browse, filter, export CSV, mark incorrect |
 
 - The API listens only on the local machine by default. Opening it to the network is a configuration choice, protected by login (NFR-SEC-3).
+- **Other programs (FR-INT-1)** use Vision Station as their vision system through `POST /api/inspections` (an id per request), `GET /api/inspections/{id}` (result and pictures) and the live view; the contract is document 06. Vision Station keeps the camera, the jobs and the decision; the other program keeps its screen, devices and process.
 - **Future PLC/MES integration (FR-INT-2)** is added as an **adapter** that subscribes to result events and talks to the external system. It doesn't touch the core.
 
 ### 10.2 External trigger

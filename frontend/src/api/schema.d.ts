@@ -72,6 +72,63 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/inspections': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Request Inspection
+     * @description Trigger an inspection and get an id to follow it (FR-INT-1). Only when the station is ready.
+     */
+    post: operations['request_inspection']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/inspections/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Inspection
+     * @description The request and, when done, its result. `wait_s` waits up to that many seconds for it.
+     */
+    get: operations['get_inspection']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/inspections/{id}/{kind}.jpg': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Inspection Image */
+    get: operations['inspection_image']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/jobs': {
     parameters: {
       query?: never
@@ -652,6 +709,41 @@ export interface components {
        */
       correct: 'PASS' | 'FAIL'
     }
+    /**
+     * InspectionOut
+     * @description An inspection another program asked for (FR-INT-1). `expired` means it never ran: treat it as an error.
+     */
+    InspectionOut: {
+      /** Frame Url */
+      frame_url: string | null
+      /** Id */
+      id: string
+      job: components['schemas']['JobRefOut'] | null
+      /** Message */
+      message: string | null
+      /** Overlay Url */
+      overlay_url: string | null
+      /** Record Id */
+      record_id: string | null
+      /** Reference */
+      reference: string
+      /** Requested At */
+      requested_at: string
+      result: components['schemas']['ResultOut'] | null
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'pending' | 'done' | 'expired'
+    }
+    /** InspectionRequest */
+    InspectionRequest: {
+      /**
+       * Reference
+       * @default
+       */
+      reference: string
+    }
     /** JobListItem */
     JobListItem: {
       /** Id */
@@ -731,6 +823,11 @@ export interface components {
        * @default []
        */
       allowed_hosts: string[]
+      /**
+       * Allowed Origins
+       * @default []
+       */
+      allowed_origins: string[]
       /**
        * Host
        * @default 127.0.0.1
@@ -1069,6 +1166,7 @@ export interface components {
       /**
        * @default {
        *       "allowed_hosts": [],
+       *       "allowed_origins": [],
        *       "host": "127.0.0.1",
        *       "port": 8765
        *     }
@@ -1353,6 +1451,186 @@ export interface operations {
       }
       /** @description needs another role */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  request_inspection: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['InspectionRequest'] | null
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['InspectionOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_inspection: {
+    parameters: {
+      query?: {
+        wait_s?: number
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['InspectionOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  inspection_image: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        kind: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+          'image/jpeg': unknown
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
         headers: {
           [name: string]: unknown
         }

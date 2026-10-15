@@ -18,6 +18,7 @@ Sibling project: `../vision-sim` (Bancada Virtual de Visão, project VIS, public
 | `docs/architecture.md` | 03: components, the **job** model, `.vjob` / `.vbak` formats, camera abstraction, state machine, flows |
 | `docs/technical-decisions.md` | 04: decisions `TD-01..20`, PC spec, network, known problems, bench tests |
 | `docs/frontend.md` | 05: the web interface (React + Vite + TypeScript): design system, screens by role, API contract, editor, tests, build |
+| `docs/integration.md` | 06: how another program uses Vision Station through the local API (inspections with an id, result and pictures, live view, allowed origins) |
 
 Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs stable; when a decision changes, update the TD record and every place that cites it.
 

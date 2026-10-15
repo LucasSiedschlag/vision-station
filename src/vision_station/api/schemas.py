@@ -96,6 +96,25 @@ class LastResultOut(ResultOut):
     record_id: str | None = None
 
 
+class InspectionRequest(BaseModel):
+    reference: Annotated[str, Field(max_length=100)] = ""  # the caller's own id (a box, an order line); comes back as is
+
+
+class InspectionOut(BaseModel):
+    """An inspection another program asked for (FR-INT-1). `expired` means it never ran: treat it as an error."""
+
+    id: str
+    reference: str
+    status: Literal["pending", "done", "expired"]
+    requested_at: str
+    result: ResultOut | None = None
+    record_id: str | None = None  # in the result store, when it was recorded
+    job: JobRefOut | None = None
+    frame_url: str | None = None  # the inspection frame, JPEG
+    overlay_url: str | None = None  # the frame with the regions drawn (green passed, red failed)
+    message: str | None = None  # Portuguese, for an expired request
+
+
 class Accepted(BaseModel):
     accepted: bool
 
