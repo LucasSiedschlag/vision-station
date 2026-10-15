@@ -271,7 +271,7 @@ class ResultStore:
         """Newest first."""
         where, args = self._where(query)
         with self._lock:
-            rows = self._db.execute(f"SELECT {_COLUMNS} FROM inspections{where} ORDER BY at_epoch DESC, id DESC LIMIT ? OFFSET ?", (*args, limit, offset)).fetchall()
+            rows = self._db.execute(f"SELECT {_COLUMNS} FROM inspections{where} ORDER BY at_epoch DESC, rowid DESC LIMIT ? OFFSET ?", (*args, limit, offset)).fetchall()
         return [_row(r) for r in rows]
 
     def count(self, query: Query = Query()) -> int:

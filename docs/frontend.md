@@ -500,7 +500,7 @@ Run locally: `cd frontend && npm run build && npm run e2e` (starts the simulated
 - **Without a build:** the server answers `/` with a clear page ("A interface não foi compilada. Rode `npm run build` em `frontend/`.") and keeps the API working.
 - **Serving:** `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`; `index.html` with `no-cache`; fallback for client routes. CSP becomes stricter than the prototype's: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'` (for the style attributes Radix sets), `img-src 'self' blob: data:`, `connect-src 'self'` plus the same-host WebSocket, `frame-ancestors 'none'`. No inline script, so the import-map hash of the prototype goes away.
 - **CI** (GitHub Actions, Windows and Linux): `npm ci`, lint, typecheck, unit and component tests, API contract check, build, size budget, then the Python tests against the built files, then Playwright (Linux).
-- **Prototype removal:** `src/vision_station/web/static` and `index.html` of the prototype are deleted when the new operator screen has parity (task VIA-0033), together with `tests/web/`.
+- **Prototype removal:** done in VIA-0033 (the Preact files and `tests/web/` are gone).
 
 ---
 
