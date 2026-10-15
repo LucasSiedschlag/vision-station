@@ -60,6 +60,17 @@ uv run python scripts/read_codes.py --name C920 --seconds 10   # Windows, camera
 
 In a job: `{id: lote, type: code, version: 1, roi: label, params: {formats: [QRCode], pattern: 'LOTE-\d+'}, reason_fail: "Código não lido"}`. Parameters are in `src/vision_station/tools/code.py`.
 
+### Inspection pipeline
+
+```python
+from vision_station.pipeline import inspect_job, draw_overlay
+
+result = inspect_job(bundle, frame)          # never raises; any doubt is ERROR
+StationController(acq, inspect_job, on_event=ResultRecorder(store, overlay=draw_overlay))
+```
+
+Order: quality gate (brightness range, sharpness vs. the reference) → locator (`geometry.locator`, e.g. `fixed`) → regions in pixels (relative to `frame` or `anchor`) → every tool in order → `all_pass`. The reason lists every tool that failed; `details` has the timings, the anchor and each region's rectangle.
+
 ### Jobs, versions and backups
 
 ```python

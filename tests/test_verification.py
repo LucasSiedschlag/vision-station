@@ -38,6 +38,14 @@ def qr_scene(text, size=(240, 320)):
     return cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR)
 
 
+def no_code_scene(size=(240, 320)):
+    """A picture as sharp as a code but with none in it: random black and white blocks."""
+    blocks = np.random.default_rng(7).integers(0, 2, (size[0] // 8 - 8, size[1] // 8 - 8), dtype=np.uint8) * 255
+    gray = np.full(size, 255, np.uint8)
+    gray[32:-32, 32:-32] = np.kron(blocks, np.ones((8, 8), np.uint8))
+    return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+
+
 def png(image):
     return cv2.imencode(".png", image)[1].tobytes()
 
@@ -63,7 +71,7 @@ def make_bundle(brightness=(0, 255), extra=None, **quality) -> JobBundle:
         **make_reference_files(reference),
         "tests/images/ok1.png": png(qr_scene("LOTE-1")),
         "tests/images/ok2.png": png(qr_scene("LOTE-2")),
-        "tests/images/blank.png": png(np.full((240, 320, 3), 255, np.uint8)),
+        "tests/images/blank.png": png(no_code_scene()),
         EXPECTED_FILE: expected_yaml(
             [
                 {"image": "tests/images/ok1.png", "outcome": "PASS", "scores": {"lote": 1.0}},
@@ -182,18 +190,18 @@ def test_a_wrong_outcome_or_score_or_reason_fails_the_case():
     always_pass = lambda b, f: InspectionResult(Outcome.PASS, scores={"lote": 1.0})
     report = verify_job(bundle, inspect=always_pass, parts="decision")
     assert not report.ok and "resultado PASS, esperado FAIL" in report.summary()
-    wrong_score = lambda b, f: InspectionResult(Outcome.PASS if f.image.min() < 255 else Outcome.FAIL, "Código não lido", scores={"lote": 0.5})
+    wrong_score = lambda b, f: InspectionResult(Outcome.PASS if run_tool("code", 1, f.image, {}).passed else Outcome.FAIL, "Código não lido", scores={"lote": 0.5})
     report = verify_job(bundle, inspect=wrong_score, parts="decision")
     assert "nota de 'lote' 0.500, esperada 1.000" in report.summary()
     wrong_reason = lambda b, f: InspectionResult(Outcome.PASS if f.image.min() < 255 else Outcome.FAIL, "outra coisa", scores={"lote": 1.0})
     assert "não contém 'não lido'" in verify_job(bundle, inspect=wrong_reason, parts="decision").summary()
-    no_scores = lambda b, f: InspectionResult(Outcome.PASS if f.image.min() < 255 else Outcome.FAIL, "Código não lido")
+    no_scores = lambda b, f: InspectionResult(Outcome.PASS if run_tool("code", 1, f.image, {}).passed else Outcome.FAIL, "Código não lido")
     assert "nota de 'lote' ausente" in verify_job(bundle, inspect=no_scores, parts="decision").summary()
 
 
 def test_the_tolerance_on_scores_is_respected():
     bundle = make_bundle()
-    slightly_off = lambda b, f: InspectionResult(Outcome.PASS if f.image.min() < 255 else Outcome.FAIL, "Código não lido", scores={"lote": 0.97})
+    slightly_off = lambda b, f: InspectionResult(Outcome.PASS if run_tool("code", 1, f.image, {}).passed else Outcome.FAIL, "Código não lido", scores={"lote": 0.97})
     assert verify_job(bundle, inspect=slightly_off, parts="decision").ok  # 0.03 < 0.05
 
 

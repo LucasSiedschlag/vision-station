@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from vision_station.jobs import CameraProfile, Job, dump_job, parse_job
 from vision_station.store.archive import MANIFEST, check_path
 from vision_station.store.errors import FormatError
+from vision_station.locators import LocatorError, check_job_locator
 from vision_station.tools import ToolError, check_job_tools
 
 JOB_FILE = "job.yaml"
@@ -51,8 +52,9 @@ def bundle_from_files(files: Mapping[str, bytes], check_tools: bool = True) -> J
         raise FormatError(f"{profile_path} is not valid: {exc}") from exc
     if check_tools:
         try:
+            check_job_locator(job)
             check_job_tools(job)
-        except ToolError as exc:
+        except (ToolError, LocatorError) as exc:
             raise FormatError(f"job cannot run on this software: {exc}") from exc
     extra = {n: d for n, d in files.items() if n not in (JOB_FILE, profile_path)}
     return JobBundle(job=job, profile=profile, extra=extra)
