@@ -1,14 +1,14 @@
-# Packaging Vision System — Architecture ("job" model)
+# Vision Station — Architecture ("job" model)
 
 | | |
 |---|---|
 | Document | 03 — Architecture |
-| Version | 0.2 (draft) — tools and anchor (TD-19) |
-| Date | 2026-10-02 |
+| Version | 0.3 — general platform for fixed stations (TD-19) |
+| Date | 2026-10-15 |
 | Author | Lucas (developer and maintainer) |
-| Status | Draft for internal review |
+| Status | Platform architecture |
 
-> **Platform and application (TD-19).** Vision Station is a general fixed-camera inspection platform. This document describes the platform, with the packaging application (box and tape) as the first example: in the platform a *check* is a **tool** and the *box* the locator finds is the **anchor**. Product words (box, tape, P/M/G/GG) appear only in examples and in section 13, which are the application.
+> **Platform (TD-19).** Vision Station is a general vision system for **fixed stations**: a fixed camera and an object that is still while it is inspected. This document describes the platform. A customer project uses it by configuring jobs; its jobs, reference images and context live in that project, not here. Examples (a part with a label on a jig) only illustrate.
 
 Related documents: 01 — Project Scope · 02 — Requirements and Use Cases · 04 — Technical Decisions.
 
@@ -50,7 +50,7 @@ flowchart LR
     end
     CAM1[Logitech C920<br/>USB] -->|frames / UVC controls| CORE
     CAM2[Hikvision IP camera<br/>Ethernet] -->|RTSP or snapshot / ISAPI| CORE
-    SCALE[Scale / PLC<br/>optional] -.->|trigger| CORE
+    SCALE[Machine / sensor / PLC<br/>optional] -.->|trigger| CORE
     CORE -.->|result, optional| EXT[PLC / MES<br/>future]
     CORE -->|scheduled backup| BK[(Network share / USB drive)]
 ```
@@ -165,7 +165,7 @@ What is **not** in a job: camera IP address and password, which PC folder to bac
 A job file is a ZIP archive with a fixed layout. Text files are UTF-8, and all paths are relative and use `/` (NFR-POR-3).
 
 ```
-caixa-M-fita-vermelha_v7.vjob
+tampa-azul-etiqueta_v7.vjob
 ├── manifest.json            # format version, job id/version, file list with SHA-256, app version that wrote it
 ├── job.yaml                 # metadata, geometry, tools, decision rule, trigger, quality limits, screen texts
 ├── camera/
@@ -173,8 +173,8 @@ caixa-M-fita-vermelha_v7.vjob
 │   └── raw/                 # driver-specific dumps, used only by the same driver
 │       └── hikvision-image.xml
 ├── models/
-│   ├── tape.onnx
-│   └── tape.card.yaml       # classes, input size, training date, dataset id, metrics
+│   ├── defects.onnx
+│   └── defects.card.yaml       # classes, input size, training date, dataset id, metrics
 ├── reference/
 │   ├── reference.png        # golden view of a good object
 │   └── reference.meta.yaml  # brightness, sharpness, anchor position measured on it
@@ -189,7 +189,7 @@ Example `job.yaml`, shortened:
 format: 1
 job:
   id: 3f1c9a2e-...          # stays the same across versions
-  name: "Caixa M — fita vermelha"
+  name: "Tampa azul — etiqueta de lote"
   version: 7
   parent_version: 6
   author: lucas
@@ -204,25 +204,32 @@ quality:
   brightness: {min: 90, max: 170}
   sharpness_min_ratio: 0.7                 # vs. reference
 geometry:
-  locator: {type: box_outline, version: 1, params: {min_area: 0.15}}
+  locator: {type: fixed, version: 1, params: {rect: [0.25, 0.20, 0.75, 0.85]}}   # where the jig holds the part
   rois:
-    seam: {relative_to: anchor, rect: [0.45, 0.0, 0.55, 1.0]}
+    cap: {relative_to: anchor, rect: [0.30, 0.00, 0.70, 0.20]}
+    label: {relative_to: anchor, rect: [0.10, 0.45, 0.90, 0.80]}
 tools:
-  - id: tape
-    type: tape_color_coverage
+  - id: tampa
+    type: color
     version: 1
-    roi: seam
-    params: {hue: [170, 10], s_min: 120, v_min: 70, min_coverage: 0.90}
-    reason_fail: "Fita ausente em {missing:.0%} da emenda"
-  - id: closed
-    type: model_detect
+    roi: cap
+    params: {hue: [100, 130], s_min: 120, v_min: 70, min_fraction: 0.80}
+    reason_fail: "Tampa ausente ou de outra cor ({fraction:.0%} azul)"
+  - id: lote
+    type: code
+    version: 1
+    roi: label
+    params: {formats: [DataMatrix], pattern: 'L\d{6}'}
+    reason_fail: "Código de lote não lido"
+  - id: defeitos
+    type: detect
     version: 1
     roi: anchor
-    params: {model: models/closure.onnx, class_fail: open_flap, conf: 0.5}
-    reason_fail: "Aba aberta"
+    params: {model: models/defects.onnx, class_fail: [risco, amassado], conf: 0.5}
+    reason_fail: "Defeito na peça: {classes}"
 decision: all_pass
 ui:
-  waiting: "Aguardando caixa"   # screen texts come from the job (TD-19)
+  waiting: "Aguardando peça"   # screen texts come from the job (TD-19)
 ```
 
 Rules:
@@ -351,7 +358,7 @@ stateDiagram-v2
 | State | Screen shows | Result possible |
 |---|---|---|
 | Starting / Preparing | "Preparando…" | none |
-| Ready / WaitingStill | "Aguardando caixa" | none |
+| Ready / WaitingStill | the job's `ui.waiting` text (default "Aguardando objeto") | none |
 | Inspecting | "Inspecionando…" | — |
 | ShowingResult | PASS / FAIL / ERROR + reason | yes |
 | CameraLost | "Câmera desconectada" (yellow) | ERROR if an object was being inspected |
@@ -491,7 +498,7 @@ All endpoints live under `/api` (the WebSocket is `/api/live`); every other path
 
 ### 10.2 External trigger
 
-The external trigger arrives through the same `POST /trigger` endpoint, or through a small adapter if the scale only offers a serial or digital signal. The method depends on the client's answer about the scale (document 02, section 7).
+The external trigger arrives through the same `POST /trigger` endpoint, or through a small adapter when the source (a machine, a sensor, a scale) only offers a serial or digital signal. Each adapter is a plugin; the project chooses it (document 02, section 7).
 
 ---
 
@@ -524,9 +531,9 @@ The external trigger arrives through the same `POST /trigger` endpoint, or throu
 
 ## 13. Open points
 
-1. **Trigger source:** image-based by default. The scale signal depends on the client's answer.
+1. **Trigger adapters:** image-based by default; serial and digital-input adapters are written when a project needs them.
 2. **Stream vs. snapshot** for the Hikvision camera: decide after testing image quality and delay on the real unit.
-3. **One job per box size vs. one job that detects the size:** decide after seeing how different P/M/G/GG look in the image.
+3. **Variants:** one job per variant or one job whose tools cover all variants is a project choice; the platform supports both (FR-INS-9).
 4. **Screen technology** (desktop app or local web page in kiosk mode): see document 04. The architecture works with either, because the screen only talks to the API.
 5. **Tolerances for verification:** brightness, sharpness, position and image similarity. Set from measurements on the prototype.
 6. **Core as a Windows service with a USB camera:** confirm it works with the C920; otherwise use the in-session fallback from section 3.1 for the prototype.

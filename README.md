@@ -1,20 +1,19 @@
 # Vision Station
 
-General inspection platform for a **fixed station**: a fixed camera identifies objects, colors or codes. Like commercial vision systems, a *job* holds the camera setup and a list of *tools* (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, and the screen shows **PASS / FAIL / ERROR** with the reason.
+A configurable vision system for **fixed industrial stations and machines**: a fixed camera looks at an object that is **stopped** for the reading (a part on a jig, a product on a bench or scale, a machine that pauses) and answers **PASS / FAIL / ERROR** with the reason in Portuguese. Objects in motion are out of scope.
 
-The first application (for Customer) is the packing station: each box is placed on a scale, and the camera checks that it leaves **closed and taped**. Platform decisions are in [TD-19](docs/technical-decisions.md).
+Like commercial vision systems, a *job* holds the camera setup and an ordered list of *tools* (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, relative to the frame or to an *anchor* found by a *locator*. Decisions are in [TD-19](docs/technical-decisions.md).
 
-> **Status:** design done, implementation starting. The first delivery (30/10/2026) runs with the Logitech C920; the Hikvision camera comes later.
+Vision Station is not built around any product. Each customer project (for example a packing station that checks that boxes leave closed and taped) installs Vision Station and configures its own jobs; those projects live in their own place, not in this repository.
 
-## What it will do
+> **Status:** platform core working (cameras, jobs, backups, verification, pipeline, results, API, operator screen). Tools, locators, management screens and the job editor are being added for the first delivery (30/10/2026, Logitech C920). The Hikvision camera comes later.
 
-Platform: tools by type, jobs exportable to one backup file and restorable with automatic verification, a camera plugin (C920 now, Hikvision later), operator screen and results log. First application (box and tape):
+## What it does
 
-- Inspect every box (sizes P, M, G, GG) with red tape or transparent tape with a printed logo.
-- Keep all inspection settings in **jobs**: one per product or box type, exportable to a single backup file and restorable on a replacement PC or camera, with automatic verification that behavior is the same.
-- Prototype with a Logitech C920 USB webcam, then move to a Hikvision DS-2CD3666G2T-IZS IP camera (motorized lens) without rewriting the inspection logic.
-- Run on a client-supplied Windows 11 PC, CPU only.
-- Never show a false PASS: any doubt is ERROR.
+- Inspects a still object with the tools of the active job; any doubt (dark, blurred or flat picture, object not found, a tool that breaks, camera lost) is **ERROR**, never a false PASS.
+- Keeps every setting in **jobs**: versioned, exportable to one file (`.vjob`), backed up together (`.vbak`), and restored on a replacement PC or camera with automatic verification that the behavior is the same.
+- Treats the camera as a plugin: Logitech C920 (USB) now, Hikvision IP camera (motorized lens) later, without rewriting the inspection logic.
+- Runs on a Windows 11 PC, CPU only, as a service with a local web screen for the operator, the supervisor and the maintainer.
 
 ## Documents
 
@@ -26,7 +25,7 @@ Platform: tools by type, jobs exportable to one backup file and restorable with 
 | 04 | [Technical decisions](docs/technical-decisions.md) | Decisions TD-01..20, PC spec, network, known problems, bench tests |
 | 05 | [Frontend](docs/frontend.md) | The web interface: stack, design system, screens by role, API contract, editor, tests, build |
 
-## Stack (planned)
+## Stack
 
 Python 3.12, OpenCV, ONNX Runtime (CPU, OpenVINO on Intel), FastAPI, SQLite, a local web UI in Edge kiosk mode, packaged as a Windows service with PyInstaller and Inno Setup. Only permissive licenses ship in the product (no Ultralytics/AGPL).
 
@@ -157,11 +156,11 @@ Operator, no login: `GET /state`, `GET /result/last`, `GET /snapshot.jpg`, `POST
 
 ## Phases
 
-0. Definition (documents 01–04 approved)
-1. Prototype with the C920
-2. Model (labeling, training, validation)
-3. Production camera (Hikvision) and on-site installation
-4. Acceptance and handover
+0. Definition (documents 01–05)
+1. Platform with the C920 (first delivery, 30/10/2026)
+2. Model (`detect` tool and the offline training path)
+3. Production camera (Hikvision)
+4. First customer project on site (owned by that project)
 
 ## Author
 

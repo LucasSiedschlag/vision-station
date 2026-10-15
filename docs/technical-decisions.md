@@ -1,14 +1,16 @@
-# Packaging Vision System — Technical Decisions
+# Vision Station — Technical Decisions
 
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.5 (draft) — TD-20 revised: React + Vite |
-| Date | 2026-10-02 |
+| Version | 0.6 — TD-19 amended: general platform, customer projects outside the repository |
+| Date | 2026-10-15 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
 
-Related documents: 01 — Project Scope · 02 — Requirements and Use Cases · 03 — Architecture ("job" model).
+Related documents: 01 — Project Scope · 02 — Requirements and Use Cases · 03 — Architecture ("job" model) · 05 — Frontend.
+
+> Some decisions below were first taken for the first project that uses the platform (a packing station). Where they keep examples from it (box, tape), they are examples; the decision applies to any fixed station (TD-19).
 
 Each decision follows the same format: **context → options → decision → consequences → revisit when**. IDs `TD-nn` are used in code comments and tickets. Requirement IDs refer to document 02, section numbers "§" to document 03.
 
@@ -36,7 +38,7 @@ Each decision follows the same format: **context → options → decision → co
 | TD-16 | Secrets | **Windows Credential Manager** via `keyring`, under the service account |
 | TD-17 | Testing | **pytest**, file camera driver, reference-set tests on every build (CI on Windows) |
 | TD-18 | Licence compliance | Only permissive licences in the shipped product; licence list generated at build |
-| TD-19 | General platform | **Vision Station is a general fixed-camera inspection platform**; the packaging application (box and tape) is its first application. Inspection steps are **tools** (color, code, pattern, detect), configured per job. |
+| TD-19 | General platform | **Vision Station is a general vision system for fixed stations** (still object, fixed camera). Inspection steps are **tools** (color, code, pattern, detect), configured per job. Customer projects use it and live outside this repository. |
 | TD-20 | Web interface | The system is **controlled from a web interface served by the API**. **React + TypeScript + Vite**, Tailwind and shadcn/ui (Radix), TanStack Query, generated API types; design system with tokens. Details in document 05 (`docs/frontend.md`). |
 
 ---
@@ -204,8 +206,8 @@ Each decision follows the same format: **context → options → decision → co
 
 | Spec (datasheet) | Value | What it means here |
 |---|---|---|
-| Sensor / max resolution | 1/2.4" CMOS, **3200 × 1800** | Enough detail for the logo on transparent tape |
-| Frame rate | 20 fps at 3200 × 1800; 30 fps at 1920 × 1080 (60 Hz) | More than enough for a still box |
+| Sensor / max resolution | 1/2.4" CMOS, **3200 × 1800** | Enough detail for small print, logos and codes over a large field |
+| Frame rate | 20 fps at 3200 × 1800; 30 fps at 1920 × 1080 (60 Hz) | More than enough for a still object |
 | Lens | Motorized varifocal 2.7–13.5 mm | Zoom and focus set remotely and stored in the job |
 | Horizontal FOV | **106° (2.7 mm) → 35.6° (13.5 mm)** | See the coverage table below |
 | Vertical FOV | 55.9° → 20° | — |
@@ -215,7 +217,7 @@ Each decision follows the same format: **context → options → decision → co
 | IR | 850 nm, up to 60 m, IR-cut filter; day/night modes Day / Night / Auto / Schedule | **Must be forced to Day, IR off** (see below) |
 | Compression | Main stream H.265 / H.264 / H.264+ / H.265+ | Use plain **H.264** (TD-05) |
 | Streams | 4 independent streams (sub and fourth stream offer MJPEG) | Main for inspection; a sub-stream can feed the live view |
-| **Alarm I/O** | **2 inputs, 2 outputs** (max 24 VDC/24 VAC, 1 A) | Can take the scale's "weight stable" contact as a trigger, and drive a tower light or buzzer on FAIL |
+| **Alarm I/O** | **2 inputs, 2 outputs** (max 24 VDC/24 VAC, 1 A) | Can take a machine or sensor contact (e.g. a scale's "weight stable") as a trigger, and drive a tower light or buzzer on FAIL |
 | Audio | 1 line in, 1 line out | Not used |
 | Power | 12 VDC (max 13 W) or **PoE IEEE 802.3at, Class 4** (max 15 W) | The injector or switch must be **802.3at (PoE+)**; an 802.3af injector is not enough |
 | Protocols | ONVIF (S, G, T), **ISAPI**, SDK, ISUP, RTSP | ISAPI available as planned |
@@ -223,20 +225,20 @@ Each decision follows the same format: **context → options → decision → co
 
 **Coverage by mounting height** (lens straight down, at the two ends of the zoom; width × height of the area seen, and horizontal pixel density at 3200 px):
 
-| Height above box top | At 13.5 mm (tele) | px/mm | At 2.7 mm (wide) | px/mm |
+| Height above the object's top | At 13.5 mm (tele) | px/mm | At 2.7 mm (wide) | px/mm |
 |---|---|---|---|---|
 | 0.8 m | 0.51 × 0.28 m | 6.2 | 2.12 × 0.85 m | 1.5 |
 | 1.0 m | 0.64 × 0.35 m | 5.0 | 2.65 × 1.06 m | 1.2 |
 | 1.2 m | 0.77 × 0.42 m | 4.2 | 3.18 × 1.27 m | 1.0 |
 | 1.5 m | 0.96 × 0.53 m | 3.3 | 3.98 × 1.59 m | 0.8 |
 
-- **Choose the height** so the GG box, plus the placement tolerance (NFR-ACC-4), fills about 70–80 % of the frame at a focal length in the **middle or tele half of the zoom**.
-- **Avoid the 2.7 mm end.** At 106° there is strong barrel distortion and the edges of the box are seen at a steep angle.
-- **Same zoom for all sizes:** one zoom setting serves P to GG unless the sizes are very different. Each job stores its own zoom and focus anyway.
-- **Confirm in the simulator:** the actual box dimensions go into the simulator to confirm the height before the bracket is made.
+- **Choose the height** so the largest object of the station, plus the placement tolerance (NFR-ACC-4), fills about 70–80 % of the frame at a focal length in the **middle or tele half of the zoom**.
+- **Avoid the 2.7 mm end.** At 106° there is strong barrel distortion and the sides of the object are seen at a steep angle.
+- **Same zoom for all variants:** one zoom setting serves every variant unless the sizes are very different. Each job stores its own zoom and focus anyway.
+- **Confirm in the simulator:** the actual object dimensions go into the simulator to confirm the height before the bracket is made.
 
 **Settings that are fixed in every job for this camera:**
-- **Day/night mode = Day, IR LEDs off.** If left on Auto, the camera switches to black-and-white with IR in low light. That breaks the red-tape check, and IR reflects strongly on tape. Forced Day mode keeps the IR-cut filter in and the image in colour.
+- **Day/night mode = Day, IR LEDs off.** If left on Auto, the camera switches to black-and-white with IR in low light. That breaks every color tool, and IR reflects strongly on glossy surfaces (film, tape, metal). Forced Day mode keeps the IR-cut filter in and the image in colour.
 - Focus mode **Manual**, with focus and zoom positions stored in the job.
 - Exposure **manual** (fixed shutter and gain); white balance **manual / locked**.
 - WDR, BLC, HLC, defog **off**; 3D DNR low or off; sharpening fixed.
@@ -259,14 +261,15 @@ Each decision follows the same format: **context → options → decision → co
 
 ### TD-07 — Inspection approach
 
-**Decision.** Each job is built from checks (§4.1), chosen in this order of preference:
+**Decision.** Each job is built from tools (TD-19), chosen in this order of preference:
 
-1. **Classical checks** with OpenCV:
-   - box outline locator;
-   - colour coverage along the seam (red tape);
-   - template / feature matching of the logo along the seam (transparent tape).
-2. **Anomaly detection** trained on good boxes only: for defects that are rare or varied, when there are few failure images.
-3. **Object detection model:** for things that need to be learned, such as open flaps, folded tape ends, or the logo under glare.
+1. **Classical tools** with OpenCV:
+   - locators: fixed position, template, outline or color blob;
+   - `color`: color coverage in a region (e.g. a colored tape or cap is there);
+   - `pattern`: template / feature matching, and repeats along a line (e.g. a printed logo along a seam);
+   - `code`: bar codes and 2D codes.
+2. **Anomaly detection** trained on good objects only: for defects that are rare or varied, when there are few failure images.
+3. **Object detection model:** for things that need to be learned, such as an open flap, a folded edge, or a mark under glare.
 
 **Why this order:**
 - Classical checks need no training data.
@@ -274,7 +277,7 @@ Each decision follows the same format: **context → options → decision → co
 - They are easy to explain to the operator (FR-INS-7).
 - Their thresholds are plain numbers inside the job, so restoring them is exact.
 
-Models are added only where the prototype shows the classical checks can't separate good boxes from bad ones (UC-03, exception 6a).
+Models are added only where the classical tools can't separate good objects from bad ones (UC-03, exception 6a).
 
 ---
 
@@ -485,7 +488,7 @@ Models are added only where the prototype shows the classical checks can't separ
 
 ---
 
-### TD-19 — General platform, packaging as the first application
+### TD-19 — General platform for fixed stations
 
 **Context.**
 - The first idea was a system for one job: check that a box is closed and taped (documents 01–03).
@@ -509,20 +512,19 @@ Models are added only where the prototype shows the classical checks can't separ
 
 | Tool `type` | What it does | Training | Library (licence) | Used by |
 |---|---|---|---|---|
-| `color` | Fraction of the region inside a color range (hue, saturation, value), or distance to a reference color. User draws the validation area. | none | OpenCV (Apache 2.0) | red tape, presence of a colored part |
+| `color` | Fraction of the region inside a color range (hue, saturation, value), or distance to a reference color. User draws the validation area. | none | OpenCV (Apache 2.0) | a colored part, cap, tape or mark is present |
 | `code` | Reads 1D bar codes and QR / Data Matrix codes in the region, optionally compares with an expected text or pattern. | none | **zxing-cpp** (Apache 2.0, Windows wheel for Python 3.12). OpenCV's own `barcode_BarcodeDetector` and `QRCodeDetector` are built into the wheel and stay as a fallback. | any station that reads a label |
-| `pattern` | Finds a template (logo) or counts repeats along a line. | none | OpenCV (Apache 2.0) | logo on transparent tape |
-| `detect` | Runs a trained object detector or anomaly model on the region. | **yes**, offline | ONNX Runtime (MIT), model per TD-08 | open flaps; "which objects are present" |
+| `pattern` | Finds a template (logo) or counts repeats along a line. | none | OpenCV (Apache 2.0) | a logo or feature is present; a printed tape along a seam |
+| `detect` | Runs a trained object detector or anomaly model on the region. | **yes**, offline | ONNX Runtime (MIT), model per TD-08 | defects that need learning; "which objects are present" |
 
-   The packaging application needs `color` and `pattern` for the tape; `code` and `detect` are added when the platform needs them, not for the contract with Customer.
-4. **Trigger modes.** A job picks one: `image_presence` (object present and still, as today), `manual`, `external`, or `continuous` (no trigger; for stations that read codes or watch a conveyor). `continuous` is named now and built when an application needs it.
+   All four are part of the platform for the first delivery (amendment below); `detect` needs the offline training path (TD-08).
+4. **Trigger modes.** A job picks one: `image_presence` (object present and still, as today), `manual`, `external`, or `continuous` (no trigger; still frames inspected one after another, e.g. a code reader). `continuous` is named now and built when a project needs it. Objects that move during capture are out of scope.
 5. **Screen text comes from the job and the language file**, not from code: "Aguardando caixa" becomes the job's `ui.waiting` text, with a neutral default.
 6. **Repository layout.**
    - `src/vision_station/`: the platform (cameras, jobs, tools, station, API, screen). No customer words.
-   - `applications/<name>/`: jobs, reference images, notes and acceptance data of one application. The first is `applications/Customer/`.
-   - Customer context stays in this repository, which is **private**. If the platform is ever published, the `applications/` folder is split out first.
+   - Customer projects live **outside** this repository (amendment of 2026-10-15 below).
 7. **Cameras.** Unchanged: the camera is a plugin (TD-04, TD-05). The C920 is the camera for the first application; the Hikvision driver comes later and serves every application.
-8. **Documents.** Documents 01–03 describe the packaging application. They are kept, retitled as the application's documents, and the platform is described in 03 (architecture) and this document. Where they say "check" or "box", the platform meaning is "tool" and "anchor".
+8. **Documents.** Documents 01–05 describe the platform (rewritten on 2026-10-15). A project's scope, requirements and acceptance numbers are written in the project.
 
 **What the C920 means for the general tools.** The search for similar projects found the C920 used with OpenCV in real prototypes (for instance a firmware test rig for electricity meters, University of Ljubljana) and sold with C/CS-mount rework kits by Kurokesu; forum reports also warn about inconsistent frame rates and prefer fixed focus for vision work. On the bench PC the driver measured 30.7 fps in MJPG at 1920×1080 with every setting read back. For the tools it means:
 - **Codes (measured on the bench PC, 2026-10-13/14, C920 at 1920×1080, focus fixed, sheet printed at 100%):**
@@ -541,6 +543,12 @@ Models are added only where the prototype shows the classical checks can't separ
 - **Licences:** all four tool families use Apache 2.0 or MIT components (TD-18). `pyzbar` is not used because it needs the LGPL ZBar library.
 
 **Revisit when:** a second application is defined, or the Hikvision camera replaces the C920, or the editor proves too large for one developer.
+
+**Amendment (2026-10-15): the platform stands alone.**
+- Vision Station is a vision system for **industrial fixed stations and machines** where the object is **stopped** for the reading. It is not built from any one product: a packing station that checks boxes and tape is a **project that uses it**, configured with jobs (locator, `color`, `pattern`), and is done last, when its samples arrive.
+- `applications/` is removed from this repository. Each customer project (jobs, reference images, acceptance data, customer notes) lives in its own place and installs Vision Station. The platform repository holds only the platform, its tests and neutral examples.
+- Documents 01–03 are rewritten as platform documents; the earlier packaging versions are kept with the project's records.
+- The tools and locators are built and tested with synthetic and bench images, not with one customer's samples. The first delivery has the four tool families, locators beyond `fixed`, and job editing on the screen (FR-PLT-7 becomes Must).
 
 ---
 

@@ -29,7 +29,7 @@ The Preact + htm prototype of task VIA-0013 was deleted when the React operator 
 
 | Role | Where and how | What matters |
 |---|---|---|
-| **Operator** (no login) | Fixed monitor at the station (assumed 21–24" 1080p, possibly touch), looks from about 2 m, hands busy with boxes | The verdict, readable at once; nothing to learn (NFR-USA-1/2); no way to break the system by accident |
+| **Operator** (no login) | Fixed monitor at the station (assumed 21–24" 1080p, possibly touch), looks from about 2 m, hands busy with the parts | The verdict, readable at once; nothing to learn (NFR-USA-1/2); no way to break the system by accident |
 | **Supervisor** | Same PC or another on the plant network, mouse and keyboard | Select the job, review failures, correct wrong results, keep the backup (NFR-USA-3) without the maintainer |
 | **Maintainer** | At the PC, with the camera in reach | Tune camera settings while watching, draw regions, test a job on the current image, change settings; full visibility of what the system did and why |
 
@@ -200,7 +200,7 @@ Built on shadcn/ui; each has loading, disabled, error and focus states in the ga
 |---|---|
 | Button | variants `primary`, `secondary`, `ghost`, `danger`; sizes `md`, `lg` (kiosk); icon + label; busy state keeps width |
 | Badge / StatusIndicator | dot or icon + word; tones `ok`, `fail`, `warn`, `busy`, `neutral`, `unknown` |
-| Dialog, Sheet (side panel), AlertDialog | focus trap, focus return, Escape; AlertDialog for impactful actions with a named confirmation ("Ativar versão 7 de Caixa M?") |
+| Dialog, Sheet (side panel), AlertDialog | focus trap, focus return, Escape; AlertDialog for impactful actions with a named confirmation ("Ativar versão 7 de Tampa azul?") |
 | Form controls | Input, NumberInput (unit, min/max, step), Select, Switch, Slider (with number box), SegmentedControl, Textarea, FileDrop |
 | Table | TanStack Table: sortable, sticky header, row selection, empty and loading skeleton, pagination |
 | Tabs, Stepper, Breadcrumb | Stepper for the job editor |
@@ -234,13 +234,13 @@ Purpose: the verdict and nothing that distracts from it (FR-UI-1..5, NFR-USA-1/2
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Caixa M — fita vermelha  v7                                      🔒 Entrar  │
+│ Tampa azul — etiqueta de lote  v7                               🔒 Entrar  │
 ├────────────────────────────────────────────┬─────────────────────────────────┤
 │                                            │                                 │
 │                                            │            ✔                    │
 │              LIVE IMAGE                    │        APROVADO                 │
-│        (fit; overlay of what the           │      Fita presente em 98%       │
-│         last inspection looked at)         │      da emenda                  │
+│        (fit; overlay of what the           │      Tampa presente,            │
+│         last inspection looked at)         │      lote L004211 lido          │
 │                                            │                                 │
 │                                            │  14:32:07 · 310 ms              │
 │                                            │                                 │
@@ -249,7 +249,7 @@ Purpose: the verdict and nothing that distracts from it (FR-UI-1..5, NFR-USA-1/2
 │                                            │ Hoje  42 total · 39 · 2 · 1     │
 │                                            │ [Inspecionar agora] [Incorreto?]│
 ├────────────────────────────────────────────┴─────────────────────────────────┤
-│ ● Sistema   ● Câmera 30 fps   ● Registro                      Aguardando caixa│
+│ ● Sistema   ● Câmera 30 fps   ● Registro                      Aguardando peça│
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -270,13 +270,13 @@ Purpose: choose the active job, move jobs between PCs, keep backups (UC-02, UC-0
 Jobs                                   [Importar arquivo]  [Fazer backup]  [Backups…]
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │ Nome               Ativo   Versões  Última alteração     Autor      Ações      │
-│ Caixa M — fita…    ● v7    7        02/10/2026 15:40     lucas      ⋯          │
-│ Etiqueta de lote           3        10/10/2026 09:12     lucas      ⋯          │
+│ Tampa azul — etiq… ● v7    7        02/10/2026 15:40     lucas      ⋯          │
+│ Suporte — furos            3        10/10/2026 09:12     lucas      ⋯          │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
 - **List:** name, the active version as a badge, number of versions, last change, author, row menu (Abrir, Exportar, Duplicar (maintainer), Editar (maintainer)).
 - **Detail (side panel or page):** versions as a timeline (number, date, author, notes, parent), the active one marked; per version: **Ativar** (opens the verification dialog), **Exportar .vjob**, **Comparar com…** (diff of job.yaml, read-only), **Abrir no editor** (creates a draft from this version).
-- **Activate flow:** AlertDialog "Ativar versão 7 de Caixa M?" → runs the verification, shows a **ReportList** (settings, view against reference, reference set) with pass/fail → if all pass **Ativar**; if some fail: the report and, for the maintainer only, **Ativar mesmo assim** which requires a written reason (recorded in the audit log).
+- **Activate flow:** AlertDialog "Ativar versão 7 de Tampa azul?" → runs the verification, shows a **ReportList** (settings, view against reference, reference set) with pass/fail → if all pass **Ativar**; if some fail: the report and, for the maintainer only, **Ativar mesmo assim** which requires a written reason (recorded in the audit log).
 - **Import:** FileDrop for `.vjob` or `.vbak`; shows what the file contains and what it will add ("3 versões de 2 jobs; 1 já existe") before confirming; result list per job (added, already present, renumbered). Importing never activates.
 - **Backup:** "Fazer backup" writes to the configured folder and shows name and size; "Backups…" lists the folder with download; restore = import of a `.vbak`.
 - States: loading skeleton rows; empty ("Nenhum job ainda…"); import error with the server's reason; offline.
@@ -287,7 +287,7 @@ Jobs                                   [Importar arquivo]  [Fazer backup]  [Back
 Purpose: create and tune a job while looking at the real image (UC-03, FR-JOB-2/4/5, FR-PLT-*). The largest screen.
 
 ```
-┌ Caixa M — fita vermelha · rascunho de v7 ───────── [Descartar] [Testar] [Salvar…] ┐
+┌ Tampa azul — etiqueta de lote · rascunho de v7 ─── [Descartar] [Testar] [Salvar…] ┐
 │ ① Câmera        │                                          │ Inspetor (do passo)  │
 │ ② Gatilho       │                                          │                      │
 │ ③ Qualidade     │            IMAGE + REGIONS               │  Exposição  [8000] µs│
@@ -480,7 +480,7 @@ Used by the editor steps 2, 4 and 5 and by the camera screen.
 | Unit | Vitest | view-model functions (state → what the screen shows; ported from `viewmodel.js` and its tests), geometry, formatting, schema-form mapping |
 | Component | Testing Library + MSW | each screen against a mocked API in loading, empty, error, success and forbidden states; dialogs (focus trap and return); the verdict panel for every station state |
 | Contract | CI script | regenerate `schema.d.ts` from the running API and fail if it differs; every endpoint the client uses exists in the OpenAPI document |
-| End to end | Playwright against `scripts/e2e_station.py` (the demo with controls: `POST /__e2e/box/on`, `/__e2e/outcome/FAIL`…) | operator cycle (box in, verdict, box out), login and role menus, activate a job (verified and refused), import and export, results filter and mark incorrect, editor: draw a region, test a tool, save a version, camera apply report |
+| End to end | Playwright against `scripts/e2e_station.py` (the demo with controls: `POST /__e2e/object/on`, `/__e2e/outcome/FAIL`…) | operator cycle (object in, verdict, object out), login and role menus, activate a job (verified and refused), import and export, results filter and mark incorrect, editor: draw a region, test a tool, save a version, camera apply report |
 | Accessibility | `@axe-core/playwright` | zero serious or critical violations on every route in both themes |
 | Tokens and components in the browser | Playwright on `/design`, in four theme situations (dark and light by the system, and each forced over the other) | computed styles equal the tokens (background, density 36/56 px, bundled fonts, reduced motion); screenshot baselines are not used because text rendering differs between Windows, macOS and Linux, so they would fail on every other machine |
 | Budget | `size-limit` | initial JS for the operator route ≤ 150 KB gzip, total initial ≤ 300 KB gzip; editor loaded lazily |

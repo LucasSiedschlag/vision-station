@@ -1,7 +1,7 @@
 [project]
 name = "vision-station"
 version = "0.1.0"
-description = "Packaging vision system: checks that each box leaves the station closed and taped."
+description = "Vision Station: a configurable vision system for fixed industrial stations (jobs, tools, PASS/FAIL/ERROR)."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [

@@ -1,14 +1,14 @@
-# Packaging Vision System — Requirements and Use Cases
+# Vision Station — Requirements and Use Cases
 
 | | |
 |---|---|
 | Document | 02 — Functional Requirements, Non-Functional Requirements and Use Cases |
-| Version | 0.1 (draft) |
-| Date | 2026-10-02 |
+| Version | 0.2 |
+| Date | 2026-10-15 |
 | Author | Lucas (developer and maintainer) |
-| Status | For review with the client |
+| Status | Platform requirements (TD-19) |
 
-> **Platform and application (TD-19).** Sections 3.1–3.9 and the use cases describe the packaging application (box and tape) on top of the platform; section 3.10 lists what the platform itself must offer. In the platform a *check* is a **tool**.
+> **Platform requirements (TD-19).** These are the requirements of Vision Station, a vision system for **fixed stations** where the object is **still** while it is inspected. Customer projects that use the platform write their own requirements (what to inspect, accuracy, time to result) and meet them with jobs; they are not listed here. Examples in this document (a label, a part on a jig, a closed package) only illustrate.
 
 Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 04 — Technical Decisions.
 
@@ -19,27 +19,30 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 - **IDs:** `FR-<area>-<n>` for functional requirements, `NFR-<area>-<n>` for non-functional requirements, `UC-<n>` for use cases.
 - **Priority (MoSCoW):**
   - **M** = Must: required for acceptance.
-  - **S** = Should: expected, but can move to a later phase with the client's agreement.
+  - **S** = Should: expected, but can move to a later phase.
   - **C** = Could: only if time allows.
   - **W** = Won't (this version): recorded so it isn't forgotten.
-- **TBD:** a value to be agreed with the client. Section 7 lists them all.
-- **Proposed:** a default value suggested by the developer. It becomes binding once the client approves it.
+- **Project value:** a number that each project that uses the platform sets for itself (time to result, accuracy). The platform makes it configuration and measures it; section 7 lists them.
+- **Proposed:** a default value suggested by the developer.
 - **Glossary:**
-  - **Job:** the full set of settings for inspecting one product or box type: camera settings, regions, tools, thresholds, model and reference images.
+  - **Job:** the full set of settings for inspecting one product or variant at one station: camera settings, trigger, locator, regions, tools, thresholds, models and reference images.
   - **Job file:** a single file containing one job, used for backup and restore.
   - **Backup file:** a single file containing all jobs plus the system settings.
   - **Trigger:** the event that starts one inspection.
   - **ROI:** region of interest, the part of the image a tool looks at.
+  - **Tool:** a versioned inspection step of one type (`color`, `pattern`, `code`, `detect`) that looks at one ROI and returns pass/fail and a score.
+  - **Locator / anchor:** the locator finds the object (the anchor) in the image, so ROIs can follow it when it is placed a little differently.
+  - **Fixed station:** a fixed camera and an object that is still during the capture (on a jig, bench, scale or a stopped machine).
 
 ## 2. Actors
 
 | Actor | Description |
 |---|---|
-| Operator | Places boxes on the scale and reads the result. No technical training. |
-| Supervisor | Selects the active job, reviews failures, keeps the backup file. A client employee, to be named. |
-| Maintainer | Creates and tunes jobs, installs updates, trains models. Lucas. |
-| Scale / external system | Optional source of the trigger ("weight stable") and optional receiver of the result (PLC, MES). |
-| Camera | C920 (prototype) or Hikvision IP camera (production). |
+| Operator | Presents the object at the station and reads the result. No technical training. |
+| Supervisor | Selects the active job, reviews failures, keeps the backup file. |
+| Maintainer | Creates and tunes jobs, installs updates, trains models. |
+| External system | Optional source of the trigger (a machine, a sensor, a scale with "weight stable") and optional receiver of the result (PLC, MES). |
+| Camera | A camera plugin: C920 (USB) now, Hikvision IP camera later. |
 
 ---
 
@@ -49,8 +52,8 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| FR-ACQ-1 | The system shall acquire images from a USB UVC camera (Logitech C920). | M |
-| FR-ACQ-2 | The system shall acquire images from a Hikvision IP camera, by RTSP stream and/or HTTP snapshot. | M |
+| FR-ACQ-1 | The system shall acquire images from a USB UVC camera (first: Logitech C920). | M |
+| FR-ACQ-2 | The system shall acquire images from a Hikvision IP camera, by RTSP stream and/or HTTP snapshot. | S (after the first delivery) |
 | FR-ACQ-3 | The camera type and its connection data shall be selected by configuration, without changing code. | M |
 | FR-ACQ-4 | On startup and on every job load, the system shall apply the job's camera settings (exposure, gain, white balance, focus, resolution, format), then read each one back and report any that did not apply. | M |
 | FR-ACQ-5 | The system shall detect when the camera disconnects or the stream stops, show the problem to the operator, and reconnect automatically. After reconnecting, it shall reapply the camera settings. | M |
@@ -62,24 +65,26 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| FR-TRG-1 | The system shall start an inspection automatically when a box is present and still in the inspection area, detected from the image (presence + no motion for a configurable time). | M |
-| FR-TRG-2 | The system shall accept an external trigger from the scale or another system ("weight stable"), if available. Interface TBD. | S |
+| FR-TRG-1 | The system shall start an inspection automatically when an object is present and still in the trigger area, detected from the image (presence + no motion for a configurable time). | M |
+| FR-TRG-2 | The system shall accept an external trigger (a machine ready signal, a sensor, a scale's "weight stable"). Interfaces are camera or I/O plugins. | S |
 | FR-TRG-3 | The operator shall be able to trigger an inspection manually from the screen. | M |
-| FR-TRG-4 | The system shall inspect each box exactly once until the box leaves the area. It shall not re-trigger while the same box stays on the scale. | M |
+| FR-TRG-4 | The system shall inspect each object exactly once until it leaves the area. It shall not re-trigger while the same object stays in place. | M |
+| FR-TRG-5 | In `continuous` mode the system shall inspect still frames one after another with no trigger (for example a code reader at a station), and still never inspect a frame taken while the scene moves. | C |
 
 ### 3.3 Inspection (INS)
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| FR-INS-1 | The system shall decide whether the box is **closed** (flaps closed along the seam). Exact definition of "closed" TBD with the client. | M |
-| FR-INS-2 | For colored-tape jobs, the system shall check that tape covers the seam along a configurable minimum fraction of its length. | M |
-| FR-INS-3 | For logo-tape (transparent) jobs, the system shall check that the logo appears along the seam with a configurable minimum count or coverage. | M |
-| FR-INS-4 | Tools shall only look at the job's ROIs, so objects outside the anchor (the box, in this application) do not affect the result. | M |
-| FR-INS-5 | A job shall be able to combine classical tools and a trained model. Each tool returns pass/fail plus a score. | M |
-| FR-INS-6 | The final result shall be **PASS**, **FAIL** or **ERROR**. ERROR means the system could not inspect, for example no box found, image too dark or out of focus, or camera lost. ERROR shall never be shown as PASS. | M |
-| FR-INS-7 | Every FAIL and ERROR shall carry a human-readable reason in Portuguese, e.g. "Fita ausente em 40% da emenda". | M |
-| FR-INS-8 | The system shall locate the anchor (the box, in this application) in the image and place the ROIs relative to it, tolerating the placement variation agreed in NFR-ACC-4. | S |
-| FR-INS-9 | The system shall support the box sizes P, M, G and GG, either as separate jobs or as one job that detects the size. | M |
+| FR-INS-1 | Each inspection shall run the active job's pipeline: image quality gate → locator (if any) → regions → every tool in order → decision. | M |
+| FR-INS-2 | The `color` tool shall measure the fraction of a region inside a color range, or the distance to a reference color, against a threshold, inside a validation area the user draws. | M |
+| FR-INS-3 | The `pattern` tool shall find a taught template in a region, and count its repeats along a line, against a minimum count or coverage. | M |
+| FR-INS-4 | Tools shall only look at the job's ROIs, so things outside them (people, other objects) do not affect the result. | M |
+| FR-INS-5 | A job shall be able to combine classical tools and trained models. Each tool returns pass/fail plus a score. | M |
+| FR-INS-6 | The final result shall be **PASS**, **FAIL** or **ERROR**. ERROR means the system could not inspect: object not found, image too dark, too bright, flat or out of focus, region outside the image, a tool that broke, camera lost. ERROR shall never be shown as PASS. | M |
+| FR-INS-7 | Every FAIL and ERROR shall carry a human-readable reason in Portuguese. FAIL reasons come from the job (each tool's `reason_fail`), and list every tool that failed. | M |
+| FR-INS-8 | The system shall locate the anchor in the image and place the ROIs relative to it, tolerating the placement variation the job allows (NFR-ACC-4). | S |
+| FR-INS-9 | Variants of a product (sizes, colors) shall be handled as separate jobs or as one job whose tools cover them, without platform changes. | M |
+| FR-INS-10 | The `code` tool shall read 1D bar codes, QR and Data Matrix in a region and optionally compare the text with an expected value or pattern. | M |
 
 ### 3.4 Jobs (JOB)
 
@@ -103,7 +108,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 |---|---|---|
 | FR-UI-1 | The screen shall show the live image, the active job and the last result in large, colour-coded form (green PASS, red FAIL, yellow ERROR). | M |
 | FR-UI-2 | On FAIL, the screen shall show the reason and highlight on the image where the problem is. | M |
-| FR-UI-3 | The screen shall show the system state: camera connected, job verified, waiting for box, inspecting. | M |
+| FR-UI-3 | The screen shall show the system state: camera connected, job verified, waiting (with the job's own text), inspecting. | M |
 | FR-UI-4 | The screen shall show counters for the current shift: total, pass, fail, error. | S |
 | FR-UI-5 | The operator screen shall be in Portuguese. | M |
 | FR-UI-6 | Job editing, export, import and settings shall be hidden from the Operator and need a Supervisor or Maintainer login. | M |
@@ -115,17 +120,17 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 |---|---|---|
 | FR-LOG-1 | Every inspection shall be recorded with: timestamp, job name and version, result, reason, per-tool scores, and the inspection image. | M |
 | FR-LOG-2 | Images shall be kept for all FAIL and ERROR results. A configurable sample of PASS images shall also be kept (proposed: 1 in 20). | M |
-| FR-LOG-3 | Records older than the retention period (TBD) shall be deleted automatically. When the disk drops below a free-space threshold, the oldest PASS images shall be deleted first. | M |
+| FR-LOG-3 | Records older than the configured retention period shall be deleted automatically. When the disk drops below a free-space threshold, the oldest PASS images shall be deleted first. | M |
 | FR-LOG-4 | The Supervisor shall be able to browse and filter results by date, job and result, and export them to CSV. | S |
 | FR-LOG-5 | The system shall keep an audit log of job changes, imports, exports, overrides and logins. | S |
-| FR-LOG-6 | Records shall be linkable to an order or batch number, if the client provides one. Source TBD. | C |
+| FR-LOG-6 | Records shall be linkable to an order or batch number, when a project provides one. | C |
 
 ### 3.7 Integration (INT)
 
 | ID | Requirement | Pri. |
 |---|---|---|
 | FR-INT-1 | The system shall expose the last result and the system state through a documented local interface (proposed: HTTP/JSON) for future integration. | S |
-| FR-INT-2 | The system shall signal FAIL to an external device (digital output, PLC, tower light). Interface TBD; integration work is outside the current scope. | W |
+| FR-INT-2 | The system shall signal the result to an external device (digital output, PLC, tower light) through an I/O plugin. Project integrations are outside the platform scope. | W |
 
 ### 3.8 Data collection and model (MDL)
 
@@ -147,17 +152,18 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 
 ### 3.10 Platform (PLT)
 
-Vision Station is a general fixed-camera inspection platform; this document's packaging requirements are its first application (TD-19 in document 04).
+What makes Vision Station a platform rather than one application (TD-19 in document 04).
 
 | ID | Requirement | Pri. |
 |---|---|---|
 | FR-PLT-1 | The system shall offer inspection tools by type, each with its own parameters and a user-drawn region: `color` (color area or distance to a reference color), `pattern` (template or repeated logo), `code` (1D bar codes, QR and Data Matrix), `detect` (trained model). | M (`color`, `pattern`, `code`), S (`detect`) |
 | FR-PLT-2 | A new tool type shall be added without changing the job manager, the station controller, the API or the screen. | M |
-| FR-PLT-3 | A job shall choose its trigger mode: `image_presence`, `manual`, `external` or `continuous`. | M (`continuous` built when an application needs it) |
+| FR-PLT-3 | A job shall choose its trigger mode: `image_presence`, `manual`, `external` or `continuous`. | M (`continuous` built when a project needs it) |
 | FR-PLT-4 | A job shall work without a locator, with regions relative to the frame. | M |
 | FR-PLT-5 | The texts the operator screen shows for a job shall come from the job and the language file, not from code. | M |
-| FR-PLT-6 | Customer jobs, reference images and notes shall live under `applications/<name>/`, apart from the platform code. | M |
-| FR-PLT-7 | The user shall be able to draw and test tool regions on the live image from the screen. | S |
+| FR-PLT-6 | Customer jobs, reference images, acceptance data and notes shall live in each customer project, outside this repository; the platform code and its examples contain no customer words. | M |
+| FR-PLT-7 | The user shall be able to create a job, draw and test tool regions on the live image, and save it, from the screen. | M |
+| FR-PLT-8 | Locators shall be plugins like tools (`fixed` first; template and color/outline locators next). | M |
 
 ---
 
@@ -167,8 +173,8 @@ Vision Station is a general fixed-camera inspection platform; this document's pa
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| NFR-PERF-1 | Time from the box settling to the result on screen: ≤ **TBD** s (proposed: 1.5 s). | M |
-| NFR-PERF-2 | Throughput: at least **TBD** boxes per minute with no missed boxes. | M |
+| NFR-PERF-1 | Time from the object being still to the result on screen: project value (proposed: ≤ 1.5 s with the classical tools on the specified PC). The pipeline reports its own timings. | M |
+| NFR-PERF-2 | Throughput: one inspection per presented object with no missed objects, up to a project value (proposed: 20 per minute). | M |
 | NFR-PERF-3 | Inference shall run on the CPU of the specified PC. No GPU is required. | M |
 | NFR-PERF-4 | The live image on the operator screen shall update at ≥ 10 fps. | S |
 
@@ -176,17 +182,17 @@ Vision Station is a general fixed-camera inspection platform; this document's pa
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| NFR-ACC-1 | Detection rate (a real defect flagged FAIL): ≥ **TBD %** (proposed: 99 %). | M |
-| NFR-ACC-2 | False-reject rate (a good box flagged FAIL): ≤ **TBD %** (proposed: 1 %). | M |
-| NFR-ACC-3 | Accuracy shall be measured on a test set collected at the station, not used for training, covering all box sizes, both tape types, and morning, midday and afternoon light. | M |
-| NFR-ACC-4 | The result shall not change when the box is placed within **TBD** mm (proposed: ±30 mm) and **TBD**° (proposed: ±10°) of its nominal position. | S |
+| NFR-ACC-1 | Detection rate (a real defect flagged FAIL): project value (proposed: 99 %). The platform measures it on the job's reference set and on labeled results. | M |
+| NFR-ACC-2 | False-reject rate (a good object flagged FAIL): project value (proposed: 1 %). | M |
+| NFR-ACC-3 | Accuracy shall be measured on a test set collected at the station, not used for training, covering every variant of the job and the light of a full day. | M |
+| NFR-ACC-4 | The result shall not change when the object is placed within the job's placement tolerance (proposed: ±30 mm and ±10°) of its nominal position, when the job has a locator. | S |
 
 ### 4.3 Reliability and recovery (REL)
 
 | ID | Requirement | Pri. |
 |---|---|---|
 | NFR-REL-1 | The system shall run unattended for a full shift (proposed: 10 h) and across days without needing a restart. | M |
-| NFR-REL-2 | After a power loss or PC restart, the system shall return to inspecting with the last active job, without operator action, within **TBD** min (proposed: 2 min). | M |
+| NFR-REL-2 | After a power loss or PC restart, the system shall return to inspecting with the last active job, without operator action, within 2 min. | M |
 | NFR-REL-3 | After a camera disconnect, inspection shall resume automatically within 30 s of the camera returning. | M |
 | NFR-REL-4 | A complete reinstallation on a new PC from a backup file, by the Maintainer, shall take ≤ 1 hour, including verification. | M |
 | NFR-REL-5 | Restoring a backup on a new installation shall give the same results on the jobs' reference images as the original installation. | M |
@@ -224,7 +230,7 @@ Vision Station is a general fixed-camera inspection platform; this document's pa
 |---|---|---|
 | NFR-SEC-1 | Camera passwords and user passwords shall not be stored in plain text. Job files shall not contain camera passwords. | M |
 | NFR-SEC-2 | The IP camera shall be on a network segment or port dedicated to the inspection PC, where possible. | S |
-| NFR-SEC-3 | Remote access for support, if any, shall follow the client's IT policy. | M |
+| NFR-SEC-3 | Remote access for support, if any, shall follow the site's IT policy. | M |
 
 ### 4.8 Legal and licensing (LIC)
 
@@ -237,43 +243,44 @@ Vision Station is a general fixed-camera inspection platform; this document's pa
 
 | ID | Requirement | Pri. |
 |---|---|---|
-| NFR-ENV-1 | The system shall keep working under the light variation of a full day at the station: ceiling lamps and windows. | M |
+| NFR-ENV-1 | The system shall keep working under the light variation of a full day at the station (ceiling lamps and windows), or flag ERROR when the image leaves the job's limits. | M |
 | NFR-ENV-2 | Disk usage for records shall stay within a configured limit (proposed: 100 GB), enforced by FR-LOG-3. | M |
 
 ---
 
 ## 5. Use cases
 
-### UC-01 — Inspect a box (main flow)
+### UC-01 — Inspect an object (main flow)
 
 | | |
 |---|---|
-| Actor | Operator (primary), Camera, Scale (optional) |
-| Goal | Know whether the box is closed and taped before it leaves the station |
+| Actor | Operator (primary), Camera, External system (optional) |
+| Goal | Know whether the object at the station is right before it moves on |
 | Preconditions | System running, active job verified, camera connected |
-| Trigger | A box is placed on the scale and stays still |
+| Trigger | The object is presented and stays still, or an external or manual trigger |
 
 **Main flow**
-1. The Operator places the box on the scale.
-2. The system detects a box present and still, or receives the external trigger.
+1. The Operator (or the machine) presents the object at the station.
+2. The system detects an object present and still, or receives the external or manual trigger.
 3. The system captures a fresh frame.
-4. The system checks image quality (brightness, sharpness) against the job's reference.
-5. The system locates the box and places the ROIs.
-6. The system runs the job's tools.
-7. The system shows PASS, FAIL or ERROR with the reason, and highlights the problem area on FAIL.
+4. The system checks image quality (brightness, sharpness) against the job's limits and reference.
+5. The system runs the job's locator, if any, and places the ROIs.
+6. The system runs every tool of the job, in order.
+7. The system shows PASS, FAIL or ERROR with the reason, and draws the regions (green passed, red failed).
 8. The system records the result (and the image, per FR-LOG-2).
-9. The Operator removes the box. The system waits for the next box.
+9. The object is removed. The system shows the job's waiting text and waits for the next one.
 
 **Alternative / exception flows**
-- 4a. Image too dark, too bright or out of focus → result ERROR, "Imagem fora do padrão — verificar iluminação/câmera". Go to 8.
-- 5a. No box found in the expected area → result ERROR, "Caixa não encontrada na posição". Go to 8.
-- 7a. FAIL → the Operator fixes the box (re-tapes it) and places it again. The system treats it as a new inspection.
-- 2a. The box is removed before the result → no result recorded; logged as "inspeção interrompida".
+- 4a. Image too dark, too bright, flat or out of focus → ERROR with the specific reason ("Imagem escura demais, verificar a iluminação"). Go to 8.
+- 5a. The locator does not find the object → ERROR, "Objeto não encontrado na posição esperada". Go to 8.
+- 6a. A region falls outside the image, or a tool breaks → ERROR. Go to 8.
+- 7a. FAIL → the object is fixed and presented again. The system treats it as a new inspection.
+- 2a. The object is removed before the result → no result recorded; logged as "inspeção interrompida".
 - Any step: camera lost → UC-09.
 
 **Postconditions:** a record exists for the inspection. Counters are updated.
 
-Covers: FR-ACQ-6/7, FR-TRG-1..4, FR-INS-1..9, FR-UI-1..4, FR-LOG-1/2.
+Covers: FR-ACQ-6/7, FR-TRG-1..4, FR-INS-*, FR-UI-1..4, FR-LOG-1/2.
 
 ---
 
@@ -282,7 +289,7 @@ Covers: FR-ACQ-6/7, FR-TRG-1..4, FR-INS-1..9, FR-UI-1..4, FR-LOG-1/2.
 | | |
 |---|---|
 | Actor | Supervisor |
-| Goal | Switch the station to another product or box type |
+| Goal | Switch the station to another product or variant |
 | Preconditions | Supervisor logged in; target job exists |
 
 **Main flow**
@@ -304,23 +311,23 @@ Covers: FR-JOB-1/3, FR-ACQ-4/8, FR-JOB-9.
 | | |
 |---|---|
 | Actor | Maintainer |
-| Goal | Set up the inspection for a new product, box size or tape type |
-| Preconditions | Maintainer logged in; sample boxes available (good and defective) |
+| Goal | Set up the inspection for a new product or variant |
+| Preconditions | Maintainer logged in; sample objects available (good and defective) |
 
 **Main flow**
 1. The Maintainer creates a new job, or duplicates an existing one.
 2. The Maintainer sets the camera settings while watching the live image (exposure, white balance, focus, zoom).
-3. The Maintainer places a good box and captures the **reference image**.
-4. The Maintainer draws the ROIs on the reference (seam, tape area).
-5. The Maintainer chooses the tools (color / pattern / code / detect; for tape: colored tape / logo tape / closure) and sets their thresholds.
-6. The Maintainer tests the job live with good and defective boxes and adjusts the thresholds.
+3. The Maintainer presents a good object and captures the **reference image**.
+4. The Maintainer chooses a locator (or none) and draws the ROIs on the reference.
+5. The Maintainer adds tools (`color`, `pattern`, `code`, `detect`), one per ROI, sets their parameters and writes each failure reason in Portuguese.
+6. The Maintainer tests the job live with good and defective objects and adjusts the parameters.
 7. The Maintainer saves the reference set: the images used in step 6, with their expected results.
 8. The Maintainer saves the job. A new version is created and an automatic backup is made.
 
 **Exceptions**
-- 6a. Good and bad boxes can't be separated by thresholds → the Maintainer marks the job as needing a model and starts UC-08.
+- 6a. Good and bad objects can't be separated by thresholds → the Maintainer marks the job as needing a model and starts UC-08.
 
-Covers: FR-JOB-2/4/5/10, FR-INS-2..5, FR-ACQ-8.
+Covers: FR-JOB-2/4/5/10, FR-INS-2..5/10, FR-PLT-7, FR-ACQ-8.
 
 ---
 
@@ -384,7 +391,7 @@ Covers: FR-JOB-8/9/11, NFR-REL-4/5.
 2. The Maintainer sets the system settings that aren't part of the jobs (camera address and password, backup folder).
 3. The Maintainer restores the backup (UC-05).
 4. For each job in use, the system runs verification. The Maintainer adjusts focus or position if the camera mount changed.
-5. The Maintainer runs a few known good and bad boxes to confirm.
+5. The Maintainer runs a few known good and bad objects to confirm.
 
 **Postcondition:** production resumes within NFR-REL-4.
 
@@ -440,7 +447,7 @@ Covers: FR-LOG-4, FR-MDL-2.
 2. The system retries the connection periodically.
 3. When the camera returns, the system reapplies the job's camera settings and reads them back.
 4. The system compares a frame with the reference image.
-5. The system returns to "Aguardando caixa".
+5. The system returns to the job's waiting text (`ui.waiting`, e.g. "Aguardando peça").
 
 **Exceptions**
 - 4a. The frame doesn't match the reference → as UC-02 3a.
@@ -459,7 +466,7 @@ Covers: FR-ACQ-5, NFR-REL-3.
 **Main flow**
 1. Windows starts. The application starts automatically (FR-ADM-2).
 2. The system loads the last active job and runs the camera steps of UC-02 (apply, read back, compare).
-3. The system shows the operator screen in "Aguardando caixa".
+3. The system shows the operator screen with the job's waiting text.
 
 **Exceptions**
 - 2a. The camera isn't ready yet (the IP camera boots slower than the PC) → keep retrying as in UC-09.
@@ -472,9 +479,9 @@ Covers: NFR-REL-2.
 
 | Use case | Main requirements |
 |---|---|
-| UC-01 Inspect a box | FR-ACQ-6/7, FR-TRG-*, FR-INS-*, FR-UI-1..4, FR-LOG-1/2, NFR-PERF-1/2, NFR-ACC-* |
+| UC-01 Inspect an object | FR-ACQ-6/7, FR-TRG-*, FR-INS-*, FR-UI-1..4, FR-LOG-1/2, NFR-PERF-1/2, NFR-ACC-* |
 | UC-02 Select job | FR-JOB-1/3/9, FR-ACQ-4/8 |
-| UC-03 Create/tune job | FR-JOB-2/4/5/10, FR-INS-2..5 |
+| UC-03 Create/tune job | FR-JOB-2/4/5/10, FR-INS-2..5/10, FR-PLT-7 |
 | UC-04 Export / backup | FR-JOB-6/7/10, NFR-USA-3 |
 | UC-05 Import / restore | FR-JOB-8/9/11, NFR-REL-4/5 |
 | UC-06 Replace PC or camera | UC-05, NFR-REL-4, NFR-POR-4 |
@@ -483,21 +490,20 @@ Covers: NFR-REL-2.
 | UC-09 Camera lost | FR-ACQ-5, NFR-REL-3 |
 | UC-10 Start-up | FR-ADM-2, NFR-REL-2 |
 
-## 7. Values to agree with the client
+## 7. Project values
 
-| Item | Where | Proposed |
+Each project that uses the platform sets these for its jobs and its own acceptance. The platform keeps them as configuration (in the job or the system settings), never as constants in code.
+
+| Item | Where | Proposed default |
 |---|---|---|
-| Result time after the box settles | NFR-PERF-1 | 1.5 s |
-| Boxes per minute | NFR-PERF-2 | **Agreed (2026-10-13):** manual process, about 1 per minute; not a design driver |
+| Time to result after the object is still | NFR-PERF-1 | 1.5 s |
+| Objects per minute | NFR-PERF-2 | 20 |
 | Detection rate | NFR-ACC-1 | 99 % |
 | False-reject rate | NFR-ACC-2 | 1 % |
 | Placement tolerance | NFR-ACC-4 | ±30 mm, ±10° |
-| Definition of "closed" | FR-INS-1 | **Agreed (2026-10-13):** cardboard flaps closed and tape applied |
-| Minimum tape coverage of the seam | FR-INS-2/3 | 90 % of seam length |
-| Retention of records and images | FR-LOG-3 | **Decided (2026-10-13):** keep everything for now; disk limit is a future problem |
-| External trigger available from the scale | FR-TRG-2 | **Decided (2026-10-13):** assume none (the scale returns the weight only; to be checked). Image-based trigger |
-| What happens on FAIL beyond the screen | FR-INT-2 | Screen only for now. Discard or hold is undefined (first idea: missing material for the box); postponed, outside the vision system |
-| Order/batch number source | FR-LOG-6 | — (client to inform) |
-| Who is the Supervisor | Section 2 | — (client to name) |
-| Backup destination | FR-JOB-10 | Network share + USB drive |
+| Retention of records and images | FR-LOG-3 | keep everything; PASS sampling, days and disk limit configurable |
+| External trigger source | FR-TRG-2 | none (image trigger) |
+| What happens on FAIL beyond the screen | FR-INT-2 | screen only |
+| Order/batch number source | FR-LOG-6 | none |
+| Backup destination | FR-JOB-10 | network share + USB drive |
 | Recovery time after power loss | NFR-REL-2 | 2 min |
