@@ -85,6 +85,7 @@ def test_a_result_shows_in_state_last_result_counters_and_is_recorded(env):
     assert state["state"] == "ShowingResult" and state["message"].startswith("PASS")
     assert state["counters"]["PASS"] == 1 and state["counters"]["total"] == 1
     assert state["last_record_id"] == env.recorder.last_record_id  # a screen opened now can still mark it wrong
+    assert [r["outcome"] for r in state["recent"]] == ["PASS"] and state["recent"][0]["at"] == state["last_result"]["at"]
     last = env.client.get("/api/result/last").json()
     assert last["outcome"] == "PASS" and last["record_id"] == env.recorder.last_record_id
     assert env.results.get(last["record_id"]).job_version == 7
@@ -362,41 +363,18 @@ def test_collection_mode_and_station_commands(env):
 # --- the screens -----------------------------------------------------------------
 
 
-def test_the_page_and_its_files_are_served_and_the_import_map_points_at_real_files(env):
-    import re
-    from vision_station.api.app import WEB_DIR
+def test_the_content_policy_allows_scripts_only_from_this_server(env):
+    csp = env.client.get("/api/state").headers["content-security-policy"]
+    assert "script-src 'self';" in csp and "unsafe-eval" not in csp and "unsafe-inline'; style" not in csp.split("script-src")[1][:30]
+    assert "default-src 'self'" in csp and "frame-ancestors 'none'" in csp
+    assert "[::1]" not in csp  # an IPv6 source in connect-src is invalid CSP syntax and the browser reports it as an error
 
+
+def test_without_a_build_the_page_says_how_to_build_it_and_the_api_works(env):
     page = env.client.get("/")
-    assert page.status_code == 200 and page.headers["content-type"].startswith("text/html")
-    assert page.headers["cache-control"] == "no-cache" and page.headers["x-content-type-options"] == "nosniff"
-    html = page.text
-    imports = json.loads(re.search(r'<script type="importmap">(.*?)</script>', html, re.S).group(1))["imports"]
-    for name, url in imports.items():
-        assert env.client.get(url).status_code == 200, f"{name} -> {url}"
-    for url in re.findall(r'(?:href|src)="(/static/[^"]+)"', html):
-        assert env.client.get(url).status_code == 200, url
-    # every module the screens import exists
-    for js in (WEB_DIR / "static").rglob("*.js"):
-        if "vendor" in js.parts:
-            continue
-        for rel in re.findall(r"from '(\.{1,2}/[^']+)'", js.read_text(encoding="utf-8")):
-            assert (js.parent / rel).resolve().is_file(), f"{js.name} imports {rel}"
-    assert env.client.get("/static/../index.html").status_code in (404, 200)  # no path outside static (checked below)
-    assert env.client.get("/static/%2e%2e/api/app.py").status_code == 404
-
-
-def test_the_content_security_policy_allows_only_this_server_and_the_one_import_map(env):
-    import base64, hashlib, re
-    from vision_station.api.app import WEB_DIR
-
-    csp = env.client.get("/").headers["content-security-policy"]
-    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
-    inline = re.search(r'<script type="importmap">(.*?)</script>', html, re.S).group(1)
-    digest = base64.b64encode(hashlib.sha256(inline.encode()).digest()).decode()
-    assert f"script-src 'self' 'sha256-{digest}'" in csp
-    assert "default-src 'self'" in csp and "frame-ancestors 'none'" in csp and "unsafe-eval" not in csp
-    assert "script-src 'self' 'unsafe-inline'" not in csp
-    assert env.client.get("/api/state").headers["content-security-policy"] == csp
+    assert page.status_code == 503 and "npm run build" in page.text and "A interface não foi compilada" in page.text
+    assert env.client.get("/jobs/abc").status_code == 503
+    assert env.client.get("/api/state").status_code == 200
 
 
 # --- the contract ----------------------------------------------------------------
@@ -486,12 +464,6 @@ def test_the_built_interface_is_served_with_a_fallback_for_client_routes(env, tm
     assert "script-src 'self';" in csp and "sha256" not in csp  # a built page has no inline script
 
 
-def test_without_a_build_the_prototype_is_still_served_and_the_api_works(env):
-    page = env.client.get("/")
-    assert page.status_code == 200 and "importmap" in page.text
-    assert env.client.get("/api/state").status_code == 200
-
-
 @pytest.mark.skipif(not (Path(__file__).parent.parent / "src/vision_station/web/dist/index.html").is_file(), reason="the interface is not built (cd frontend && npm run build)")
 def test_the_real_build_is_served_by_the_api(env):
     from vision_station.api.app import WEB_DIR
@@ -505,3 +477,18 @@ def test_the_real_build_is_served_by_the_api(env):
         assert client.get(url).status_code == 200, url
     assert 'id="root"' in client.get("/jobs/anything").text  # a client route
     assert client.get("/api/state").json()["state"] == "Ready"
+
+
+def test_recent_results_are_the_last_ten_oldest_first_and_every_result_says_when(env):
+    for i in range(12):
+        env.results.record(res(Outcome.FAIL if i % 2 else Outcome.PASS, f"r{i}"), frame(), **JOB)
+    recent = env.client.get("/api/state").json()["recent"]
+    assert [r["reason"] for r in recent] == [f"r{i}" for i in range(2, 12)]
+    assert all(r["at"].startswith("2026-") or r["at"][:2] == "20" for r in recent)
+
+
+def test_about_is_for_supervisors_and_lists_the_tools_this_software_can_run(env):
+    assert env.client.get("/api/about").status_code == 401
+    body = env.client.get("/api/about", headers=login(env)).json()
+    assert body["job_format"] == 1 and body["version"]
+    assert {"name": "code", "version": 1} in body["tools"]

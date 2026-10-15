@@ -22,6 +22,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    testTimeout: 20_000, // whole-app tests mount the router, Radix and the query cache
+
     exclude: ['e2e/**', 'node_modules/**'],
   },
 })

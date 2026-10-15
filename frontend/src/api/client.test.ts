@@ -73,7 +73,7 @@ describe('the typed client', () => {
     useSession.getState().signIn('tok123', 'supervisor', 3600)
     await call(api.GET('/api/jobs')).catch(() => undefined)
     expect(sent).toBe('Bearer tok123')
-    expect(useSession.getState()).toMatchObject({ token: null, role: 'operator' })
+    expect(useSession.getState()).toMatchObject({ token: null, role: 'operator', expired: true })
   })
 })
 

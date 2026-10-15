@@ -28,7 +28,7 @@ const auth: Middleware = {
   },
   onResponse({ response }) {
     // the server no longer accepts the token (expired, revoked, or a new password): fall back to the operator
-    if (response.status === 401 && useSession.getState().token) useSession.getState().clear()
+    if (response.status === 401 && useSession.getState().token) useSession.getState().expire()
     return response
   },
 }
@@ -41,7 +41,8 @@ export function createApi(baseUrl = '') {
   return client
 }
 
-export const api = createApi()
+// an absolute base, so the same code works in the browser and under test (where there is no relative-URL fetch)
+export const api = createApi(typeof location === 'undefined' ? '' : location.origin)
 
 /** Unwraps a call of the typed client: the data, or an ApiError. */
 export async function call<T>(

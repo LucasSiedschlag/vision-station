@@ -60,7 +60,7 @@
   --text-2xl--line-height: 40px;
   --text-3xl: 48px;
   --text-3xl--line-height: 56px;
-  --text-display: clamp(56px, 7vw, 112px);
+  --text-display: clamp(48px, 5.5vw, 96px);
   --text-display--line-height: 1;
 
   --radius-*: initial;
@@ -73,6 +73,7 @@
   --width-confirm: min(30rem, calc(100vw - 2rem));
   --width-sheet: min(34rem, 100vw);
   --width-toast: min(24rem, calc(100vw - 2rem));
+  --width-side: clamp(22rem, 34vw, 40rem); /* the verdict column of the operator screen */
 
   --shadow-*: initial;
   --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.35);
@@ -89,6 +90,9 @@
 }
 @utility w-toast {
   width: var(--width-toast);
+}
+@utility grid-operator {
+  grid-template-columns: minmax(0, 1fr) var(--width-side);
 }
 @utility grid-swatches {
   grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));

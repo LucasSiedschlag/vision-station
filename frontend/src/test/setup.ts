@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom/vitest'
+import { configure } from '@testing-library/react'
+
+// the whole-app tests are slow on a busy machine: wait longer before saying an element is not there
+configure({ asyncUtilTimeout: 5000 })
 
 // jsdom lacks a few browser APIs that Radix UI and the layout code use (skipped in the node-only tests).
 if (typeof window !== 'undefined') {

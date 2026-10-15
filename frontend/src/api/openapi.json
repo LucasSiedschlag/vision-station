@@ -1,6 +1,28 @@
 {
   "components": {
     "schemas": {
+      "AboutOut": {
+        "properties": {
+          "job_format": {
+            "title": "Job Format",
+            "type": "integer"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolInfo"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": ["version", "job_format", "tools"],
+        "title": "AboutOut",
+        "type": "object"
+      },
       "Accepted": {
         "properties": {
           "accepted": {
@@ -341,6 +363,17 @@
       },
       "LastResultOut": {
         "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "integer"
@@ -373,7 +406,7 @@
             "type": "object"
           }
         },
-        "required": ["outcome", "reason", "scores", "duration_ms", "record_id"],
+        "required": ["outcome", "reason", "scores", "duration_ms", "at", "record_id"],
         "title": "LastResultOut",
         "type": "object"
       },
@@ -498,6 +531,26 @@
         },
         "required": ["detail", "code", "problems", "fields", "verified"],
         "title": "Problem",
+        "type": "object"
+      },
+      "RecentResult": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": ["PASS", "FAIL", "ERROR"],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": ["outcome", "reason", "at"],
+        "title": "RecentResult",
         "type": "object"
       },
       "RecordOut": {
@@ -633,6 +686,18 @@
       },
       "ResultMessage": {
         "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "integer"
@@ -681,6 +746,18 @@
       },
       "ResultOut": {
         "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "integer"
@@ -830,6 +907,13 @@
             "title": "Message",
             "type": "string"
           },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/RecentResult"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
           "recording_failures": {
             "title": "Recording Failures",
             "type": "integer"
@@ -871,6 +955,7 @@
           "last_record_id",
           "camera",
           "counters",
+          "recent",
           "recording_failures",
           "version"
         ],
@@ -919,6 +1004,13 @@
             "title": "Message",
             "type": "string"
           },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/RecentResult"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
           "recording_failures": {
             "title": "Recording Failures",
             "type": "integer"
@@ -964,10 +1056,26 @@
           "job",
           "camera",
           "counters",
+          "recent",
           "recording_failures",
           "version"
         ],
         "title": "StatusMessage",
+        "type": "object"
+      },
+      "ToolInfo": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": ["name", "version"],
+        "title": "ToolInfo",
         "type": "object"
       },
       "ValidationError": {
@@ -1026,6 +1134,72 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/about": {
+      "get": {
+        "operationId": "about",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AboutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "About"
+      }
+    },
     "/api/backup": {
       "post": {
         "operationId": "make_backup",

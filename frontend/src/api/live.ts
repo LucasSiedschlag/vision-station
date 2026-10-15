@@ -37,8 +37,13 @@ export function applyMessage(status: StateOut | null, message: LiveMessage): Sta
       reason: message.reason,
       scores: message.scores,
       duration_ms: message.duration_ms,
+      at: message.at ?? null,
     },
     last_record_id: message.record_id ?? null,
+    recent: [
+      ...status.recent,
+      { outcome: message.outcome, reason: message.reason, at: message.at ?? '' },
+    ].slice(-10),
   }
 }
 

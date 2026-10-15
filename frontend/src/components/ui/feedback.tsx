@@ -20,16 +20,19 @@ export function EmptyState({
   description,
   action,
   icon,
+  heading,
 }: {
   title: string
   description?: string
   action?: ReactNode
   icon?: ReactNode
+  heading?: 'h1' | 'h2'
 }) {
+  const Title = heading ?? 'p'
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
       <span className="text-fg-muted">{icon ?? <Inbox aria-hidden className="size-8" />}</span>
-      <p className="text-base font-medium">{title}</p>
+      <Title className="text-base font-medium">{title}</Title>
       {description ? <p className="max-w-md text-sm text-fg-muted">{description}</p> : null}
       {action}
     </div>

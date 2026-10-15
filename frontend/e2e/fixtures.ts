@@ -67,3 +67,21 @@ export function watchTheBrowser(page: Page) {
   })
   return problems
 }
+
+/** Starts the page already signed in, as a login would leave it (the token the API gives, in the session storage). */
+export async function signInAs(
+  page: Page,
+  request: APIRequestContext,
+  role: 'supervisor' | 'maintainer',
+) {
+  const response = await request.post('/api/login', { data: { role, password: `${role}-pass` } })
+  const body = await response.json()
+  await page.addInitScript(
+    ([token, who, seconds]) =>
+      sessionStorage.setItem(
+        'vision-station-session',
+        JSON.stringify({ token, role: who, expires: Date.now() + Number(seconds) * 1000 }),
+      ),
+    [body.token, body.role, String(body.expires_in_s)],
+  )
+}

@@ -138,13 +138,11 @@ test.describe('gallery behaviour', () => {
       .getByLabel('Escolher arquivo de job')
       .setInputFiles({ name: 'notas.txt', mimeType: 'text/plain', buffer: Buffer.from('x') })
     await expect(page.getByRole('alert').filter({ hasText: 'notas.txt' })).toBeVisible()
-    await page
-      .getByLabel('Escolher arquivo de job')
-      .setInputFiles({
-        name: 'Caixa_v7.vjob',
-        mimeType: 'application/octet-stream',
-        buffer: Buffer.from('x'),
-      })
+    await page.getByLabel('Escolher arquivo de job').setInputFiles({
+      name: 'Caixa_v7.vjob',
+      mimeType: 'application/octet-stream',
+      buffer: Buffer.from('x'),
+    })
     await expect(page.getByText('Arquivo recebido: Caixa_v7.vjob')).toBeVisible()
   })
 

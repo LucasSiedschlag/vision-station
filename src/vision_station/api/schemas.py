@@ -55,6 +55,13 @@ class ResultOut(BaseModel):
     reason: str
     scores: dict[str, float]
     duration_ms: int
+    at: str | None = None  # when it was recorded (ISO 8601 with offset); None if results are not being recorded
+
+
+class RecentResult(BaseModel):
+    outcome: Outcome
+    reason: str
+    at: str
 
 
 class StateOut(BaseModel):
@@ -67,8 +74,20 @@ class StateOut(BaseModel):
     last_record_id: str | None = None
     camera: CameraOut
     counters: Counters
+    recent: list[RecentResult]  # the last 10 results, oldest first
     recording_failures: int
     version: str
+
+
+class ToolInfo(BaseModel):
+    name: str
+    version: int
+
+
+class AboutOut(BaseModel):
+    version: str
+    job_format: int
+    tools: list[ToolInfo]
 
 
 class LastResultOut(ResultOut):

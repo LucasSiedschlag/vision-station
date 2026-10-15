@@ -34,7 +34,8 @@ from vision_station.api.hub import EventHub
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
 from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import FormatError, JobRef, JobStore, StoreError
-from vision_station.store.archive import kind_of
+from vision_station.store.archive import FORMAT, kind_of
+from vision_station.tools import tool_types
 from vision_station.verification import VerificationFailed, activate, verify_stored_job
 from vision_station.verification.verify import Inspector
 
@@ -58,7 +59,7 @@ class ApiDeps:
     inspect: Inspector
     recorder: ResultRecorder | None = None
     backup_dir: Path | None = None
-    web_dist: Path = WEB_DIR / "dist"  # the built interface; without it the prototype in web/ is served
+    web_dist: Path = WEB_DIR / "dist"  # the built interface (cd frontend && npm run build)
     shift_start: Callable[[], datetime] = _start_of_today  # counters for "the current shift": since this moment
     frame_fps: float = 10.0  # the live view is reduced to at most this (NFR-PERF-4)
     frame_width: int = 960
@@ -88,16 +89,24 @@ def make_event_handler(deps: ApiDeps) -> Callable[[StationEvent], None]:
     return handle
 
 
-def _result(result: Any) -> m.ResultOut | None:
+def _result(result: Any, at: str | None = None) -> m.ResultOut | None:
     if result is None:
         return None
-    return m.ResultOut(outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000))
+    return m.ResultOut(outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000), at=at)
+
+
+def _recorded_at(deps: ApiDeps) -> str | None:
+    """When the last result was recorded, if a recorder is writing them."""
+    if deps.recorder is None or deps.recorder.last_record_id is None:
+        return None
+    record = deps.results.get(deps.recorder.last_record_id)
+    return record.at if record else None
 
 
 def event_message(deps: ApiDeps, event: StationEvent) -> dict[str, Any]:
     if event.kind == "result":
         message = m.ResultMessage(
-            **_result(event.result).model_dump(),
+            **_result(event.result, _recorded_at(deps) or datetime.now().astimezone().isoformat(timespec="milliseconds")).model_dump(),
             job=m.JobRefOut(id=event.job_id, name=event.job_name, version=event.job_version),
             record_id=deps.recorder.last_record_id if deps.recorder else None,
         )
@@ -116,10 +125,11 @@ def status_model(deps: ApiDeps) -> m.StateOut:
         detail=status.detail,
         warnings=list(status.warnings),
         job=m.JobRefOut(id=status.job_id, name=status.job_name, version=status.job_version),
-        last_result=_result(status.last_result),
+        last_result=_result(status.last_result, _recorded_at(deps)),
         last_record_id=deps.recorder.last_record_id if deps.recorder else None,
         camera=m.CameraOut(connected=acq.connected, last_frame_age_s=None if age is None else round(age, 2), last_error=acq.last_error),
         counters=m.Counters(**deps.results.counts(deps.shift_start())),
+        recent=[m.RecentResult(outcome=r.outcome, reason=r.reason, at=r.at) for r in reversed(deps.results.find(limit=10))],
         recording_failures=deps.recorder.failures if deps.recorder else 0,
         version=__version__,
     )
@@ -143,12 +153,10 @@ def encode_jpeg(image: Any, width: int, quality: int) -> bytes:
     return data.tobytes()
 
 
-def content_security_policy(index_html: str) -> str:
-    """Scripts only from this server, plus one inline import map if the page has one (by its hash)."""
-    found = re.search(r'<script type="importmap">(.*?)</script>', index_html, re.S)
-    inline = f" 'sha256-{base64.b64encode(hashlib.sha256(found.group(1).encode()).digest()).decode()}'" if found else ""
+def content_security_policy() -> str:
+    """Scripts and styles only from this server; the built page has no inline script."""
     return (
-        f"default-src 'self'; script-src 'self'{inline}; style-src 'self' 'unsafe-inline'; "
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
         "img-src 'self' blob: data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:*; "
         "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     )
@@ -240,7 +248,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
 
     @api.get("/result/last", response_model=m.LastResultOut, responses={404: {"model": m.Problem}})
     def last_result() -> m.LastResultOut:
-        result = _result(deps.controller.last_result)
+        result = _result(deps.controller.last_result, _recorded_at(deps))
         if result is None:
             raise Problem(404, "Ainda não há resultado", "no_result")
         return m.LastResultOut(**result.model_dump(), record_id=deps.recorder.last_record_id if deps.recorder else None)
@@ -452,6 +460,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
             raise Problem(404, "Nenhuma imagem foi guardada para esse resultado", "no_image")
         return FileResponse(deps.results.root / rel, media_type="image/jpeg")
 
+    @api.get("/about", response_model=m.AboutOut)
+    def about(_: str = Depends(need("supervisor"))) -> m.AboutOut:
+        return m.AboutOut(version=__version__, job_format=FORMAT, tools=[m.ToolInfo(name=n, version=v) for n, v in tool_types()])
+
     # --- maintainer ----------------------------------------------------------------------------------------
 
     @api.post("/collection/{job_id}", response_model=m.CollectionOut)
@@ -494,9 +506,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
 
     dist = deps.web_dist
     built = (dist / "index.html").is_file()
-    prototype_index = WEB_DIR / "index.html"
-    index_html = (dist / "index.html").read_text(encoding="utf-8") if built else prototype_index.read_text(encoding="utf-8") if prototype_index.is_file() else NO_BUILD_PAGE
-    csp = content_security_policy(index_html)
+    csp = content_security_policy()
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
@@ -522,17 +532,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
                 return FileResponse(candidate)  # favicon and the like
             return FileResponse(dist / "index.html", media_type="text/html")  # any client route: reload and deep links work
 
-    elif prototype_index.is_file():
+    else:  # the API keeps working; the page says how to build the interface
 
-        @app.get("/", include_in_schema=False)
-        def index() -> FileResponse:
-            return FileResponse(prototype_index, media_type="text/html")
-
-        app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
-    else:
-
-        @app.get("/", include_in_schema=False)
-        def no_build() -> HTMLResponse:
+        @app.get("/{path:path}", include_in_schema=False)
+        def no_build(path: str) -> HTMLResponse:
             return HTMLResponse(NO_BUILD_PAGE, status_code=503)
 
     return app

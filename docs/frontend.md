@@ -6,7 +6,7 @@
 | Version | 0.1 (draft) |
 | Date | 2026-10-14 |
 | Author | Lucas (developer and maintainer) |
-| Status | For review. Decisions here replace the Preact + htm prototype (TD-20 revised). |
+| Status | In use. Replaced the Preact + htm prototype, which was deleted in VIA-0033 (TD-20 revised). |
 
 Related documents: 02 — Requirements (FR-UI-*, FR-PLT-*, FR-ADM-*) · 03 — Architecture (§10 API) · 04 — Technical Decisions (TD-11, TD-19, TD-20) · `docs/design/DESIGN-IS-2026-10-14/` (audit of the prototype).
 
@@ -21,7 +21,7 @@ In scope: every screen listed in section 7, access control in the interface (sec
 
 Out of scope: a mobile app, remote access over the plant network (allowed later by configuration, NFR-SEC-3), languages other than Portuguese (the code is prepared, section 11), charts and dashboards beyond the shift counters.
 
-The prototype (`src/vision_station/web/`, Preact + htm, task VIA-0013) is kept running until the new operator screen reaches parity; then it is deleted (section 15).
+The Preact + htm prototype of task VIA-0013 was deleted when the React operator screen reached parity (task VIA-0033).
 
 ---
 
@@ -180,7 +180,7 @@ IBM Plex Sans for text, IBM Plex Mono for numbers, ids and times (tabular figure
 | `text-xl` | 24 / 32 | page titles |
 | `text-2xl` | 32 / 40 | counters |
 | `text-3xl` | 48 / 56 | reason text on the operator screen |
-| `text-display` | clamp(56px, 7vw, 112px) | the verdict word |
+| `text-display` | clamp(48px, 5.5vw, 96px) | the verdict word (APROVADO, REPROVADO, ERRO); other headlines use `text-3xl` |
 
 Weights 400, 500, 600. Verdict word 700. No other sizes or weights.
 
@@ -469,7 +469,7 @@ Used by the editor steps 2, 4 and 5 and by the camera screen.
 - **Kiosk (Edge `--kiosk`):** the operator route fills the screen, hides the cursor after 5 s of inactivity (touch and mouse bring it back), disables text selection and the context menu on that route only, and never shows scrollbars. Zoom and shortcuts are blocked by kiosk mode itself. An idle login falls back to the operator screen.
 - **Touch:** no hover-only function; drags in the editor work with touch; dialogs scroll inside themselves.
 - **Colour independence:** every status has an icon and a word.
-- **Reading distance:** operator text sizes in 7.1 are chosen for 2 m on a 24" 1080p monitor (verdict word about 110 px, reason about 48 px).
+- **Reading distance:** operator text sizes in 7.1 are chosen for 2 m on a 24" 1080p monitor (verdict word up to 96 px, reason 48 px).
 
 ---
 
