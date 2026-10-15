@@ -13,13 +13,19 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.jobfiles import JobFiles
+from vision_station.schema_labels import labels
 from vision_station.locators.base import Anchor, LocatorError, LocatorType, register
 
 Fraction = Annotated[float, Field(ge=0, le=1)]
 
 
 class TemplateParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        template=("Gabarito", "Imagem do objeto dentro do job, recortada da imagem de referência"),
+        search=("Área de busca (x0, y0, x1, y1)", "Frações da imagem; o objeto é procurado só aqui"),
+        min_score=("Semelhança mínima", "0 a 1; abaixo disso o objeto não foi encontrado"),
+        work_width=("Largura de trabalho (px)", "A imagem é comparada nesta largura, para ser rápido"),
+    ))
 
     template: Annotated[str, Field(min_length=1)]  # image inside the job
     search: tuple[Fraction, Fraction, Fraction, Fraction] = (0.0, 0.0, 1.0, 1.0)  # where to look, fractions of the frame

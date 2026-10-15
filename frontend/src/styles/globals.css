@@ -72,6 +72,8 @@
   --width-dialog: min(32rem, calc(100vw - 2rem));
   --width-confirm: min(30rem, calc(100vw - 2rem));
   --width-wide: min(48rem, calc(100vw - 2rem)); /* dialogs with a table or a diff */
+  --width-steps: 13rem; /* the job editor's step list */
+  --width-inspector: clamp(20rem, 28vw, 28rem); /* the job editor's step panel */
   --width-sheet: min(34rem, 100vw);
   --width-toast: min(24rem, calc(100vw - 2rem));
   --width-side: clamp(22rem, 34vw, 40rem); /* the verdict column of the operator screen */
@@ -94,6 +96,9 @@
 }
 @utility w-toast {
   width: var(--width-toast);
+}
+@utility grid-editor {
+  grid-template-columns: var(--width-steps) minmax(0, 1fr) var(--width-inspector);
 }
 @utility grid-operator {
   grid-template-columns: minmax(0, 1fr) var(--width-side);

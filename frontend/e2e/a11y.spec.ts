@@ -14,9 +14,7 @@ for (const scheme of themes) {
     test('waiting has no accessibility violations', async ({ page, station }) => {
       void station
       await page.goto('/')
-      await expect(page.getByRole('status', { name: 'Resultado' })).toContainText(
-        'Aguardando peça',
-      )
+      await expect(page.getByRole('status', { name: 'Resultado' })).toContainText('Aguardando peça')
       expect(await accessibilityProblems(page)).toEqual([])
     })
 

@@ -26,7 +26,11 @@ for (const scheme of ['dark', 'light'] as const) {
       await row.getByRole('link', { name: JOB }).click()
       await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
       await expect(
-        page.getByRole('list', { name: 'Versões' }).getByRole('button', { name: 'Ativar' }),
+        page
+          .getByRole('list', { name: 'Versões' })
+          .getByRole('listitem')
+          .filter({ hasText: 'Ativo' })
+          .getByRole('button', { name: 'Ativar' }),
       ).toBeDisabled()
       expect(await accessibilityProblems(page)).toEqual([])
     })
@@ -52,5 +56,5 @@ test('a backup is made and listed, and a job exported downloads a .vjob', async 
   await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
   const download = page.waitForEvent('download')
   await page.getByRole('menuitem', { name: 'Exportar .vjob' }).click()
-  expect((await download).suggestedFilename()).toMatch(/_v1\.vjob$/)
+  expect((await download).suggestedFilename()).toMatch(/_v\d+\.vjob$/) // the latest version; other tests may have saved more
 })

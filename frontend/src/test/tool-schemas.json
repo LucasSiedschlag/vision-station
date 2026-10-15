@@ -1,0 +1,563 @@
+{
+ "color": {
+  "additionalProperties": false,
+  "properties": {
+   "mode": {
+    "default": "range",
+    "description": "Faixa de matiz, saturação e valor, ou distância a uma cor de referência",
+    "enum": [
+     "range",
+     "reference"
+    ],
+    "title": "Modo",
+    "type": "string",
+    "x-enum-labels": {
+     "range": "faixa (HSV)",
+     "reference": "cor de referência"
+    }
+   },
+   "hue": {
+    "anyOf": [
+     {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+       {
+        "maximum": 179,
+        "minimum": 0,
+        "type": "integer"
+       },
+       {
+        "maximum": 179,
+        "minimum": 0,
+        "type": "integer"
+       }
+      ],
+      "type": "array"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 179 (graus ÷ 2). Se 'de' for maior que 'até', a faixa passa pelo vermelho, ex. 170 a 10",
+    "title": "Matiz (de, até)"
+   },
+   "s_min": {
+    "default": 0,
+    "description": "0 a 255. Use uns 60 ou mais com uma faixa de matiz: cinza e branco têm matiz 0",
+    "maximum": 255,
+    "minimum": 0,
+    "title": "Saturação mínima",
+    "type": "integer"
+   },
+   "s_max": {
+    "default": 255,
+    "description": "0 a 255",
+    "maximum": 255,
+    "minimum": 0,
+    "title": "Saturação máxima",
+    "type": "integer"
+   },
+   "v_min": {
+    "default": 0,
+    "description": "0 a 255",
+    "maximum": 255,
+    "minimum": 0,
+    "title": "Brilho mínimo",
+    "type": "integer"
+   },
+   "v_max": {
+    "default": 255,
+    "description": "0 a 255",
+    "maximum": 255,
+    "minimum": 0,
+    "title": "Brilho máximo",
+    "type": "integer"
+   },
+   "rgb": {
+    "anyOf": [
+     {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+       {
+        "maximum": 255,
+        "minimum": 0,
+        "type": "integer"
+       },
+       {
+        "maximum": 255,
+        "minimum": 0,
+        "type": "integer"
+       },
+       {
+        "maximum": 255,
+        "minimum": 0,
+        "type": "integer"
+       }
+      ],
+      "type": "array"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 255 cada",
+    "title": "Cor de referência (R, G, B)"
+   },
+   "max_distance": {
+    "default": 20.0,
+    "description": "Quanto a cor pode diferir da referência; 10 a 30 é comum",
+    "exclusiveMinimum": 0,
+    "maximum": 200,
+    "title": "Distância máxima (ΔE)",
+    "type": "number"
+   },
+   "min_fraction": {
+    "anyOf": [
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 1: a cor precisa ocupar pelo menos isso da região",
+    "title": "Fração mínima da área"
+   },
+   "max_fraction": {
+    "anyOf": [
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 1: para conferir que uma cor não está lá",
+    "title": "Fração máxima da área"
+   },
+   "axis": {
+    "default": "none",
+    "description": "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)",
+    "enum": [
+     "none",
+     "x",
+     "y"
+    ],
+    "title": "Medir ao longo de",
+    "type": "string",
+    "x-enum-labels": {
+     "none": "área toda",
+     "x": "horizontal (x)",
+     "y": "vertical (y)"
+    }
+   },
+   "line_min": {
+    "default": 0.3,
+    "description": "0 a 1: parte de cada coluna com a cor para ela contar como coberta",
+    "exclusiveMinimum": 0,
+    "maximum": 1,
+    "title": "Mínimo por coluna (ou linha)",
+    "type": "number"
+   },
+   "min_coverage": {
+    "anyOf": [
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 1: parte do comprimento que precisa estar coberta",
+    "title": "Cobertura mínima"
+   },
+   "max_gap": {
+    "anyOf": [
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 1 do comprimento, pontas incluídas",
+    "title": "Maior trecho faltando"
+   }
+  },
+  "title": "ColorParams",
+  "type": "object"
+ },
+ "code": {
+  "additionalProperties": false,
+  "properties": {
+   "formats": {
+    "anyOf": [
+     {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos",
+    "title": "Formatos"
+   },
+   "expect": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Um código só conta se tiver exatamente este texto",
+    "title": "Texto esperado"
+   },
+   "pattern": {
+    "anyOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Expressão regular; ex.: L\\d{6}",
+    "title": "Padrão do texto"
+   },
+   "min_count": {
+    "default": 1,
+    "description": "Códigos aceitos para aprovar",
+    "minimum": 1,
+    "title": "Mínimo de códigos",
+    "type": "integer"
+   },
+   "max_count": {
+    "anyOf": [
+     {
+      "minimum": 1,
+      "type": "integer"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Mais que isso reprova (ex.: etiqueta colada duas vezes)",
+    "title": "Máximo de códigos"
+   },
+   "try_rotate": {
+    "default": true,
+    "title": "Tentar girado",
+    "type": "boolean"
+   },
+   "try_downscale": {
+    "default": true,
+    "title": "Tentar reduzido",
+    "type": "boolean"
+   },
+   "try_invert": {
+    "default": true,
+    "description": "Código claro sobre fundo escuro",
+    "title": "Tentar invertido",
+    "type": "boolean"
+   }
+  },
+  "title": "CodeParams",
+  "type": "object"
+ },
+ "blob": {
+  "$defs": {
+   "ColorRange": {
+    "additionalProperties": false,
+    "description": "`range`: hue (lo > hi wraps through red, e.g. [170, 10]), saturation and value limits.\n`reference`: every pixel within `max_distance` (ΔE, CIELAB) of `rgb`.",
+    "properties": {
+     "mode": {
+      "default": "range",
+      "description": "Faixa de matiz, saturação e valor, ou distância a uma cor de referência",
+      "enum": [
+       "range",
+       "reference"
+      ],
+      "title": "Modo",
+      "type": "string",
+      "x-enum-labels": {
+       "range": "faixa (HSV)",
+       "reference": "cor de referência"
+      }
+     },
+     "hue": {
+      "anyOf": [
+       {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+         {
+          "maximum": 179,
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "maximum": 179,
+          "minimum": 0,
+          "type": "integer"
+         }
+        ],
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "0 a 179 (graus ÷ 2). Se 'de' for maior que 'até', a faixa passa pelo vermelho, ex. 170 a 10",
+      "title": "Matiz (de, até)"
+     },
+     "s_min": {
+      "default": 0,
+      "description": "0 a 255. Use uns 60 ou mais com uma faixa de matiz: cinza e branco têm matiz 0",
+      "maximum": 255,
+      "minimum": 0,
+      "title": "Saturação mínima",
+      "type": "integer"
+     },
+     "s_max": {
+      "default": 255,
+      "description": "0 a 255",
+      "maximum": 255,
+      "minimum": 0,
+      "title": "Saturação máxima",
+      "type": "integer"
+     },
+     "v_min": {
+      "default": 0,
+      "description": "0 a 255",
+      "maximum": 255,
+      "minimum": 0,
+      "title": "Brilho mínimo",
+      "type": "integer"
+     },
+     "v_max": {
+      "default": 255,
+      "description": "0 a 255",
+      "maximum": 255,
+      "minimum": 0,
+      "title": "Brilho máximo",
+      "type": "integer"
+     },
+     "rgb": {
+      "anyOf": [
+       {
+        "maxItems": 3,
+        "minItems": 3,
+        "prefixItems": [
+         {
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+         }
+        ],
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "0 a 255 cada",
+      "title": "Cor de referência (R, G, B)"
+     },
+     "max_distance": {
+      "default": 20.0,
+      "description": "Quanto a cor pode diferir da referência; 10 a 30 é comum",
+      "exclusiveMinimum": 0,
+      "maximum": 200,
+      "title": "Distância máxima (ΔE)",
+      "type": "number"
+     }
+    },
+    "title": "ColorRange",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "properties": {
+   "mode": {
+    "enum": [
+     "color",
+     "dark",
+     "light"
+    ],
+    "title": "O objeto é",
+    "type": "string",
+    "x-enum-labels": {
+     "color": "de uma cor",
+     "dark": "mais escuro que o fundo",
+     "light": "mais claro que o fundo"
+    }
+   },
+   "color": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/ColorRange"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Cor do objeto"
+   },
+   "threshold": {
+    "anyOf": [
+     {
+      "maximum": 255,
+      "minimum": 0,
+      "type": "integer"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "0 a 255. Vazio: automático",
+    "title": "Limiar de cinza"
+   },
+   "search": {
+    "default": [
+     0.0,
+     0.0,
+     1.0,
+     1.0
+    ],
+    "description": "Frações da imagem",
+    "maxItems": 4,
+    "minItems": 4,
+    "prefixItems": [
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     }
+    ],
+    "title": "Área de busca (x0, y0, x1, y1)",
+    "type": "array"
+   },
+   "min_area": {
+    "default": 0.02,
+    "description": "Fração da área de busca",
+    "exclusiveMinimum": 0,
+    "maximum": 1,
+    "title": "Área mínima",
+    "type": "number"
+   },
+   "max_area": {
+    "default": 1.0,
+    "description": "Fração da área de busca",
+    "exclusiveMinimum": 0,
+    "maximum": 1,
+    "title": "Área máxima",
+    "type": "number"
+   },
+   "clean_px": {
+    "default": 3,
+    "description": "Remove pontinhos e fecha furos pequenos",
+    "maximum": 50,
+    "minimum": 0,
+    "title": "Limpeza (px)",
+    "type": "integer"
+   },
+   "work_width": {
+    "default": 640,
+    "maximum": 4096,
+    "minimum": 64,
+    "title": "Largura de trabalho (px)",
+    "type": "integer"
+   }
+  },
+  "required": [
+   "mode"
+  ],
+  "title": "BlobParams",
+  "type": "object"
+ },
+ "fixed": {
+  "additionalProperties": false,
+  "properties": {
+   "rect": {
+    "description": "Frações da imagem; desenhe na imagem",
+    "maxItems": 4,
+    "minItems": 4,
+    "prefixItems": [
+     {
+      "type": "number"
+     },
+     {
+      "type": "number"
+     },
+     {
+      "type": "number"
+     },
+     {
+      "type": "number"
+     }
+    ],
+    "title": "Posição do objeto (x0, y0, x1, y1)",
+    "type": "array"
+   }
+  },
+  "required": [
+   "rect"
+  ],
+  "title": "FixedParams",
+  "type": "object"
+ }
+}

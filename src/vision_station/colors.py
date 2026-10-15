@@ -9,6 +9,8 @@ import cv2
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from vision_station.schema_labels import COLOR_RANGE, labels
+
 Byte = Annotated[int, Field(ge=0, le=255)]
 Hue = Annotated[int, Field(ge=0, le=179)]  # OpenCV hue: degrees / 2
 
@@ -17,7 +19,7 @@ class ColorRange(BaseModel):
     """`range`: hue (lo > hi wraps through red, e.g. [170, 10]), saturation and value limits.
     `reference`: every pixel within `max_distance` (ΔE, CIELAB) of `rgb`."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(**COLOR_RANGE))
 
     mode: Literal["range", "reference"] = "range"
     hue: tuple[Hue, Hue] | None = None  # None: any hue (e.g. black or white, by value alone)

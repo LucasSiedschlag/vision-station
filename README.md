@@ -61,7 +61,7 @@ uv run python scripts/set_password.py supervisor
 uv run vision-station --data bench_data
 ```
 
-Open http://127.0.0.1:8765: the operator screen. **Entrar** opens the Supervisor and Maintainer screens; the API's own page is http://127.0.0.1:8765/api/docs. Stop with Ctrl+C. Logs: `bench_data/logs/`.
+Open http://127.0.0.1:8765: the operator screen. **Entrar** opens the Supervisor and Maintainer screens: **Jobs** lists the jobs (activate with verification, import, export, backups), and as Maintainer **Novo job** / **Editar** opens the job editor (camera, trigger, quality, regions drawn on the image, tools, reference, test, save). The API's own page is http://127.0.0.1:8765/api/docs. Stop with Ctrl+C. Logs: `bench_data/logs/`.
 
 **4. Check that all is well**
 

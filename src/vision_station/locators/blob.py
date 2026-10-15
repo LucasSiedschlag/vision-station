@@ -14,13 +14,23 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.colors import ColorRange, color_mask
 from vision_station.jobfiles import JobFiles
+from vision_station.schema_labels import labels
 from vision_station.locators.base import Anchor, LocatorType, register
 
 Fraction = Annotated[float, Field(ge=0, le=1)]
 
 
 class BlobParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        mode=("O objeto é", "", {"color": "de uma cor", "dark": "mais escuro que o fundo", "light": "mais claro que o fundo"}),
+        color=("Cor do objeto", ""),
+        threshold=("Limiar de cinza", "0 a 255. Vazio: automático"),
+        search=("Área de busca (x0, y0, x1, y1)", "Frações da imagem"),
+        min_area=("Área mínima", "Fração da área de busca"),
+        max_area=("Área máxima", "Fração da área de busca"),
+        clean_px=("Limpeza (px)", "Remove pontinhos e fecha furos pequenos"),
+        work_width=("Largura de trabalho (px)", ""),
+    ))
 
     mode: Literal["color", "dark", "light"]
     color: ColorRange | None = None  # for mode 'color'

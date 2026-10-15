@@ -17,9 +17,10 @@ Fields for `reason_fail`: {fraction}, {coverage}, {missing} (1 - coverage), {gap
 from typing import Annotated, Literal, Self
 
 import numpy as np
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from vision_station.colors import ColorRange, color_mask
+from vision_station.schema_labels import COLOR_RANGE, labels
 from vision_station.jobfiles import JobFiles
 from vision_station.tools.base import ToolResult, ToolType, register
 from vision_station.tools.measures import at_least, at_most, strip_profile
@@ -28,6 +29,16 @@ Share = Annotated[float, Field(ge=0, le=1)]
 
 
 class ColorParams(ColorRange):
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        **COLOR_RANGE,
+        min_fraction=("Fração mínima da área", "0 a 1: a cor precisa ocupar pelo menos isso da região"),
+        max_fraction=("Fração máxima da área", "0 a 1: para conferir que uma cor não está lá"),
+    axis=("Medir ao longo de", "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)", {"none": "área toda", "x": "horizontal (x)", "y": "vertical (y)"}),
+    min_coverage=("Cobertura mínima", "0 a 1: parte do comprimento que precisa estar coberta"),
+    max_gap=("Maior trecho faltando", "0 a 1 do comprimento, pontas incluídas"),
+        line_min=("Mínimo por coluna (ou linha)", "0 a 1: parte de cada coluna com a cor para ela contar como coberta"),
+    ))
+
     min_fraction: Share | None = None
     max_fraction: Share | None = None
     axis: Literal["none", "x", "y"] = "none"

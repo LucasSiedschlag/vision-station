@@ -15,11 +15,21 @@ import zxingcpp
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from vision_station.jobfiles import JobFiles
+from vision_station.schema_labels import labels
 from vision_station.tools.base import ToolResult, ToolType, register
 
 
 class CodeParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        formats=("Formatos", "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos"),
+        expect=("Texto esperado", "Um código só conta se tiver exatamente este texto"),
+        pattern=("Padrão do texto", "Expressão regular; ex.: L\\d{6}"),
+        min_count=("Mínimo de códigos", "Códigos aceitos para aprovar"),
+        max_count=("Máximo de códigos", "Mais que isso reprova (ex.: etiqueta colada duas vezes)"),
+        try_rotate=("Tentar girado", ""),
+        try_downscale=("Tentar reduzido", ""),
+        try_invert=("Tentar invertido", "Código claro sobre fundo escuro"),
+    ))
 
     formats: list[str] | None = None  # e.g. ["QRCode", "Code128"]; None = every readable format
     expect: str | None = None  # a code is accepted if its text is exactly this

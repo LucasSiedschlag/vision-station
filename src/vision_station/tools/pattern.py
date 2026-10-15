@@ -24,6 +24,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.jobfiles import JobFiles
+from vision_station.schema_labels import labels
 from vision_station.tools.base import ToolError, ToolResult, ToolType, register
 from vision_station.tools.measures import at_least, at_most, strip_profile
 
@@ -32,7 +33,16 @@ MAX_MATCHES = 500
 
 
 class PatternParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        template=("Gabarito", "Imagem dentro do job, recortada da imagem de referência"),
+        min_score=("Semelhança mínima", "0 a 1; 0,7 é um bom começo"),
+        min_count=("Mínimo de ocorrências", "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está"),
+        max_count=("Máximo de ocorrências", "Vazio: sem limite"),
+    axis=("Medir ao longo de", "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)", {"none": "área toda", "x": "horizontal (x)", "y": "vertical (y)"}),
+    min_coverage=("Cobertura mínima", "0 a 1: parte do comprimento que precisa estar coberta"),
+    max_gap=("Maior trecho faltando", "0 a 1 do comprimento, pontas incluídas"),
+        max_side=("Maior lado para comparar (px)", "Regiões maiores são reduzidas para comparar mais rápido"),
+    ))
 
     template: Annotated[str, Field(min_length=1)]  # image inside the job
     min_score: Annotated[float, Field(gt=0, le=1)] = 0.7
