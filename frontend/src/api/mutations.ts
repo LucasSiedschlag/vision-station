@@ -15,6 +15,15 @@ export function useTrigger() {
   })
 }
 
+/** The maintainer's station commands: retry after a fault, resume after a pause (e.g. camera tuning). */
+export function useStationCommand() {
+  return useMutation({
+    mutationFn: (command: 'retry' | 'resume' | 'pause') =>
+      call(api.POST('/api/station/{command}', { params: { path: { command } } })),
+    onError: (error) => toast.error(describeError(error)),
+  })
+}
+
 export function useMarkWrong() {
   const client = useQueryClient()
   return useMutation({

@@ -20,6 +20,8 @@ Sibling project: `../vision-sim` (Bancada Virtual de Visão, project VIS, public
 | `docs/frontend.md` | 05: the web interface (React + Vite + TypeScript): design system, screens by role, API contract, editor, tests, build |
 | `docs/integration.md` | 06: how another program uses Vision Station through the local API (inspections with an id, result and pictures, live view, allowed origins) |
 | `docs/models.md` | 07: the `detect` tool, training offline, ONNX export, the model card |
+| `docs/job-format.md` | 08: `.vjob`/`.vbak` format (D8) |
+| `docs/guias/` | Portuguese guides: installation, operator, backup and restore (D10) |
 
 Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs stable; when a decision changes, update the TD record and every place that cites it.
 
@@ -42,6 +44,7 @@ uv run pytest        # run the tests
 uv run vision-station --data bench_data   # the program (setup: scripts/setup_bench.py, scripts/set_password.py)
 (cd frontend && npm ci && npm test && npm run build)   # the React interface; after changing the API: npm run gen:api
 uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
+powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1   # Windows: program (PyInstaller) + installer (Inno Setup)
 ```
 
 Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry; `code`, `color`, `pattern`, `detect`; `measures.py` for scores and strip gaps), `models.py` (ONNX models and their cards, SHA-256 checked, sessions cached), `locators/` (locator registry; `fixed`, `template`, `blob`), `colors.py` (color ranges shared by tools and locators), `jobfiles.py` (job files a tool or locator needs, checked on load), `pipeline.py` (`inspect_job`: brightness → locator → sharpness → regions → all tools → PASS/FAIL/ERROR), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR), `system/` (`system.yaml`, applying settings, scheduled backup and housekeeping, camera and folder checks), `runtime.py` (the `vision-station` entry point that wires everything).

@@ -345,3 +345,24 @@ describe('the shell', () => {
     )
   })
 })
+
+describe('station commands for the maintainer', () => {
+  it('a fault offers "Tentar de novo" to the maintainer only, and sends it', async () => {
+    let sent = ''
+    server.use(
+      http.post('*/api/station/:command', ({ params }) => {
+        sent = String(params.command)
+        return HttpResponse.json({ sent })
+      }),
+    )
+    setLive({ state: 'Fault', message: 'Falha na verificação — chamar manutenção' })
+    const { unmount } = renderApp('/')
+    expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
+    unmount()
+    signIn('maintainer')
+    setLive({ state: 'Fault', message: 'Falha na verificação — chamar manutenção' })
+    renderApp('/')
+    await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    await waitFor(() => expect(sent).toBe('retry'))
+  })
+})

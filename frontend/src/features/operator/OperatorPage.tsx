@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { useLoginDialog } from '@/api/auth'
 import { useLive } from '@/api/live'
-import { useMarkWrong, useTrigger } from '@/api/mutations'
+import { useMarkWrong, useStationCommand, useTrigger } from '@/api/mutations'
+import { can } from '@/lib/permissions'
 import { useSession } from '@/api/session'
 import { LiveCanvas } from '@/components/domain/LiveCanvas'
 import { StatusStrip } from '@/components/domain/StatusStrip'
@@ -154,6 +155,14 @@ export function OperatorPage() {
   const role = useSession((s) => s.role)
   const showLogin = useLoginDialog((s) => s.show)
   const trigger = useTrigger()
+  const command = useStationCommand()
+  const stationCommand = can(role, 'stationCommands')
+    ? status?.state === 'Fault'
+      ? 'retry'
+      : status?.state === 'Paused'
+        ? 'resume'
+        : null
+    : null
   const [asking, setAsking] = useState(false)
   // without a login the screen stands alone (kiosk): its own header and footer, a hidden cursor, no selection or context menu
   const bare = role === 'operator'
@@ -209,6 +218,15 @@ export function OperatorPage() {
             >
               {text.operator.trigger}
             </Button>
+            {stationCommand ? (
+              <Button
+                variant="primary"
+                loading={command.isPending}
+                onClick={() => command.mutate(stationCommand)}
+              >
+                {stationCommand === 'retry' ? text.operator.retry : text.operator.resume}
+              </Button>
+            ) : null}
             {markable ? (
               <Button variant="ghost" onClick={() => setAsking(true)}>
                 {text.operator.wrong}

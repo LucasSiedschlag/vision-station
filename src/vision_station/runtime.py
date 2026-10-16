@@ -156,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--set-password", choices=["supervisor", "maintainer"], metavar="ROLE", help="set the password of supervisor or maintainer and exit")
     args = parser.parse_args(argv)
     if args.version:
-        print(f"vision-station {describe()}")
+        print(f"vision-station {describe().replace(' · ', ' / ')}")  # plain ASCII: any console code page
         return 0
     root = args.data or default_data_root()
     if args.set_password:

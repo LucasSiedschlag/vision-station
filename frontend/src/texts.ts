@@ -42,6 +42,8 @@ export const text = {
   },
   operator: {
     trigger: 'Inspecionar agora',
+    retry: 'Tentar de novo',
+    resume: 'Retomar a estação',
     wrong: 'Resultado incorreto?',
     wrongTitle: 'Este resultado estava errado?',
     wrongBody: (said: string) => `O sistema disse ${said}. Qual era o resultado certo?`,
