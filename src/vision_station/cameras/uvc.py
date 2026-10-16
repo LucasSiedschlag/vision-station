@@ -38,6 +38,7 @@ FOURCC = {"mjpeg": "MJPG", "yuyv": "YUY2"}
 POWER_LINE_VALUE = {50: 1, 60: 2}  # UVC power line frequency: 0 off, 1 = 50 Hz, 2 = 60 Hz
 SETTLE_S = 0.2  # TD-04: wait between switching to manual and writing values
 MAX_READ_FAILURES = 5
+PRESENCE_EVERY_S = 2.0  # VIA-0050: how often frames() checks the device is still plugged in
 
 
 class ControlError(Exception):
@@ -70,6 +71,9 @@ class Controls(Protocol):
 
     def set(self, name: str, value: int, auto: bool) -> None:
         """Raises ControlError if the write is refused."""
+
+    def present(self) -> bool:
+        """The device is still in the system's device list (False once it is unplugged)."""
 
     def close(self) -> None: ...
 
@@ -252,7 +256,13 @@ class UvcCamera(Camera):
     def frames(self) -> Iterator[Frame]:
         self._require_open()
         failures = 0
+        checked = self._clock()
         while self._capture is not None:
+            if self._clock() - checked >= PRESENCE_EVERY_S:
+                # unplugged, DirectShow keeps delivering (black) frames with no error (VIA-0050)
+                checked = self._clock()
+                if self._controls is not None and not self._controls.present():
+                    raise CameraError("câmera desconectada: não está mais na lista de dispositivos")
             ok, image = self._capture.read()
             if not ok or image is None:
                 failures += 1

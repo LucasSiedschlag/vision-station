@@ -233,6 +233,32 @@ def test_acquisition_loses_the_camera_retries_with_growing_delays_and_reapplies_
     assert acq.latest() is not None
 
 
+def test_a_camera_that_sends_only_uniform_frames_is_lost_and_reconnected():
+    """VIA-0050: an unplugged C920 kept sending black frames with no error; the station never noticed."""
+    clock = Clock()
+    cam = FakeCamera(clock, scene=scene_with_object(40))
+    acq = Acquisition(cam, {}, clock=clock, retry_delays_s=(1.0,), dead_after_s=2.0)
+    acq.configure(make_bundle().profile)
+    for _ in range(5):
+        clock.advance(0.1)
+        acq.step()
+    assert acq.connected
+    cam.scene = np.full((120, 160, 3), 1, np.uint8)  # what DirectShow sends after the unplug
+    for _ in range(15):
+        clock.advance(0.1)
+        acq.step()
+    assert acq.connected  # a short dark moment is not a loss
+    for _ in range(10):
+        clock.advance(0.1)
+        acq.step()
+    assert not acq.connected and "uniforme" in acq.last_error and acq.latest() is None
+    cam.scene = scene_with_object(40)  # plugged back
+    for _ in range(20):
+        clock.advance(0.1)
+        acq.step()
+    assert acq.connected and acq.generation == 2 and len(cam.applied) == 2
+
+
 def test_acquisition_detects_a_stall_and_the_end_of_a_stream():
     clock = Clock()
     cam = FakeCamera(clock)

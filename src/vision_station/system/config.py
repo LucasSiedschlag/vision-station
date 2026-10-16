@@ -61,6 +61,8 @@ class CameraSettings(_Strict):
     keyring_entry: str | None = None  # where the camera's password is kept in the OS secret store
     # frames dropped after the settings are written: the C920 sends overexposed frames first (VIA-0045)
     settle_ms: Annotated[int, Field(ge=0, le=5000)] = 500
+    # only uniform (black) frames for this long = camera lost: an unplugged C920 sends them with no error (VIA-0050)
+    dead_after_s: Annotated[float, Field(ge=0, le=60)] = 2.0
 
     @field_validator("driver")
     @classmethod

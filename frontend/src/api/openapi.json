@@ -246,6 +246,13 @@
             "title": "Connection",
             "type": "object"
           },
+          "dead_after_s": {
+            "default": 2.0,
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Dead After S",
+            "type": "number"
+          },
           "driver": {
             "default": "uvc",
             "title": "Driver",
@@ -316,6 +323,13 @@
             "default": {},
             "title": "Connection",
             "type": "object"
+          },
+          "dead_after_s": {
+            "default": 2.0,
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Dead After S",
+            "type": "number"
           },
           "driver": {
             "default": "uvc",
@@ -2240,6 +2254,7 @@
             "$ref": "#/components/schemas/CameraSettings",
             "default": {
               "connection": {},
+              "dead_after_s": 2.0,
               "driver": "uvc",
               "settle_ms": 500
             }

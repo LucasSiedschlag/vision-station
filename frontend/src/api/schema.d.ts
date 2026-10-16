@@ -987,6 +987,11 @@ export interface components {
         [key: string]: unknown
       }
       /**
+       * Dead After S
+       * @default 2
+       */
+      dead_after_s: number
+      /**
        * Driver
        * @default uvc
        */
@@ -1023,6 +1028,11 @@ export interface components {
       connection: {
         [key: string]: unknown
       }
+      /**
+       * Dead After S
+       * @default 2
+       */
+      dead_after_s: number
       /**
        * Driver
        * @default uvc
@@ -1880,6 +1890,7 @@ export interface components {
       /**
        * @default {
        *       "connection": {},
+       *       "dead_after_s": 2,
        *       "driver": "uvc",
        *       "settle_ms": 500
        *     }

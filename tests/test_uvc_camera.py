@@ -38,6 +38,10 @@ class FakeControls:
         self.ignore = set(ignore)  # controls whose writes are silently dropped
         self.log = []
         self.closed = False
+        self.is_present = True  # False: the device left Windows' device list (unplugged)
+
+    def present(self):
+        return self.is_present
 
     def range(self, name):
         return self.ranges.get(name)
@@ -304,6 +308,19 @@ def test_frames_and_health():
     assert health.connected and health.fps > 0
     cam.close()
     assert capture.released and not cam.health().connected
+
+
+def test_a_camera_that_left_the_device_list_is_lost_even_while_frames_still_come():
+    """VIA-0050: unplugged, DirectShow kept delivering (black) frames with no error."""
+    cam, controls, captures = make_camera()
+    captures.last.frames_left = 10_000
+    frames = cam.frames()
+    for _ in range(5):
+        next(frames)
+    controls.is_present = False
+    with pytest.raises(CameraError, match="desconectada"):
+        for _ in range(200):  # the fake clock moves 0.1 s per call: a few checks pass
+            next(frames)
 
 
 def test_snapshot_is_not_offered_and_capabilities_list_what_exists():

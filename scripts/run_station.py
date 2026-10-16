@@ -53,6 +53,7 @@ def main() -> int:
     parser.add_argument("--still-ms", type=int, default=800)
     parser.add_argument("--min-area", type=float, default=0.05, help="fraction of the area that must change to count as an object")
     parser.add_argument("--settle-ms", type=int, default=SystemConfig().camera.settle_ms, help="frames dropped after the settings are written (camera.settle_ms)")
+    parser.add_argument("--dead-after-s", type=float, default=SystemConfig().camera.dead_after_s, help="only uniform frames this long = camera lost (camera.dead_after_s)")
     args = parser.parse_args()
     connection = {"device_path": args.path} if args.path else {"device_name": args.name} if args.name else {"device_index": args.index}
     if args.path is None and args.name is None and args.index is None:
@@ -82,7 +83,7 @@ def main() -> int:
             if event.frame is not None:
                 cv2.imwrite(str(out / f"{count:03d}_{event.result.outcome}.png"), event.frame.image)
 
-    acq = Acquisition(create_camera("uvc"), connection, settle_s=args.settle_ms / 1000)
+    acq = Acquisition(create_camera("uvc"), connection, settle_s=args.settle_ms / 1000, dead_after_s=args.dead_after_s)
     controller = StationController(acq, inspect, on_event=show)
     controller.start(build_job(profile, args.still_ms, args.min_area))
     acq.start()

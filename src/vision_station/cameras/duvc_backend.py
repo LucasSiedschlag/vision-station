@@ -21,9 +21,10 @@ PROPERTY = {
 
 
 class DuvcControls:
-    def __init__(self, controller: Any, duvc: Any):
+    def __init__(self, controller: Any, duvc: Any, device_path: str = ""):
         self._cam = controller
         self._duvc = duvc
+        self._path = device_path
 
     def range(self, name: str) -> ControlRange | None:
         try:
@@ -56,6 +57,14 @@ class DuvcControls:
             raise
         except Exception as exc:
             raise ControlError(f"cannot set {name}: {exc}") from exc
+
+    def present(self) -> bool:
+        if not self._path:
+            return True  # nothing to compare with
+        try:
+            return any(d.path == self._path for d in self._duvc.list_devices())
+        except Exception:  # the list could not be read: not a reason to drop a working camera
+            return True
 
     def close(self) -> None:
         self._cam.close()
@@ -105,4 +114,4 @@ def open_duvc_controls(connection: Mapping[str, Any]) -> tuple[Controls, int]:
         controller = duvc_ctl.CameraController(device=devices[index])
     except Exception as exc:
         raise CameraError(f"cannot open camera controls: {exc}") from exc
-    return DuvcControls(controller, duvc_ctl), index
+    return DuvcControls(controller, duvc_ctl, devices[index].path), index

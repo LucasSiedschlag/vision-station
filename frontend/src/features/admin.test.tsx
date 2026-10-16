@@ -216,6 +216,7 @@ describe('settings', () => {
         connection: { device_name: 'C920' },
         keyring_entry: null,
         settle_ms: 500,
+        dead_after_s: 2,
       },
       recording: {
         pass_sample_every: 1,

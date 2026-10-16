@@ -5,6 +5,8 @@ the job's camera settings on every (re)connect, and retries a lost camera with g
 After each apply the frames of the settling time are dropped: a camera may send a few frames with
 other settings first (the C920 reopens its capture and sends overexposed frames), and the controller
 must not take one of them as the empty scene or inspect it (VIA-0045).
+A camera that sends only perfectly uniform frames for `dead_after_s` is lost too: an unplugged C920 keeps
+sending black frames through DirectShow with no error (VIA-0050). A real camera always has some noise.
 The station controller asks for a frame captured *after* a given moment, never one buffered
 before it (FR-ACQ-6).
 """
@@ -13,6 +15,8 @@ import threading
 import time
 from collections.abc import Callable, Iterator, Mapping
 from typing import Any
+
+import numpy as np
 
 from vision_station.cameras import ApplyReport, Camera, CameraError, Frame
 from vision_station.jobs import CameraProfile
@@ -28,10 +32,12 @@ class Acquisition:
         stall_timeout_s: float = 3.0,
         retry_delays_s: tuple[float, ...] = (1.0, 2.0, 5.0, 10.0),
         settle_s: float = 0.0,
+        dead_after_s: float = 0.0,
     ):
         self._camera = camera
         self._connection = dict(connection)
         self.settle_s = settle_s  # frames are dropped for this long after each apply
+        self.dead_after_s = dead_after_s  # only uniform frames for this long = lost (0: never)
         self._clock = clock
         self._sleep = sleep
         self.stall_timeout_s = stall_timeout_s
@@ -46,6 +52,7 @@ class Acquisition:
         self.applied_serial = -1  # the profile_serial that was last applied successfully written
         self._settling: int | None = None  # the profile_serial just written, until the settling time is over
         self._settle_until = 0.0
+        self._uniform_since: float | None = None
         self._reapply = False
         self._connected = False
         self._next_try = 0.0
@@ -129,12 +136,25 @@ class Acquisition:
             self._lose(exc)
             return
         self._failures = 0
+        if self.dead_after_s > 0 and self._dead(frame):
+            self._lose(CameraError(f"a câmera só manda imagem uniforme (preta) há {self.dead_after_s:g} s: desconectada?"))
+            return
         if self._settling is not None:
             if self._clock() < self._settle_until:
                 return  # still settling: this frame may not show the new settings yet
             self.applied_serial, self._settling = self._settling, None
         with self._lock:
             self._latest = frame
+
+    def _dead(self, frame: Frame) -> bool:
+        sample = np.asarray(frame.image)[::8, ::8]
+        if sample.size and int(sample.max()) != int(sample.min()):
+            self._uniform_since = None
+            return False
+        now = self._clock()
+        if self._uniform_since is None:
+            self._uniform_since = now
+        return now - self._uniform_since >= self.dead_after_s
 
     def _connect(self) -> None:
         self._camera.open(self._connection)
@@ -162,6 +182,7 @@ class Acquisition:
         with self._lock:
             self._latest = None  # a frame from before the loss must never be used
         self._settling = None  # written again on the reconnect
+        self._uniform_since = None
         self._connected = False
         self._frames = None
         self.last_error = f"{type(exc).__name__}: {exc}"
