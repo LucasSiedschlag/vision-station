@@ -43,6 +43,7 @@ class StationSettings(_Strict):
     shift_starts: Annotated[list[str], Field(min_length=1, max_length=6)] = ["00:00"]  # counters start again at each
     idle_logout_min: Annotated[int, Field(ge=1, le=240)] = 10
     fail_sound: bool = False
+    result_min_s: Annotated[float, Field(ge=0, le=30)] = 2.0  # a verdict stays on screen at least this long (VIA-0049)
 
     @field_validator("shift_starts")
     @classmethod

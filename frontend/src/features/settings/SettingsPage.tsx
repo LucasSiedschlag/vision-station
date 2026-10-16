@@ -184,6 +184,19 @@ function SettingsForm({ system }: { system: SystemOut }) {
             />
           )}
         </Field>
+        <Field label={t.resultMin} hint={t.resultMinHint} error={err('station.result_min_s')}>
+          {(p) => (
+            <NumberInput
+              {...p}
+              value={config.station.result_min_s}
+              onChange={(v) => set('station', { result_min_s: v ?? 2 })}
+              unit={t.seconds}
+              min={0}
+              max={30}
+              decimals={1}
+            />
+          )}
+        </Field>
         <Switch
           checked={config.station.fail_sound}
           onCheckedChange={(c) => set('station', { fail_sound: c })}

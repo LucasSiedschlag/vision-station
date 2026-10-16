@@ -500,6 +500,41 @@ def test_manual_trigger_also_works_with_presence_detection():
     assert len(rig.inspected) == 1
 
 
+def test_a_verdict_stays_shown_for_the_hold_time_while_the_station_is_already_armed_again():
+    """VIA-0049: a manual or API trigger on a scene the image trigger sees as empty re-arms at once; the
+    verdict was on screen for about 90 ms. The station stays Ready (the next request is accepted), but its
+    status keeps showing the verdict for hold_s, and says when that ends."""
+    rig = Rig(outcome=Outcome.FAIL, hold_s=2.0)
+    rig.boot()
+    rig.controller.request_trigger()
+    rig.tick(8)  # inspected, shown, re-armed: nothing is in front of the camera
+    status = rig.controller.status()
+    assert status.state is State.READY and status.showing_result
+    assert status.message == "FAIL: Tampa ausente"
+    rig.tick(15)
+    status = rig.controller.status()
+    assert not status.showing_result and status.message == "Aguardando objeto"
+    ends = [e for e in rig.events if e.kind == "state" and e.state is State.READY]
+    assert [e.showing_result for e in ends][-2:] == [True, False]  # the screens are told when it ends
+    assert ends[-1].message == "Aguardando objeto"
+
+
+def test_the_next_inspection_ends_the_held_verdict():
+    rig = Rig(hold_s=5.0)
+    rig.boot()
+    rig.controller.request_trigger()
+    rig.tick(4)
+    assert rig.controller.status().showing_result
+    rig.controller.request_trigger()
+    seen = []
+    for _ in range(5):
+        rig.tick(1)
+        status = rig.controller.status()
+        seen.append((status.state, status.showing_result))
+    assert (State.INSPECTING, False) in seen  # the old verdict is not shown during the new inspection
+    assert len(rig.inspected) == 2
+
+
 def test_continuous_mode_inspects_frame_after_frame():
     rig = Rig(mode="continuous", presence=False)
     rig.controller.start(rig.bundle)

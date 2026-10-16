@@ -501,3 +501,20 @@ def test_the_built_interface_is_looked_for_in_frontend_dist_unless_told_otherwis
     assert default_web_dist() == Path(__file__).parent.parent / "frontend" / "dist"
     monkeypatch.setenv("VISION_STATION_WEB", str(tmp_path))
     assert default_web_dist() == tmp_path
+
+
+def test_a_verdict_held_after_the_station_armed_again_shows_in_the_state_and_the_socket(env):
+    """VIA-0049: the station is Ready (the next request is accepted), but the verdict is still to be shown."""
+    published = []
+    env.deps.hub.publish = published.append
+    request = env.client.post("/api/inspections", json={"reference": "peça-1"})
+    assert request.status_code == 202
+    env.rig.tick(8)  # nothing in front of the camera: inspected, then armed again at once
+    body = env.client.get("/api/state").json()
+    assert body["state"] == "Ready" and body["showing_result"] is True and body["message"] == "PASS"
+    assert env.client.post("/api/inspections", json={}).status_code == 202  # not holding the station
+    env.rig.tick(30)
+    body = env.client.get("/api/state").json()
+    assert body["showing_result"] is False and body["message"] == "Aguardando objeto"
+    states = [m for m in published if m["type"] == "state"]
+    assert states and all("showing_result" in m for m in states) and states[-1]["showing_result"] is False

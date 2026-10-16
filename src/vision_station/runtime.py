@@ -91,7 +91,7 @@ def build_runtime(root: Path | str, config: SystemConfig | None = None, camera: 
     results = ResultStore(root, config.recording.to_recording_config())
     auth = AuthService(root / "system" / "users.json")
     acquisition = Acquisition(camera if camera is not None else create_camera(config.camera.driver), config.camera.connection, settle_s=config.camera.settle_ms / 1000)
-    controller = StationController(acquisition, inspect_job, verifier=JobVerifier(inspect_job))
+    controller = StationController(acquisition, inspect_job, verifier=JobVerifier(inspect_job), hold_s=config.station.result_min_s)
     system = SystemService(root, config)
     extra = dict(web_dist=web_dist) if web_dist is not None else {}
     deps = ApiDeps(
@@ -114,6 +114,7 @@ def build_runtime(root: Path | str, config: SystemConfig | None = None, camera: 
     def apply(new: SystemConfig) -> None:  # what applies without a restart
         results.config = new.recording.to_recording_config()
         deps.backup_dir = system.backup_dir()
+        controller.set_hold(new.station.result_min_s)
 
     system.on_apply = apply
     controller._on_event = make_event_handler(deps)

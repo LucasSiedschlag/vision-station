@@ -48,6 +48,7 @@ export function renderApp(path = '/') {
 export const stateFixture = (over: Record<string, unknown> = {}) => ({
   state: 'Ready' as const,
   message: 'Aguardando peça',
+  showing_result: false,
   detail: '',
   warnings: [],
   job: { id: 'j', name: 'Tampa azul — etiqueta de lote', version: 7 },

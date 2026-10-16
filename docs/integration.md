@@ -28,6 +28,8 @@ The camera is opened **only** by Vision Station. A USB camera serves one program
 
 Use it to show the operator why the vision step is not available ("Câmera desconectada", "Nenhum job ativo…").
 
+`showing_result` is `true` while the last verdict should still be on a screen: during `ShowingResult`, and also for `station.result_min_s` of `system.yaml` (default 2 s) after the station armed itself again. That happens when the image trigger sees nothing in front of the camera (an inspection asked by this API or by the button, with the part already there when the station got ready): the state is `Ready` at once, so the next request is accepted, but `message` still says the verdict. The live socket sends a `state` message with `showing_result: false` when that time is over (VIA-0049).
+
 ## 3. Inspections
 
 ### Request

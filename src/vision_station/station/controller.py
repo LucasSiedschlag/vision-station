@@ -93,6 +93,7 @@ class StationEvent:
     job_name: str = ""
     job_version: int = 0
     reference: str = ""  # on "result" events: what the caller gave with the trigger that started it (FR-INT-1)
+    showing_result: bool = False  # on "state" events: the last verdict is still to be shown (VIA-0049)
 
 
 @dataclass
@@ -112,6 +113,7 @@ class Status:
     last_result: InspectionResult | None = None
     job_id: str = ""
     warnings: tuple[str, ...] = field(default_factory=tuple)
+    showing_result: bool = False  # the last verdict is shown, also after the station armed again (VIA-0049)
 
 
 class StationController:
@@ -146,7 +148,8 @@ class StationController:
         self._trigger_reference = ""
         self._reference = ""  # of the inspection running now
         self._t0 = 0.0  # when the current inspection was triggered
-        self._shown_at = 0.0
+        self._shown_at = float("-inf")
+        self._showing = False  # what the screens were last told about showing the verdict
         self._last_frame_ts = -1.0
         self._stop = threading.Event()
 
@@ -189,6 +192,21 @@ class StationController:
     def last_result(self) -> InspectionResult | None:
         return self._last_result
 
+    @property
+    def showing_result(self) -> bool:
+        """The verdict stays on the screens for at least hold_s, even when the image trigger already armed
+        the station again (nothing in front of the camera): Ready, but still showing it, until the time is
+        over or the next inspection starts."""
+        if self._last_result is None:
+            return False
+        if self._state is State.SHOWING_RESULT:
+            return True
+        return self._state in (State.READY, State.WAITING_STILL) and self._clock() - self._shown_at < self._hold_s
+
+    def set_hold(self, seconds: float) -> None:
+        """How long a verdict is shown at least (system.yaml station.result_min_s)."""
+        self._hold_s = seconds
+
     def status(self) -> Status:
         job = self._bundle.job.job if self._bundle else None
         return Status(
@@ -200,10 +218,11 @@ class StationController:
             job_id=str(job.id) if job else "",
             last_result=self._last_result,
             warnings=self._warnings,
+            showing_result=self.showing_result,
         )
 
     def _message(self) -> str:
-        if self._state is State.SHOWING_RESULT and self._last_result is not None:
+        if self.showing_result and self._last_result is not None:
             r = self._last_result
             return f"{r.outcome}: {r.reason}" if r.reason else str(r.outcome)
         if self._state is State.STARTING and self._bundle is None:
@@ -245,6 +264,9 @@ class StationController:
             State.CAMERA_LOST: self._camera_lost_wait,
         }[state]
         handler()
+        if self.showing_result != self._showing:  # the held verdict ended without a change of state
+            self._showing = self.showing_result
+            self._emit(StationEvent("state", self._state, previous=self._state, message=self._message(), showing_result=self._showing))
 
     # --- commands -------------------------------------------------------------------
 
@@ -278,6 +300,7 @@ class StationController:
         assert self._bundle is not None
         self._trigger_requested = False
         self._trigger_reference = ""
+        self._shown_at = float("-inf")  # a verdict from before is not shown again after preparing
         self._acq.configure(self._bundle.profile)
         self._detail = ""
         self._go(State.PREPARING)
@@ -418,7 +441,8 @@ class StationController:
     def _go(self, new: State) -> None:
         previous, self._state = self._state, new
         if previous is not new:
-            self._emit(StationEvent("state", new, previous=previous, message=self._message()))
+            self._showing = self.showing_result
+            self._emit(StationEvent("state", new, previous=previous, message=self._message(), showing_result=self._showing))
 
     def _emit(self, event: StationEvent) -> None:
         if self._on_event is None:

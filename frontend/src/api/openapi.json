@@ -1944,6 +1944,11 @@
             "default": null,
             "title": "Previous"
           },
+          "showing_result": {
+            "default": false,
+            "title": "Showing Result",
+            "type": "boolean"
+          },
           "state": {
             "enum": [
               "Starting",
@@ -2021,6 +2026,11 @@
             "title": "Recording Failures",
             "type": "integer"
           },
+          "showing_result": {
+            "default": false,
+            "title": "Showing Result",
+            "type": "boolean"
+          },
           "state": {
             "enum": [
               "Starting",
@@ -2051,6 +2061,7 @@
         "required": [
           "state",
           "message",
+          "showing_result",
           "detail",
           "warnings",
           "job",
@@ -2086,6 +2097,13 @@
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "result_min_s": {
+            "default": 2.0,
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Result Min S",
+            "type": "number"
           },
           "shift_starts": {
             "default": ["00:00"],
@@ -2153,6 +2171,11 @@
           "recording_failures": {
             "title": "Recording Failures",
             "type": "integer"
+          },
+          "showing_result": {
+            "default": false,
+            "title": "Showing Result",
+            "type": "boolean"
           },
           "state": {
             "enum": [
@@ -2248,6 +2271,7 @@
               "fail_sound": false,
               "idle_logout_min": 10,
               "name": "Estação de visão",
+              "result_min_s": 2.0,
               "shift_starts": ["00:00"]
             }
           }

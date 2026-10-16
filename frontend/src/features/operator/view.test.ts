@@ -23,6 +23,20 @@ const showing = (
   })
 
 describe('verdictOf', () => {
+  it('a verdict still shown after the station armed again is the verdict, not "waiting"', () => {
+    const held = {
+      ...showing('FAIL', 'Código não lido'),
+      state: 'Ready',
+      showing_result: true,
+    } as StateOut
+    expect(verdictOf(held, 'connected')).toMatchObject({
+      headline: 'REPROVADO',
+      reason: 'Código não lido',
+    })
+    const over = { ...held, showing_result: false, message: 'Aguardando objeto' } as StateOut
+    expect(verdictOf(over, 'connected').headline).not.toBe('REPROVADO')
+  })
+
   it('every result has a word and an icon, not only a colour', () => {
     const pass = verdictOf(showing('PASS'), 'connected')
     expect([pass.tone, pass.icon, pass.headline, pass.size]).toEqual([

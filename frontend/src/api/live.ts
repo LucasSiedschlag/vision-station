@@ -24,7 +24,12 @@ export function applyMessage(status: StateOut | null, message: LiveMessage): Sta
   }
   if (!status) return status // events before the first full status carry too little to show
   if (message.type === 'state') {
-    return { ...status, state: message.state, message: message.message }
+    return {
+      ...status,
+      state: message.state,
+      message: message.message,
+      showing_result: message.showing_result ?? false,
+    }
   }
   const counters = { ...status.counters }
   counters[message.outcome] += 1

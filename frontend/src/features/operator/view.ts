@@ -53,7 +53,10 @@ export function verdictOf(status: StateOut | null, connection: Connection): Verd
     }
   }
   const r = status.last_result
-  switch (status.state) {
+  // the station may already be armed again (Ready) while its last verdict is still to be shown (VIA-0049)
+  const held =
+    status.showing_result && (status.state === 'Ready' || status.state === 'WaitingStill')
+  switch (held ? 'ShowingResult' : status.state) {
     case 'ShowingResult': {
       const meta = [clockTime(r?.at), r ? `${r.duration_ms} ms` : ''].filter(Boolean).join(' · ')
       if (r?.outcome === 'PASS')

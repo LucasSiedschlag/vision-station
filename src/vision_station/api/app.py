@@ -160,7 +160,9 @@ def event_message(deps: ApiDeps, event: StationEvent) -> dict[str, Any]:
             record_id=deps.recorder.last_record_id if deps.recorder else None,
         )
     else:
-        message = m.StateMessage(state=str(event.state), previous=str(event.previous) if event.previous else None, message=event.message)
+        message = m.StateMessage(
+            state=str(event.state), previous=str(event.previous) if event.previous else None, message=event.message, showing_result=event.showing_result
+        )
     return message.model_dump(mode="json")
 
 
@@ -171,6 +173,7 @@ def status_model(deps: ApiDeps) -> m.StateOut:
     return m.StateOut(
         state=str(status.state),
         message=status.message,
+        showing_result=status.showing_result,
         detail=status.detail,
         warnings=list(status.warnings),
         job=m.JobRefOut(id=status.job_id, name=status.job_name, version=status.job_version),

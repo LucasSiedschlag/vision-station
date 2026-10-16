@@ -4,6 +4,7 @@ import { applyMessage, useLive, type LiveMessage, type StateOut } from './live'
 const status = (over: Partial<StateOut> = {}): StateOut => ({
   state: 'Ready',
   message: 'Aguardando objeto',
+  showing_result: false,
   detail: '',
   warnings: [],
   job: { id: 'j', name: 'Tampa azul', version: 7 },
@@ -36,6 +37,7 @@ describe('applyMessage', () => {
         state: 'Inspecting',
         previous: 'Ready',
         message: 'Inspecionando…',
+        showing_result: false,
       }),
     ).toBeNull()
   })
@@ -46,8 +48,32 @@ describe('applyMessage', () => {
       state: 'Inspecting',
       previous: 'Ready',
       message: 'Inspecionando…',
+      showing_result: false,
     })
     expect(next).toMatchObject({ state: 'Inspecting', message: 'Inspecionando…' })
+  })
+
+  it('follows whether the last verdict is still shown, also without a change of state', () => {
+    const held = applyMessage(status(), {
+      type: 'state',
+      state: 'Ready',
+      previous: 'ShowingResult',
+      message: 'PASS',
+      showing_result: true,
+    })
+    expect(held).toMatchObject({ state: 'Ready', showing_result: true })
+    const over = applyMessage(held, {
+      type: 'state',
+      state: 'Ready',
+      previous: 'Ready',
+      message: 'Aguardando objeto',
+      showing_result: false,
+    })
+    expect(over).toMatchObject({
+      state: 'Ready',
+      showing_result: false,
+      message: 'Aguardando objeto',
+    })
   })
 
   it('counts a result and keeps the record id, without touching the old status', () => {

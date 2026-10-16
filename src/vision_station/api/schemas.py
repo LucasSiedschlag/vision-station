@@ -69,6 +69,7 @@ class RecentResult(BaseModel):
 class StateOut(BaseModel):
     state: StationState
     message: str
+    showing_result: bool = False  # the last verdict is still shown, also when the station is already Ready again
     detail: str
     warnings: list[str]
     job: JobRefOut
@@ -136,6 +137,7 @@ class StateMessage(BaseModel):
     state: StationState
     previous: StationState | None = None
     message: str
+    showing_result: bool = False  # see StateOut; a message with the same state says the held verdict ended
 
 
 class ResultMessage(ResultOut):

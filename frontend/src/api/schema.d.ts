@@ -1724,6 +1724,11 @@ export interface components {
           )
         | null
       /**
+       * Showing Result
+       * @default false
+       */
+      showing_result: boolean
+      /**
        * State
        * @enum {string}
        */
@@ -1759,6 +1764,11 @@ export interface components {
       recent: components['schemas']['RecentResult'][]
       /** Recording Failures */
       recording_failures: number
+      /**
+       * Showing Result
+       * @default false
+       */
+      showing_result: boolean
       /**
        * State
        * @enum {string}
@@ -1796,6 +1806,11 @@ export interface components {
        */
       name: string
       /**
+       * Result Min S
+       * @default 2
+       */
+      result_min_s: number
+      /**
        * Shift Starts
        * @default [
        *       "00:00"
@@ -1823,6 +1838,11 @@ export interface components {
       recent: components['schemas']['RecentResult'][]
       /** Recording Failures */
       recording_failures: number
+      /**
+       * Showing Result
+       * @default false
+       */
+      showing_result: boolean
       /**
        * State
        * @enum {string}
@@ -1891,6 +1911,7 @@ export interface components {
        *       "fail_sound": false,
        *       "idle_logout_min": 10,
        *       "name": "Estação de visão",
+       *       "result_min_s": 2,
        *       "shift_starts": [
        *         "00:00"
        *       ]

@@ -204,7 +204,13 @@ describe('settings', () => {
   const system = {
     config: {
       format: 1,
-      station: { name: 'Linha 2', shift_starts: ['06:00'], idle_logout_min: 10, fail_sound: false },
+      station: {
+        name: 'Linha 2',
+        shift_starts: ['06:00'],
+        idle_logout_min: 10,
+        fail_sound: false,
+        result_min_s: 2,
+      },
       camera: {
         driver: 'uvc',
         connection: { device_name: 'C920' },
@@ -248,11 +254,17 @@ describe('settings', () => {
     await userEvent.clear(screen.getByLabelText('Nome da estação'))
     await userEvent.type(screen.getByLabelText('Nome da estação'), 'Embalagem')
     await userEvent.type(screen.getByLabelText('Pasta de backup'), 'E:/backups')
+    const hold = screen.getByLabelText('Mostrar o resultado por pelo menos')
+    expect(hold).toHaveValue('2')
+    await userEvent.clear(hold)
+    await userEvent.type(hold, '3,5')
+    await userEvent.tab()
     await userEvent.click(screen.getByRole('button', { name: 'Testar pasta' }))
     expect(await screen.findByText('Pasta gravável, 120,5 GB livres')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Salvar configurações' }))
     await waitFor(() => expect(put?.station.name).toBe('Embalagem'))
     expect(put.backup.folder).toBe('E:/backups')
+    expect(put.station.result_min_s).toBe(3.5)
     expect(await screen.findByText('Configurações salvas: estação, backup.')).toBeInTheDocument()
   })
 })

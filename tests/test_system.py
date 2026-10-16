@@ -53,6 +53,7 @@ def test_missing_file_means_defaults_and_a_saved_file_reads_back(tmp_path):
         ("station: {shift_starts: ['25:00']}", "HH:MM"),
         ("recording: {pass_sample_every: 0}", "pass_sample_every"),
         ("camera: {settle_ms: -1}", "settle_ms"),
+        ("station: {result_min_s: -1}", "result_min_s"),
         ("colour: blue", "colour"),
     ],
 )
@@ -77,6 +78,17 @@ def test_the_camera_settling_time_reaches_the_acquisition(tmp_path):
     save_config(root, SystemConfig.model_validate({"camera": {"driver": "file", "connection": {"path": str(tmp_path)}, "settle_ms": 200}}))
     runtime = build_runtime(root, web_dist=tmp_path / "no-build")
     assert runtime.acquisition.settle_s == pytest.approx(0.2)
+
+
+def test_the_minimum_time_of_a_verdict_reaches_the_controller_and_applies_without_a_restart(tmp_path):
+    assert SystemConfig().station.result_min_s == 2.0
+    root = tmp_path / "data"
+    save_config(root, SystemConfig.model_validate({"camera": {"driver": "file", "connection": {"path": str(tmp_path)}}, "station": {"result_min_s": 3.5}}))
+    runtime = build_runtime(root, web_dist=tmp_path / "no-build")
+    assert runtime.controller._hold_s == pytest.approx(3.5)
+    changed = runtime.system.config.model_copy(update={"station": runtime.system.config.station.model_copy(update={"result_min_s": 1.0})})
+    assert runtime.system.update(changed) == ["station"] and runtime.system.restart_pending == []
+    assert runtime.controller._hold_s == pytest.approx(1.0)
 
 
 def test_changed_sections():
