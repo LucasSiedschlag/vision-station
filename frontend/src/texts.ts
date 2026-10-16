@@ -287,6 +287,9 @@ export const text = {
     wholeFrame: 'imagem toda',
     wholeAnchor: 'o objeto (âncora)',
     proposeColour: 'Propor a cor a partir da região',
+    modelDrop: 'Solte aqui o modelo (.onnx) e o cartão (.card.yaml)',
+    modelHint: 'O modelo é treinado fora da estação (docs/models.md) e vai dentro do job.',
+    modelAdded: (paths: string) => `Adicionado ao job: ${paths}`,
     colourNeedsFrameRegion: 'Escolha uma região relativa à imagem para amostrar a cor.',
     colourNone: 'Não há cor suficiente na região para propor uma faixa.',
     colourProposed: (a: number, b: number) =>

@@ -6,6 +6,7 @@ import { editorApi, useTypes, type CameraState, type DraftTestOut } from '@/api/
 import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
+import { FileDrop } from '@/components/ui/file-drop'
 import { Input, NumberInput, Textarea } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -14,7 +15,7 @@ import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { useDraft, toRequest, draftFiles, type Draft, type JobJson } from './draft'
 import { suggestHue, type Rect } from './geometry'
-import { cropPng, pixelsOf, sample, type EditorImage } from './image'
+import { blobToBase64, cropPng, pixelsOf, sample, type EditorImage } from './image'
 import { SchemaForm } from './SchemaForm'
 
 const t = text.editor
@@ -644,6 +645,21 @@ export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps
     toast.success(t.colourProposed(s.hue[0], s.hue[1]))
   }
 
+  const addModelFiles = async (i: number, files: File[]) => {
+    const read = await Promise.all(
+      files.map(async (f) => [`models/${f.name}`, await blobToBase64(f)] as const),
+    )
+    edit((d) => {
+      for (const [path, b64] of read) {
+        d.addFiles[path] = b64
+        d.removeFiles = d.removeFiles.filter((p) => p !== path)
+      }
+      const onnx = read.find(([p]) => p.endsWith('.onnx'))
+      if (onnx) d.job.tools[i].params = { ...d.job.tools[i].params, model: onnx[0] }
+    })
+    toast.success(t.modelAdded(read.map(([p]) => p).join(', ')))
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {tools.length === 0 ? <p className="text-sm text-fg-muted">{t.noTools}</p> : null}
@@ -730,6 +746,15 @@ export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps
                       />
                     )}
                   </Field>
+                  {tool.type === 'detect' ? (
+                    <FileDrop
+                      accept=".onnx,.yaml,.yml"
+                      multiple
+                      label={t.modelDrop}
+                      hint={t.modelHint}
+                      onFiles={(files) => void addModelFiles(i, files)}
+                    />
+                  ) : null}
                   {tool.type === 'color' ? (
                     <Button variant="ghost" onClick={() => void proposeColour(i)}>
                       <Pipette aria-hidden className="size-4" />
@@ -800,7 +825,9 @@ export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps
                     ? { min_fraction: 0.5 }
                     : type === 'pattern'
                       ? { template: '' }
-                      : {},
+                      : type === 'detect'
+                        ? { model: '' }
+                        : {},
                 reason_fail: t.defaultReason,
               }),
             )

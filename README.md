@@ -25,6 +25,7 @@ Vision Station is not built around any product. Each customer project (for examp
 | 04 | [Technical decisions](docs/technical-decisions.md) | Decisions TD-01..20, PC spec, network, known problems, bench tests |
 | 05 | [Frontend](docs/frontend.md) | The web interface: stack, design system, screens by role, API contract, editor, tests, build |
 | 06 | [Integration](docs/integration.md) | How another program on the same PC uses Vision Station: request an inspection, get the result and pictures, live view |
+| 07 | [Models](docs/models.md) | The `detect` tool: train offline, export to ONNX, the model card, what each task returns |
 
 ## Stack
 
@@ -123,7 +124,7 @@ Locators (`src/vision_station/locators/`):
 | `template` | a taught picture inside the job, normalized correlation (light changes and shifts, not rotation or size) | `template` (path in the job), `search`, `min_score` |
 | `blob` | the largest region of a color, or darker / lighter than the background | `mode` (`color`, `dark`, `light`), `color`, `threshold`, `min_area`, `max_area`, `search` |
 
-Tools (`src/vision_station/tools/`): `code` (bar codes and 2D codes, above) and `color`: the fraction of the region in a color (HSV range, or a reference RGB with a ΔE distance), and optionally the coverage along `x` or `y` with the longest gap, e.g. `{id: faixa, type: color, version: 1, roi: seam, params: {hue: [170, 10], s_min: 100, v_min: 70, axis: x, min_coverage: 0.9, max_gap: 0.05}, reason_fail: "Faixa ausente em {missing:.0%} da emenda"}`. `pattern` finds a taught template (a logo, a mark) in the region and counts it (`min_count`, `max_count`), and optionally its coverage along `x` or `y` with the longest stretch without it, ends included: `{id: marca, type: pattern, version: 1, roi: seam, params: {template: patterns/logo.png, axis: x, max_gap: 0.1}, reason_fail: "Marca ausente em {gap:.0%} da faixa"}`. Like the `template` locator it tolerates light changes, not rotation or size. Files a tool or locator needs (a template) travel inside the job; a job without them is refused when loaded.
+Tools (`src/vision_station/tools/`): `code` (bar codes and 2D codes, above) and `color`: the fraction of the region in a color (HSV range, or a reference RGB with a ΔE distance), and optionally the coverage along `x` or `y` with the longest gap, e.g. `{id: faixa, type: color, version: 1, roi: seam, params: {hue: [170, 10], s_min: 100, v_min: 70, axis: x, min_coverage: 0.9, max_gap: 0.05}, reason_fail: "Faixa ausente em {missing:.0%} da emenda"}`. `pattern` finds a taught template (a logo, a mark) in the region and counts it (`min_count`, `max_count`), and optionally its coverage along `x` or `y` with the longest stretch without it, ends included: `{id: marca, type: pattern, version: 1, roi: seam, params: {template: patterns/logo.png, axis: x, max_gap: 0.1}, reason_fail: "Marca ausente em {gap:.0%} da faixa"}`. Like the `template` locator it tolerates light changes, not rotation or size. `detect` runs a trained ONNX model (classifier, DETR-style detector or anomaly) with its card, both inside the job ([docs/models.md](docs/models.md)). Files a tool or locator needs (a template) travel inside the job; a job without them is refused when loaded.
 
 ### Jobs, versions and backups
 
