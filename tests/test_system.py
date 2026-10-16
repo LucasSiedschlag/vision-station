@@ -202,6 +202,25 @@ def test_the_active_job_is_loaded_verified_and_inspects(station):
     assert station.controller.last_result.outcome.value == "PASS"
 
 
+def test_a_real_inspection_is_listed_in_the_results_with_the_time_of_each_tool(station):
+    """VIA-0046: the pipeline's timings carry the time of each tool; the results API gave 500 on them."""
+    ref = station.jobs.save(make_bundle())
+    activate(station.jobs, ref, verify_job(station.jobs.load(ref), inspect=inspect_job, parts="decision"))
+    station.start(maintenance_period_s=3600)
+    assert wait_for(lambda: station.controller.state is State.READY), station.controller.status()
+    station.controller.request_trigger()
+    assert wait_for(lambda: station.deps.recorder.last_record_id is not None)
+    client = TestClient(create_app(station.deps))
+    sup = login(client, "supervisor")
+    listed = client.get("/api/results", headers=sup)
+    assert listed.status_code == 200, listed.text
+    record = listed.json()["results"][0]
+    assert all(isinstance(v, float) for v in record["timings"].values()) and "total" in record["timings"]
+    tool = make_bundle().job.tools[0].id
+    assert set(record["tool_timings"]) == {tool}
+    assert client.get(f"/api/results/{record['id']}", headers=sup).json()["tool_timings"] == record["tool_timings"]
+
+
 def test_a_damaged_active_job_is_a_fault_with_the_reason(station):
     station.jobs.save(make_bundle())
     station.jobs.set_active(JobRef(str(make_bundle().job.job.id), 1))

@@ -365,6 +365,7 @@ export const text = {
       'A imagem deste resultado não foi guardada (amostragem de aprovados ou limpeza do disco).',
     scores: 'Pontuações',
     timings: 'Tempos',
+    toolTimings: 'Tempo de cada ferramenta',
     jobVersion: (name: string, v: number) => `${name} · v${v}`,
     markIncorrect: 'Marcar como incorreto',
     markHint: 'A imagem vai para o treinamento com o resultado certo.',

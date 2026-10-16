@@ -97,6 +97,37 @@ describe('results', () => {
     await waitFor(() => expect(marked).toEqual({ correct: 'PASS', by: 'supervisor' }))
   })
 
+  it('shows the time of each tool in a result', async () => {
+    server.use(
+      http.get('*/api/results', () =>
+        HttpResponse.json({
+          total: 1,
+          results: [record({ tool_timings: { tampa: 0.082, lote: 0.0071 } })],
+        }),
+      ),
+      http.get(
+        '*/api/results/r1/image',
+        () => new HttpResponse(new Uint8Array([1]), { headers: { 'Content-Type': 'image/jpeg' } }),
+      ),
+    )
+    as('supervisor')
+    renderApp('/results')
+    await userEvent.click(await screen.findByRole('button', { name: /^Abrir o resultado de/ }))
+    const sheet = await screen.findByRole('dialog', { name: 'Resultado' })
+    expect(within(sheet).getByText('tampa: 82 ms · lote: 7 ms')).toBeInTheDocument()
+  })
+
+  it('says so when the results cannot be read, instead of loading for ever', async () => {
+    server.use(
+      http.get('*/api/results', () => new HttpResponse('Internal Server Error', { status: 500 })),
+    )
+    as('supervisor')
+    renderApp('/results')
+    expect(
+      await screen.findByText('Não foi possível ler os resultados.', {}, { timeout: 4000 }),
+    ).toBeInTheDocument()
+  })
+
   it('says when the image was not kept, and when there is nothing', async () => {
     server.use(
       http.get('*/api/results', () =>
@@ -174,7 +205,12 @@ describe('settings', () => {
     config: {
       format: 1,
       station: { name: 'Linha 2', shift_starts: ['06:00'], idle_logout_min: 10, fail_sound: false },
-      camera: { driver: 'uvc', connection: { device_name: 'C920' }, keyring_entry: null, settle_ms: 500 },
+      camera: {
+        driver: 'uvc',
+        connection: { device_name: 'C920' },
+        keyring_entry: null,
+        settle_ms: 500,
+      },
       recording: {
         pass_sample_every: 1,
         unsampled_pass_hours: null,

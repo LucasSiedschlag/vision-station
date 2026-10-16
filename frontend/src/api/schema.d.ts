@@ -1543,6 +1543,13 @@ export interface components {
       timings: {
         [key: string]: number
       }
+      /**
+       * Tool Timings
+       * @default {}
+       */
+      tool_timings: {
+        [key: string]: number
+      }
     }
     /** RecordingSettings */
     RecordingSettings: {

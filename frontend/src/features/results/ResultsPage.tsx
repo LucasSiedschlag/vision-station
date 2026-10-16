@@ -197,6 +197,19 @@ export function ResultsPage() {
   )
 }
 
+function Timings({ title, seconds }: { title: string; seconds: Record<string, number> }) {
+  const entries = Object.entries(seconds)
+  if (!entries.length) return null
+  return (
+    <div className="flex flex-col gap-1">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="font-mono text-xs tabular-nums text-fg-muted">
+        {entries.map(([k, v]) => `${k}: ${formatNumber(v * 1000, 0)} ms`).join(' · ')}
+      </p>
+    </div>
+  )
+}
+
 function ResultSheet({ record, onClose }: { record: RecordOut; onClose: () => void }) {
   const [marked, setMarked] = useState(Boolean(record.overlay_path))
   const [image, setImage] = useState<{ url: string; key: string } | null>(null)
@@ -277,17 +290,8 @@ function ResultSheet({ record, onClose }: { record: RecordOut; onClose: () => vo
             </p>
           </div>
         ) : null}
-        {Object.keys(record.timings).length ? (
-          <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold">{t.timings}</h3>
-            <p className="font-mono text-xs tabular-nums text-fg-muted">
-              {Object.entries(record.timings)
-                .filter(([, v]) => typeof v === 'number')
-                .map(([k, v]) => `${k}: ${formatNumber(v * 1000, 0)} ms`)
-                .join(' · ')}
-            </p>
-          </div>
-        ) : null}
+        <Timings title={t.timings} seconds={record.timings} />
+        <Timings title={t.toolTimings} seconds={record.tool_timings ?? {}} />
         {record.correct_outcome ? (
           <p className="text-sm text-warn-text">
             {t.corrected(text.operator.outcome[record.correct_outcome], record.corrected_by ?? '')}

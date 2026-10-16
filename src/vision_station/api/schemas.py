@@ -265,7 +265,8 @@ class RecordOut(BaseModel):
     outcome: Outcome
     reason: str
     scores: dict[str, float]
-    timings: dict[str, float]
+    timings: dict[str, float]  # seconds per step: quality, locate, tools, total
+    tool_timings: dict[str, float] = {}  # seconds per tool id
     duration_ms: float
     image_path: str | None = None
     overlay_path: str | None = None

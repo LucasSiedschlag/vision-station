@@ -97,7 +97,8 @@ class InspectionRecord:
     outcome: str
     reason: str
     scores: Mapping[str, float]
-    timings: Mapping[str, float]
+    timings: Mapping[str, float]  # seconds per step (quality, locate, tools, total)
+    tool_timings: Mapping[str, float]  # seconds per tool id
     duration_ms: float
     image_path: str | None
     overlay_path: str | None
@@ -123,10 +124,22 @@ class DatasetExport:
     count: int
 
 
+def _split_timings(raw: Any) -> tuple[dict[str, float], dict[str, float]]:
+    """The pipeline keeps the time of each tool under `per_tool` (VIA-0046); the steps and the tools are
+    returned apart, numbers only, so records saved before this read the same way."""
+    if not isinstance(raw, Mapping):
+        return {}, {}
+    steps = {k: float(v) for k, v in raw.items() if isinstance(v, (int, float)) and not isinstance(v, bool)}
+    per_tool = raw.get("per_tool")
+    tools = {k: float(v) for k, v in per_tool.items() if isinstance(v, (int, float))} if isinstance(per_tool, Mapping) else {}
+    return steps, tools
+
+
 def _row(r: sqlite3.Row | tuple) -> InspectionRecord:
+    timings, tool_timings = _split_timings(json.loads(r[8]))
     return InspectionRecord(
         id=r[0], at=r[1], job_id=r[2], job_name=r[3], job_version=r[4], outcome=r[5], reason=r[6],
-        scores=json.loads(r[7]), timings=json.loads(r[8]), duration_ms=r[9], image_path=r[10],
+        scores=json.loads(r[7]), timings=timings, tool_timings=tool_timings, duration_ms=r[9], image_path=r[10],
         overlay_path=r[11], sampled=bool(r[12]), correct_outcome=r[13], corrected_at=r[14], corrected_by=r[15],
     )
 

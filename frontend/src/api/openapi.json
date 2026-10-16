@@ -1534,6 +1534,14 @@
             },
             "title": "Timings",
             "type": "object"
+          },
+          "tool_timings": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "title": "Tool Timings",
+            "type": "object"
           }
         },
         "required": [
@@ -1546,6 +1554,7 @@
           "reason",
           "scores",
           "timings",
+          "tool_timings",
           "duration_ms",
           "image_path",
           "overlay_path",
