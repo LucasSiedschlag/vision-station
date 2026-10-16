@@ -218,12 +218,14 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
 
     @api.post("/jobs/{job_id}/versions", status_code=201, response_model=m.SavedVersion, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
     def save_version(job_id: str, draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.SavedVersion:
-        """Save the draft as version n+1. `draft.base` must be the latest version: if someone saved meanwhile,
-        409 instead of silently building on a version the editor did not see."""
+        """Save the draft as version n+1. The draft may start from any version (`draft.base`, where its files come
+        from), but the newest version it saw (`draft.latest`, else `draft.base`) must still be the latest: if
+        someone saved meanwhile, 409 instead of silently building on a version the editor did not see (VIA-0047)."""
         latest = jobs.latest(job_id)
         if latest is None:
             raise Problem(404, "Esse job não existe", "job_not_found")
-        if draft.base is None or draft.base.id != job_id or draft.base.version != latest:
+        seen = draft.latest if draft.latest is not None else draft.base.version if draft.base else None
+        if draft.base is None or draft.base.id != job_id or seen != latest:
             raise Problem(409, f"O job mudou: a última versão é a {latest}. Abra de novo antes de salvar.", "stale_draft", latest=latest)
         saved = save(build(draft, job_id=job_id, version=latest + 1, parent=latest, author=role))
         jobs.audit("job_save", by=role, job_id=job_id, version=saved.version, parent=latest, notes=draft.notes)

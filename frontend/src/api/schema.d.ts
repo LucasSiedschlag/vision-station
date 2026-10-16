@@ -365,8 +365,9 @@ export interface paths {
     put?: never
     /**
      * Save Version
-     * @description Save the draft as version n+1. `draft.base` must be the latest version: if someone saved meanwhile,
-     *     409 instead of silently building on a version the editor did not see.
+     * @description Save the draft as version n+1. The draft may start from any version (`draft.base`, where its files come
+     *     from), but the newest version it saw (`draft.latest`, else `draft.base`) must still be the latest: if
+     *     someone saved meanwhile, 409 instead of silently building on a version the editor did not see (VIA-0047).
      */
     post: operations['save_version']
     delete?: never
@@ -1309,6 +1310,8 @@ export interface components {
       job: {
         [key: string]: unknown
       }
+      /** Latest */
+      latest?: number | null
       /**
        * Notes
        * @default

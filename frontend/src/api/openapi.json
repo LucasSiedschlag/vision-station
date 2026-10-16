@@ -998,6 +998,17 @@
             "title": "Job",
             "type": "object"
           },
+          "latest": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest"
+          },
           "notes": {
             "default": "",
             "maxLength": 500,
@@ -4235,7 +4246,7 @@
     },
     "/api/jobs/{job_id}/versions": {
       "post": {
-        "description": "Save the draft as version n+1. `draft.base` must be the latest version: if someone saved meanwhile,\n409 instead of silently building on a version the editor did not see.",
+        "description": "Save the draft as version n+1. The draft may start from any version (`draft.base`, where its files come\nfrom), but the newest version it saw (`draft.latest`, else `draft.base`) must still be the latest: if\nsomeone saved meanwhile, 409 instead of silently building on a version the editor did not see (VIA-0047).",
         "operationId": "save_version",
         "parameters": [
           {

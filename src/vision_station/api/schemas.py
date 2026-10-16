@@ -355,6 +355,7 @@ class JobDraft(BaseModel):
     job: dict[str, Any]
     profile: dict[str, Any]
     base: ActiveRef | None = None  # copy the other files from this saved version
+    latest: int | None = None  # the newest version the editor saw; if newer ones exist, saving is refused (default: base)
     add_files: dict[str, str] = {}  # path -> base64 content (added or replaced)
     remove_files: list[str] = []
     notes: Annotated[str, Field(max_length=500)] = ""

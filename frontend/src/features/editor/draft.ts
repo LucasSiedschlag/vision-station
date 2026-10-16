@@ -19,7 +19,8 @@ const HISTORY = 100
 /** What is being edited. Everything the server needs to save a version, and nothing it sets itself. */
 export interface Draft {
   key: string // job id, or "new"
-  base: { id: string; version: number } | null
+  base: { id: string; version: number } | null // the version it starts from (its files are copied)
+  latest?: number | null // the newest version seen when it was opened; saving checks it is still the newest
   job: JobJson
   profile: JobJson
   baseFiles: FileInfo[] // files of the base version
@@ -132,6 +133,7 @@ export function toRequest(d: Draft) {
     job: d.job,
     profile: d.profile,
     base: d.base,
+    latest: d.latest ?? d.base?.version ?? null,
     add_files: addFiles,
     remove_files: removeFiles,
     notes: d.notes,

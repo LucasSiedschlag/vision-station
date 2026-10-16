@@ -252,6 +252,41 @@ describe('the job editor', () => {
     expect(localStorage.getItem(`vision-station-draft:${JOB}`)).toBeNull()
   })
 
+  it('an older version opens as a draft and saves as the next version after the latest', async () => {
+    let saved: any = null
+    const entry = (v: number) => ({
+      version: v,
+      created_at: '',
+      author: 'maintainer',
+      notes: '',
+      parent_version: v - 1 || null,
+      active: false,
+    })
+    server.use(
+      http.get(`*/api/jobs/${JOB}`, () =>
+        HttpResponse.json({
+          id: JOB,
+          name: 'Tampa azul',
+          description: '',
+          versions: [entry(2), entry(1)],
+        }),
+      ),
+      http.get(`*/api/jobs/${JOB}/versions/1`, () => HttpResponse.json({ ...version, version: 1 })),
+      http.post(`*/api/jobs/${JOB}/versions`, async ({ request }) => {
+        saved = await request.json()
+        return HttpResponse.json({ id: JOB, version: 3 }, { status: 201 })
+      }),
+    )
+    await openEditor(`/jobs/${JOB}/edit?from=1`)
+    expect(screen.getByText('rascunho a partir da v1')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar…' }))
+    const dialog = screen.getByRole('dialog', { name: 'Salvar como versão 3' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar…' }))
+    await waitFor(() => expect(saved).not.toBeNull())
+    expect(saved.base).toEqual({ id: JOB, version: 1 })
+    expect(saved.latest).toBe(2)
+  })
+
   it('undo and redo', async () => {
     await openEditor()
     await userEvent.click(screen.getByRole('button', { name: 'Remover a região cap' }))

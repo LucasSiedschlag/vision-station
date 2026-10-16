@@ -78,7 +78,7 @@ export function EditorPage() {
       } else load(newDraft(camera.data?.profile ?? null))
       return
     }
-    if (!version.data) return
+    if (!version.data || latest === null) return
     const v = version.data
     const kept = savedDraft(id)
     if (kept && kept.base?.version === v.version) {
@@ -88,6 +88,7 @@ export function EditorPage() {
     load({
       key: id,
       base: { id, version: v.version },
+      latest,
       job: v.job,
       profile: v.profile,
       baseFiles: v.files,
@@ -97,7 +98,7 @@ export function EditorPage() {
       baseExpected: JSON.stringify(v.expected ?? null),
       notes: '',
     })
-  }, [isNew, id, version.data, camera.isPending, camera.data, load])
+  }, [isNew, id, version.data, latest, camera.isPending, camera.data, load])
 
   useEffect(() => () => useDraft.getState().clear(), [])
 
@@ -535,7 +536,9 @@ function Editor({
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent
-          title={draft.base ? t.saveTitle(draft.base.version + 1) : t.saveNewTitle}
+          title={
+            draft.base ? t.saveTitle((draft.latest ?? draft.base.version) + 1) : t.saveNewTitle
+          }
           description={t.saveBody}
         >
           <Field label={t.notes} hint={t.notesHint}>

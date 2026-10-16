@@ -85,6 +85,22 @@ def test_validate_reports_fields_and_jobs_that_cannot_run(env, mnt):
     assert env.client.post("/api/jobs", headers=mnt, json=bad).status_code == 422
 
 
+def test_a_draft_from_an_older_version_saves_when_it_saw_the_latest(env, mnt):
+    """VIA-0047: the editor opens any version; `base` is where the files come from, `latest` what it saw last."""
+    job_id = create(env, mnt)
+    v2 = draft(name="Segunda")
+    v2.update(add_files={}, base={"id": job_id, "version": 1})
+    assert env.client.post(f"/api/jobs/{job_id}/versions", headers=mnt, json=v2).json()["version"] == 2
+    from_v1 = draft(name="De volta à primeira")
+    from_v1.update(add_files={}, base={"id": job_id, "version": 1}, latest=2, notes="a partir da v1")
+    r = env.client.post(f"/api/jobs/{job_id}/versions", headers=mnt, json=from_v1)
+    assert r.status_code == 201 and r.json()["version"] == 3
+    v3 = env.client.get(f"/api/jobs/{job_id}/versions/3", headers=mnt).json()
+    assert v3["job"]["job"]["parent_version"] == 2 and "reference/reference.png" in {f["path"] for f in v3["files"]}
+    stale = env.client.post(f"/api/jobs/{job_id}/versions", headers=mnt, json=from_v1)  # saw v2, the latest is now v3
+    assert stale.status_code == 409 and stale.json()["code"] == "stale_draft" and stale.json()["latest"] == 3
+
+
 def test_a_new_version_builds_on_the_latest_and_keeps_its_files(env, mnt):
     job_id = create(env, mnt)
     edit = draft(name="Etiqueta de lote (nova luz)")
