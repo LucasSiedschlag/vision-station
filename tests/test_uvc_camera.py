@@ -122,7 +122,7 @@ class FakeCapture:
         return self.props.get(prop, 0)
 
     def read(self):
-        if self.frames_left <= 0:
+        if self.frames_left <= 0 or getattr(self, "dead", False):
             return False, None
         self.frames_left -= 1
         return True, np.zeros((4, 4, 3), np.uint8)
@@ -155,8 +155,12 @@ class Captures:
         self.last = None
 
     def __call__(self, index, params=None):
+        # DirectShow lets a second capture of the same device open while one is open, but it delivers nothing
+        busy = self.last is not None and not self.last.released
         self.last = FakeCapture(params=params, **self.kwargs)
+        self.last.dead = busy
         self.opened = getattr(self, "opened", 0) + 1
+        self.most_open = max(getattr(self, "most_open", 0), 2 if busy else 1)
         return self.last
 
 
@@ -269,6 +273,15 @@ def test_other_ways_of_asking_are_tried_until_mjpeg_sticks(profile, works_with):
     assert report.status["resolution"] is SettingStatus.APPLIED
     assert cam.open_strategy == works_with
     assert cam.read_back()["pixel_format"] == "mjpeg"
+
+
+def test_with_no_profile_yet_the_camera_still_delivers_frames():
+    """VIA-0053: with no active job the camera opens without a size; MJPG does not stick on the C920 then, every
+    way of asking was tried, and the next capture was opened before the previous one was closed: it delivered nothing."""
+    cam, _, captures = make_camera(captures=Captures(works_with="never"))
+    assert captures.most_open == 1  # never two captures of the device open at once
+    frame = next(cam.frames())
+    assert frame.image is not None
 
 
 def test_format_that_never_sticks_is_reported(profile):

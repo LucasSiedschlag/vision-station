@@ -293,7 +293,8 @@ class UvcCamera(Camera):
         With DirectShow the order of the settings decides whether the format sticks (the C920
         stays on YUY2, about 5 fps at 1080p, if it does not), and what works depends on the
         OpenCV build. So the ways of asking are tried in turn, each checked by reading the
-        format back, and the first that works is kept (`open_strategy` says which).
+        format back, and the first that works is kept (`open_strategy` says which). Each failed
+        attempt is closed before the next one opens: never two captures of the device at once.
         """
         if self._capture is not None:
             self._capture.release()
@@ -327,20 +328,23 @@ class UvcCamera(Camera):
                 cap.set(P.CAP_PROP_FRAME_HEIGHT, height)
             return cap
 
-        best: Capture | None = None
-        for name, attempt in (("params", with_params), ("fourcc-first", fourcc_first), ("size-first", size_first)):
+        def opened(attempt: Callable[[], Capture]) -> Capture:
             cap = attempt()
             if not cap.isOpened():
                 cap.release()
                 raise CameraError(f"cannot open camera {self._index} (is another program using it?)")
             cap.set(P.CAP_PROP_BUFFERSIZE, 1)
-            if best is not None:
-                best.release()
-            best = cap
-            self.open_strategy = name
+            return cap
+
+        for name, attempt in (("params", with_params), ("fourcc-first", fourcc_first), ("size-first", size_first)):
+            cap = opened(attempt)
             if self._format_matches(cap, code, size):
-                break
-        self._capture = best
+                self._capture, self.open_strategy = cap, name
+                return
+            # one capture of the device at a time: DirectShow opens a second one, but it delivers no frames (VIA-0053)
+            cap.release()
+        # no way of asking got the format (on the C920, MJPG without a size): keep a plain capture; read_back says so
+        self._capture, self.open_strategy = opened(with_params), "params"
 
     @staticmethod
     def _format_matches(cap: Capture, code: int, size: tuple[int, int] | None) -> bool:
