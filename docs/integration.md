@@ -19,7 +19,7 @@ The camera is opened **only** by Vision Station. A USB camera serves one program
 
 - **Local only.** The API listens on `127.0.0.1` (system configuration `network`). These endpoints need **no login**, like the operator's trigger; everything else in the API needs a Supervisor or Maintainer login.
 - **Never a pass by default.** The caller passes a part only on `status: done` with `result.outcome: PASS`. Anything else (`FAIL`, `ERROR`, `expired`, a 409, a timeout, Vision Station not answering) is not a pass.
-- **One inspection at a time.** A request is accepted only when the station is `Ready` or `WaitingStill`; otherwise 409 with the state.
+- **One inspection at a time.** A request is accepted only when the station is `Ready` or `WaitingStill` and no other accepted request is still waiting to start; otherwise 409 with the state. Two requests at the same moment are one inspection and one 409, never two 202 (VIA-0051).
 - **The job decides.** Which tools run, with which limits, is the active job (made and verified on Vision Station's own screens). The caller does not send parameters.
 
 ## 2. Station state

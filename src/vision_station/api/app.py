@@ -318,9 +318,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
     @api.post("/trigger", status_code=202, response_model=m.Accepted, responses={409: {"model": m.Problem}})
     def trigger() -> m.Accepted:
         """Manual (FR-TRG-3) and external (FR-TRG-2) trigger."""
-        if deps.controller.state.value not in ("Ready", "WaitingStill"):
+        if not deps.controller.try_request_trigger():
             raise Problem(409, "A estação não está pronta", "station_not_ready")
-        deps.controller.request_trigger()
         return m.Accepted(accepted=True)
 
     # --- inspections requested by another program (FR-INT-1); no login, like the trigger -------------------
@@ -351,10 +350,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
     @api.post("/inspections", status_code=202, response_model=m.InspectionOut, responses={409: {"model": m.Problem}})
     def request_inspection(body: m.InspectionRequest | None = None) -> m.InspectionOut:
         """Trigger an inspection and get an id to follow it (FR-INT-1). Only when the station is ready."""
-        if deps.controller.state.value not in ("Ready", "WaitingStill"):
-            raise Problem(409, "A estação não está pronta", "station_not_ready", state=deps.controller.state.value, message=deps.controller.status().message)
         item = deps.inspections.new((body or m.InspectionRequest()).reference)
-        deps.controller.request_trigger(item.id)
+        if not deps.controller.try_request_trigger(item.id):  # checks and takes the turn at once (VIA-0051)
+            deps.inspections.discard(item.id)
+            raise Problem(409, "A estação não está pronta", "station_not_ready", state=deps.controller.state.value, message=deps.controller.status().message)
         return inspection_out(item)
 
     @api.get("/inspections/{id}", response_model=m.InspectionOut, responses={404: {"model": m.Problem}})

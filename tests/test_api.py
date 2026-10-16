@@ -518,3 +518,17 @@ def test_a_verdict_held_after_the_station_armed_again_shows_in_the_state_and_the
     assert body["showing_result"] is False and body["message"] == "Aguardando objeto"
     states = [m for m in published if m["type"] == "state"]
     assert states and all("showing_result" in m for m in states) and states[-1]["showing_result"] is False
+
+
+def test_two_requests_at_once_are_one_inspection_and_a_409_never_two_accepted(env):
+    """VIA-0051: both requests saw Ready before the station took the first; both got 202, one inspection
+    ran, and the other request expired after 30 s."""
+    first = env.client.post("/api/inspections", json={"reference": "a"})
+    second = env.client.post("/api/inspections", json={"reference": "b"})
+    assert first.status_code == 202
+    assert second.status_code == 409 and second.json()["code"] == "station_not_ready"
+    assert env.client.post("/api/trigger").status_code == 409  # the button too
+    env.rig.tick(8)
+    done = env.client.get(f"/api/inspections/{first.json()['id']}").json()
+    assert done["status"] == "done" and done["reference"] == "a"
+    assert env.client.post("/api/inspections", json={"reference": "c"}).status_code == 202  # free again

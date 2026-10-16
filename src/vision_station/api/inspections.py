@@ -47,6 +47,11 @@ class InspectionRegistry:
                 self._items.popitem(last=False)
         return item
 
+    def discard(self, id: str) -> None:
+        """A request the station refused: it never existed for the caller."""
+        with self._lock:
+            self._items.pop(id, None)
+
     def get(self, id: str) -> Requested | None:
         with self._lock:
             return self._items.get(id)

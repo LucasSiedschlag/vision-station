@@ -146,6 +146,8 @@ class StationController:
         self._last_result: InspectionResult | None = None
         self._trigger_requested = False
         self._trigger_reference = ""
+        self._trigger_lock = threading.Lock()
+        self._trigger_taken = False  # a trigger was accepted and its inspection has not started yet (VIA-0051)
         self._reference = ""  # of the inspection running now
         self._t0 = 0.0  # when the current inspection was triggered
         self._shown_at = float("-inf")
@@ -169,6 +171,17 @@ class StationController:
         """Manual or external trigger (FR-TRG-2/3). `reference` comes back on the result event, so another
         program can tell which result answers its request (FR-INT-1)."""
         self._commands.put(_Command("trigger", detail=reference))
+
+    def try_request_trigger(self, reference: str = "") -> bool:
+        """Accept a trigger only if the station is ready and no other trigger is waiting to start: checking and
+        taking the turn happen together, so two requests at once are one inspection and one refusal, never two
+        accepted with one of them silently dropped (VIA-0051)."""
+        with self._trigger_lock:
+            if self._trigger_taken or self._state not in (State.READY, State.WAITING_STILL):
+                return False
+            self._trigger_taken = True
+        self.request_trigger(reference)
+        return True
 
     def pause(self) -> None:
         self._commands.put(_Command("pause"))
@@ -300,6 +313,8 @@ class StationController:
         assert self._bundle is not None
         self._trigger_requested = False
         self._trigger_reference = ""
+        with self._trigger_lock:
+            self._trigger_taken = False  # a trigger accepted before is dropped with the preparation
         self._shown_at = float("-inf")  # a verdict from before is not shown again after preparing
         self._acq.configure(self._bundle.profile)
         self._detail = ""
@@ -360,6 +375,8 @@ class StationController:
         # a pending reference goes with the inspection that starts now, whatever started it
         self._reference, self._trigger_reference = self._trigger_reference, ""
         self._trigger_requested = False
+        with self._trigger_lock:
+            self._trigger_taken = False
         self._t0 = self._clock()
         self._go(State.INSPECTING)
 
