@@ -76,6 +76,9 @@ describe('the jobs list', () => {
     expect(within(row).getByText('ativo: v1')).toBeInTheDocument()
     expect(within(row).getByText('2')).toBeInTheDocument()
     expect(within(row).getByText('15/10/2026, 14:32')).toBeInTheDocument()
+    expect(within(row).getByText('Mantenedor')).toBeInTheDocument() // the role, not its id
+    const other = screen.getByRole('link', { name: 'Suporte — furos' }).closest('tr')!
+    expect(within(other).getByText('lucas')).toBeInTheDocument() // any other author as written
     expect(screen.getByRole('link', { name: 'Jobs' })).toHaveAttribute('aria-current', 'page')
   })
 
@@ -217,6 +220,8 @@ describe('one job', () => {
     expect(items[0]).toHaveTextContent('v2')
     expect(items[0]).toHaveTextContent('luz nova')
     expect(items[0]).toHaveTextContent('a partir da v1')
+    expect(items[0]).toHaveTextContent('Mantenedor')
+    expect(items[0]).not.toHaveTextContent('maintainer')
     expect(within(items[1]!).getByText('Ativo')).toBeInTheDocument()
     expect(within(items[1]!).getByRole('button', { name: 'Ativar' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'Abrir no editor' })).not.toBeInTheDocument()

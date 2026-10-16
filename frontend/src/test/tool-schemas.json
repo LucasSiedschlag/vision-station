@@ -1,6 +1,7 @@
 {
   "color": {
     "additionalProperties": false,
+    "description": "Mede quanto de uma região tem uma cor.",
     "properties": {
       "mode": {
         "default": "range",
@@ -198,6 +199,7 @@
   },
   "code": {
     "additionalProperties": false,
+    "description": "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região.",
     "properties": {
       "formats": {
         "anyOf": [
@@ -404,6 +406,7 @@
       }
     },
     "additionalProperties": false,
+    "description": "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo.",
     "properties": {
       "mode": {
         "enum": ["color", "dark", "light"],
@@ -510,6 +513,7 @@
   },
   "fixed": {
     "additionalProperties": false,
+    "description": "O objeto fica sempre no mesmo lugar: a âncora é um retângulo escrito no job.",
     "properties": {
       "rect": {
         "description": "Frações da imagem; desenhe na imagem",

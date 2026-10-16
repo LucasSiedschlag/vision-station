@@ -30,6 +30,7 @@ Share = Annotated[float, Field(ge=0, le=1)]
 
 class ColorParams(ColorRange):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "Mede quanto de uma região tem uma cor.",
         **COLOR_RANGE,
         min_fraction=("Fração mínima da área", "0 a 1: a cor precisa ocupar pelo menos isso da região"),
         max_fraction=("Fração máxima da área", "0 a 1: para conferir que uma cor não está lá"),

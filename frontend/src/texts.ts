@@ -523,3 +523,8 @@ export const text = {
     noJob: 'Nenhum job',
   },
 } as const
+
+/** Who saved a version: a profile is shown by its name ("Mantenedor"), any other author as written. */
+export function authorName(author: string): string {
+  return author in text.roles ? text.roles[author as keyof typeof text.roles] : author
+}

@@ -22,6 +22,7 @@ Fraction = Annotated[float, Field(ge=0, le=1)]
 
 class BlobParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo.",
         mode=("O objeto é", "", {"color": "de uma cor", "dark": "mais escuro que o fundo", "light": "mais claro que o fundo"}),
         color=("Cor do objeto", ""),
         threshold=("Limiar de cinza", "0 a 255. Vazio: automático"),

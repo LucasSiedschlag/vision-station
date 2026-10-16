@@ -21,6 +21,7 @@ Fraction = Annotated[float, Field(ge=0, le=1)]
 
 class TemplateParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "Acha na imagem uma foto ensinada do objeto (ou de uma marca nele).",
         template=("Gabarito", "Imagem do objeto dentro do job, recortada da imagem de referência"),
         search=("Área de busca (x0, y0, x1, y1)", "Frações da imagem; o objeto é procurado só aqui"),
         min_score=("Semelhança mínima", "0 a 1; abaixo disso o objeto não foi encontrado"),

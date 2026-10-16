@@ -5,8 +5,9 @@
         axis=("Medir ao longo de", "", {"none": "área toda", "x": "horizontal", "y": "vertical"}),
     ))
 
-Each entry is a title, or (title, description) or (title, description, labels of the choices). The labels
-only change the schema the screen reads, never validation.
+Each entry is a title, or (title, description) or (title, description, labels of the choices). `about` is what
+the tool or locator does, shown above its form (the code's docstrings stay in English). The labels only change
+the schema the screen reads, never validation.
 """
 
 from collections.abc import Callable
@@ -15,8 +16,10 @@ from typing import Any
 Label = str | tuple[str, str] | tuple[str, str, dict[str, str]]
 
 
-def labels(**fields: Label) -> Callable[[dict[str, Any]], None]:
+def labels(about: str = "", **fields: Label) -> Callable[[dict[str, Any]], None]:
     def extra(schema: dict[str, Any]) -> None:
+        if about:
+            schema["description"] = about
         properties = schema.get("properties", {})
         for name, label in fields.items():
             prop = properties.get(name)

@@ -40,23 +40,23 @@ function RecentResults({
   return (
     <div>
       <p className="mb-1 text-sm text-fg-muted">{text.operator.recent}</p>
-      <ul className="flex gap-1" aria-label={text.operator.recent}>
+      <ul className="grid grid-cols-10 gap-1" aria-label={text.operator.recent}>
         {slots.map((r, i) => {
           if (!r)
             return (
-              <li key={i} className="grid size-9 place-items-center text-fg-muted">
+              <li key={i} className="grid h-9 min-w-0 place-items-center text-fg-muted">
                 <CircleDashed aria-hidden className="size-5 opacity-40" />
               </li>
             )
           const Icon = outcomeIcon[r.outcome]
           const label = `${text.operator.outcome[r.outcome]}${clockTime(r.at) ? ` às ${clockTime(r.at)}` : ''}${r.reason ? `: ${r.reason}` : ''}`
           return (
-            <li key={i}>
+            <li key={i} className="min-w-0">
               <Tooltip content={label}>
                 <button
                   type="button"
                   aria-label={label}
-                  className="grid size-9 min-w-control place-items-center rounded-control hover:bg-surface-3"
+                  className="grid h-9 w-full place-items-center rounded-control hover:bg-surface-3"
                 >
                   <Icon aria-hidden className={`size-6 ${outcomeColour[r.outcome]}`} />
                 </button>

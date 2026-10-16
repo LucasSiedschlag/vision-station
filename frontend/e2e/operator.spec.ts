@@ -115,3 +115,35 @@ test('the page is served with a strict content policy and the API refuses anothe
   expect(foreign.status()).toBe(403)
   expect((await foreign.json()).code).toBe('origin_not_allowed')
 })
+
+test('at 1366×768 the last ten results fit, the newest included, with no sideways scroll', async ({
+  page,
+  station,
+  request,
+}) => {
+  void station
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await page.goto('/')
+  for (let i = 0; i < 10; i++) {
+    let id = ''
+    await expect
+      .poll(
+        async () => {
+          const r = await request.post('/api/inspections', { data: {} })
+          if (r.status() === 202) id = ((await r.json()) as { id: string }).id
+          return r.status()
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(202)
+    const done = await request.get(`/api/inspections/${id}?wait_s=10`)
+    expect(((await done.json()) as { status: string }).status).toBe('done')
+  }
+  const strip = page.getByRole('list', { name: 'Últimos resultados' }).getByRole('button')
+  await expect(strip).toHaveCount(10, { timeout: 15_000 })
+  await expect(strip.last()).toBeInViewport({ ratio: 1 })
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  expect(overflow).toBe(0)
+})

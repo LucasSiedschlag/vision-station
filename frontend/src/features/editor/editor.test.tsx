@@ -134,17 +134,16 @@ const version = {
   reference: { brightness: 120, sharpness: 300 },
   expected: null,
 }
+// as the server sends them: the description is the Portuguese one of the parameter schema
+const kind = (name: keyof typeof schemas) => ({
+  name,
+  version: 1,
+  description: schemas[name].description,
+  params_schema: schemas[name],
+})
 const types = {
-  tools: [
-    {
-      name: 'color',
-      version: 1,
-      description: 'Color tool: how much of a region has a color.',
-      params_schema: schemas.color,
-    },
-    { name: 'code', version: 1, description: 'Code tool.', params_schema: schemas.code },
-  ],
-  locators: [{ name: 'fixed', version: 1, description: 'Fixed.', params_schema: schemas.fixed }],
+  tools: [kind('color'), kind('code')],
+  locators: [kind('fixed')],
   builtin_rois: ['anchor', 'frame'],
 }
 
@@ -199,6 +198,17 @@ async function openEditor(path = `/jobs/${JOB}/edit`) {
 }
 
 describe('the job editor', () => {
+  it('a job without a reference image shows the live picture, and says so', async () => {
+    server.use(
+      http.get(`*/api/jobs/${JOB}/versions/2`, () =>
+        HttpResponse.json({ ...version, files: [], reference: null }),
+      ),
+    )
+    await openEditor()
+    expect(screen.getByRole('radio', { name: 'Ao vivo' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Referência' })).toBeDisabled()
+  })
+
   it('opens the latest version as a draft, on the regions step, with the steps listed', async () => {
     await openEditor()
     expect(screen.getByText('rascunho a partir da v2')).toBeInTheDocument()

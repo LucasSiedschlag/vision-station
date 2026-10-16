@@ -27,6 +27,7 @@ from vision_station.tools.measures import at_least, at_most
 
 class DetectParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "Roda um modelo treinado na região.",
         model=("Modelo", "Arquivo .onnx dentro do job (treinado fora da estação)"),
         card=("Cartão do modelo", "Vazio: o mesmo nome com .card.yaml"),
         min_confidence=("Confiança mínima", "0 a 1"),

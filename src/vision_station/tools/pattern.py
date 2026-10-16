@@ -34,6 +34,7 @@ MAX_MATCHES = 500
 
 class PatternParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece.",
         template=("Gabarito", "Imagem dentro do job, recortada da imagem de referência"),
         min_score=("Semelhança mínima", "0 a 1; 0,7 é um bom começo"),
         min_count=("Mínimo de ocorrências", "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está"),

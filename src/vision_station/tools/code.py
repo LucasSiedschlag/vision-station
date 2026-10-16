@@ -21,6 +21,7 @@ from vision_station.tools.base import ToolResult, ToolType, register
 
 class CodeParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região.",
         formats=("Formatos", "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos"),
         expect=("Texto esperado", "Um código só conta se tiver exatamente este texto"),
         pattern=("Padrão do texto", "Expressão regular; ex.: L\\d{6}"),

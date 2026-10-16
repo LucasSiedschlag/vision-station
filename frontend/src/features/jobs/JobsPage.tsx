@@ -18,7 +18,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatDateTime } from '@/lib/datetime'
 import { can } from '@/lib/permissions'
-import { text } from '@/texts'
+import { text, authorName } from '@/texts'
 import {
   BackupsDialog,
   DuplicateDialog,
@@ -116,7 +116,7 @@ export function JobsPage() {
                   </TD>
                   <TD numeric>{job.versions.length}</TD>
                   <TD>{formatDateTime(job.updated_at)}</TD>
-                  <TD>{job.author}</TD>
+                  <TD>{authorName(job.author)}</TD>
                   <TD className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

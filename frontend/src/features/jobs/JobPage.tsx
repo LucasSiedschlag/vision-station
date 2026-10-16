@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { formatDateTime } from '@/lib/datetime'
 import { can } from '@/lib/permissions'
-import { text } from '@/texts'
+import { text, authorName } from '@/texts'
 import { ActivateDialog, DiffDialog, DuplicateDialog, exportVersion } from './dialogs'
 
 type Action = { kind: 'activate' | 'diff' | 'duplicate'; version: number } | null
@@ -64,7 +64,7 @@ export function JobPage() {
                         {v.active ? <Badge tone="ok">{text.jobs.active}</Badge> : null}
                       </p>
                       <p className="text-sm text-fg-muted">
-                        {formatDateTime(v.created_at)} · {v.author}
+                        {formatDateTime(v.created_at)} · {authorName(v.author)}
                         {v.parent_version ? ` · ${text.jobs.parent(v.parent_version)}` : ''}
                       </p>
                       <p className="text-sm">

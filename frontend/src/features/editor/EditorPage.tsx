@@ -456,7 +456,7 @@ function Editor({
           <div className="flex flex-wrap items-center gap-2">
             <SegmentedControl
               label={t.imageSource}
-              value={source}
+              value={useReference ? 'reference' : 'live'}
               onValueChange={(v) => setSource(v as 'reference' | 'live')}
               options={[
                 { value: 'reference', label: t.sourceReference, disabled: !hasReference },

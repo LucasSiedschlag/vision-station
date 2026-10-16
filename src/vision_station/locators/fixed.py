@@ -14,7 +14,9 @@ from vision_station.locators.base import Anchor, LocatorType, register
 
 
 class FixedParams(BaseModel):
-    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(rect=("Posição do objeto (x0, y0, x1, y1)", "Frações da imagem; desenhe na imagem")))
+    model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
+        "O objeto fica sempre no mesmo lugar: a âncora é um retângulo escrito no job.",
+        rect=("Posição do objeto (x0, y0, x1, y1)", "Frações da imagem; desenhe na imagem")))
 
     rect: tuple[float, float, float, float] = Field(description="x0, y0, x1, y1 as fractions of the frame")
 

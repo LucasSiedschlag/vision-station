@@ -11,7 +11,6 @@ import csv
 import difflib
 import io
 import json
-import sys
 import time
 import uuid
 from collections.abc import Callable
@@ -45,14 +44,10 @@ def _now() -> datetime:
     return datetime.now().astimezone()
 
 
-def _doc(func: Callable) -> str:
-    doc = sys.modules[func.__module__].__doc__ or ""
-    return doc.strip().split("\n\n")[0].replace("\n", " ")
-
-
 def _type_info(name: str, version: int, entry: Any) -> m.TypeInfo:
-    fn = entry.run if hasattr(entry, "run") else entry.locate
-    return m.TypeInfo(name=name, version=version, description=_doc(fn), params_schema=entry.params.model_json_schema())
+    schema = entry.params.model_json_schema()
+    # what the editor shows about the type: the Portuguese `about` of its parameters (schema_labels), not the docstring
+    return m.TypeInfo(name=name, version=version, description=schema.get("description", ""), params_schema=schema)
 
 
 def _fields(exc: ValidationError, prefix: str) -> dict[str, str]:

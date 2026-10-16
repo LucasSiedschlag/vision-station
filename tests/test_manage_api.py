@@ -45,8 +45,11 @@ def test_types_with_their_parameter_schemas(env, mnt):
     body = env.client.get("/api/tools", headers=mnt).json()
     tools = {t["name"]: t for t in body["tools"]}
     assert {"code", "color", "pattern"} <= set(tools)
-    assert "min_fraction" in tools["color"]["params_schema"]["properties"] and tools["color"]["description"].startswith("Color tool")
+    assert "min_fraction" in tools["color"]["params_schema"]["properties"]
     assert {"fixed", "template", "blob"} <= {t["name"] for t in body["locators"]}
+    for kind in body["tools"] + body["locators"]:  # shown in the editor: Portuguese, never the code's docstring (VIA-0048)
+        assert kind["description"] and kind["description"] == kind["params_schema"].get("description"), kind["name"]
+        assert " tool" not in kind["description"] and "Locator" not in kind["description"], kind["description"]
     assert body["builtin_rois"] == ["anchor", "frame"]
 
 
