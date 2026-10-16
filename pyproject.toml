@@ -23,6 +23,9 @@ vision-station = "vision_station.runtime:main"
 uvc = ["duvc-ctl; sys_platform == 'win32'"]
 
 [dependency-groups]
+build = [
+    "pyinstaller>=6.22.3",
+]
 dev = [
     "httpx>=0.28.1",
     "onnx>=1.23.2",

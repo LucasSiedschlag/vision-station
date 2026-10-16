@@ -88,6 +88,7 @@ class ToolInfo(BaseModel):
 
 class AboutOut(BaseModel):
     version: str
+    build: str  # version · git commit · build date (TD-15)
     job_format: int
     tools: list[ToolInfo]
 

@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from vision_station.api import ApiDeps, AuthService, create_app, make_event_handler
+from vision_station.build_info import describe
 from vision_station.cameras import Camera, create_camera
 from vision_station.pipeline import draw_overlay, inspect_job
 from vision_station.records import ResultRecorder, ResultStore
@@ -129,12 +130,37 @@ def _setup_logging(root: Path, verbose: bool) -> None:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, handlers=[handler, logging.StreamHandler()])
 
 
+def _set_password(root: Path, role: str) -> int:
+    import getpass
+
+    from vision_station.api import AuthError
+
+    password = getpass.getpass(f"Nova senha do perfil {role}: ")
+    if password != getpass.getpass("Repita: "):
+        print("As duas senhas são diferentes.")
+        return 1
+    try:
+        AuthService(root / "system" / "users.json").set_password(role, password)
+    except AuthError as exc:
+        print(f"Senha não aceita: {exc}")
+        return 1
+    print(f"Senha do perfil {role} definida em {root / 'system' / 'users.json'}.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="vision-station", description="Vision Station: the inspection station and its web interface.")
     parser.add_argument("--data", type=Path, default=None, help=f"data folder (default: {default_data_root()})")
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--version", action="store_true", help="print the version and exit")
+    parser.add_argument("--set-password", choices=["supervisor", "maintainer"], metavar="ROLE", help="set the password of supervisor or maintainer and exit")
     args = parser.parse_args(argv)
+    if args.version:
+        print(f"vision-station {describe()}")
+        return 0
     root = args.data or default_data_root()
+    if args.set_password:
+        return _set_password(root, args.set_password)
     _setup_logging(root, args.verbose)
     try:
         runtime = build_runtime(root)
@@ -143,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     network = runtime.system.config.network
     if not network.local_only and not (runtime.auth.has_password("supervisor") or runtime.auth.has_password("maintainer")):
-        log.error("the API is set to listen on %s, but no Supervisor or Maintainer password exists; set one first (scripts/set_password.py)", network.host)
+        log.error("the API is set to listen on %s, but no Supervisor or Maintainer password exists; set one first (vision-station --set-password maintainer)", network.host)
         return 2
     import uvicorn
 

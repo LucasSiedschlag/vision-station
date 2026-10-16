@@ -1,0 +1,21 @@
+<!-- WinSW (MIT) service definition (TD-14). The wrapper VisionStation.exe sits next to this file and to
+     vision-station.exe in the program folder; %BASE% is that folder. -->
+<service>
+  <id>VisionStation</id>
+  <name>Vision Station</name>
+  <description>Sistema de visão da estação (Vision Station): câmera, inspeção, registros e a tela em http://127.0.0.1:8765</description>
+  <executable>%BASE%\vision-station.exe</executable>
+  <arguments>--data "%ProgramData%\VisionSystem"</arguments>
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 hour</resetfailure>
+  <stoptimeout>20 sec</stoptimeout>
+  <logpath>%ProgramData%\VisionSystem\logs\service</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+</service>

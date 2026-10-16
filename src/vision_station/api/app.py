@@ -31,6 +31,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from vision_station import __version__
+from vision_station.build_info import bundle_dir, describe
 from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
@@ -53,7 +54,10 @@ def default_web_dist() -> Path:
     """Where the built interface is: `VISION_STATION_WEB` if set (an installed program), else `frontend/dist`
     of this checkout. The interface lives only in `frontend/`; nothing of it is kept inside the Python package."""
     configured = os.environ.get("VISION_STATION_WEB")
-    return Path(configured) if configured else Path(__file__).resolve().parents[3] / "frontend" / "dist"
+    if configured:
+        return Path(configured)
+    bundled = bundle_dir()  # the installed program carries the built interface in its own folder
+    return bundled / "web" if bundled else Path(__file__).resolve().parents[3] / "frontend" / "dist"
 
 
 MAX_UPLOAD = 256 * 1024 * 1024
@@ -560,7 +564,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
 
     @api.get("/about", response_model=m.AboutOut)
     def about(_: str = Depends(need("supervisor"))) -> m.AboutOut:
-        return m.AboutOut(version=__version__, job_format=FORMAT, tools=[m.ToolInfo(name=n, version=v) for n, v in tool_types()])
+        return m.AboutOut(version=__version__, build=describe(), job_format=FORMAT, tools=[m.ToolInfo(name=n, version=v) for n, v in tool_types()])
 
     # --- maintainer ----------------------------------------------------------------------------------------
 

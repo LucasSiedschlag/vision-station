@@ -31,6 +31,8 @@ export function AboutPage() {
               <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
                 <dt className="text-fg-muted">{text.about.version}</dt>
                 <dd className="font-mono tabular-nums">{about.data.version}</dd>
+                <dt className="text-fg-muted">{text.about.build}</dt>
+                <dd className="font-mono tabular-nums">{about.data.build}</dd>
                 <dt className="text-fg-muted">{text.about.jobFormat}</dt>
                 <dd className="font-mono tabular-nums">{about.data.job_format}</dd>
               </dl>

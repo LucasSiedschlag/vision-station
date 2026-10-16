@@ -3,6 +3,10 @@
     "schemas": {
       "AboutOut": {
         "properties": {
+          "build": {
+            "title": "Build",
+            "type": "string"
+          },
           "job_format": {
             "title": "Job Format",
             "type": "integer"
@@ -19,7 +23,7 @@
             "type": "string"
           }
         },
-        "required": ["version", "job_format", "tools"],
+        "required": ["version", "build", "job_format", "tools"],
         "title": "AboutOut",
         "type": "object"
       },

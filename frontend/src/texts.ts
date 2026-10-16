@@ -70,6 +70,7 @@ export const text = {
   about: {
     title: 'Sobre',
     version: 'Versão do programa',
+    build: 'Compilação',
     jobFormat: 'Formato dos arquivos de job',
     tools: 'Ferramentas que este programa executa',
     loadError: 'Não foi possível ler as informações do programa.',

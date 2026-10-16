@@ -18,3 +18,10 @@ bench_data/
 
 # output of the Playwright MCP plugin
 .playwright-mcp/
+
+# packaging output (packaging/build_windows.ps1)
+/build/
+/dist/
+packaging/build_info.json
+packaging/winsw/VisionStation.exe
+THIRD_PARTY_LICENSES.md

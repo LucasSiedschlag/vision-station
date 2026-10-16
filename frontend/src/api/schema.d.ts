@@ -877,6 +877,8 @@ export interface components {
   schemas: {
     /** AboutOut */
     AboutOut: {
+      /** Build */
+      build: string
       /** Job Format */
       job_format: number
       /** Tools */

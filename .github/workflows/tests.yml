@@ -58,3 +58,43 @@ jobs:
         with:
           name: web-dist
           path: frontend/dist
+
+  package:
+    # the installed program and its installer, built and started on Windows (TD-15)
+    needs: [pytest, frontend]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Build the program and the installer
+        run: powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
+      - name: The program starts and serves the API and the interface
+        shell: pwsh
+        run: |
+          $data = Join-Path $env:RUNNER_TEMP 'vs-data'
+          New-Item -ItemType Directory -Force "$data\system" | Out-Null
+          "camera: {driver: file, connection: {path: '$($env:RUNNER_TEMP -replace '\\','/')/frames', loop: true, fps: 5}}" | Set-Content "$data\system\system.yaml"
+          $p = Start-Process dist\vision-station\vision-station.exe -ArgumentList '--data', $data -PassThru -RedirectStandardError "$env:RUNNER_TEMP\vs.err" -RedirectStandardOutput "$env:RUNNER_TEMP\vs.out"
+          $ok = $false
+          foreach ($i in 1..60) {
+            try { $state = Invoke-RestMethod http://127.0.0.1:8765/api/state; $ok = $true; break } catch { Start-Sleep -Seconds 1 }
+          }
+          if ($ok) { $page = Invoke-WebRequest http://127.0.0.1:8765/ -UseBasicParsing }
+          Stop-Process -Id $p.Id -Force
+          Get-Content "$env:RUNNER_TEMP\vs.err" -Tail 30
+          if (-not $ok) { throw 'the program did not answer' }
+          Write-Host "state: $($state.state) - $($state.message)"
+          if ($page.Content -notmatch 'id="root"') { throw 'the interface is not served' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: |
+            dist/VisionStation-*-setup.exe
+            THIRD_PARTY_LICENSES.md
