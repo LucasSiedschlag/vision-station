@@ -152,6 +152,17 @@ def check_model(model: bytes, card: ModelCard) -> str:
     return digest
 
 
+def _numbers(value: Any, what: str) -> np.ndarray:
+    """An output as numbers, or ModelError: an empty output or a NaN/infinity must never decide a result (a NaN
+    is not below any confidence, and argmax takes it as the top class: that was a pass) (VIA-0054)."""
+    array = np.asarray(value, np.float64)
+    if array.size == 0:
+        raise ModelError(f"saída do modelo vazia ({what})")
+    if not np.all(np.isfinite(array)):
+        raise ModelError(f"saída do modelo não é um número (NaN ou infinito) em {what}")
+    return array
+
+
 def predict(model: bytes, card: ModelCard, image: np.ndarray, min_confidence: float = 0.5) -> Prediction:
     if image.size == 0:
         raise ModelError("empty region")
@@ -162,31 +173,31 @@ def predict(model: bytes, card: ModelCard, image: np.ndarray, min_confidence: fl
     values = list(outputs.values())
 
     if card.task == "classifier":
-        scores = np.asarray(values[0], np.float64).reshape(-1)
+        scores = _numbers(values[0], "classes").reshape(-1)
         if card.classes and len(scores) != len(card.classes):
             raise ModelError(f"the model gives {len(scores)} classes, its card names {len(card.classes)}")
-        probs = _softmax(scores) if card.output.softmax else scores
+        probs = _numbers(_softmax(scores) if card.output.softmax else scores, "probabilidades")
         names = card.classes or [str(i) for i in range(len(probs))]
         top = int(np.argmax(probs))
         return Prediction("classifier", label=names[top], confidence=float(probs[top]), probabilities={n: float(p) for n, p in zip(names, probs)})
 
     if card.task == "detector":
-        boxes = np.asarray(outputs[card.output.boxes] if card.output.boxes else values[0], np.float64)
-        logits = np.asarray(outputs[card.output.scores] if card.output.scores else values[1], np.float64)
-        boxes = boxes.reshape(-1, 4)
-        logits = logits.reshape(len(boxes), -1)
+        boxes = _numbers(outputs[card.output.boxes] if card.output.boxes else values[0], "caixas").reshape(-1, 4)
+        logits = _numbers(outputs[card.output.scores] if card.output.scores else values[1], "classes").reshape(len(boxes), -1)
+        if card.classes and logits.shape[1] != len(card.classes):
+            # a box of a class past the card's list was dropped in silence: a shifted export could hide the failing class
+            raise ModelError(f"o modelo dá {logits.shape[1]} classes e o cartão nomeia {len(card.classes)}")
         probs = _sigmoid(logits) if card.output.sigmoid else logits
         names = card.classes or [str(i) for i in range(probs.shape[1])]
         sx, sy = (fx1 - fx0) or 1.0, (fy1 - fy0) or 1.0
         found = []
         for (cx, cy, bw, bh), p in zip(boxes, probs):
             c = int(np.argmax(p))
-            if p[c] < min_confidence or c >= len(names):
+            if p[c] < min_confidence:
                 continue
             box = ((cx - bw / 2 - fx0) / sx, (cy - bh / 2 - fy0) / sy, (cx + bw / 2 - fx0) / sx, (cy + bh / 2 - fy0) / sy)
             found.append(Detection(names[c], float(p[c]), tuple(float(min(1, max(0, v))) for v in box)))  # type: ignore[arg-type]
         found.sort(key=lambda d: d.confidence, reverse=True)
         return Prediction("detector", detections=found)
 
-    out = np.asarray(values[0], np.float64)
-    return Prediction("anomaly", score=float(out.max()) if out.size else 0.0)
+    return Prediction("anomaly", score=float(_numbers(values[0], "pontuação de anomalia").max()))

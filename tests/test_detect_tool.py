@@ -49,6 +49,16 @@ def anomaly() -> bytes:
     return _model([helper.make_node("ReduceMax", ["x"], ["score"], keepdims=0)], [helper.make_tensor_value_info("score", TensorProto.FLOAT, [])])
 
 
+def constant(**outputs) -> bytes:
+    """A model whose outputs are fixed, whatever the picture: to feed the tool what a broken export gives."""
+    arrays = {name: np.asarray(value, np.float32) for name, value in outputs.items()}
+    return _model(
+        [helper.make_node("Identity", [f"{name}_value"], [name]) for name in arrays],
+        [helper.make_tensor_value_info(name, TensorProto.FLOAT, list(a.shape)) for name, a in arrays.items()],
+        [numpy_helper.from_array(a, f"{name}_value") for name, a in arrays.items()],
+    )
+
+
 def card(model: bytes, task: str, **extra) -> bytes:
     data = {"format": 1, "task": task, "sha256": hashlib.sha256(model).hexdigest(), "input": {"size": [8, 8]}, "name": f"teste {task}", **extra}
     return yaml.safe_dump(data).encode()
@@ -158,3 +168,34 @@ def test_in_a_job_the_files_are_required_and_the_pipeline_runs_it():
     assert inspect_job(bundle, Frame(reference, 0.0)).outcome is Outcome.PASS
     failed = inspect_job(bundle, Frame(red, 0.0))
     assert failed.outcome is Outcome.FAIL and failed.reason == "Peça vermelho"
+
+
+NAN, INF = float("nan"), float("inf")
+BOX = [[[0.5, 0.5, 0.5, 0.5]]]
+TWO = {"classes": ["ok", "risco"]}
+
+
+@pytest.mark.parametrize(
+    "task, outputs, extra, params",
+    [
+        ("classifier", {"y": [[NAN, NAN]]}, TWO, {"fail_classes": ["risco"]}),  # argmax took "ok": a pass (VIA-0054)
+        ("classifier", {"y": [[INF, 0.0]]}, {**TWO, "output": {"softmax": True}}, {"fail_classes": ["risco"]}),
+        ("detector", {"dets": BOX, "logits": [[[NAN, NAN]]]}, TWO, {"require_classes": ["ok"]}),
+        ("detector", {"dets": [[[NAN, 0.5, 0.5, 0.5]]], "logits": [[[9.0, -9.0]]]}, TWO, {"require_classes": ["ok"]}),
+        ("anomaly", {"score": NAN}, {"threshold": 0.5}, {}),
+        ("anomaly", {"score": np.zeros((0,))}, {"threshold": 0.5}, {}),  # was a score of 0: a pass
+    ],
+    ids=["classifier-nan", "classifier-inf", "detector-nan-score", "detector-nan-box", "anomaly-nan", "anomaly-empty"],
+)
+def test_an_output_that_is_not_a_number_or_is_empty_is_an_error_never_a_pass(task, outputs, extra, params):
+    model = constant(**outputs)
+    with pytest.raises(ToolError, match="saída do modelo"):
+        detect(patch(GRAY), files(model, task, **extra), **params)
+
+
+def test_a_detector_with_another_number_of_classes_than_its_card_is_an_error():
+    """VIA-0054: a box of a class index past the card's list was dropped in silence; a shifted export could
+    hide the class that fails."""
+    model = constant(dets=BOX, logits=[[[-9.0, -9.0, 9.0]]])  # three classes, the card names two
+    with pytest.raises(ToolError, match="classes"):
+        detect(patch(GRAY), files(model, "detector", **TWO), fail_classes=["risco"])

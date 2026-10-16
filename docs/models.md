@@ -63,7 +63,11 @@ The licences of the code and of the starting weights are written in the card (TD
 
 Fields for the failure text: `{label}`, `{confidence}`, `{classes}`, `{count}`, `{score}`, `{threshold}`.
 
-Not yet supported: YOLOX raw outputs (grid decoding), segmentation, OpenVINO IR files (the OpenVINO execution provider of TD-09 comes with the production PC).
+**An output the tool cannot trust is an ERROR, never a pass** (VIA-0054): an empty output, a NaN or an infinity in any of the three tasks (a NaN is below no confidence and `argmax` takes it as the top class, which made a pass), and, for the classifier and the detector, a number of classes other than the card's `classes` (a detector box of a class past the list used to be dropped in silence, so a shifted export could hide the class that fails).
+
+**Open question, RF-DETR class indexes:** check on a real fine-tuned export whether index 0 is a reserved class (COCO-style numbering) before writing the card. If it is, the card's `classes` must list it too (for example `[_fundo, risco, amassado]`), or every box lands one class off. Test it with a reference set that has one picture of each class.
+
+Not yet supported: YOLOX raw outputs (grid decoding), segmentation, OpenVINO IR files, and the OpenVINO execution provider (TD-09: it needs the `onnxruntime-openvino` package instead of `onnxruntime`; it comes with the production PC).
 
 ## 4. Runtime
 

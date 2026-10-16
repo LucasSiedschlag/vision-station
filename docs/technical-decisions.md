@@ -322,6 +322,7 @@ Models are added only where the classical tools can't separate good objects from
 - **No PyTorch in the production install.**
 
 **Consequences.**
+- **OpenVINO is not a switch.** Its execution provider ships in the `onnxruntime-openvino` package, which replaces `onnxruntime` (the two must not be installed together), and `models._session` asks for `CPUExecutionProvider` only. When the production PC arrives: swap the package in `pyproject.toml` (and the PyInstaller spec's `collect_dynamic_libs`), ask for `OpenVINOExecutionProvider` with the CPU one as fallback, check its licence for the list of TD-18, and benchmark against plain CPU (prototype test 4) (VIA-0054).
 - Every model is exported to ONNX (or OpenVINO IR) during training.
 - The job stores the exported file and its checksum (FR-MDL-3).
 - The production install stays small, and the training stack's dependencies never reach the client's PC.
