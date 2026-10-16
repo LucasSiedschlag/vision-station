@@ -6,7 +6,7 @@ Para o Mantenedor. Leva cerca de 30 minutos num PC novo, sem contar a montagem d
 
 - **PC:** Windows 11 Pro 64 bits, Intel Core i5 de 12ª geração ou melhor, 16 GB de memória, SSD de 512 GB, monitor de 21" ou maior, nobreak. Especificação completa no documento 04, §3.
 - **Câmera:** a C920 numa porta USB 3, ou a câmera IP na rede (driver Hikvision, depois da primeira entrega).
-- **O instalador:** `VisionStation-<versão>-setup.exe` (gerado por `packaging\build_windows.ps1` ou baixado do CI, artefato *installer*).
+- **O instalador:** `VisionStation-<versão>-setup.exe` (gerado como explica o [guia para gerar o instalador](gerar-instalador.md), ou baixado do CI, artefato *installer*).
 - **Microsoft Edge:** já vem no Windows 11; é a tela do operador.
 
 ## 2. Instalar
@@ -54,7 +54,7 @@ Antes de atualizar, faça um backup (**Jobs → Fazer backup**).
 |---|---|
 | A tela não abre (página não encontrada) | O programa não está rodando. *Serviços* → *Vision Station* → *Iniciar*. Veja o registro em `logs\` |
 | "Câmera desconectada" o tempo todo com a C920 | Feche qualquer programa que use a câmera (app da Logitech, Teams, navegador). Se continuar e o programa roda como serviço, reinstale escolhendo **Ao entrar no Windows** (uma câmera USB às vezes não abre fora da sessão do usuário) |
-| "A interface não foi compilada" | Instalador gerado sem a interface: gere de novo com `packaging\build_windows.ps1` |
+| "A interface não foi compilada" | Instalador gerado sem a interface: gere de novo ([guia para gerar o instalador](gerar-instalador.md)) |
 | "Nenhum job ativo" | Ative um job em **Jobs** |
 | "Falha na verificação — chamar manutenção" | A câmera ou a imagem mudou desde que o job foi feito (câmera movida, foco, luz). O detalhe aparece na tela. Corrija a câmera e, como Mantenedor, toque **Tentar de novo** na tela da estação; se a cena mudou de vez, ajuste o job no editor e ative a versão nova |
 | O programa não inicia e o registro fala do `system.yaml` | O arquivo foi editado com erro; o registro diz onde. Corrija ou apague o arquivo (volta aos padrões) |
