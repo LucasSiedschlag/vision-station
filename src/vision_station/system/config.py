@@ -58,6 +58,8 @@ class CameraSettings(_Strict):
     # uvc: device_name, device_path or device_index; file: path; hikvision: host, port, user
     connection: dict[str, Any] = {}
     keyring_entry: str | None = None  # where the camera's password is kept in the OS secret store
+    # frames dropped after the settings are written: the C920 sends overexposed frames first (VIA-0045)
+    settle_ms: Annotated[int, Field(ge=0, le=5000)] = 500
 
     @field_validator("driver")
     @classmethod

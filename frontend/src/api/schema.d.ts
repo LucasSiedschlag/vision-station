@@ -992,6 +992,11 @@ export interface components {
       driver: string
       /** Keyring Entry */
       keyring_entry?: string | null
+      /**
+       * Settle Ms
+       * @default 500
+       */
+      settle_ms: number
     }
     /** CameraOut */
     CameraOut: {
@@ -1024,6 +1029,11 @@ export interface components {
       driver: string
       /** Keyring Entry */
       keyring_entry?: string | null
+      /**
+       * Settle Ms
+       * @default 500
+       */
+      settle_ms: number
     }
     /** CameraStateOut */
     CameraStateOut: {
@@ -1840,7 +1850,8 @@ export interface components {
       /**
        * @default {
        *       "connection": {},
-       *       "driver": "uvc"
+       *       "driver": "uvc",
+       *       "settle_ms": 500
        *     }
        */
       camera: components['schemas']['CameraSettings']

@@ -124,6 +124,7 @@ Each decision follows the same format: **context → options → decision → co
    - mixing the two backends breaks capture;
    - auto-exposure values mean different things on each backend.
 6. OpenCV buffers frames, so a read can return an old frame.
+7. Every apply reopens the capture (the format is asked for while opening), and the C920 then sends 2 or 3 **overexposed frames** (mean brightness about 200–240 against 100) before the manual exposure holds, even when the same profile is written again (bench PC, 2026-10-16).
 
 **Options for control on Windows:**
 - OpenCV `CAP_PROP_*`: partial, behavior differs by backend.
@@ -138,6 +139,7 @@ Each decision follows the same format: **context → options → decision → co
   2. wait about 200 ms, then write the values;
   3. read everything back.
 - **When to apply:** on every open, every reconnect, and every job activation (FR-ACQ-4/5).
+- **Settling after an apply:** the acquisition drops every frame for `camera.settle_ms` of `system.yaml` (default 500 ms) after the settings are written, and the frame from before the apply is not used either. Only then is the profile counted as applied, so the controller never takes an overexposed frame as the empty scene of the image trigger or inspects it. Without this, a job switch could learn a bright background: the real scene then looked like an object forever, the station inspected on its own and never re-armed (VIA-0045).
 - **Fixed defaults in every C920 profile:** low-light compensation off; power-line frequency 60 Hz (Brazil mains); autofocus off, with a fixed focus value.
 - **Device identity:** store the camera's device path in `system.yaml`. Don't use the OpenCV index, which can change when USB devices are added or removed.
 - **On Linux (if TD-01 changes):** V4L2 backend plus `v4l2-ctl`, under the same driver interface. Control names differ between kernels (`focus_auto` vs `focus_automatic_continuous`), so read the available controls at start-up instead of hardcoding them.
@@ -530,6 +532,7 @@ Models are added only where the classical tools can't separate good objects from
 - **Codes (measured on the bench PC, 2026-10-13/14, C920 at 1920×1080, focus fixed, sheet printed at 100%):**
   - **Even light, 33 ms exposure, gain 0** (about 3.3 and 3.9 px/mm in two shots): QR and Data Matrix modules of 1.02 mm (about 3.4 to 4 px) were read, 0.68 mm (about 2.2 to 2.7 px) were not. Code 128 with 0.51 mm bars (about 1.7 to 2 px per bar) was read, 0.34 mm (about 1.1 px) was not.
   - **Phone torch, 7.8 ms** (about 4.8 px/mm): QR at 0.68 mm (3.3 px) was read; Data Matrix needed 1.02 mm; Code 128 at 0.51 mm was *not* read in that shot. The hot spot and glare of a single torch hurt more than the pixel count helped, so light quality changed the limit by about 1 px.
+  - **Bench with its own lights, 7.8 ms, gain 0 (2026-10-16, about 3.9 px/mm):** QR and Data Matrix from 0.68 mm (about 2.7 px) were read in every frame (141 of 141); Code 128 only now and then. The fixed focus mattered: at that distance the sharpness peaked at focus 35–40 and fell fast above 45, so the focus value is set per job, at the working distance.
   - **Rule used for design (with margin): at least 4 px per module for QR and Data Matrix, and at least 2 px per bar for Code 128.** The smallest module is `4 / (px per mm)`: a field of 600 mm across (3.2 px/mm) allows modules of about 1.3 mm; 900 mm across (2.1 px/mm) allows about 1.9 mm.
   - **Light, not the camera, was the main limit.** With ambient light only and 7.8 ms, gain 0, the sheet came out at brightness 20 of 255 and nothing was read. Raising the exposure to 33 ms (about 1/30 s, fine for a still scene) gave an evenly lit sheet and the results above. Raising the gain made the image almost saturated. Brightening dark frames by software recovered only one or two codes (8-bit noise). So: dedicated, diffuse light, fixed exposure and gain 0.
 - **Objects and colors:** fine for a fixed scene with fixed light. Light matters more than the camera (TD-06). A webcam has a rolling shutter: moving objects blur, so the object must be still when captured.
@@ -655,6 +658,7 @@ Job files are the same on both, so a backup made on Windows restores on Linux an
 | 16 | Camera switches to B/W + IR in low light | Production | Day/night forced to Day, IR off, in every job (TD-06) |
 | 17 | Wrong PoE class (802.3af) | Production | 802.3at injector/switch specified (section 3) |
 | 18 | Barrel distortion at the wide end of the zoom | Production | Use the middle/tele half of the zoom; choose height accordingly (TD-06) |
+| 19 | C920 sends overexposed frames after each apply | Prototype | Frames dropped for `camera.settle_ms` after every apply (TD-04) |
 
 ---
 

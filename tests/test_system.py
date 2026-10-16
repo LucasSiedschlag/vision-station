@@ -52,6 +52,7 @@ def test_missing_file_means_defaults_and_a_saved_file_reads_back(tmp_path):
         ("camera: {driver: uvc, connection: {password: abc}}", "secret"),
         ("station: {shift_starts: ['25:00']}", "HH:MM"),
         ("recording: {pass_sample_every: 0}", "pass_sample_every"),
+        ("camera: {settle_ms: -1}", "settle_ms"),
         ("colour: blue", "colour"),
     ],
 )
@@ -68,6 +69,14 @@ def test_recording_and_shift_settings():
     assert shift_start(config, day.replace(hour=15, minute=30)) == day.replace(hour=14)
     assert shift_start(config, day.replace(hour=3)) == day.replace(hour=22) - timedelta(days=1)  # the night shift began yesterday
     assert shift_start(SystemConfig(), day.replace(hour=9)) == day
+
+
+def test_the_camera_settling_time_reaches_the_acquisition(tmp_path):
+    assert SystemConfig().camera.settle_ms == 500
+    root = tmp_path / "data"
+    save_config(root, SystemConfig.model_validate({"camera": {"driver": "file", "connection": {"path": str(tmp_path)}, "settle_ms": 200}}))
+    runtime = build_runtime(root, web_dist=tmp_path / "no-build")
+    assert runtime.acquisition.settle_s == pytest.approx(0.2)
 
 
 def test_changed_sections():

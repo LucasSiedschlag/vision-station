@@ -174,7 +174,7 @@ describe('settings', () => {
     config: {
       format: 1,
       station: { name: 'Linha 2', shift_starts: ['06:00'], idle_logout_min: 10, fail_sound: false },
-      camera: { driver: 'uvc', connection: { device_name: 'C920' }, keyring_entry: null },
+      camera: { driver: 'uvc', connection: { device_name: 'C920' }, keyring_entry: null, settle_ms: 500 },
       recording: {
         pass_sample_every: 1,
         unsampled_pass_hours: null,

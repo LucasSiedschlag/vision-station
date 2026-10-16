@@ -43,6 +43,8 @@ class FakeCamera(Camera):
         self.fail_open = False
         self.fail_read = False
         self.open_now = False
+        self.flash_frames = 0  # overexposed frames sent after each apply, like the C920 when its capture reopens
+        self._flash_left = 0
 
     def open(self, connection):
         if self.fail_open:
@@ -58,6 +60,7 @@ class FakeCamera(Camera):
 
     def apply(self, profile, raw=None):
         self.applied.append(profile)
+        self._flash_left = self.flash_frames
         status = self.status or {"exposure": SettingStatus.APPLIED}
         return ApplyReport(status=status, detail={k: "x" for k in status})
 
@@ -68,6 +71,10 @@ class FakeCamera(Camera):
         while self.open_now:
             if self.fail_read:
                 raise CameraError("usb disconnected")
+            if self._flash_left > 0:
+                self._flash_left -= 1
+                yield Frame(np.full_like(self.scene, 240), self.clock())
+                continue
             yield Frame(self.scene.copy(), self.clock())
 
     def snapshot(self):
@@ -105,10 +112,10 @@ def make_bundle(mode="image_presence", presence=True, waiting=None) -> JobBundle
 class Rig:
     """Everything wired with a fake clock, advancing time in 0.1 s ticks."""
 
-    def __init__(self, mode="image_presence", presence=True, outcome=Outcome.PASS, **controller_args):
+    def __init__(self, mode="image_presence", presence=True, outcome=Outcome.PASS, settle_s=0.0, **controller_args):
         self.clock = Clock()
         self.camera = FakeCamera(self.clock)
-        self.acq = Acquisition(self.camera, {"device_name": "fake"}, clock=self.clock, retry_delays_s=(1.0, 2.0))
+        self.acq = Acquisition(self.camera, {"device_name": "fake"}, clock=self.clock, retry_delays_s=(1.0, 2.0), settle_s=settle_s)
         self.inspected = []
         self.outcome = outcome
         self.events = []
@@ -129,9 +136,9 @@ class Rig:
             self.acq.step()
             self.controller.step()
 
-    def boot(self):
+    def boot(self, ticks=3):
         self.controller.start(self.bundle)
-        self.tick(3)
+        self.tick(ticks)
         assert self.controller.state is State.READY, self.controller.status()
 
     @property
@@ -164,6 +171,33 @@ def test_acquisition_connects_applies_settings_and_keeps_only_the_latest_frame()
     assert acq.frame_after(first.timestamp) is acq.latest()
     assert acq.frame_after(acq.latest().timestamp) is None  # nothing newer than that moment
     assert not acq.stalled()
+
+
+def test_acquisition_publishes_frames_only_once_the_camera_settled_after_applying():
+    clock = Clock()
+    cam = FakeCamera(clock)
+    cam.flash_frames = 2
+    acq = Acquisition(cam, {}, clock=clock, settle_s=0.5)
+    acq.configure(make_bundle().profile)
+    acq.step()  # connects, applies, reads a frame inside the settling time
+    assert acq.connected and not acq.applied and acq.latest() is None
+    for _ in range(4):
+        clock.advance(0.1)
+        acq.step()
+        assert not acq.applied and acq.latest() is None
+    clock.advance(0.2)
+    acq.step()
+    assert acq.applied and acq.latest().image.mean() == pytest.approx(90)  # the scene, not the overexposed frames
+    assert not acq.stalled()
+
+    acq.configure(make_bundle().profile)  # a job switch: written again
+    clock.advance(0.1)
+    acq.step()
+    assert not acq.applied and acq.latest() is None  # the frame from before the apply is not used either
+    for _ in range(6):
+        clock.advance(0.1)
+        acq.step()
+    assert acq.applied and acq.latest().image.mean() == pytest.approx(90) and len(cam.applied) == 2
 
 
 def test_acquisition_loses_the_camera_retries_with_growing_delays_and_reapplies_settings():
@@ -297,6 +331,23 @@ def test_one_inspection_per_box_through_the_whole_cycle():
     rig.tick(12)
     assert len(rig.inspected) == 2
     assert rig.states()[:6] == [State.PREPARING, State.READY, State.WAITING_STILL, State.INSPECTING, State.SHOWING_RESULT, State.READY]
+
+
+def test_a_job_switch_does_not_take_the_overexposed_frames_after_applying_as_the_empty_scene():
+    """VIA-0045: the C920 sends a few overexposed frames after each apply. Taken as the empty scene, the
+    real scene looked like an object forever: the station inspected on its own and never re-armed."""
+    rig = Rig(settle_s=0.5)
+    rig.camera.flash_frames = 2
+    rig.boot(ticks=8)
+    rig.controller.switch_job(rig.bundle)
+    rig.tick(20)
+    assert rig.state is State.READY and rig.inspected == []
+    rig.camera.scene = scene_with_object(40)
+    rig.tick(10)
+    assert len(rig.inspected) == 1
+    rig.camera.scene = empty_scene()
+    rig.tick(6)
+    assert rig.state is State.READY  # re-armed
 
 
 def test_the_inspected_frame_was_captured_after_the_trigger():

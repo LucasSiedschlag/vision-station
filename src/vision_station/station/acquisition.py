@@ -2,6 +2,9 @@
 
 The thread (or `step()` in tests) reads frames as fast as they come, keeps only the latest, applies
 the job's camera settings on every (re)connect, and retries a lost camera with growing delays.
+After each apply the frames of the settling time are dropped: a camera may send a few frames with
+other settings first (the C920 reopens its capture and sends overexposed frames), and the controller
+must not take one of them as the empty scene or inspect it (VIA-0045).
 The station controller asks for a frame captured *after* a given moment, never one buffered
 before it (FR-ACQ-6).
 """
@@ -24,9 +27,11 @@ class Acquisition:
         sleep: Callable[[float], None] = time.sleep,
         stall_timeout_s: float = 3.0,
         retry_delays_s: tuple[float, ...] = (1.0, 2.0, 5.0, 10.0),
+        settle_s: float = 0.0,
     ):
         self._camera = camera
         self._connection = dict(connection)
+        self.settle_s = settle_s  # frames are dropped for this long after each apply
         self._clock = clock
         self._sleep = sleep
         self.stall_timeout_s = stall_timeout_s
@@ -39,6 +44,8 @@ class Acquisition:
         self._raw: Mapping[str, bytes] | None = None
         self.profile_serial = 0  # counts configure() calls
         self.applied_serial = -1  # the profile_serial that was last applied successfully written
+        self._settling: int | None = None  # the profile_serial just written, until the settling time is over
+        self._settle_until = 0.0
         self._reapply = False
         self._connected = False
         self._next_try = 0.0
@@ -121,9 +128,13 @@ class Acquisition:
         except Exception as exc:
             self._lose(exc)
             return
+        self._failures = 0
+        if self._settling is not None:
+            if self._clock() < self._settle_until:
+                return  # still settling: this frame may not show the new settings yet
+            self.applied_serial, self._settling = self._settling, None
         with self._lock:
             self._latest = frame
-        self._failures = 0
 
     def _connect(self) -> None:
         self._camera.open(self._connection)
@@ -137,10 +148,11 @@ class Acquisition:
         with self._lock:
             profile, raw, serial = self._profile, self._raw, self.profile_serial
             self._reapply = False
+            self._latest = None  # taken with the settings from before
         if profile is None:
             return
         self.last_apply = self._camera.apply(profile, raw)
-        self.applied_serial = serial
+        self._settling, self._settle_until = serial, self._clock() + self.settle_s
 
     def _lose(self, exc: BaseException) -> None:
         try:
@@ -149,6 +161,7 @@ class Acquisition:
             pass
         with self._lock:
             self._latest = None  # a frame from before the loss must never be used
+        self._settling = None  # written again on the reconnect
         self._connected = False
         self._frames = None
         self.last_error = f"{type(exc).__name__}: {exc}"

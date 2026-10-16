@@ -90,7 +90,7 @@ def build_runtime(root: Path | str, config: SystemConfig | None = None, camera: 
     jobs = JobStore(root)
     results = ResultStore(root, config.recording.to_recording_config())
     auth = AuthService(root / "system" / "users.json")
-    acquisition = Acquisition(camera if camera is not None else create_camera(config.camera.driver), config.camera.connection)
+    acquisition = Acquisition(camera if camera is not None else create_camera(config.camera.driver), config.camera.connection, settle_s=config.camera.settle_ms / 1000)
     controller = StationController(acquisition, inspect_job, verifier=JobVerifier(inspect_job))
     system = SystemService(root, config)
     extra = dict(web_dist=web_dist) if web_dist is not None else {}
