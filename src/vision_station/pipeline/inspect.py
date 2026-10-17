@@ -16,14 +16,16 @@ import numpy as np
 from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
 from vision_station.core.jobfiles import JobFileError, JobFiles
-from vision_station.core.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome, ReasonCode, ToolReport
 from vision_station.geometry.regions import RegionError, resolve_roi
 from vision_station.jobs import Job
+from vision_station.jobs.job import Tool
 from vision_station.locators import Anchor, LocatorError, run_locator
 from vision_station.pipeline.quality import brightness_gate, sharp_enough
 from vision_station.pipeline.stop import Stop
 from vision_station.store.bundle import JobBundle
 from vision_station.tools import ToolError, run_tool
+from vision_station.tools.base import ToolResult
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +94,8 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     regions: list[dict[str, Any]] = []
     tool_details: dict[str, Any] = {}
     per_tool: dict[str, float] = {}
+    reports: list[ToolReport] = []
+    reason_codes: list[ReasonCode] = []
     for tool in job.tools:
         try:
             rect, px = resolve_roi(job, tool.roi, anchor, image.shape)
@@ -113,8 +117,11 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         scores[tool.id] = score
         tool_details[tool.id] = dict(result.details)
         regions.append({"tool": tool.id, "roi": tool.roi, "rect": list(px), "passed": bool(result.passed)})
+        report = _report(tool, result, score)
+        reports.append(report)
         if not result.passed:
             failures.append(result.reason(tool.reason_fail))
+            reason_codes.extend(ReasonCode(tool.id, f"{tool.type}.{c.code}") for c in report.criteria if not c.passed)
     timings["tools"] = time.perf_counter() - t_tools
     timings["per_tool"] = per_tool
 
@@ -127,5 +134,18 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         "tools": tool_details,
     }
     if failures:
-        return InspectionResult(Outcome.FAIL, "; ".join(failures), scores=scores, details=details, duration_s=total)
-    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total)
+        return InspectionResult(
+            Outcome.FAIL, "; ".join(failures), scores=scores, details=details, duration_s=total, reason_codes=tuple(reason_codes), tools=tuple(reports)
+        )
+    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports))
+
+
+def _report(tool: Tool, result: ToolResult, score: float) -> ToolReport:
+    """The tool's part of the result contract: its numeric measures with units, and its criteria (TD-22)."""
+    values = {
+        name: float(result.values[name])
+        for name in result.units
+        if isinstance(result.values.get(name), int | float) and not isinstance(result.values.get(name), bool)
+    }
+    units = {name: unit for name, unit in result.units.items() if name in values}
+    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria))

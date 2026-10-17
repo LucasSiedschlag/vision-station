@@ -25,8 +25,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.schema_labels import labels
-from vision_station.tools.base import ToolError, ToolResult, ToolType, register
-from vision_station.algorithms.measures import at_least, at_most, strip_profile
+from vision_station.algorithms.measures import strip_profile
+from vision_station.core.results import Unit
+from vision_station.tools.base import ToolError, ToolResult, ToolType, count_at_most, judged, maximum, minimum, register
 
 Share = Annotated[float, Field(ge=0, le=1)]
 MAX_MATCHES = 500
@@ -110,9 +111,10 @@ def run(region: np.ndarray, params: PatternParams, files: JobFiles) -> ToolResul
         "count": count,
         "matches": [{"rect": [round(x / scale), round(y / scale), round((x + tw) / scale), round((y + th) / scale)], "score": s} for x, y, s in matches],
     }
-    scores = [at_least(count, params.min_count)]
-    if params.max_count is not None and count > params.max_count:
-        scores.append(0.0)
+    criteria = [minimum("min_count", "count", count, params.min_count)]
+    if params.max_count is not None:
+        criteria.append(count_at_most("max_count", "count", count, params.max_count))
+    units: dict[str, Unit] = {"count": "count", "best": "score"}
     if params.axis != "none":
         length = gray.shape[1] if params.axis == "x" else gray.shape[0]
         covered = np.zeros(length, bool)
@@ -123,12 +125,12 @@ def run(region: np.ndarray, params: PatternParams, files: JobFiles) -> ToolResul
         coverage, gap = profile["coverage"], profile["gap"]
         values.update(coverage=coverage, missing=1.0 - coverage, gap=gap)
         details.update(axis=params.axis, **profile)
+        units.update(coverage="fraction", missing="fraction", gap="fraction")
         if params.min_coverage is not None:
-            scores.append(at_least(coverage, params.min_coverage))
+            criteria.append(minimum("min_coverage", "coverage", coverage, params.min_coverage))
         if params.max_gap is not None:
-            scores.append(at_most(gap, params.max_gap))
-    score = min(scores)
-    return ToolResult(passed=score >= 1.0, score=score, values=values, details=details)
+            criteria.append(maximum("max_gap", "gap", gap, params.max_gap))
+    return judged(criteria, values=values, details=details, units=units)
 
 
 PATTERN = register(ToolType(name="pattern", version=1, params=PatternParams, run=run, needs=lambda p: [p.template]))

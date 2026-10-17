@@ -22,8 +22,9 @@ from pydantic import ConfigDict, Field, model_validator
 from vision_station.algorithms.color import ColorRange, color_mask
 from vision_station.core.schema_labels import COLOR_RANGE, labels
 from vision_station.core.jobfiles import JobFiles
-from vision_station.tools.base import ToolResult, ToolType, register
-from vision_station.algorithms.measures import at_least, at_most, strip_profile
+from vision_station.algorithms.measures import strip_profile
+from vision_station.core.results import Criterion, Unit
+from vision_station.tools.base import ToolResult, ToolType, judged, maximum, minimum, register
 
 Share = Annotated[float, Field(ge=0, le=1)]
 
@@ -75,23 +76,24 @@ def run(region: np.ndarray, params: ColorParams, files: JobFiles) -> ToolResult:
         "max_gap": params.max_gap,
     }
     details: dict = {"fraction": fraction}
-    scores: list[float] = []
+    criteria: list[Criterion] = []
     if params.min_fraction is not None:
-        scores.append(at_least(fraction, params.min_fraction))
+        criteria.append(minimum("min_fraction", "fraction", fraction, params.min_fraction))
     if params.max_fraction is not None:
-        scores.append(at_most(fraction, params.max_fraction))
+        criteria.append(maximum("max_fraction", "fraction", fraction, params.max_fraction))
+    units: dict[str, Unit] = {"fraction": "fraction"}
     if params.axis != "none":
         per_line = mask.mean(axis=0 if params.axis == "x" else 1) if mask.size else np.zeros(0)
         profile = strip_profile(per_line >= params.line_min)
         coverage, gap = profile["coverage"], profile["gap"]
         values.update(coverage=coverage, missing=1.0 - coverage, gap=gap)
         details.update(axis=params.axis, **profile)
+        units.update(coverage="fraction", missing="fraction", gap="fraction")
         if params.min_coverage is not None:
-            scores.append(at_least(coverage, params.min_coverage))
+            criteria.append(minimum("min_coverage", "coverage", coverage, params.min_coverage))
         if params.max_gap is not None:
-            scores.append(at_most(gap, params.max_gap))
-    score = min(scores)
-    return ToolResult(passed=score >= 1.0, score=score, values=values, details=details)
+            criteria.append(maximum("max_gap", "gap", gap, params.max_gap))
+    return judged(criteria, values=values, details=details, units=units)
 
 
 COLOR = register(ToolType(name="color", version=1, params=ColorParams, run=run))

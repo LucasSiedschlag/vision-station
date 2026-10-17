@@ -15,7 +15,9 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, ValidationError
 
+from vision_station.algorithms.measures import at_least, at_most
 from vision_station.core.jobfiles import JobFiles
+from vision_station.core.results import Criterion, Unit
 
 
 class ToolError(Exception):
@@ -28,6 +30,8 @@ class ToolResult:
     score: float  # 0..1, how far from failing (1 = fully satisfied)
     values: Mapping[str, Any] = field(default_factory=dict)  # fields a job's `reason_fail` text can use
     details: Mapping[str, Any] = field(default_factory=dict)  # for the screen and the log
+    criteria: tuple[Criterion, ...] = ()  # each check, so a failure has a reason code (FR-INS-14)
+    units: Mapping[str, Unit] = field(default_factory=dict)  # the keys of `values` that are measures, and their unit
 
     def reason(self, template: str) -> str:
         """The job's `reason_fail` text with this result's values filled in."""
@@ -35,6 +39,35 @@ class ToolResult:
             return template.format_map(self.values)
         except (KeyError, IndexError, ValueError):
             return template  # a typo in the text must not hide the failure
+
+
+def judged(criteria: list[Criterion], **fields: Any) -> ToolResult:
+    """A result whose score and verdict come from its criteria: the lowest score, passed only if all pass."""
+    score = min((c.score for c in criteria), default=1.0)
+    return ToolResult(passed=score >= 1.0, score=score, criteria=tuple(criteria), **fields)
+
+
+def minimum(code: str, measure: str, value: float, limit: float) -> Criterion:
+    """`value` at least `limit` (algorithms.measures.at_least)."""
+    score = at_least(value, limit)
+    return Criterion(code, "min", score >= 1.0, score, measure, float(value), float(limit))
+
+
+def maximum(code: str, measure: str, value: float, limit: float) -> Criterion:
+    """A fraction `value` at most `limit` (algorithms.measures.at_most)."""
+    score = at_most(value, limit)
+    return Criterion(code, "max", score >= 1.0, score, measure, float(value), float(limit))
+
+
+def count_at_most(code: str, measure: str, value: int, limit: int) -> Criterion:
+    """A count at most `limit`: one more is a failure with score 0."""
+    score = 1.0 if value <= limit else 0.0
+    return Criterion(code, "max", score >= 1.0, score, measure, float(value), float(limit))
+
+
+def rule(code: str, score: float) -> Criterion:
+    """A yes/no check (a class that fails, a class that is missing); `score` 1.0 when satisfied."""
+    return Criterion(code, "rule", score >= 1.0, score)
 
 
 @dataclass(frozen=True)

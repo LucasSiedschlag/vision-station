@@ -654,7 +654,7 @@ One result structure is used by the pipeline, the records, the API, the machine 
 | `error_code` | int, 0 when not ERROR | Stable code from the catalog below |
 | `reason` | string, in the station language (pt-BR or en, TD-30) | For the operator, from the job's texts or the catalog; screens may re-render it in the viewer's language from `error_code` / `reason_codes` and the job's texts |
 | `reason_codes` | list of {tool, code} | Which tools failed and why, machine-readable |
-| `tools` | list of {id, type, version, passed, score, margin, values{name: number}, units, affects_result} | Per-tool results |
+| `tools` | list of {id, type, version, passed, score, margin, values{name: number}, units{name: fraction / count / score}, criteria, affects_result} | Per-tool results. Each criterion is {code, kind: min / max / rule, measure, value, limit, passed, margin}; `margin` is how far the value is inside the limit in the value's unit (negative: outside), and the tool's `margin` is the one of its decisive criterion (the lowest score); a rule has none. Fractions are 0..1 |
 | `fixtures` | list of {name, x, y, angle, scale, score} | Poses found |
 | `timings` | {stage: seconds} | Per stage and per tool |
 | `simulated` | bool | From the file camera, the editor, the A/B replay or the benchmark (FR-INT-12) |
@@ -683,7 +683,27 @@ One result structure is used by the pipeline, the records, the API, the machine 
 | E506 | System | Job switched during the inspection ("Troca de job durante a inspeção") |
 | E601 | Machine | Heartbeat from the machine lost |
 
-Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`, `pattern.count`, `edge.width`), so a failure can be counted by cause across jobs.
+Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`), so a failure can be counted by cause across jobs. Like the error codes they are stable; the list lives in `core/errors.py` (`REASON_CODES`), a test keeps it equal to this table, and every tool's criteria are checked against it in the test suite:
+
+| Reason code | Meaning |
+|---|---|
+| `code.min_count` | Menos códigos aceitos que o mínimo |
+| `code.max_count` | Mais códigos aceitos que o máximo |
+| `color.min_fraction` | Fração da região com a cor abaixo do mínimo |
+| `color.max_fraction` | Fração da região com a cor acima do máximo |
+| `color.min_coverage` | Cobertura ao longo do eixo abaixo do mínimo |
+| `color.max_gap` | Maior trecho sem a cor acima do máximo |
+| `pattern.min_count` | Menos ocorrências do padrão que o mínimo |
+| `pattern.max_count` | Mais ocorrências do padrão que o máximo |
+| `pattern.min_coverage` | Cobertura do padrão ao longo do eixo abaixo do mínimo |
+| `pattern.max_gap` | Maior trecho sem o padrão acima do máximo |
+| `detect.class` | Classe que reprova (ou fora das que aprovam) |
+| `detect.min_confidence` | Confiança do modelo abaixo do mínimo |
+| `detect.fail_class` | Detecção de uma classe que reprova |
+| `detect.require_classes` | Classe obrigatória não detectada |
+| `detect.min_count` | Menos detecções da classe contada que o mínimo |
+| `detect.max_count` | Mais detecções da classe contada que o máximo |
+| `detect.max_score` | Pontuação de anomalia acima do limite |
 
 ---
 

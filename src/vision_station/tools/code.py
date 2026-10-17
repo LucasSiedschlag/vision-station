@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.schema_labels import labels
-from vision_station.tools.base import ToolResult, ToolType, register
+from vision_station.tools.base import ToolResult, ToolType, count_at_most, judged, minimum, register
 
 
 class CodeParams(BaseModel):
@@ -99,10 +99,9 @@ def run(region: np.ndarray, params: CodeParams, files: JobFiles) -> ToolResult:
         if r.valid
     ]
     matching = sum(c["accepted"] for c in codes)
-    passed = matching >= params.min_count and (params.max_count is None or matching <= params.max_count)
-    score = min(matching / params.min_count, 1.0)
-    if params.max_count is not None and matching > params.max_count:
-        score = 0.0
+    criteria = [minimum("min_count", "matching", matching, params.min_count)]
+    if params.max_count is not None:
+        criteria.append(count_at_most("max_count", "matching", matching, params.max_count))
     values = {
         "found": len(codes),
         "matching": matching,
@@ -110,7 +109,7 @@ def run(region: np.ndarray, params: CodeParams, files: JobFiles) -> ToolResult:
         "expected": params.expect if params.expect is not None else params.pattern,
         "texts": ", ".join(c["text"] for c in codes),
     }
-    return ToolResult(passed=passed, score=score, values=values, details={"codes": codes})
+    return judged(criteria, values=values, details={"codes": codes}, units={"found": "count", "matching": "count"})
 
 
 CODE = register(ToolType(name="code", version=1, params=CodeParams, run=run))

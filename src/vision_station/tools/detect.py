@@ -21,8 +21,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.models import ModelError, parse_card, predict
 from vision_station.core.schema_labels import labels
-from vision_station.tools.base import ToolError, ToolResult, ToolType, register
-from vision_station.algorithms.measures import at_least, at_most
+from vision_station.algorithms.measures import at_most
+from vision_station.core.results import Criterion, Unit
+from vision_station.tools.base import ToolError, ToolResult, ToolType, count_at_most, judged, minimum, register, rule
 
 
 class DetectParams(BaseModel):
@@ -73,15 +74,17 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
         raise ToolError(str(exc)) from exc
     values: dict = {"label": None, "confidence": None, "classes": "", "count": None, "score": None, "threshold": None}
     details: dict = {"task": card.task, "model": card.name or params.model}
-    scores: list[float] = []
+    criteria: list[Criterion] = []
+    units: dict[str, Unit] = {}
 
     if card.task == "classifier":
         label, conf = prediction.label or "", prediction.confidence
         values.update(label=label, confidence=conf, classes=label)
         details.update(label=label, confidence=conf, probabilities=prediction.probabilities)
         bad = label in params.fail_classes or (params.pass_classes and label not in params.pass_classes)
-        unsure = conf < params.min_confidence
-        scores.append(0.0 if bad else at_least(conf, params.min_confidence) if unsure else 1.0)
+        criteria.append(rule("class", 0.0 if bad else 1.0))
+        criteria.append(minimum("min_confidence", "confidence", conf, params.min_confidence))  # unsure is a failure
+        units["confidence"] = "fraction"
 
     elif card.task == "detector":
         found = prediction.detections
@@ -89,20 +92,21 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
         values["classes"] = ", ".join(classes)
         details["detections"] = [{"label": d.label, "confidence": d.confidence, "box": list(d.box)} for d in found]
         failing = [d for d in found if d.label in params.fail_classes]
-        if failing:
-            scores.append(max(0.0, 1.0 - max(d.confidence for d in failing)))
+        if params.fail_classes:
+            criteria.append(rule("fail_class", max(0.0, 1.0 - max(d.confidence for d in failing)) if failing else 1.0))
         missing = [c for c in params.require_classes if c not in classes]
+        if params.require_classes:
+            criteria.append(rule("require_classes", 0.0 if missing else 1.0))
         if missing:
-            scores.append(0.0)
             details["missing"] = missing
         if params.count_class:
             count = sum(d.label == params.count_class for d in found)
             values["count"] = count
+            units["count"] = "count"
             if params.min_count is not None:
-                scores.append(at_least(count, params.min_count))
-            if params.max_count is not None and count > params.max_count:
-                scores.append(0.0)
-        scores.append(1.0)
+                criteria.append(minimum("min_count", "count", count, params.min_count))
+            if params.max_count is not None:
+                criteria.append(count_at_most("max_count", "count", count, params.max_count))
 
     else:  # anomaly
         threshold = params.threshold if params.threshold is not None else card.threshold
@@ -111,10 +115,11 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
         score = float(prediction.score or 0.0)
         values.update(score=score, threshold=threshold)
         details.update(score=score, threshold=threshold)
-        scores.append(1.0 if score <= threshold else max(0.0, at_most(score / (threshold * 2 or 1), 0.5)))
+        units["score"] = "score"
+        part = 1.0 if score <= threshold else max(0.0, at_most(score / (threshold * 2 or 1), 0.5))
+        criteria.append(Criterion("max_score", "max", part >= 1.0, part, "score", score, float(threshold)))
 
-    score = min(scores)
-    return ToolResult(passed=score >= 1.0, score=score, values=values, details=details)
+    return judged(criteria, values=values, details=details, units=units)
 
 
 DETECT = register(ToolType(name="detect", version=1, params=DetectParams, run=run, needs=lambda p: [p.model, p.card_path]))

@@ -66,3 +66,26 @@ CATALOG: dict[ErrorCode, ErrorInfo] = {
     ErrorCode.JOB_SWITCHED: ErrorInfo("system", "Troca de job durante a inspeção"),
     ErrorCode.MACHINE_HEARTBEAT: ErrorInfo("machine", "Máquina sem sinal de vida", planned="R3"),
 }
+
+
+# Reason codes of a failing tool, `<tool type>.<criterion>` (FR-INS-14): stable like the error codes, so a
+# failure can be counted by cause across jobs. A tool's new criterion adds a code here and in architecture §10.3.
+REASON_CODES: dict[str, str] = {
+    "code.min_count": "Menos códigos aceitos que o mínimo",
+    "code.max_count": "Mais códigos aceitos que o máximo",
+    "color.min_fraction": "Fração da região com a cor abaixo do mínimo",
+    "color.max_fraction": "Fração da região com a cor acima do máximo",
+    "color.min_coverage": "Cobertura ao longo do eixo abaixo do mínimo",
+    "color.max_gap": "Maior trecho sem a cor acima do máximo",
+    "pattern.min_count": "Menos ocorrências do padrão que o mínimo",
+    "pattern.max_count": "Mais ocorrências do padrão que o máximo",
+    "pattern.min_coverage": "Cobertura do padrão ao longo do eixo abaixo do mínimo",
+    "pattern.max_gap": "Maior trecho sem o padrão acima do máximo",
+    "detect.class": "Classe que reprova (ou fora das que aprovam)",
+    "detect.min_confidence": "Confiança do modelo abaixo do mínimo",
+    "detect.fail_class": "Detecção de uma classe que reprova",
+    "detect.require_classes": "Classe obrigatória não detectada",
+    "detect.min_count": "Menos detecções da classe contada que o mínimo",
+    "detect.max_count": "Mais detecções da classe contada que o máximo",
+    "detect.max_score": "Pontuação de anomalia acima do limite",
+}
