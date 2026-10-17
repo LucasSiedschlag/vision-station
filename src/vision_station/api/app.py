@@ -14,7 +14,7 @@ import io
 import os
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +30,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from vision_station.core.results import contract_dict
 from vision_station import __version__
 from vision_station.build_info import bundle_dir, describe
 from vision_station.api import schemas as m
@@ -117,10 +118,35 @@ def make_event_handler(deps: ApiDeps) -> Callable[[StationEvent], None]:
     return handle
 
 
+def _iso(epoch: float | None) -> str | None:
+    return None if epoch is None else datetime.fromtimestamp(epoch).astimezone().isoformat(timespec="milliseconds")
+
+
+def _contract(c: Mapping[str, Any], *, sequence: int | None, error_code: int | None, simulated: bool) -> dict[str, Any]:
+    """The result contract fields of the API (architecture §10.3) from `contract_dict` or a record."""
+    trigger = c.get("trigger")
+    return dict(
+        sequence=sequence,
+        error_code=error_code,
+        reason_codes=list(c.get("reason_codes", ())),
+        tools=list(c.get("tools", ())),
+        fixtures=list(c.get("fixtures", ())),
+        trigger=None if trigger is None else {**trigger, "at": _iso(trigger.get("at"))},
+        acquired_at=_iso(c.get("acquired_at")),
+        decided_at=_iso(c.get("decided_at")),
+        simulated=simulated,
+    )
+
+
 def _result(result: Any, at: str | None = None) -> m.ResultOut | None:
     if result is None:
         return None
-    return m.ResultOut(outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000), at=at)
+    c = contract_dict(result)
+    return m.ResultOut(
+        outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000), at=at,
+        job=None if c["job"] is None else m.JobRefOut(**c["job"]),
+        **_contract(c, sequence=result.sequence, error_code=result.error_code, simulated=result.simulated),
+    )
 
 
 def _complete_request(deps: ApiDeps, event: StationEvent) -> None:
@@ -154,9 +180,10 @@ def _recorded_at(deps: ApiDeps) -> str | None:
 
 def event_message(deps: ApiDeps, event: StationEvent) -> dict[str, Any]:
     if event.kind == "result":
+        result = _result(event.result, _recorded_at(deps) or datetime.now().astimezone().isoformat(timespec="milliseconds"))
         message = m.ResultMessage(
-            **_result(event.result, _recorded_at(deps) or datetime.now().astimezone().isoformat(timespec="milliseconds")).model_dump(),
-            job=m.JobRefOut(id=event.job_id, name=event.job_name, version=event.job_version),
+            **result.model_dump(exclude={"job"}),
+            job=result.job or m.JobRefOut(id=event.job_id, name=event.job_name, version=event.job_version),
             record_id=deps.recorder.last_record_id if deps.recorder else None,
         )
     else:
@@ -192,7 +219,12 @@ def status_json(deps: ApiDeps) -> dict[str, Any]:
 
 
 def _record(r: InspectionRecord) -> m.RecordOut:
-    return m.RecordOut(**{k: getattr(r, k) for k in m.RecordOut.model_fields})
+    contract = _contract(
+        {"reason_codes": r.reason_codes, "tools": r.tools, "fixtures": r.fixtures, "trigger": r.trigger, "acquired_at": r.acquired_at, "decided_at": r.decided_at},
+        sequence=r.sequence, error_code=r.error_code, simulated=r.simulated,
+    )
+    plain = {k: getattr(r, k) for k in m.RecordOut.model_fields if k not in contract}
+    return m.RecordOut(**plain, **contract)
 
 
 def encode_jpeg(image: Any, width: int, quality: int) -> bytes:

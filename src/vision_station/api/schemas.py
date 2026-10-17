@@ -44,6 +44,8 @@ class JobRefOut(BaseModel):
     id: str
     name: str
     version: int
+    number: int | None = None  # the machine's job number (R3)
+    content_hash: str | None = None  # of the saved version's files: exactly which version decided (TD-22)
 
 
 class CameraOut(BaseModel):
@@ -52,12 +54,78 @@ class CameraOut(BaseModel):
     last_error: str | None = None
 
 
-class ResultOut(BaseModel):
+Unit = Literal["fraction", "count", "score"]
+
+
+class CriterionOut(BaseModel):
+    """One check of a tool. `<tool type>.<code>` is its reason code when it fails."""
+
+    code: str
+    kind: Literal["min", "max", "rule"]
+    measure: str | None = None
+    value: float | None = None
+    limit: float | None = None
+    passed: bool
+    score: float
+    margin: float | None = None  # how far inside the limit, in the measure's unit (negative: outside); None for a rule
+
+
+class ToolResultOut(BaseModel):
+    id: str
+    type: str
+    version: int
+    passed: bool
+    score: float
+    margin: float | None = None  # of the decisive criterion
+    values: dict[str, float] = {}  # the measures, by name
+    units: dict[str, Unit] = {}  # fraction is 0..1
+    criteria: list[CriterionOut] = []
+    affects_result: bool = True  # False: informative, never decides (FR-INS-13)
+    error: str = ""  # an informative tool that could not run
+
+
+class ReasonCodeOut(BaseModel):
+    tool: str
+    code: str  # `<tool type>.<criterion>`, stable (architecture §10.3)
+
+
+class FixtureOut(BaseModel):
+    name: str
+    x: float  # centre, fraction of the frame
+    y: float
+    angle: float | None = None  # None until the locators measure it (R1)
+    scale: float | None = None
+    score: float
+
+
+class TriggerOut(BaseModel):
+    source: Literal["image", "manual", "api", "machine"]
+    reference: str = ""
+    part_id: str = ""
+    at: str | None = None  # ISO 8601 with offset
+
+
+class ResultContract(BaseModel):
+    """The result contract (architecture §10.3, TD-22). Every field is optional so older clients and records read."""
+
+    sequence: int | None = None  # +1 per inspection, wraps at 2**32
+    error_code: int | None = None  # ERROR: a code of the catalog; 0 otherwise; None on records from before the contract
+    reason_codes: list[ReasonCodeOut] = []
+    tools: list[ToolResultOut] = []
+    fixtures: list[FixtureOut] = []
+    trigger: TriggerOut | None = None
+    acquired_at: str | None = None
+    decided_at: str | None = None
+    simulated: bool = False  # never signalled to a machine (FR-INT-12)
+
+
+class ResultOut(ResultContract):
     outcome: Outcome
     reason: str
     scores: dict[str, float]
     duration_ms: int
     at: str | None = None  # when it was recorded (ISO 8601 with offset); None if results are not being recorded
+    job: JobRefOut | None = None
 
 
 class RecentResult(BaseModel):
@@ -258,7 +326,7 @@ class BackupOut(BaseModel):
 # --- results --------------------------------------------------------------------------------------
 
 
-class RecordOut(BaseModel):
+class RecordOut(ResultContract):
     id: str
     at: str
     job_id: str
@@ -276,6 +344,7 @@ class RecordOut(BaseModel):
     correct_outcome: Literal["PASS", "FAIL"] | None = None
     corrected_at: str | None = None
     corrected_by: str | None = None
+    job_hash: str | None = None
 
 
 class ResultsOut(BaseModel):
@@ -389,6 +458,7 @@ class RegionOut(BaseModel):
     roi: str
     rect: list[int]  # x0, y0, x1, y1 in pixels of the frame
     passed: bool
+    affects_result: bool = True
 
 
 class DraftTestOut(BaseModel):

@@ -317,3 +317,75 @@ def test_a_failing_recorder_or_handler_does_not_stop_the_station(tmp_path, caplo
     rig2.camera.scene = scene_with_object(40)
     rig2.tick(10)
     assert rig2.state is State.SHOWING_RESULT
+
+
+# --- the result contract (version 2, TD-22, FR-LOG-8) --------------------------------------------------
+
+V1_SCHEMA = """
+CREATE TABLE inspections (
+    id TEXT PRIMARY KEY, at TEXT NOT NULL, at_epoch REAL NOT NULL, job_id TEXT NOT NULL, job_name TEXT NOT NULL,
+    job_version INTEGER NOT NULL, outcome TEXT NOT NULL, reason TEXT NOT NULL, scores TEXT NOT NULL,
+    timings TEXT NOT NULL, duration_ms REAL NOT NULL, image_path TEXT, overlay_path TEXT,
+    sampled INTEGER NOT NULL DEFAULT 1, correct_outcome TEXT, corrected_at TEXT, corrected_by TEXT
+);
+INSERT INTO inspections VALUES ('old-1', '2026-10-13T08:00:00.000-03:00', 1792000000, 'j', 'Tampa', 1, 'ERROR',
+    'Câmera desconectada durante a inspeção', '{}', '{}', 12.0, NULL, NULL, 1, NULL, NULL, NULL);
+PRAGMA user_version=1;
+"""
+
+
+def test_a_database_of_version_1_is_migrated_and_its_old_rows_still_read(tmp_path, clock):
+    import sqlite3
+
+    (tmp_path / "results").mkdir()
+    db = sqlite3.connect(tmp_path / "results" / "results.db")
+    db.executescript(V1_SCHEMA)
+    db.close()
+    with ResultStore(tmp_path, clock=clock) as store:
+        old = store.get("old-1")
+        assert old.outcome == "ERROR" and old.error_code is None and old.sequence is None  # unknown, never 0
+        assert old.tools == () and old.trigger is None and old.simulated is False
+        new = store.record(res(Outcome.ERROR, "x", error_code=401, sequence=7), None, **JOB)
+        assert store.get(new.id).error_code == 401 and store.next_sequence() == 8
+    db = sqlite3.connect(tmp_path / "results" / "results.db")
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+    db.execute("PRAGMA user_version=1")  # a program of version 1 opened it in between
+    db.commit()
+    db.close()
+    with ResultStore(tmp_path, clock=clock) as store:  # the columns are there already: no second ALTER
+        assert store.get(new.id).error_code == 401
+
+
+def test_the_contract_is_recorded_and_read_back(tmp_path, clock):
+    from vision_station.core.results import Criterion, FixturePose, ReasonCode, ResultJob, ToolReport, TriggerInfo
+
+    tool = ToolReport("tampa", "color", 1, False, 0.5, {"fraction": 0.4}, {"fraction": "fraction"},
+                      (Criterion("min_fraction", "min", False, 0.5, "fraction", 0.4, 0.8),))
+    result = res(
+        Outcome.FAIL, "Tampa ausente", sequence=41, reason_codes=(ReasonCode("tampa", "color.min_fraction"),), tools=(tool,),
+        fixtures=(FixturePose("anchor", 0.5, 0.5, None, None, 0.9),), trigger=TriggerInfo("api", "lote 42", at=1.0),
+        job=ResultJob("j", "Tampa", 3, content_hash="ab" * 32), acquired_at=1.5, decided_at=2.0, simulated=True,
+    )
+    with ResultStore(tmp_path, clock=clock) as store:
+        r = store.get(store.record(result, None, **JOB).id)
+        assert (r.sequence, r.error_code, r.simulated, r.job_hash) == (41, 0, True, "ab" * 32)
+        assert r.reason_codes == ({"tool": "tampa", "code": "color.min_fraction"},)
+        (t,) = r.tools
+        assert t["criteria"][0]["margin"] == pytest.approx(-0.4) and t["margin"] == pytest.approx(-0.4)
+        assert r.fixtures[0]["angle"] is None and r.trigger["source"] == "api" and r.trigger["reference"] == "lote 42"
+        assert (r.acquired_at, r.decided_at) == (1.5, 2.0)
+        out = io.StringIO()
+        store.export_csv(out)
+        header, row = out.getvalue().splitlines()[:2]
+        assert header.endswith("sequencia;codigo_erro;codigos_motivo;simulado")
+        assert row.endswith("41;0;tampa:color.min_fraction;1")
+
+
+def test_the_sequence_continues_after_a_restart(tmp_path, clock):
+    with ResultStore(tmp_path, clock=clock) as store:
+        assert store.next_sequence() == 0
+        store.record(res(sequence=2**32 - 1), None, **JOB)
+    with ResultStore(tmp_path, clock=clock) as store:
+        assert store.next_sequence() == 0  # wraps like the controller
+        store.record(res(sequence=0), None, **JOB)
+        assert store.next_sequence() == 1

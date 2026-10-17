@@ -511,6 +511,79 @@
         "title": "Counters",
         "type": "object"
       },
+      "CriterionOut": {
+        "description": "One check of a tool. `<tool type>.<code>` is its reason code when it fails.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["min", "max", "rule"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Margin"
+          },
+          "measure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Measure"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Value"
+          }
+        },
+        "required": ["code", "kind", "passed", "score"],
+        "title": "CriterionOut",
+        "type": "object"
+      },
       "DatasetExportBody": {
         "properties": {
           "job_id": {
@@ -740,6 +813,53 @@
         },
         "required": ["version", "name"],
         "title": "DuplicateBody",
+        "type": "object"
+      },
+      "FixtureOut": {
+        "properties": {
+          "angle": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Angle"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "scale": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scale"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "x": {
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": ["name", "x", "y", "score"],
+        "title": "FixtureOut",
         "type": "object"
       },
       "FolderCheckBody": {
@@ -1102,6 +1222,18 @@
       },
       "JobRefOut": {
         "properties": {
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content Hash"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1109,6 +1241,18 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Number"
           },
           "version": {
             "title": "Version",
@@ -1202,6 +1346,17 @@
       },
       "LastResultOut": {
         "properties": {
+          "acquired_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired At"
+          },
           "at": {
             "anyOf": [
               {
@@ -1213,9 +1368,49 @@
             ],
             "title": "At"
           },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "fixtures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FixtureOut"
+            },
+            "title": "Fixtures",
+            "type": "array"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "outcome": {
             "enum": ["PASS", "FAIL", "ERROR"],
@@ -1225,6 +1420,14 @@
           "reason": {
             "title": "Reason",
             "type": "string"
+          },
+          "reason_codes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonCodeOut"
+            },
+            "title": "Reason Codes",
+            "type": "array"
           },
           "record_id": {
             "anyOf": [
@@ -1243,9 +1446,60 @@
             },
             "title": "Scores",
             "type": "object"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ToolResultOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": ["outcome", "reason", "scores", "duration_ms", "at", "record_id"],
+        "required": [
+          "sequence",
+          "error_code",
+          "reason_codes",
+          "tools",
+          "fixtures",
+          "trigger",
+          "acquired_at",
+          "decided_at",
+          "simulated",
+          "outcome",
+          "reason",
+          "scores",
+          "duration_ms",
+          "at",
+          "job",
+          "record_id"
+        ],
         "title": "LastResultOut",
         "type": "object"
       },
@@ -1431,6 +1685,21 @@
         "title": "Problem",
         "type": "object"
       },
+      "ReasonCodeOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": ["tool", "code"],
+        "title": "ReasonCodeOut",
+        "type": "object"
+      },
       "RecentResult": {
         "properties": {
           "at": {
@@ -1453,6 +1722,17 @@
       },
       "RecordOut": {
         "properties": {
+          "acquired_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired At"
+          },
           "at": {
             "title": "At",
             "type": "string"
@@ -1491,9 +1771,39 @@
             ],
             "title": "Corrected By"
           },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "number"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "fixtures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FixtureOut"
+            },
+            "title": "Fixtures",
+            "type": "array"
           },
           "id": {
             "title": "Id",
@@ -1509,6 +1819,17 @@
               }
             ],
             "title": "Image Path"
+          },
+          "job_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Hash"
           },
           "job_id": {
             "title": "Job Id",
@@ -1542,6 +1863,14 @@
             "title": "Reason",
             "type": "string"
           },
+          "reason_codes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonCodeOut"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
           "sampled": {
             "title": "Sampled",
             "type": "boolean"
@@ -1552,6 +1881,22 @@
             },
             "title": "Scores",
             "type": "object"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
           },
           "timings": {
             "additionalProperties": {
@@ -1567,9 +1912,36 @@
             "default": {},
             "title": "Tool Timings",
             "type": "object"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ToolResultOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
+          "sequence",
+          "error_code",
+          "reason_codes",
+          "tools",
+          "fixtures",
+          "trigger",
+          "acquired_at",
+          "decided_at",
+          "simulated",
           "id",
           "at",
           "job_id",
@@ -1586,7 +1958,8 @@
           "sampled",
           "correct_outcome",
           "corrected_at",
-          "corrected_by"
+          "corrected_by",
+          "job_hash"
         ],
         "title": "RecordOut",
         "type": "object"
@@ -1735,6 +2108,11 @@
       },
       "RegionOut": {
         "properties": {
+          "affects_result": {
+            "default": true,
+            "title": "Affects Result",
+            "type": "boolean"
+          },
           "passed": {
             "title": "Passed",
             "type": "boolean"
@@ -1755,12 +2133,24 @@
             "type": "string"
           }
         },
-        "required": ["tool", "roi", "rect", "passed"],
+        "required": ["tool", "roi", "rect", "passed", "affects_result"],
         "title": "RegionOut",
         "type": "object"
       },
       "ResultMessage": {
         "properties": {
+          "acquired_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Acquired At"
+          },
           "at": {
             "anyOf": [
               {
@@ -1773,9 +2163,41 @@
             "default": null,
             "title": "At"
           },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Decided At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          },
+          "fixtures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FixtureOut"
+            },
+            "title": "Fixtures",
+            "type": "array"
           },
           "job": {
             "$ref": "#/components/schemas/JobRefOut"
@@ -1788,6 +2210,14 @@
           "reason": {
             "title": "Reason",
             "type": "string"
+          },
+          "reason_codes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonCodeOut"
+            },
+            "title": "Reason Codes",
+            "type": "array"
           },
           "record_id": {
             "anyOf": [
@@ -1808,6 +2238,42 @@
             "title": "Scores",
             "type": "object"
           },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sequence"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ToolResultOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
           "type": {
             "const": "result",
             "default": "result",
@@ -1821,6 +2287,18 @@
       },
       "ResultOut": {
         "properties": {
+          "acquired_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Acquired At"
+          },
           "at": {
             "anyOf": [
               {
@@ -1833,9 +2311,52 @@
             "default": null,
             "title": "At"
           },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Decided At"
+          },
           "duration_ms": {
             "title": "Duration Ms",
             "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error Code"
+          },
+          "fixtures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FixtureOut"
+            },
+            "title": "Fixtures",
+            "type": "array"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "outcome": {
             "enum": ["PASS", "FAIL", "ERROR"],
@@ -1846,12 +2367,56 @@
             "title": "Reason",
             "type": "string"
           },
+          "reason_codes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReasonCodeOut"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          },
           "scores": {
             "additionalProperties": {
               "type": "number"
             },
             "title": "Scores",
             "type": "object"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sequence"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ToolResultOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TriggerOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": ["outcome", "reason", "scores", "duration_ms"],
@@ -2373,6 +2938,114 @@
         },
         "required": ["name", "version"],
         "title": "ToolInfo",
+        "type": "object"
+      },
+      "ToolResultOut": {
+        "properties": {
+          "affects_result": {
+            "default": true,
+            "title": "Affects Result",
+            "type": "boolean"
+          },
+          "criteria": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CriterionOut"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "error": {
+            "default": "",
+            "title": "Error",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Margin"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "units": {
+            "additionalProperties": {
+              "enum": ["fraction", "count", "score"],
+              "type": "string"
+            },
+            "default": {},
+            "title": "Units",
+            "type": "object"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "title": "Values",
+            "type": "object"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "type", "version", "passed", "score"],
+        "title": "ToolResultOut",
+        "type": "object"
+      },
+      "TriggerOut": {
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "At"
+          },
+          "part_id": {
+            "default": "",
+            "title": "Part Id",
+            "type": "string"
+          },
+          "reference": {
+            "default": "",
+            "title": "Reference",
+            "type": "string"
+          },
+          "source": {
+            "enum": ["image", "manual", "api", "machine"],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": ["source"],
+        "title": "TriggerOut",
         "type": "object"
       },
       "TypeInfo": {

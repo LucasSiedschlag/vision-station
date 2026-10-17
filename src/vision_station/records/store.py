@@ -28,9 +28,9 @@ from typing import Any
 import cv2
 import numpy as np
 
-from vision_station.core.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome, contract_dict
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2: the result contract (architecture §10.3, TD-22, FR-LOG-8)
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS inspections (
     id TEXT PRIMARY KEY,
@@ -49,7 +49,12 @@ CREATE TABLE IF NOT EXISTS inspections (
     sampled INTEGER NOT NULL DEFAULT 1,
     correct_outcome TEXT,
     corrected_at TEXT,
-    corrected_by TEXT
+    corrected_by TEXT,
+    sequence INTEGER,
+    error_code INTEGER,
+    simulated INTEGER NOT NULL DEFAULT 0,
+    job_hash TEXT,
+    contract TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_inspections_at ON inspections(at_epoch);
 CREATE INDEX IF NOT EXISTS ix_inspections_job ON inspections(job_id, at_epoch);
@@ -70,8 +75,21 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value INTEGER NOT NULL);
 """
 _COLUMNS = (
     "id, at, job_id, job_name, job_version, outcome, reason, scores, timings, duration_ms, "
-    "image_path, overlay_path, sampled, correct_outcome, corrected_at, corrected_by"
+    "image_path, overlay_path, sampled, correct_outcome, corrected_at, corrected_by, "
+    "sequence, error_code, simulated, job_hash, contract"
 )
+# columns added after version 1, in the order they were added; a database of an older version gets them on open.
+# Each is nullable or has a default, so a program of version 1 can still write to the database.
+_ADDED_COLUMNS = (
+    ("sequence", "INTEGER"),
+    ("error_code", "INTEGER"),  # NULL on rows written before version 2: unknown, never 0 ("not an error")
+    ("simulated", "INTEGER NOT NULL DEFAULT 0"),
+    ("job_hash", "TEXT"),
+    ("contract", "TEXT"),  # JSON: reason_codes, tools, fixtures, trigger, job, acquired_at, decided_at
+)
+_INDEXES = """
+CREATE INDEX IF NOT EXISTS ix_inspections_error ON inspections(error_code, at_epoch);
+"""
 
 
 class ResultsError(Exception):
@@ -106,6 +124,17 @@ class InspectionRecord:
     correct_outcome: str | None
     corrected_at: str | None
     corrected_by: str | None
+    # the result contract (version 2); a record written before has None, empty lists and False
+    sequence: int | None = None
+    error_code: int | None = None
+    simulated: bool = False
+    job_hash: str | None = None
+    reason_codes: tuple[Mapping[str, str], ...] = ()
+    tools: tuple[Mapping[str, Any], ...] = ()
+    fixtures: tuple[Mapping[str, Any], ...] = ()
+    trigger: Mapping[str, Any] | None = None
+    acquired_at: float | None = None
+    decided_at: float | None = None
 
 
 @dataclass(frozen=True)
@@ -137,11 +166,25 @@ def _split_timings(raw: Any) -> tuple[dict[str, float], dict[str, float]]:
 
 def _row(r: sqlite3.Row | tuple) -> InspectionRecord:
     timings, tool_timings = _split_timings(json.loads(r[8]))
+    contract = json.loads(r[20]) if r[20] else {}
     return InspectionRecord(
         id=r[0], at=r[1], job_id=r[2], job_name=r[3], job_version=r[4], outcome=r[5], reason=r[6],
         scores=json.loads(r[7]), timings=timings, tool_timings=tool_timings, duration_ms=r[9], image_path=r[10],
         overlay_path=r[11], sampled=bool(r[12]), correct_outcome=r[13], corrected_at=r[14], corrected_by=r[15],
+        sequence=r[16], error_code=r[17], simulated=bool(r[18]), job_hash=r[19],
+        reason_codes=tuple(contract.get("reason_codes", ())), tools=tuple(contract.get("tools", ())),
+        fixtures=tuple(contract.get("fixtures", ())), trigger=contract.get("trigger"),
+        acquired_at=contract.get("acquired_at"), decided_at=contract.get("decided_at"),
     )
+
+
+def _migrate(db: sqlite3.Connection) -> None:
+    """Bring a database of an older version up to this one. Checks the table, not only `user_version`: a
+    program of version 1 opening the database sets the version back to 1 without removing the columns."""
+    present = {row[1] for row in db.execute("PRAGMA table_info(inspections)")}
+    for name, kind in _ADDED_COLUMNS:
+        if name not in present:
+            db.execute(f"ALTER TABLE inspections ADD COLUMN {name} {kind}")
 
 
 def _encode(image: np.ndarray, quality: int) -> bytes:
@@ -183,6 +226,8 @@ class ResultStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=NORMAL")
         self._db.executescript(_SCHEMA)
+        _migrate(self._db)
+        self._db.executescript(_INDEXES)  # after the migration: they use the added columns
         self._db.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
 
     def close(self) -> None:
@@ -231,15 +276,14 @@ class ResultStore:
                         written.append(self.root / overlay_rel)
                 raw_timings = result.details.get("timings", {})
                 timings = dict(raw_timings) if isinstance(raw_timings, Mapping) else {}
-                self._db.execute(
-                    f"INSERT INTO inspections ({_COLUMNS}, at_epoch) VALUES ({','.join('?' * 17)})",
-                    (
-                        rid, now.isoformat(timespec="milliseconds"), job_id, job_name, job_version, str(result.outcome), result.reason,
-                        json.dumps(dict(result.scores), sort_keys=True), json.dumps(timings, sort_keys=True),
-                        (result.duration_s or 0.0) * 1000, image_rel, overlay_rel, int(sampled), None, None, None,
-                        now.timestamp(),
-                    ),
+                row = (
+                    rid, now.isoformat(timespec="milliseconds"), job_id, job_name, job_version, str(result.outcome), result.reason,
+                    json.dumps(dict(result.scores), sort_keys=True), json.dumps(timings, sort_keys=True),
+                    (result.duration_s or 0.0) * 1000, image_rel, overlay_rel, int(sampled), None, None, None,
+                    result.sequence, int(result.error_code), int(result.simulated), result.job.content_hash if result.job else None,
+                    json.dumps(contract_dict(result), sort_keys=True), now.timestamp(),
                 )
+                self._db.execute(f"INSERT INTO inspections ({_COLUMNS}, at_epoch) VALUES ({','.join('?' * len(row))})", row)
                 if encoded is not None and self._collecting(job_id):
                     written.append(self._add_dataset(rid, job_id, job_name, job_version, encoded, result=str(result.outcome), label=None, source="collected", now=now))
                 self._db.execute("COMMIT")
@@ -249,6 +293,12 @@ class ResultStore:
                     path.unlink(missing_ok=True)
                 raise
             return self.get(rid)  # type: ignore[return-value]
+
+    def next_sequence(self) -> int:
+        """The number for the next result: one after the last one recorded, so a restart never goes back (TD-22)."""
+        with self._lock:
+            row = self._db.execute("SELECT sequence FROM inspections WHERE sequence IS NOT NULL ORDER BY rowid DESC LIMIT 1").fetchone()
+        return 0 if row is None else (row[0] + 1) % 2**32
 
     def _bump(self, key: str) -> int:
         self._db.execute("INSERT INTO meta(key, value) VALUES(?, 1) ON CONFLICT(key) DO UPDATE SET value = value + 1", (key,))
@@ -307,7 +357,8 @@ class ResultStore:
 
     def export_csv(self, dest: Path | str | io.TextIOBase, query: Query = Query(), delimiter: str = ";") -> int:
         """Write the filtered results as CSV (UTF-8 with BOM, ';' separator, as Excel in Portuguese expects). Returns the row count."""
-        header = ["id", "data_hora", "job", "versao", "resultado", "motivo", "notas", "duracao_ms", "imagem", "correcao", "corrigido_em", "corrigido_por"]
+        header = ["id", "data_hora", "job", "versao", "resultado", "motivo", "notas", "duracao_ms", "imagem", "correcao", "corrigido_em", "corrigido_por",
+                  "sequencia", "codigo_erro", "codigos_motivo", "simulado"]  # the last four since the result contract (R2)
 
         def write(f: Any) -> int:
             w = csv.writer(f, delimiter=delimiter, lineterminator="\n")
@@ -318,7 +369,9 @@ class ResultStore:
                 if not page:
                     break
                 for r in page:
-                    w.writerow([r.id, r.at, r.job_name, r.job_version, r.outcome, r.reason, json.dumps(dict(r.scores), sort_keys=True), f"{r.duration_ms:.0f}", r.image_path or "", r.correct_outcome or "", r.corrected_at or "", r.corrected_by or ""])
+                    w.writerow([r.id, r.at, r.job_name, r.job_version, r.outcome, r.reason, json.dumps(dict(r.scores), sort_keys=True), f"{r.duration_ms:.0f}", r.image_path or "", r.correct_outcome or "", r.corrected_at or "", r.corrected_by or "",
+                                "" if r.sequence is None else r.sequence, "" if r.error_code is None else r.error_code,
+                                " ".join(f"{c['tool']}:{c['code']}" for c in r.reason_codes), int(r.simulated)])
                     n += 1
             return n
 

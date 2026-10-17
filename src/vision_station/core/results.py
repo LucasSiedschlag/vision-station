@@ -122,3 +122,28 @@ class InspectionResult:
     acquired_at: float | None = None  # wall-clock times, epoch seconds
     decided_at: float | None = None
     simulated: bool = False  # from a simulated camera, the editor or a replay: never signalled to a machine (FR-INT-12)
+
+
+def _criterion(c: Criterion) -> dict[str, Any]:
+    return {"code": c.code, "kind": c.kind, "measure": c.measure, "value": c.value, "limit": c.limit, "passed": c.passed, "score": c.score, "margin": c.margin}
+
+
+def tool_dict(t: ToolReport) -> dict[str, Any]:
+    return {
+        "id": t.id, "type": t.type, "version": t.version, "passed": t.passed, "score": t.score, "margin": t.margin,
+        "values": dict(t.values), "units": dict(t.units), "criteria": [_criterion(c) for c in t.criteria],
+        "affects_result": t.affects_result, "error": t.error,
+    }
+
+
+def contract_dict(r: InspectionResult) -> dict[str, Any]:
+    """The parts of the result contract that are lists or objects, as JSON-ready values (records, API)."""
+    return {
+        "reason_codes": [{"tool": c.tool, "code": c.code} for c in r.reason_codes],
+        "tools": [tool_dict(t) for t in r.tools],
+        "fixtures": [{"name": f.name, "x": f.x, "y": f.y, "angle": f.angle, "scale": f.scale, "score": f.score} for f in r.fixtures],
+        "trigger": None if r.trigger is None else {"source": r.trigger.source, "reference": r.trigger.reference, "part_id": r.trigger.part_id, "at": r.trigger.at},
+        "job": None if r.job is None else {"id": r.job.id, "name": r.job.name, "version": r.job.version, "number": r.job.number, "content_hash": r.job.content_hash},
+        "acquired_at": r.acquired_at,
+        "decided_at": r.decided_at,
+    }

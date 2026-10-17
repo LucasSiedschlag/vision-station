@@ -1,13 +1,26 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { applyMessage, useLive, type LiveMessage, type StateOut } from './live'
 
+// the result contract fields every result message carries (TD-22)
+const contract = {
+  sequence: null,
+  error_code: 0,
+  reason_codes: [],
+  tools: [],
+  fixtures: [],
+  trigger: null,
+  acquired_at: null,
+  decided_at: null,
+  simulated: false,
+}
+
 const status = (over: Partial<StateOut> = {}): StateOut => ({
   state: 'Ready',
   message: 'Aguardando objeto',
   showing_result: false,
   detail: '',
   warnings: [],
-  job: { id: 'j', name: 'Tampa azul', version: 7 },
+  job: { id: 'j', name: 'Tampa azul', version: 7, number: null, content_hash: null },
   last_result: null,
   last_record_id: null,
   camera: { connected: true, last_frame_age_s: 0.1, last_error: null },
@@ -79,13 +92,14 @@ describe('applyMessage', () => {
   it('counts a result and keeps the record id, without touching the old status', () => {
     const before = status()
     const after = applyMessage(before, {
+      ...contract,
       type: 'result',
       outcome: 'FAIL',
       reason: 'Tampa ausente',
       scores: { tampa: 0.5 },
       duration_ms: 120,
       at: '2026-10-14T14:32:07-03:00',
-      job: { id: 'j', name: 'Tampa azul', version: 7 },
+      job: { id: 'j', name: 'Tampa azul', version: 7, number: null, content_hash: null },
       record_id: 'r1',
     })
     expect(after?.counters).toEqual({ PASS: 0, FAIL: 1, ERROR: 0, total: 1 })
@@ -102,13 +116,14 @@ describe('applyMessage', () => {
     let current: StateOut | null = status()
     for (let i = 0; i < 12; i++) {
       current = applyMessage(current, {
+        ...contract,
         type: 'result',
         outcome: i % 2 ? 'FAIL' : 'PASS',
         reason: `r${i}`,
         scores: {},
         duration_ms: 1,
         at: `t${i}`,
-        job: { id: 'j', name: 'x', version: 1 },
+        job: { id: 'j', name: 'x', version: 1, number: null, content_hash: null },
         record_id: null,
       })
     }
@@ -128,13 +143,14 @@ describe('applyMessage', () => {
 
   it('lets the next full status correct the counters', () => {
     const counted = applyMessage(status(), {
+      ...contract,
       type: 'result',
       outcome: 'PASS',
       reason: '',
       scores: {},
       duration_ms: 90,
       at: null,
-      job: { id: 'j', name: 'x', version: 1 },
+      job: { id: 'j', name: 'x', version: 1, number: null, content_hash: null },
       record_id: null,
     })
     const refreshed = applyMessage(

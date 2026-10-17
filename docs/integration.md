@@ -49,7 +49,20 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
 → 200 {
     "id": "9f2c…", "reference": "caixa-0017",
     "status": "done",                               pending | done | expired
-    "result": {"outcome": "FAIL", "reason": "Faixa ausente em 40% da emenda", "scores": {"faixa": 0.6}, "duration_ms": 310, "at": "…"},
+    "result": {
+      "outcome": "FAIL", "reason": "Faixa ausente em 40% da emenda", "scores": {"faixa": 0.6}, "duration_ms": 310, "at": "…",
+      "sequence": 1834,                             +1 per inspection, wraps at 2³²
+      "error_code": 0,                              ERROR only: E-code number of document 03 §10.3 (e.g. 401 camera lost)
+      "reason_codes": [{"tool": "faixa", "code": "color.min_coverage"}],
+      "tools": [{"id": "faixa", "type": "color", "version": 1, "passed": false, "score": 0.6, "margin": -0.2,
+                 "values": {"fraction": 0.31, "coverage": 0.6}, "units": {"fraction": "fraction", "coverage": "fraction"},
+                 "criteria": [{"code": "min_coverage", "kind": "min", "measure": "coverage", "value": 0.6, "limit": 0.8, "passed": false, "score": 0.75, "margin": -0.2}],
+                 "affects_result": true, "error": ""}],
+      "fixtures": [{"name": "anchor", "x": 0.5, "y": 0.48, "angle": null, "scale": null, "score": 0.93}],
+      "trigger": {"source": "api", "reference": "caixa-0017", "part_id": "", "at": "…"},
+      "job": {"id": "…", "name": "…", "version": 7, "number": null, "content_hash": "…"},
+      "acquired_at": "…", "decided_at": "…", "simulated": false
+    },
     "record_id": "20261015T143207-4be5ea",          in Vision Station's results, when recorded
     "job": {"id": "…", "name": "…", "version": 7},
     "frame_url": "/api/inspections/9f2c…/frame.jpg",
@@ -59,6 +72,7 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
 → 404 {"code": "inspection_not_found"}            unknown id, or no longer kept (the last 50 are kept)
 ```
 
+- The result follows the result contract of document 03 §10.3 (TD-22). The fields of version 0.1 are unchanged; the others were added with R2 and a client may ignore them. `error_code` and `reason_codes` are stable across versions: count and react on them, not on the text. `simulated: true` (a file camera, a test) is never a real part.
 - `expired`: the request did not turn into an inspection within 30 s (the station stopped, the camera was lost, a job change). `message` says the station's state. Treat it as an error.
 - `reason` is the job's text in the language the request asks for with `Accept-Language` (`pt-BR` or `en`; default: the station language), ready for an operator screen. Act on `outcome` and the codes, never on the text.
 

@@ -227,3 +227,11 @@ def _one_result(env):
     from vision_station.core.results import InspectionResult, Outcome
 
     return InspectionResult(Outcome.PASS), qr_scene("X")
+
+
+def test_a_draft_result_is_simulated_with_its_tools_and_reason_codes(env, mnt):
+    fail = env.client.post("/api/jobs/test", headers=mnt, json={"draft": draft(), "image": b64(png(no_code_scene()))}).json()["result"]
+    assert fail["simulated"] is True and fail["sequence"] is None  # never a production result
+    assert fail["reason_codes"] == [{"tool": "lote", "code": "code.min_count"}]
+    (tool,) = fail["tools"]
+    assert tool["units"]["matching"] == "count" and tool["criteria"][0]["code"] == "min_count" and tool["margin"] == -1

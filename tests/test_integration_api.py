@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from test_api import env  # noqa: F401  (the fixture)
+from test_api import env, login  # noqa: F401  (the fixture)
 from test_station import scene_with_object
 from vision_station.api import create_app
 from vision_station.api.inspections import InspectionRegistry
@@ -120,3 +120,14 @@ def test_pages_of_other_programs_listed_in_the_settings_may_call_the_api(env, or
         assert client.get("/api/state", headers={"Origin": origin}).headers["access-control-allow-origin"] == origin
     else:
         assert r.status_code == 403
+
+
+def test_the_result_carries_the_contract_and_the_record_too(env):
+    body = run_until_done(env, env.client.post("/api/inspections", json={"reference": "caixa-18"}).json()["id"])
+    result = body["result"]
+    assert result["error_code"] == 0 and isinstance(result["sequence"], int)
+    assert result["trigger"]["source"] == "api" and result["trigger"]["reference"] == "caixa-18" and result["trigger"]["at"]
+    assert result["decided_at"] and result["simulated"] is False
+    record = env.client.get(f"/api/results/{body['record_id']}", headers=login(env)).json()
+    assert record["sequence"] == result["sequence"] and record["error_code"] == 0
+    assert record["trigger"]["reference"] == "caixa-18" and record["decided_at"] == result["decided_at"]

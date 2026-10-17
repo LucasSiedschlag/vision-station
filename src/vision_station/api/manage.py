@@ -14,6 +14,7 @@ import json
 import time
 import uuid
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import datetime
 from typing import Any
 
@@ -242,7 +243,8 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         """Run a draft on the camera's newest frame (or a given image) without saving or activating it."""
         bundle = placeholder(body.draft, role)
         image = frame_or(body.image)
-        result = deps.inspect(bundle, Frame(image=image, timestamp=time.monotonic()))
+        # a draft on a picture is never a production result (FR-INT-12); it is not recorded and takes no sequence number
+        result = replace(deps.inspect(bundle, Frame(image=image, timestamp=time.monotonic())), simulated=True)
         drawn = deps.overlay(image, result) if deps.overlay else image
         ok, jpeg = cv2.imencode(".jpg", drawn, [cv2.IMWRITE_JPEG_QUALITY, 85])
         details = dict(result.details)

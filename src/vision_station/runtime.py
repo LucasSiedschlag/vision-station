@@ -96,7 +96,10 @@ def build_runtime(root: Path | str, config: SystemConfig | None = None, camera: 
         settle_s=config.camera.settle_ms / 1000,
         dead_after_s=config.camera.dead_after_s,
     )
-    controller = StationController(acquisition, inspect_job, verifier=JobVerifier(inspect_job), hold_s=config.station.result_min_s)
+    controller = StationController(
+        acquisition, inspect_job, verifier=JobVerifier(inspect_job), hold_s=config.station.result_min_s,
+        first_sequence=results.next_sequence(),  # a restart continues the numbers a PLC follows (TD-22)
+    )
     system = SystemService(root, config)
     extra = dict(web_dist=web_dist) if web_dist is not None else {}
     deps = ApiDeps(

@@ -1115,6 +1115,43 @@ export interface components {
        */
       total: number
     }
+    /**
+     * CriterionOut
+     * @description One check of a tool. `<tool type>.<code>` is its reason code when it fails.
+     */
+    CriterionOut: {
+      /** Code */
+      code: string
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'min' | 'max' | 'rule'
+      /**
+       * Limit
+       * @default null
+       */
+      limit: number | null
+      /**
+       * Margin
+       * @default null
+       */
+      margin: number | null
+      /**
+       * Measure
+       * @default null
+       */
+      measure: string | null
+      /** Passed */
+      passed: boolean
+      /** Score */
+      score: number
+      /**
+       * Value
+       * @default null
+       */
+      value: number | null
+    }
     /** DatasetExportBody */
     DatasetExportBody: {
       /** Job Id */
@@ -1206,6 +1243,27 @@ export interface components {
       name: string
       /** Version */
       version: number
+    }
+    /** FixtureOut */
+    FixtureOut: {
+      /**
+       * Angle
+       * @default null
+       */
+      angle: number | null
+      /** Name */
+      name: string
+      /**
+       * Scale
+       * @default null
+       */
+      scale: number | null
+      /** Score */
+      score: number
+      /** X */
+      x: number
+      /** Y */
+      y: number
     }
     /** FolderCheckBody */
     FolderCheckBody: {
@@ -1363,10 +1421,20 @@ export interface components {
     }
     /** JobRefOut */
     JobRefOut: {
+      /**
+       * Content Hash
+       * @default null
+       */
+      content_hash: string | null
       /** Id */
       id: string
       /** Name */
       name: string
+      /**
+       * Number
+       * @default null
+       */
+      number: number | null
       /** Version */
       version: number
     }
@@ -1406,10 +1474,22 @@ export interface components {
     }
     /** LastResultOut */
     LastResultOut: {
+      /** Acquired At */
+      acquired_at: string | null
       /** At */
       at: string | null
+      /** Decided At */
+      decided_at: string | null
       /** Duration Ms */
       duration_ms: number
+      /** Error Code */
+      error_code: number | null
+      /**
+       * Fixtures
+       * @default []
+       */
+      fixtures: components['schemas']['FixtureOut'][]
+      job: components['schemas']['JobRefOut'] | null
       /**
        * Outcome
        * @enum {string}
@@ -1417,12 +1497,30 @@ export interface components {
       outcome: 'PASS' | 'FAIL' | 'ERROR'
       /** Reason */
       reason: string
+      /**
+       * Reason Codes
+       * @default []
+       */
+      reason_codes: components['schemas']['ReasonCodeOut'][]
       /** Record Id */
       record_id: string | null
       /** Scores */
       scores: {
         [key: string]: number
       }
+      /** Sequence */
+      sequence: number | null
+      /**
+       * Simulated
+       * @default false
+       */
+      simulated: boolean
+      /**
+       * Tools
+       * @default []
+       */
+      tools: components['schemas']['ToolResultOut'][]
+      trigger: components['schemas']['TriggerOut'] | null
     }
     LiveMessage:
       | components['schemas']['StatusMessage']
@@ -1503,6 +1601,13 @@ export interface components {
       /** Verified */
       verified: boolean | null
     }
+    /** ReasonCodeOut */
+    ReasonCodeOut: {
+      /** Code */
+      code: string
+      /** Tool */
+      tool: string
+    }
     /** RecentResult */
     RecentResult: {
       /** At */
@@ -1517,6 +1622,8 @@ export interface components {
     }
     /** RecordOut */
     RecordOut: {
+      /** Acquired At */
+      acquired_at: string | null
       /** At */
       at: string
       /** Correct Outcome */
@@ -1525,12 +1632,23 @@ export interface components {
       corrected_at: string | null
       /** Corrected By */
       corrected_by: string | null
+      /** Decided At */
+      decided_at: string | null
       /** Duration Ms */
       duration_ms: number
+      /** Error Code */
+      error_code: number | null
+      /**
+       * Fixtures
+       * @default []
+       */
+      fixtures: components['schemas']['FixtureOut'][]
       /** Id */
       id: string
       /** Image Path */
       image_path: string | null
+      /** Job Hash */
+      job_hash: string | null
       /** Job Id */
       job_id: string
       /** Job Name */
@@ -1546,12 +1664,24 @@ export interface components {
       overlay_path: string | null
       /** Reason */
       reason: string
+      /**
+       * Reason Codes
+       * @default []
+       */
+      reason_codes: components['schemas']['ReasonCodeOut'][]
       /** Sampled */
       sampled: boolean
       /** Scores */
       scores: {
         [key: string]: number
       }
+      /** Sequence */
+      sequence: number | null
+      /**
+       * Simulated
+       * @default false
+       */
+      simulated: boolean
       /** Timings */
       timings: {
         [key: string]: number
@@ -1563,6 +1693,12 @@ export interface components {
       tool_timings: {
         [key: string]: number
       }
+      /**
+       * Tools
+       * @default []
+       */
+      tools: components['schemas']['ToolResultOut'][]
+      trigger: components['schemas']['TriggerOut'] | null
     }
     /** RecordingSettings */
     RecordingSettings: {
@@ -1616,6 +1752,11 @@ export interface components {
     }
     /** RegionOut */
     RegionOut: {
+      /**
+       * Affects Result
+       * @default true
+       */
+      affects_result: boolean
       /** Passed */
       passed: boolean
       /** Rect */
@@ -1628,12 +1769,32 @@ export interface components {
     /** ResultMessage */
     ResultMessage: {
       /**
+       * Acquired At
+       * @default null
+       */
+      acquired_at: string | null
+      /**
        * At
        * @default null
        */
       at: string | null
+      /**
+       * Decided At
+       * @default null
+       */
+      decided_at: string | null
       /** Duration Ms */
       duration_ms: number
+      /**
+       * Error Code
+       * @default null
+       */
+      error_code: number | null
+      /**
+       * Fixtures
+       * @default []
+       */
+      fixtures: components['schemas']['FixtureOut'][]
       job: components['schemas']['JobRefOut']
       /**
        * Outcome
@@ -1642,6 +1803,11 @@ export interface components {
       outcome: 'PASS' | 'FAIL' | 'ERROR'
       /** Reason */
       reason: string
+      /**
+       * Reason Codes
+       * @default []
+       */
+      reason_codes: components['schemas']['ReasonCodeOut'][]
       /**
        * Record Id
        * @default null
@@ -1652,6 +1818,23 @@ export interface components {
         [key: string]: number
       }
       /**
+       * Sequence
+       * @default null
+       */
+      sequence: number | null
+      /**
+       * Simulated
+       * @default false
+       */
+      simulated: boolean
+      /**
+       * Tools
+       * @default []
+       */
+      tools: components['schemas']['ToolResultOut'][]
+      /** @default null */
+      trigger: components['schemas']['TriggerOut'] | null
+      /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
        */
@@ -1660,12 +1843,34 @@ export interface components {
     /** ResultOut */
     ResultOut: {
       /**
+       * Acquired At
+       * @default null
+       */
+      acquired_at: string | null
+      /**
        * At
        * @default null
        */
       at: string | null
+      /**
+       * Decided At
+       * @default null
+       */
+      decided_at: string | null
       /** Duration Ms */
       duration_ms: number
+      /**
+       * Error Code
+       * @default null
+       */
+      error_code: number | null
+      /**
+       * Fixtures
+       * @default []
+       */
+      fixtures: components['schemas']['FixtureOut'][]
+      /** @default null */
+      job: components['schemas']['JobRefOut'] | null
       /**
        * Outcome
        * @enum {string}
@@ -1673,10 +1878,32 @@ export interface components {
       outcome: 'PASS' | 'FAIL' | 'ERROR'
       /** Reason */
       reason: string
+      /**
+       * Reason Codes
+       * @default []
+       */
+      reason_codes: components['schemas']['ReasonCodeOut'][]
       /** Scores */
       scores: {
         [key: string]: number
       }
+      /**
+       * Sequence
+       * @default null
+       */
+      sequence: number | null
+      /**
+       * Simulated
+       * @default false
+       */
+      simulated: boolean
+      /**
+       * Tools
+       * @default []
+       */
+      tools: components['schemas']['ToolResultOut'][]
+      /** @default null */
+      trigger: components['schemas']['TriggerOut'] | null
     }
     /** ResultsOut */
     ResultsOut: {
@@ -1955,6 +2182,76 @@ export interface components {
       name: string
       /** Version */
       version: number
+    }
+    /** ToolResultOut */
+    ToolResultOut: {
+      /**
+       * Affects Result
+       * @default true
+       */
+      affects_result: boolean
+      /**
+       * Criteria
+       * @default []
+       */
+      criteria: components['schemas']['CriterionOut'][]
+      /**
+       * Error
+       * @default
+       */
+      error: string
+      /** Id */
+      id: string
+      /**
+       * Margin
+       * @default null
+       */
+      margin: number | null
+      /** Passed */
+      passed: boolean
+      /** Score */
+      score: number
+      /** Type */
+      type: string
+      /**
+       * Units
+       * @default {}
+       */
+      units: {
+        [key: string]: 'fraction' | 'count' | 'score'
+      }
+      /**
+       * Values
+       * @default {}
+       */
+      values: {
+        [key: string]: number
+      }
+      /** Version */
+      version: number
+    }
+    /** TriggerOut */
+    TriggerOut: {
+      /**
+       * At
+       * @default null
+       */
+      at: string | null
+      /**
+       * Part Id
+       * @default
+       */
+      part_id: string
+      /**
+       * Reference
+       * @default
+       */
+      reference: string
+      /**
+       * Source
+       * @enum {string}
+       */
+      source: 'image' | 'manual' | 'api' | 'machine'
     }
     /**
      * TypeInfo

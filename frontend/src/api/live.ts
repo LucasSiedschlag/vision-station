@@ -34,16 +34,11 @@ export function applyMessage(status: StateOut | null, message: LiveMessage): Sta
   const counters = { ...status.counters }
   counters[message.outcome] += 1
   counters.total += 1
+  const { type: _type, record_id: _record, ...result } = message // the whole result contract (TD-22)
   return {
     ...status,
     counters,
-    last_result: {
-      outcome: message.outcome,
-      reason: message.reason,
-      scores: message.scores,
-      duration_ms: message.duration_ms,
-      at: message.at ?? null,
-    },
+    last_result: { ...result, at: message.at ?? null },
     last_record_id: message.record_id ?? null,
     recent: [
       ...status.recent,
