@@ -19,3 +19,4 @@ class InspectionResult:
     scores: Mapping[str, float] = field(default_factory=dict)
     details: Mapping[str, Any] = field(default_factory=dict)
     duration_s: float = 0.0
+    error_code: int = 0  # ERROR only: a code of the catalog (core/errors.py, FR-INS-14); 0 otherwise

@@ -15,11 +15,12 @@ import queue
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any
 
 from vision_station.cameras import Frame, SettingStatus
+from vision_station.core.errors import CATALOG, ErrorCode
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station.acquisition import Acquisition
 from vision_station.station.trigger import PresenceDetector
@@ -303,7 +304,7 @@ class StationController:
 
     def _load(self, bundle: JobBundle) -> None:
         if self._state is State.INSPECTING:
-            self._finish(self._error("Troca de job durante a inspeção"), None)
+            self._finish(self._error(ErrorCode.JOB_SWITCHED), None)
         self._bundle = bundle
         trigger = bundle.job.trigger
         self._detector = PresenceDetector(trigger) if trigger.presence_roi is not None else None
@@ -384,19 +385,19 @@ class StationController:
         frame = self._acq.frame_after(self._t0)  # captured after the trigger, never a buffered one (FR-ACQ-6)
         if frame is None:
             if self._clock() - self._t0 > self._inspect_timeout_s:
-                self._finish(self._error("Imagem não recebida da câmera"), None)
+                self._finish(self._error(ErrorCode.NO_FRESH_FRAME), None)
             return
         started = self._clock()
         try:
             result = self._inspect(self._bundle, frame)  # type: ignore[arg-type]
         except Exception as exc:
-            result = self._error(f"Erro interno na inspeção ({type(exc).__name__})")
+            result = self._error(ErrorCode.INTERNAL, f"Erro interno na inspeção ({type(exc).__name__})")
         if not isinstance(result, InspectionResult) or result.outcome not in tuple(Outcome):
-            result = self._error("Resultado de inspeção inválido")
+            result = self._error(ErrorCode.INTERNAL, "Resultado de inspeção inválido")
         elif self._acq.stalled():
-            result = self._error("Câmera perdida durante a inspeção")  # never a PASS after doubt
+            result = self._error(ErrorCode.CAMERA_LOST, "Câmera perdida durante a inspeção")  # never a PASS after doubt
         elif result.outcome is Outcome.PASS and frame.timestamp <= self._t0:
-            result = self._error("Imagem anterior ao gatilho")
+            result = self._error(ErrorCode.NO_FRESH_FRAME, "Imagem anterior ao gatilho")
         self._finish(result, frame, started)
 
     def _showing_result(self) -> None:
@@ -416,7 +417,7 @@ class StationController:
 
     def _camera_lost(self) -> None:
         if self._state is State.INSPECTING:
-            self._finish(self._error("Câmera desconectada durante a inspeção"), None)
+            self._finish(self._error(ErrorCode.CAMERA_LOST), None)
         self._detail = self._acq.last_error or ""
         self._go(State.CAMERA_LOST)
 
@@ -429,12 +430,14 @@ class StationController:
 
     # --- results ------------------------------------------------------------------
 
-    def _error(self, reason: str) -> InspectionResult:
-        return InspectionResult(outcome=Outcome.ERROR, reason=reason)
+    def _error(self, code: ErrorCode, reason: str | None = None) -> InspectionResult:
+        return InspectionResult(outcome=Outcome.ERROR, reason=CATALOG[code].text if reason is None else reason, error_code=int(code))
 
     def _finish(self, result: InspectionResult, frame: Frame | None, started: float | None = None) -> None:
         if started is not None and result.duration_s == 0.0:
-            result = InspectionResult(result.outcome, result.reason, result.scores, result.details, self._clock() - started)
+            result = replace(result, duration_s=self._clock() - started)
+        if result.outcome is Outcome.ERROR and not result.error_code:
+            result = replace(result, error_code=int(ErrorCode.INTERNAL))  # an inspector without codes: never an ERROR without one
         self._last_result = result
         self._shown_at = self._clock()
         job = self._bundle.job.job if self._bundle else None

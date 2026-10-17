@@ -3,20 +3,19 @@
 import numpy as np
 
 from vision_station.algorithms import metrics
+from vision_station.core.errors import ErrorCode
 from vision_station.pipeline.stop import Stop
 from vision_station.store.bundle import JobBundle
 from vision_station.verification.reference import REFERENCE_META, parse_meta
-
-OUT_OF_FOCUS = "Imagem fora de foco, verificar a lente e a câmera"
 
 
 def brightness_gate(bundle: JobBundle, image: np.ndarray) -> None:
     quality = bundle.job.quality
     level = metrics.brightness(image)
     if level < quality.brightness.min:
-        raise Stop("Imagem escura demais, verificar a iluminação")
+        raise Stop(ErrorCode.TOO_DARK)
     if level > quality.brightness.max:
-        raise Stop("Imagem clara demais, verificar a iluminação")
+        raise Stop(ErrorCode.TOO_BRIGHT)
 
 
 def sharp_enough(bundle: JobBundle, image: np.ndarray) -> bool:

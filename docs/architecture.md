@@ -660,7 +660,7 @@ One result structure is used by the pipeline, the records, the API, the machine 
 | `simulated` | bool | From the file camera, the editor, the A/B replay or the benchmark (FR-INT-12) |
 | `frame_ref`, `overlay_ref` | strings | Where the pictures are |
 
-**Error-code catalog (FR-INS-14).** Codes are stable across versions; texts can be reworded. Grouped by cause so a PLC program or a dashboard can react by group:
+**Error-code catalog (FR-INS-14, `core/errors.py`).** Codes are stable across versions; texts can be reworded. A test keeps this table and the catalog equal. Codes not raised yet (planned): E105 (R5), E202 (R1), E502, E503, E504 (R3), E505 (R6), E601 (R3). Grouped by cause so a PLC program or a dashboard can react by group:
 
 | Code | Group | Meaning (pt-BR text shown; the English text comes from the same catalog) |
 |---|---|---|
@@ -674,12 +674,13 @@ One result structure is used by the pipeline, the records, the API, the machine 
 | E204 | Location | Locator cannot run (job problem) |
 | E301 | Region / tool | Region outside the image |
 | E302 / E303 / E304 | Region / tool | Tool cannot run / tool failed / invalid score |
-| E401 / E402 | Camera | Camera lost / stale frame |
+| E401 / E402 | Camera | Camera lost / no frame newer than the trigger in time ("Imagem não recebida da câmera", "Imagem anterior ao gatilho") |
 | E501 | System | Internal failure ("Falha interna na inspeção, chamar a manutenção") |
 | E502 | System | No active or verified job |
 | E503 | System | Unknown job number from the machine |
 | E504 | System | Verification failed |
 | E505 | System | Challenge test required or failed |
+| E506 | System | Job switched during the inspection ("Troca de job durante a inspeção") |
 | E601 | Machine | Heartbeat from the machine lost |
 
 Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`, `pattern.count`, `edge.width`), so a failure can be counted by cause across jobs.

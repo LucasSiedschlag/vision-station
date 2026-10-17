@@ -7,6 +7,7 @@ import yaml
 from vision_station.cameras import ApplyReport, Camera, CameraError, Capabilities, Frame, Health, SettingStatus
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs.job import Trigger
+from vision_station.core.errors import ErrorCode
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import (
     Acquisition,
@@ -419,6 +420,7 @@ def test_an_internal_error_or_bad_result_is_an_error_never_a_pass(outcome):
     rig.camera.scene = scene_with_object()
     rig.tick(10)
     assert rig.controller.last_result.outcome is Outcome.ERROR
+    assert rig.controller.last_result.error_code == ErrorCode.INTERNAL
     assert Outcome.PASS not in [r.outcome for r in rig.results()]
 
 
@@ -434,6 +436,7 @@ def test_the_camera_lost_during_an_inspection_is_an_error():
     rig.tick(10)
     assert rig.controller.last_result.outcome is Outcome.ERROR
     assert "Câmera" in rig.controller.last_result.reason
+    assert rig.controller.last_result.error_code == ErrorCode.CAMERA_LOST
     assert rig.state is State.CAMERA_LOST
 
 
@@ -446,6 +449,7 @@ def test_a_missing_fresh_frame_ends_in_error_after_the_timeout():
     assert rig.inspected == []  # the buffered frame from before the trigger is never used
     assert rig.controller.last_result.outcome is Outcome.ERROR
     assert rig.controller.last_result.reason == "Imagem não recebida da câmera"
+    assert rig.controller.last_result.error_code == ErrorCode.NO_FRESH_FRAME
 
 
 def test_camera_lost_and_recovered_goes_back_through_preparing():
