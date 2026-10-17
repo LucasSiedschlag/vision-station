@@ -19,6 +19,7 @@ import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { text } from '@/texts'
+import { LANGUAGE_NAMES, LOCALES, type Locale } from '@/app/locale'
 
 const t = text.settings
 type Check = { ok: boolean; message: string } | null
@@ -195,6 +196,16 @@ function SettingsForm({ system }: { system: SystemOut }) {
               min={0}
               max={30}
               decimals={1}
+            />
+          )}
+        </Field>
+        <Field label={t.language} hint={t.languageHint} error={err('station.language')}>
+          {(p) => (
+            <Select
+              {...p}
+              value={config.station.language}
+              onValueChange={(v) => set('station', { language: v as Locale })}
+              options={LOCALES.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
             />
           )}
         </Field>

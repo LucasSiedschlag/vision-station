@@ -2576,6 +2576,12 @@
           "job": {
             "$ref": "#/components/schemas/JobRefOut"
           },
+          "language": {
+            "default": "pt-BR",
+            "enum": ["pt-BR", "en"],
+            "title": "Language",
+            "type": "string"
+          },
           "last_record_id": {
             "anyOf": [
               {
@@ -2646,6 +2652,7 @@
         },
         "required": [
           "state",
+          "language",
           "message",
           "showing_result",
           "detail",
@@ -2676,6 +2683,12 @@
             "minimum": 1.0,
             "title": "Idle Logout Min",
             "type": "integer"
+          },
+          "language": {
+            "default": "pt-BR",
+            "enum": ["pt-BR", "en"],
+            "title": "Language",
+            "type": "string"
           },
           "name": {
             "default": "Estação de visão",
@@ -2719,6 +2732,12 @@
           },
           "job": {
             "$ref": "#/components/schemas/JobRefOut"
+          },
+          "language": {
+            "default": "pt-BR",
+            "enum": ["pt-BR", "en"],
+            "title": "Language",
+            "type": "string"
           },
           "last_record_id": {
             "anyOf": [
@@ -2857,6 +2876,7 @@
             "default": {
               "fail_sound": false,
               "idle_logout_min": 10,
+              "language": "pt-BR",
               "name": "Estação de visão",
               "result_min_s": 2.0,
               "shift_starts": ["00:00"]

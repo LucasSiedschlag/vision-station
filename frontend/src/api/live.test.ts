@@ -16,6 +16,7 @@ const contract = {
 
 const status = (over: Partial<StateOut> = {}): StateOut => ({
   state: 'Ready',
+  language: 'pt-BR',
   message: 'Aguardando objeto',
   showing_result: false,
   detail: '',

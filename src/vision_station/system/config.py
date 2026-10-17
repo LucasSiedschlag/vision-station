@@ -44,6 +44,8 @@ class StationSettings(_Strict):
     idle_logout_min: Annotated[int, Field(ge=1, le=240)] = 10
     fail_sound: bool = False
     result_min_s: Annotated[float, Field(ge=0, le=30)] = 2.0  # a verdict stays on screen at least this long (VIA-0049)
+    # the language of the operator screen and the default of the other screens (TD-30); applies at once
+    language: Literal["pt-BR", "en"] = "pt-BR"
 
     @field_validator("shift_starts")
     @classmethod
@@ -132,7 +134,11 @@ class SystemConfig(_Strict):
 
 
 def dump_config(config: SystemConfig) -> str:
-    return yaml.safe_dump(config.model_dump(mode="json"), sort_keys=False, allow_unicode=True)
+    data = config.model_dump(mode="json")
+    if data["station"]["language"] == "pt-BR":
+        # written only when not Portuguese, so a backup of a station in Portuguese still restores on version 0.1
+        del data["station"]["language"]
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
 
 def config_path(root: Path | str) -> Path:

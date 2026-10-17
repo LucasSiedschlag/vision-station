@@ -137,6 +137,7 @@ class RecentResult(BaseModel):
 
 class StateOut(BaseModel):
     state: StationState
+    language: Literal["pt-BR", "en"] = "pt-BR"  # the station language: the operator screen speaks it (TD-30)
     message: str
     showing_result: bool = False  # the last verdict is still shown, also when the station is already Ready again
     detail: str

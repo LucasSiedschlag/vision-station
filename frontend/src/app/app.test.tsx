@@ -446,3 +446,34 @@ describe('the shell (document 05 §4.2)', () => {
     expect(screen.queryByRole('dialog', { name: 'Ir para…' })).not.toBeInTheDocument()
   })
 })
+
+describe('two languages (TD-30)', () => {
+  it('the operator screen speaks the station language', async () => {
+    setLive({ language: 'en' })
+    renderApp('/')
+    expect(await screen.findByRole('button', { name: 'System: connected' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Camera: ok' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+  })
+
+  it('a person picks English for themselves; the menu is read in English; logging out goes back to the station language', async () => {
+    server.use(http.post('*/api/logout', () => HttpResponse.json({ ok: true })))
+    signIn()
+    setLive()
+    renderApp('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Conta: Supervisor' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'English' }))
+    const nav = await screen.findByRole('navigation', { name: 'Menu' })
+    await waitFor(() =>
+      expect(
+        within(nav)
+          .getAllByRole('link')
+          .map((l) => l.textContent),
+      ).toEqual(['Station', 'Jobs', 'Results', 'Access', 'Audit', 'About']),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Account: Supervisor' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }))
+    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument() // the station speaks Portuguese
+    expect(localStorage.getItem('vision-station-language')).toBe('en') // kept for the next login in this browser
+  })
+})

@@ -10,7 +10,8 @@ import { describe, expect, it } from 'vitest'
 const root = fileURLToPath(new URL('..', import.meta.url))
 
 // the component gallery is for developers and stays Portuguese only (VIA-0060)
-const ALLOWED = ['texts.ts', 'features/design/', 'api/schema.d.ts', 'locales/']
+// app/locale.tsx names each language in its own language (Português, English)
+const ALLOWED = ['texts.ts', 'features/design/', 'api/schema.d.ts', 'locales/', 'app/locale.tsx']
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

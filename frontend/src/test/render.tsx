@@ -7,7 +7,7 @@ import { useLoginDialog } from '@/api/auth'
 import { useLive } from '@/api/live'
 import { useSession } from '@/api/session'
 import { Toaster } from '@/components/ui/toaster'
-import { LocaleProvider } from '@/app/locale'
+import { activate, LocaleProvider, useLocale } from '@/app/locale'
 import { routes } from '@/app/routes'
 
 // One mock API for a test file: call server.use(http.get('*/api/about', ...)) inside a test.
@@ -15,12 +15,17 @@ export const server = setupServer()
 
 export function mockApi() {
   beforeAll(() => server.listen())
-  afterEach(() => {
+  afterEach(async () => {
     cleanup() // unmount first, so a dialog that is open closes with its page and not with the stores below
     server.resetHandlers()
     useSession.getState().clear()
     useLoginDialog.setState({ open: false, opened: false, next: null })
     useLive.setState({ status: null, frame: null, connected: false, connecting: true })
+    // every test starts in Portuguese with no language chosen (TD-30)
+    localStorage.removeItem('vision-station-language')
+    localStorage.removeItem('vision-station-station-language')
+    useLocale.setState({ station: 'pt-BR', choice: null })
+    await activate('pt-BR')
     // a modal that was open leaves the page marked inert/aria-hidden; start every test from a clean page
     document.body.removeAttribute('style')
     document.body.removeAttribute('data-scroll-locked')
@@ -50,6 +55,7 @@ export function renderApp(path = '/') {
 
 export const stateFixture = (over: Record<string, unknown> = {}) => ({
   state: 'Ready' as const,
+  language: 'pt-BR' as const,
   message: 'Aguardando peça',
   showing_result: false,
   detail: '',

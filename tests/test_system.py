@@ -294,3 +294,14 @@ def test_main_refuses_a_bad_config_and_an_open_network_without_passwords(tmp_pat
     assert main(["--data", str(root)]) == 2
     save_config(root, SystemConfig.model_validate({"camera": {"driver": "file", "connection": {"path": str(tmp_path)}}, "network": {"host": "0.0.0.0"}}))
     assert main(["--data", str(root)]) == 2
+
+
+def test_the_station_language_is_in_the_status_and_written_only_when_not_portuguese():
+    from vision_station.system.config import SystemConfig, dump_config
+
+    assert "language" not in dump_config(SystemConfig())  # a backup still restores on 0.1
+    english = SystemConfig.model_validate({"station": {"language": "en"}})
+    assert "language: en" in dump_config(english)
+    assert SystemConfig.model_validate({"station": {"language": "en"}}).station.language == "en"
+    with pytest.raises(ValueError):
+        SystemConfig.model_validate({"station": {"language": "fr"}})

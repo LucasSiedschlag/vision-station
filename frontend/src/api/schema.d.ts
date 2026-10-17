@@ -1992,6 +1992,12 @@ export interface components {
       /** Detail */
       detail: string
       job: components['schemas']['JobRefOut']
+      /**
+       * Language
+       * @default pt-BR
+       * @enum {string}
+       */
+      language: 'pt-BR' | 'en'
       /** Last Record Id */
       last_record_id: string | null
       last_result: components['schemas']['ResultOut'] | null
@@ -2038,6 +2044,12 @@ export interface components {
        */
       idle_logout_min: number
       /**
+       * Language
+       * @default pt-BR
+       * @enum {string}
+       */
+      language: 'pt-BR' | 'en'
+      /**
        * Name
        * @default Estação de visão
        */
@@ -2062,6 +2074,12 @@ export interface components {
       /** Detail */
       detail: string
       job: components['schemas']['JobRefOut']
+      /**
+       * Language
+       * @default pt-BR
+       * @enum {string}
+       */
+      language: 'pt-BR' | 'en'
       /**
        * Last Record Id
        * @default null
@@ -2148,6 +2166,7 @@ export interface components {
        * @default {
        *       "fail_sound": false,
        *       "idle_logout_min": 10,
+       *       "language": "pt-BR",
        *       "name": "Estação de visão",
        *       "result_min_s": 2,
        *       "shift_starts": [

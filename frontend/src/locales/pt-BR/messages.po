@@ -181,6 +181,9 @@ msgstr "Descartar"
 msgid "Resultado"
 msgstr "Resultado"
 
+msgid "A tela do operador fala este idioma. As outras telas também, até alguém escolher outro no menu da conta."
+msgstr "A tela do operador fala este idioma. As outras telas também, até alguém escolher outro no menu da conta."
+
 msgid "Duplicar"
 msgstr "Duplicar"
 
@@ -483,6 +486,9 @@ msgstr "Tema"
 
 msgid "Registro"
 msgstr "Registro"
+
+msgid "Idioma depois de entrar"
+msgstr "Idioma depois de entrar"
 
 msgid "Mostrar o resultado por pelo menos"
 msgstr "Mostrar o resultado por pelo menos"
@@ -879,6 +885,9 @@ msgstr "Sair por inatividade após"
 
 msgid "Claro"
 msgstr "Claro"
+
+msgid "Idioma da estação"
+msgstr "Idioma da estação"
 
 msgid "Nome"
 msgstr "Nome"
@@ -1384,6 +1393,9 @@ msgstr "imagem ao vivo (reduzida)"
 msgid "Referência"
 msgstr "Referência"
 
+msgid "Idioma"
+msgstr "Idioma"
+
 msgid "Marcado"
 msgstr "Marcado"
 
@@ -1518,6 +1530,9 @@ msgstr "Sem ligação com o sistema, o estado da máquina não é conhecido."
 
 msgid "Job duplicado"
 msgstr "Job duplicado"
+
+msgid "Vale só para você, neste navegador. A tela do operador usa o idioma da estação."
+msgstr "Vale só para você, neste navegador. A tela do operador usa o idioma da estação."
 
 msgid "Exportar o dataset de {name}"
 msgstr "Exportar o dataset de {name}"

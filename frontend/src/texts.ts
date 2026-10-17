@@ -45,6 +45,9 @@ export const text = {
     },
   },
   login: {
+    get language() {
+      return t`Idioma depois de entrar`
+    },
     get open() {
       return t`Entrar`
     },
@@ -1054,6 +1057,12 @@ export const text = {
     },
   },
   settings: {
+    get language() {
+      return t`Idioma da estação`
+    },
+    get languageHint() {
+      return t`A tela do operador fala este idioma. As outras telas também, até alguém escolher outro no menu da conta.`
+    },
     get title() {
       return t`Configurações`
     },
@@ -1386,6 +1395,12 @@ export const text = {
     } as Record<string, string>,
   },
   shell: {
+    get language() {
+      return t`Idioma`
+    },
+    get languageNote() {
+      return t`Vale só para você, neste navegador. A tela do operador usa o idioma da estação.`
+    },
     get menu() {
       return t`Menu`
     },

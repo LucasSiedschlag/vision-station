@@ -1,4 +1,4 @@
-import { LogOut, Monitor, Moon, Search, Sun, User } from 'lucide-react'
+import { Languages, LogOut, Monitor, Moon, Search, Sun, User } from 'lucide-react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router'
 import { logout } from '@/api/auth'
@@ -37,6 +37,7 @@ import { cn } from '@/lib/cn'
 import { atLeast } from '@/lib/permissions'
 import { useTheme } from '@/lib/theme'
 import { text } from '@/texts'
+import { chooseLocale, LANGUAGE_NAMES, LOCALES, useLocale } from '../locale'
 import { screens, type Area } from '../routes'
 
 const COLLAPSED_KEY = 'vision-station-nav-collapsed'
@@ -146,6 +147,7 @@ function CommandPalette() {
 function UserMenu() {
   const role = useSession((s) => s.role)
   const { preference, setPreference } = useTheme()
+  const locale = useLocale((s) => s.locale)
   const themes = [
     { value: 'system', label: text.shell.themeSystem, icon: Monitor },
     { value: 'dark', label: text.shell.themeDark, icon: Moon },
@@ -173,6 +175,22 @@ function UserMenu() {
             {preference === value ? <span className="sr-only"> {text.ui.current}</span> : null}
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <p className="px-3 py-1 text-xs text-fg-muted">{text.shell.language}</p>
+        {LOCALES.map((value) => (
+          <DropdownMenuItem
+            key={value}
+            lang={value}
+            onSelect={() => chooseLocale(value)}
+            aria-current={locale === value ? 'true' : undefined}
+            className={cn(locale === value && 'font-medium')}
+          >
+            <Languages aria-hidden className="size-4" />
+            {LANGUAGE_NAMES[value]}
+            {locale === value ? <span className="sr-only"> {text.ui.current}</span> : null}
+          </DropdownMenuItem>
+        ))}
+        <p className="max-w-60 px-3 py-1 text-xs text-fg-muted">{text.shell.languageNote}</p>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void logout()}>
           <LogOut aria-hidden className="size-4" />

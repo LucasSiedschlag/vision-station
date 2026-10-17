@@ -2,7 +2,9 @@ import { lazy, Suspense } from 'react'
 import { Outlet, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { logout } from '@/api/auth'
+import { useLive } from '@/api/live'
 import { useSession } from '@/api/session'
+import { useLocaleSync } from './locale'
 import { useLoginDialog } from '@/api/auth'
 import { useIdle } from '@/lib/idle'
 import { text } from '@/texts'
@@ -18,6 +20,8 @@ export const IDLE_LOGOUT_MS = 10 * 60 * 1000
 
 export function RootLayout() {
   const role = useSession((s) => s.role)
+  const station = useLive((s) => s.status?.language)
+  useLocaleSync(station, role !== 'operator')
   const navigate = useNavigate()
   const loginOpened = useLoginDialog((s) => s.opened)
 

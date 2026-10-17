@@ -199,6 +199,7 @@ def status_model(deps: ApiDeps) -> m.StateOut:
     age = acq.age_s()
     return m.StateOut(
         state=str(status.state),
+        language=deps.system.config.station.language if deps.system else "pt-BR",
         message=status.message,
         showing_result=status.showing_result,
         detail=status.detail,

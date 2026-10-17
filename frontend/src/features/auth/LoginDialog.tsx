@@ -10,6 +10,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { text } from '@/texts'
+import { chooseLocale, LANGUAGE_NAMES, LOCALES, useLocale, type Locale } from '@/app/locale'
 
 /** The one login dialog. It opens from the lock button, from a protected link, or when the session ends; the page behind is kept. */
 export function LoginDialog() {
@@ -17,6 +18,8 @@ export function LoginDialog() {
   const expired = useSession((s) => s.expired)
   const navigate = useNavigate()
   const [role, setRole] = useState<'supervisor' | 'maintainer'>('supervisor')
+  // the language after logging in: the person's last choice in this browser, else the station's
+  const language = useLocale((s) => s.choice ?? s.station)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -64,6 +67,16 @@ export function LoginDialog() {
                   { value: 'supervisor', label: text.roles.supervisor },
                   { value: 'maintainer', label: text.roles.maintainer },
                 ]}
+              />
+            )}
+          </Field>
+          <Field label={text.login.language}>
+            {(p) => (
+              <Select
+                {...p}
+                value={language}
+                onValueChange={(v) => chooseLocale(v as Locale)}
+                options={LOCALES.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
               />
             )}
           </Field>

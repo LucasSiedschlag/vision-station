@@ -1,6 +1,6 @@
 import { i18n, type Messages } from '@lingui/core'
 import { I18nProvider as LinguiProvider } from '@lingui/react'
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, useEffect, type ReactNode } from 'react'
 import { I18nProvider as AriaProvider } from 'react-aria-components'
 import { create } from 'zustand'
 
@@ -13,6 +13,9 @@ import { create } from 'zustand'
  */
 export type Locale = 'pt-BR' | 'en'
 export const LOCALES: readonly Locale[] = ['pt-BR', 'en']
+
+/** Each language by its own name, the same in every language (a person looks for the word they know). */
+export const LANGUAGE_NAMES: Record<Locale, string> = { 'pt-BR': 'Português', en: 'English' }
 
 const STATION_KEY = 'vision-station-station-language' // the last station language seen: no flash of Portuguese on start
 const CHOICE_KEY = 'vision-station-language'
@@ -111,4 +114,20 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 /** The locale for Intl formatters outside React (lib/number, lib/datetime). */
 export function currentLocale(): Locale {
   return useLocale.getState().locale
+}
+
+/**
+ * Keeps the screen in the right language: the station's (from the status) on the operator screen and after a
+ * logout, the person's choice while logged in. Mounted once, in the root layout.
+ */
+export function useLocaleSync(station: Locale | undefined, loggedIn: boolean) {
+  const choice = useLocale((s) => s.choice)
+  const known = useLocale((s) => s.station)
+  useEffect(() => {
+    if (station) setStationLocale(station)
+  }, [station])
+  useEffect(() => {
+    const target = loggedIn && choice ? choice : known
+    if (target !== useLocale.getState().locale) void activate(target)
+  }, [loggedIn, choice, known])
 }
