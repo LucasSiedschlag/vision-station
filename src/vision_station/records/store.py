@@ -28,7 +28,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 
 SCHEMA_VERSION = 1
 _SCHEMA = """

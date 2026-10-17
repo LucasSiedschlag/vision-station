@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from vision_station.schema_labels import COLOR_RANGE, labels
+from vision_station.core.schema_labels import COLOR_RANGE, labels
 
 Byte = Annotated[int, Field(ge=0, le=255)]
 Hue = Annotated[int, Field(ge=0, le=179)]  # OpenCV hue: degrees / 2

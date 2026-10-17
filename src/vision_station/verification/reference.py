@@ -15,7 +15,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from vision_station.store.errors import FormatError
-from vision_station.verification import metrics
+from vision_station.algorithms import metrics
 
 REFERENCE_IMAGE = "reference/reference.png"
 REFERENCE_META = "reference/reference.meta.yaml"

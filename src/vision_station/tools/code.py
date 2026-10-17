@@ -14,8 +14,8 @@ import numpy as np
 import zxingcpp
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from vision_station.jobfiles import JobFiles
-from vision_station.schema_labels import labels
+from vision_station.core.jobfiles import JobFiles
+from vision_station.core.schema_labels import labels
 from vision_station.tools.base import ToolResult, ToolType, register
 
 

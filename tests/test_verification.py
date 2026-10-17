@@ -9,7 +9,7 @@ import zxingcpp
 from test_station import Rig, State, empty_scene, make_bundle as station_bundle
 from vision_station.cameras import ApplyReport, Frame, SettingStatus
 from vision_station.jobs import CameraProfile, Job
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import Acquisition
 from vision_station.store import JobBundle, JobRef, JobStore
 from vision_station.tools import run_tool
@@ -24,7 +24,7 @@ from vision_station.verification import (
     verify_live,
     verify_stored_job,
 )
-from vision_station.verification import metrics
+from vision_station.algorithms import metrics
 
 FIXTURES = Path(__file__).parent / "fixtures"
 JOB_ID = "3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10"

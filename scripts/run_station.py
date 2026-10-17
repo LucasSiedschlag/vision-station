@@ -21,7 +21,7 @@ import yaml
 
 from vision_station.cameras import create_camera
 from vision_station.jobs import CameraProfile, Job
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import JobBundle
 from vision_station.system import SystemConfig

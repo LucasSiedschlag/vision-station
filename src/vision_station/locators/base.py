@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, ValidationError
 
-from vision_station.jobfiles import JobFileError, JobFiles, check_files
+from vision_station.core.jobfiles import JobFileError, JobFiles, check_files
 from vision_station.jobs import Job
 
 

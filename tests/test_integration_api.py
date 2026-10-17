@@ -14,7 +14,7 @@ from vision_station.api import create_app
 from vision_station.api.inspections import InspectionRegistry
 from vision_station.pipeline import draw_overlay
 from vision_station.records import RecordingConfig
-from vision_station.results import Outcome
+from vision_station.core.results import Outcome
 
 
 def run_until_done(env, id, ticks=60):

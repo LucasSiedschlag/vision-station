@@ -11,7 +11,7 @@ from test_station import Rig, State, empty_scene, scene_with_object
 from test_verification import inspect_code, make_bundle as job_bundle
 from vision_station.api import ApiDeps, AuthError, AuthService, LockedOut, create_app, make_event_handler
 from vision_station.records import RecordingConfig, ResultRecorder, ResultStore
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.store import JobRef, JobStore
 
 HOSTS = ("testserver", "localhost", "127.0.0.1")

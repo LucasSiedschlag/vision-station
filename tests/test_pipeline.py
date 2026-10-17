@@ -7,7 +7,7 @@ from vision_station.cameras import Frame
 from vision_station.jobs import Job
 from vision_station.locators import LocatorError, check_job_locator, locator_types, run_locator
 from vision_station.pipeline import draw_overlay, inspect_job
-from vision_station.results import Outcome
+from vision_station.core.results import Outcome
 from vision_station.store import JobBundle
 from vision_station.tools import ToolType, register
 from vision_station.tools.base import ToolResult
@@ -130,6 +130,20 @@ def test_region_outside_is_error():
     job["geometry"]["rois"]["label"]["rect"] = [0.5, 0.5, 0.5001, 0.5001]
     r = inspect_job(JobBundle(Job.model_validate(job), bundle.profile, {}), frame(np.full((10, 10, 3), 255, np.uint8)))
     assert r.outcome is Outcome.ERROR and "fora da imagem" in r.reason
+
+
+def test_a_region_on_the_anchor_without_an_anchor_is_an_error_with_its_reason():
+    # job validation already refuses both; the pipeline checks again and keeps its own reason
+    bundle = make_bundle()
+    roi = bundle.job.geometry.rois["label"]
+    on_anchor = bundle.job.geometry.model_copy(update={"rois": {"label": roi.model_copy(update={"relative_to": "anchor"})}})
+    job = bundle.job.model_copy(update={"geometry": on_anchor})
+    r = inspect_job(JobBundle(job, bundle.profile, {}), frame(qr_scene("LOTE-1")))
+    assert r.outcome is Outcome.ERROR and r.reason == "Região 'label' depende do objeto, que não foi localizado"
+    tool = bundle.job.tools[0].model_copy(update={"roi": "anchor"})
+    job = bundle.job.model_copy(update={"tools": [tool]})
+    r = inspect_job(JobBundle(job, bundle.profile, {}), frame(qr_scene("LOTE-1")))
+    assert r.outcome is Outcome.ERROR and r.reason == "Região 'anchor' sem localizador"
 
 
 @pytest.mark.parametrize("seed", range(20))

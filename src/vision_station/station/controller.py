@@ -20,7 +20,7 @@ from enum import StrEnum
 from typing import Any
 
 from vision_station.cameras import Frame, SettingStatus
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station.acquisition import Acquisition
 from vision_station.station.trigger import PresenceDetector
 from vision_station.store import JobBundle

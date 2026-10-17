@@ -14,7 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from vision_station.results import InspectionResult
+from vision_station.core.results import InspectionResult
 
 
 @dataclass

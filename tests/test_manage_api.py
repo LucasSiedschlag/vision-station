@@ -224,6 +224,6 @@ def test_dataset_counts_and_export(env, mnt):
 
 
 def _one_result(env):
-    from vision_station.results import InspectionResult, Outcome
+    from vision_station.core.results import InspectionResult, Outcome
 
     return InspectionResult(Outcome.PASS), qr_scene("X")

@@ -6,7 +6,7 @@ import yaml
 from test_verification import FIXTURES, png
 from vision_station.jobs import Job
 from vision_station.tools import ToolError, check_job_tools, run_tool, tool_types
-from vision_station.tools.measures import at_least, at_most, longest_run, strip_profile
+from vision_station.algorithms.measures import at_least, at_most, longest_run, strip_profile
 
 BACK = 225  # a light film over cardboard
 
@@ -136,7 +136,7 @@ def test_in_the_pipeline_a_short_print_fails_with_the_gap_in_the_reason():
     from vision_station.cameras import Frame
     from vision_station.jobs import CameraProfile
     from vision_station.pipeline import inspect_job
-    from vision_station.results import Outcome
+    from vision_station.core.results import Outcome
     from vision_station.store import JobBundle
     from vision_station.verification import make_reference_files
 

@@ -1,7 +1,7 @@
 """Color tool: how much of a region has a color (FR-INS-2, TD-19).
 
 The region is the validation area the user draws. The color is a range in HSV or a reference color with
-a distance (see `vision_station.colors`). A hue range needs a saturation limit (`s_min`): grays and whites
+a distance (see `vision_station.algorithms.color`). A hue range needs a saturation limit (`s_min`): grays and whites
 have hue 0, which is red. Two ways to judge it, which can be combined:
 
 - **area**: the fraction of the region's pixels in the color (`min_fraction`, `max_fraction`). E.g. a
@@ -19,11 +19,11 @@ from typing import Annotated, Literal, Self
 import numpy as np
 from pydantic import ConfigDict, Field, model_validator
 
-from vision_station.colors import ColorRange, color_mask
-from vision_station.schema_labels import COLOR_RANGE, labels
-from vision_station.jobfiles import JobFiles
+from vision_station.algorithms.color import ColorRange, color_mask
+from vision_station.core.schema_labels import COLOR_RANGE, labels
+from vision_station.core.jobfiles import JobFiles
 from vision_station.tools.base import ToolResult, ToolType, register
-from vision_station.tools.measures import at_least, at_most, strip_profile
+from vision_station.algorithms.measures import at_least, at_most, strip_profile
 
 Share = Annotated[float, Field(ge=0, le=1)]
 

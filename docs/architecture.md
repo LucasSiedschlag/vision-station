@@ -200,7 +200,7 @@ src/vision_station/
 └── api/             # FastAPI: HTTP, WebSocket, login
 ```
 
-Today `pipeline.py`, `models.py` and `results.py` are single modules and there is no `core/`, `geometry/`, `algorithms/` or `machine/`. The refactor moves code without changing behaviour first (§18, R0), so the tests keep passing at every step.
+Since R0 (2026-10-17) the packages `core/`, `algorithms/`, `geometry/`, `pipeline/` and `models/` exist and hold the code that was in single modules (`results.py`, `jobfiles.py`, `schema_labels.py`, `colors.py`, `tools/measures.py`, `verification/metrics.py`, `pipeline.py`, `models.py`), moved without changing behaviour. Still to come: `Pose` and `Fixture` in `core/` and fixtures in `geometry/` (R1, today the locator's `Anchor` in `locators/`), the error-code catalog in `core/` (R2), matching, shape and calipers in `algorithms/` (R4, R5), and `machine/` (R3).
 
 ---
 

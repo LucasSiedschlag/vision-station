@@ -1,13 +1,12 @@
 # CLAUDE.md
 
+Guidance for Claude Code when working in this repository.
 
 ## What this is
 
-**Vision Station**: a general vision system for **industrial fixed stations and machines**, where a fixed camera looks at an object that is **stopped** for the reading (objects in motion are out of scope). In the style of commercial vision systems, a *job* holds the camera setup and an ordered list of *tools* (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, relative to the frame or to an *anchor* found by a *locator* (TD-19). It answers PASS / FAIL / ERROR with a reason in Portuguese. It is **not built around any product**: customer projects (e.g. Customer's packing station, box and tape) are separate projects that install Vision Station and configure jobs; they live outside this repository and are done last. Sole developer: Lucas.
+**Vision Station**: a general vision system for **industrial fixed stations and machines**, where a fixed camera looks at an object that is **stopped** for the reading (objects in motion are out of scope). In the style of commercial vision systems, a *job* holds the camera setup and an ordered list of *tools* (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, relative to the frame or to an *anchor* found by a *locator* (TD-19). It answers PASS / FAIL / ERROR with a reason in Portuguese. It is **not built around any product**: customer projects are separate projects that install Vision Station and configure jobs; they live outside this repository and are done last.
 
 Current state: platform core implemented (cameras, jobs, store, station, verification, records, API, pipeline, operator screen); tools beyond `code`, locators beyond `fixed`, management screens and the job editor are in progress. Delivery of 30/10/2026 uses the **Logitech C920 only**; the Hikvision driver comes later. Phases: 0 definition → 1 platform with the C920 → 2 model → 3 production camera (Hikvision DS-2CD3666G2T-IZS) → 4 first project on site.
-
-Sibling project: `../vision-sim` (Bancada Virtual de Visão, project VIS, public repo). A static ES-module web simulator used to choose camera, lens, height and lighting before buying hardware. It is not a dependency of this repo, but its camera catalog (`data/cameras.csv`) and models are the reference for hardware choices. **Nothing from a customer may go into `vision-sim`**, it is public.
 
 ## Documents (read before changing design)
 
@@ -50,7 +49,7 @@ uv sync --extra uvc  # on Windows: add duvc-ctl for the C920 driver
 packaging\gerar-instalador.cmd   # Windows: program (PyInstaller) + installer (Inno Setup); docs/guias/gerar-instalador.md
 ```
 
-Code map: `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `tools/` (tool registry; `code`, `color`, `pattern`, `detect`; `measures.py` for scores and strip gaps), `models.py` (ONNX models and their cards, SHA-256 checked, sessions cached), `locators/` (locator registry; `fixed`, `template`, `blob`), `colors.py` (color ranges shared by tools and locators), `jobfiles.py` (job files a tool or locator needs, checked on load), `pipeline.py` (`inspect_job`: brightness → locator → sharpness → regions → all tools → PASS/FAIL/ERROR), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `results.py` (PASS/FAIL/ERROR), `system/` (`system.yaml`, applying settings, scheduled backup and housekeeping, camera and folder checks), `runtime.py` (the `vision-station` entry point that wires everything).
+Code map (architecture §3.3): `core/` (`results.py` PASS/FAIL/ERROR, `jobfiles.py` job files a tool or locator needs, checked on load, `schema_labels.py` Portuguese labels of the parameter schemas), `jobs/` (job and camera profile models), `cameras/` (interface, file and UVC drivers), `algorithms/` (pure functions: `color.py` color ranges, `metrics.py` brightness, sharpness and similarity, `measures.py` scores and strip gaps), `geometry/` (`regions.py`: a region relative to the frame or the anchor, in pixels), `tools/` (tool registry; `code`, `color`, `pattern`, `detect`), `locators/` (locator registry; `fixed`, `template`, `blob`), `models/` (`card.py` the model card, `runtime.py` ONNX sessions, SHA-256 checked, cached), `pipeline/` (`inspect_job`: brightness → locator → sharpness → regions → all tools → PASS/FAIL/ERROR; `quality.py` gates, `overlay.py` the drawn result), `store/` (`.vjob`/`.vbak` archives and the job store), `station/` (acquisition thread, image trigger, state machine), `verification/` (job verification and activation), `api/` (FastAPI: HTTP, WebSocket, login), `records/` (results in SQLite, images, collection mode, dataset export), `system/` (`system.yaml`, applying settings, scheduled backup and housekeeping, camera and folder checks), `runtime.py` (the `vision-station` entry point that wires everything).
 
 Layout: `src/vision_station/` (platform, no customer words), `frontend/`, `tests/`, `scripts/`, `docs/`. No customer project lives here (no `applications/`). CI (`.github/workflows/tests.yml`) runs pytest on Windows and Linux.
 
@@ -66,4 +65,3 @@ Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `
 - Interface text is **Portuguese and English** (TD-30): Lingui catalogs in `frontend/` (source pt-BR), PO catalogs on the server; the operator screen uses the station language. Jobs supply their own texts in both languages (format 2). Docs, code and identifiers are English.
 - Reference requirement/decision IDs in code comments and commits (`TD-04`, `FR-ACQ-4`).
 - Project values (time to result, accuracy, retention…) are configuration, never constants in code (document 02 §7).
-

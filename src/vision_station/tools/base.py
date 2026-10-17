@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, ValidationError
 
-from vision_station.jobfiles import JobFiles
+from vision_station.core.jobfiles import JobFiles
 
 
 class ToolError(Exception):

@@ -23,10 +23,10 @@ import cv2
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from vision_station.jobfiles import JobFiles
-from vision_station.schema_labels import labels
+from vision_station.core.jobfiles import JobFiles
+from vision_station.core.schema_labels import labels
 from vision_station.tools.base import ToolError, ToolResult, ToolType, register
-from vision_station.tools.measures import at_least, at_most, strip_profile
+from vision_station.algorithms.measures import at_least, at_most, strip_profile
 
 Share = Annotated[float, Field(ge=0, le=1)]
 MAX_MATCHES = 500

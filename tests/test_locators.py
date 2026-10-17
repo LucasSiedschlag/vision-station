@@ -8,7 +8,7 @@ from vision_station.cameras import Frame
 from vision_station.jobs import CameraProfile, Job
 from vision_station.locators import LocatorError, check_job_locator, locator_types, run_locator
 from vision_station.pipeline import inspect_job
-from vision_station.results import Outcome
+from vision_station.core.results import Outcome
 from vision_station.store import JobBundle
 from vision_station.store.bundle import bundle_from_files
 from vision_station.store.errors import FormatError

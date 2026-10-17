@@ -16,9 +16,9 @@ from typing import Literal
 import numpy as np
 
 from vision_station.cameras import ApplyReport, Frame, SettingStatus
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.store import JobBundle
-from vision_station.verification import metrics
+from vision_station.algorithms import metrics
 from vision_station.verification.reference import (
     EXPECTED_FILE,
     REFERENCE_IMAGE,

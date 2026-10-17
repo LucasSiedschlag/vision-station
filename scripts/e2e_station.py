@@ -29,7 +29,7 @@ from vision_station.api import ApiDeps, AuthService, create_app, make_event_hand
 from vision_station.cameras import ApplyReport, Camera, Capabilities, Frame, Health, SettingStatus
 from vision_station.jobs import CameraProfile, Job
 from vision_station.records import ResultRecorder, ResultStore
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import Acquisition, StationController
 from vision_station.store import JobBundle, JobStore
 from vision_station.system import SystemConfig, SystemService

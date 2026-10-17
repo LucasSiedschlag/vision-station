@@ -7,7 +7,7 @@ import yaml
 from vision_station.cameras import ApplyReport, Camera, CameraError, Capabilities, Frame, Health, SettingStatus
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs.job import Trigger
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import (
     Acquisition,
     PresenceDetector,

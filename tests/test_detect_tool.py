@@ -147,7 +147,7 @@ def test_in_a_job_the_files_are_required_and_the_pipeline_runs_it():
     from vision_station.cameras import Frame
     from vision_station.jobs import Job
     from vision_station.pipeline import inspect_job
-    from vision_station.results import Outcome
+    from vision_station.core.results import Outcome
     from vision_station.store import JobBundle
     from vision_station.store.bundle import bundle_from_files
     from vision_station.store.errors import FormatError

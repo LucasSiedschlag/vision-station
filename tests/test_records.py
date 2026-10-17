@@ -17,7 +17,7 @@ from vision_station.records import (
     ResultsError,
     ResultStore,
 )
-from vision_station.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome
 
 JOB = {"job_id": "3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10", "job_name": "Tampa azul", "job_version": 3}
 OTHER = {"job_id": "9b2d4c60-1a3e-4f5b-8c7d-0e1f2a3b4c5d", "job_name": "Etiqueta", "job_version": 1}
