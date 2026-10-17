@@ -29,6 +29,11 @@ export const text = {
     system: 'Sistema',
     camera: 'Câmera',
     log: 'Registro',
+    machine: 'Máquina',
+    machineConnected: 'conectada',
+    noSignal: 'sem sinal',
+    heartbeat: (seconds: number) =>
+      `sinal de vida há ${seconds.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`,
     connecting: 'conectando',
     connected: 'conectado',
     offline: 'sem conexão',
@@ -524,6 +529,10 @@ export const text = {
     themeDark: 'Escuro',
     themeLight: 'Claro',
     noJob: 'Nenhum job',
+    palette: 'Ir para…',
+    palettePlaceholder: 'Nome da tela',
+    paletteEmpty: 'Nada encontrado.',
+    paletteScreens: 'Telas',
   },
 } as const
 

@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogTrigger,
+  Drawer,
   Sheet,
 } from '@/components/ui/dialog'
 import {
@@ -35,6 +36,30 @@ import { Switch } from '@/components/ui/switch'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip } from '@/components/ui/tooltip'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import {
+  ChartContainer,
+  ChartTooltip,
+  chartAxis,
+  chartGrid,
+  type ChartConfig,
+} from '@/components/ui/chart'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { SortableList } from '@/components/ui/sortable'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { cn } from '@/lib/cn'
 import { useTheme, type ThemePreference } from '@/lib/theme'
 
@@ -147,6 +172,12 @@ export function DesignPage() {
   const [pick, setPick] = useState<string>()
   const [confirm, setConfirm] = useState(false)
   const [sheet, setSheet] = useState(false)
+  const [drawer, setDrawer] = useState(false)
+  const [tools, setTools] = useState([
+    { id: 'tampa', type: 'Cor' },
+    { id: 'lote', type: 'Código' },
+    { id: 'largura', type: 'Borda' },
+  ])
 
   return (
     <div
@@ -616,6 +647,108 @@ export function DesignPage() {
           </Card>
         </div>
       </Section>
+
+      <Section id="workbench" title="Bancada: painéis, seções e listas">
+        <div className="h-48 overflow-hidden rounded-card border border-line">
+          <ResizablePanelGroup orientation="horizontal">
+            <ResizablePanel defaultSize="65" minSize="30">
+              <div className="grid h-full place-items-center bg-surface-2 text-fg-muted">
+                Imagem
+              </div>
+            </ResizablePanel>
+            <ResizableHandle aria-label="Largura do inspetor" />
+            <ResizablePanel defaultSize="35" minSize="20">
+              <div className="grid h-full place-items-center bg-surface-1 text-fg-muted">
+                Inspetor
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Accordion type="multiple" defaultValue={['region', 'measure']}>
+            <AccordionItem value="region">
+              <AccordionTrigger hint="tampa">Região</AccordionTrigger>
+              <AccordionContent>Relativa à âncora “peça”.</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="measure">
+              <AccordionTrigger>O que medir</AccordionTrigger>
+              <AccordionContent>Faixa de cor em HSV.</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="criteria">
+              <AccordionTrigger>Critério</AccordionTrigger>
+              <AccordionContent>Fração mínima da região com a cor.</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="result" disabled>
+              <AccordionTrigger hint="sem ferramenta">Resultado</AccordionTrigger>
+              <AccordionContent>—</AccordionContent>
+            </AccordionItem>
+          </Accordion>
+          <SortableList
+            label="Ferramentas do job"
+            items={tools}
+            onReorder={setTools}
+            itemLabel={(t) => t.id}
+            renderItem={(t) => (
+              <p className="flex min-h-control items-center gap-2">
+                <span className="font-medium">{t.id}</span>
+                <span className="text-fg-muted">· {t.type}</span>
+              </p>
+            )}
+          />
+        </div>
+        <div className="flex flex-wrap items-start gap-6">
+          <Button onClick={() => setDrawer(true)}>Abrir gaveta</Button>
+          <Drawer
+            open={drawer}
+            onOpenChange={setDrawer}
+            title="Amostras"
+            description="Em 1366×768 a faixa de amostras abre por baixo."
+          >
+            <p className="text-fg-muted">12 boas · 3 ruins</p>
+          </Drawer>
+          <div className="w-full max-w-md rounded-card border border-line bg-surface-1 p-3">
+            <Command label="Ir para (exemplo)">
+              <CommandInput placeholder="Nome da tela" />
+              <CommandList>
+                <CommandEmpty>Nada encontrado.</CommandEmpty>
+                <CommandGroup heading="Telas">
+                  <CommandItem>Jobs</CommandItem>
+                  <CommandItem>Resultados</CommandItem>
+                  <CommandItem disabled>Máquina (fase B)</CommandItem>
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>
+        </div>
+      </Section>
+
+      <Section id="charts" title="Gráficos">
+        <ChartContainer
+          config={reasonChart}
+          title="Motivos de reprovação"
+          summary="Últimas 24 h: tampa fora da cor 18, lote ilegível 7, peça fora de posição 3."
+          table={{
+            columns: ['Motivo', 'Reprovadas'],
+            rows: reasons.map((r) => [r.reason, r.fail]),
+          }}
+          className="max-w-2xl"
+        >
+          <BarChart data={reasons} accessibilityLayer={false}>
+            <CartesianGrid {...chartGrid} />
+            <XAxis dataKey="reason" {...chartAxis} />
+            <YAxis allowDecimals={false} width={32} {...chartAxis} />
+            <ChartTooltip config={reasonChart} />
+            <Bar dataKey="fail" fill="var(--series-fail)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </Section>
     </div>
   )
 }
+
+const reasonChart: ChartConfig = { fail: { label: 'Reprovadas', color: 'var(--fail)' } }
+const reasons = [
+  { reason: 'Tampa fora da cor', fail: 18 },
+  { reason: 'Lote ilegível', fail: 7 },
+  { reason: 'Fora de posição', fail: 3 },
+]

@@ -18,8 +18,8 @@ test('a wrong password says so; the right one opens the menu of the role; logout
     'Estação',
     'Jobs',
     'Resultados',
-    'Auditoria',
     'Acessos',
+    'Auditoria',
     'Sobre',
   ])
   await page.getByRole('button', { name: 'Conta: Supervisor' }).click()

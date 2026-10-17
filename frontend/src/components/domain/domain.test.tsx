@@ -104,4 +104,38 @@ describe('StatusStrip', () => {
     expect(indicators(status(), 'offline')[0]).toMatchObject({ tone: 'fail', word: 'sem conexão' })
     expect(indicators(null, 'connecting')[0]).toMatchObject({ tone: 'busy', word: 'conectando' })
   })
+
+  describe('the Máquina indicator', () => {
+    const machine = (m: Record<string, unknown>) =>
+      status({ machine: { connected: true, heartbeat_age_s: 0.4, last_error: null, ...m } })
+
+    it('is not shown while no machine connector is enabled', () => {
+      expect(indicators(status(), 'connected').map((i) => i.id)).not.toContain('machine')
+      render(<StatusStrip status={status({ machine: null })} connection="connected" />)
+      expect(screen.queryByRole('button', { name: /Máquina/ })).not.toBeInTheDocument()
+    })
+
+    it('with a connector: the heartbeat in words, or the lost signal as a failure', () => {
+      render(<StatusStrip status={machine({})} connection="connected" />)
+      expect(screen.getByRole('button', { name: 'Máquina: conectada' })).toBeInTheDocument()
+      expect(indicators(machine({}), 'connected')[2]).toMatchObject({
+        id: 'machine',
+        tone: 'ok',
+        detail: ['sinal de vida há 0,4 s'],
+      })
+      expect(
+        indicators(
+          machine({ connected: false, last_error: 'E601 sem sinal de vida' }),
+          'connected',
+        )[2],
+      ).toMatchObject({ tone: 'fail', word: 'sem sinal', detail: ['E601 sem sinal de vida'] })
+    })
+
+    it('without a link to the system it is unknown, never fine', () => {
+      expect(indicators(machine({}), 'offline')[2]).toMatchObject({
+        id: 'machine',
+        tone: 'unknown',
+      })
+    })
+  })
 })

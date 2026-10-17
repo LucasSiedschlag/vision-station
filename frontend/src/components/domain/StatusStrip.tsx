@@ -12,7 +12,21 @@ interface Item {
   detail: string[]
 }
 
-/** The three named indicators of what the screen knows: the link to the system, the camera, the results log. */
+/**
+ * The machine link (architecture §16), present in the status only while a machine connector is
+ * enabled. The core does not send it yet (R3): the indicator stays hidden until it does.
+ */
+export interface MachineStatus {
+  connected: boolean
+  heartbeat_age_s: number | null
+  last_error: string | null
+}
+
+function machineOf(status: StateOut | null): MachineStatus | null {
+  return (status as (StateOut & { machine?: MachineStatus | null }) | null)?.machine ?? null
+}
+
+/** The named indicators of what the screen knows: the link to the system, the camera, the results log. */
 export function indicators(status: StateOut | null, connection: Connection): Item[] {
   const s = text.status
   const system: Item =
@@ -40,6 +54,19 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
             detail: ['Esta tela perdeu a ligação com o programa e tenta de novo sozinha.'],
           }
 
+  const machine = machineOf(status)
+  const unknownMachine: Item[] = machine
+    ? [
+        {
+          id: 'machine',
+          label: s.machine,
+          tone: 'unknown',
+          word: s.unknown,
+          detail: ['Sem ligação com o sistema, o estado da máquina não é conhecido.'],
+        },
+      ]
+    : []
+
   // without a status the camera and the log are unknown: never shown as fine
   if (!status || connection !== 'connected') {
     return [
@@ -51,6 +78,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
         word: s.unknown,
         detail: ['Sem ligação com o sistema, o estado da câmera não é conhecido.'],
       },
+      ...unknownMachine,
       {
         id: 'log',
         label: s.log,
@@ -95,7 +123,28 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
           word: s.ok,
           detail: ['Os resultados estão sendo gravados.'],
         }
-  return [system, camera, log]
+  const machineItems: Item[] = !machine
+    ? []
+    : machine.connected
+      ? [
+          {
+            id: 'machine',
+            label: s.machine,
+            tone: 'ok',
+            word: s.machineConnected,
+            detail: machine.heartbeat_age_s === null ? [] : [s.heartbeat(machine.heartbeat_age_s)],
+          },
+        ]
+      : [
+          {
+            id: 'machine',
+            label: s.machine,
+            tone: 'fail',
+            word: s.noSignal,
+            detail: [machine.last_error ?? 'A máquina não responde; nenhum disparo é aceito.'],
+          },
+        ]
+  return [system, camera, ...machineItems, log]
 }
 
 export function StatusStrip({

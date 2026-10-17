@@ -52,9 +52,9 @@ The living reference is the gallery: run the interface and open **`/design`**. I
 | Status | `StatusIndicator` (icon + word; `unknown` is never shown as OK), `Badge` |
 | Form | `Field` (label, hint, error, ids wired) around `Input`, **`NumberField`** (React Aria: unit, locale decimals, arrows within the range; a value out of range is flagged, never changed; a typed `.` or `,` is the decimal mark of the language, so `0.8` is never read as 8; no thousands separator), `Textarea`, `Select`, `Switch`, **`Slider`** (React Aria, one or more thumbs that never cross; `fields` adds a `NumberField` per thumb), `SegmentedControl`, `FileDrop` |
 | Colour | **`ColorArea`, `ColorSlider`, `ColorField`** (React Aria, HSB channels): building blocks of `HsvRangePicker` |
-| Overlays | `Dialog`, `ConfirmDialog`, `Sheet`, `Drawer`, `DropdownMenu`, `Popover`, `Tooltip`, toasts with `toast` from `sonner` |
+| Overlays | `Dialog`, `ConfirmDialog`, `Sheet`, `Drawer` (a `Sheet` from the bottom), `DropdownMenu`, `Popover`, `Tooltip`, toasts with `toast` from `sonner` |
 | Structure | `Sidebar` (shell), `Resizable` (panels), `Accordion` (inspector sections), `Card`, `Tabs`, `Table` parts, `Stepper` |
-| Navigation | `Command` (Ctrl+K palette) |
+| Navigation | `Command` (Ctrl+K palette, inside our `Dialog`; only the screens of the role) |
 | Charts | `Chart` (Recharts) for low-frequency charts, always with a table view |
 | Feedback | `Skeleton`, `Spinner`, `EmptyState`, `ErrorState` |
 | Language | `LanguageSwitch` |

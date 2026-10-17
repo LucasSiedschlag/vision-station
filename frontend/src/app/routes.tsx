@@ -49,11 +49,19 @@ const DesignPage = lazy(() =>
   import('@/features/design/DesignPage').then((m) => ({ default: m.DesignPage })),
 )
 
-/** A screen in the menu. Screens that are built later are added here: the menu, the guard and the route follow. */
+/** The four areas of work in the menu, in order (document 05 §4.2). */
+export type Area = 'operation' | 'setup' | 'analysis' | 'system'
+
+/**
+ * A screen in the menu. Screens that are built later are added here: the menu, the guard and the
+ * route follow. Máquina (Configuração) and Estatísticas (Análise) join when their screens exist
+ * (phases B and D); until then they are not in the menu.
+ */
 export interface Screen {
   path: string
   label: string
   icon: LucideIcon
+  area: Area
   /** the lowest role that may open it */
   min: Role
   element: ReactNode
@@ -64,6 +72,7 @@ export const screens: Screen[] = [
     path: '/',
     label: text.nav.station,
     icon: MonitorPlay,
+    area: 'operation',
     min: 'operator',
     element: <OperatorPage />,
   },
@@ -71,6 +80,7 @@ export const screens: Screen[] = [
     path: '/jobs',
     label: text.nav.jobs,
     icon: Layers,
+    area: 'setup',
     min: 'supervisor',
     element: (
       <Suspense fallback={null}>
@@ -82,6 +92,7 @@ export const screens: Screen[] = [
     path: '/results',
     label: text.nav.results,
     icon: ListChecks,
+    area: 'analysis',
     min: 'supervisor',
     element: (
       <Suspense fallback={null}>
@@ -90,42 +101,10 @@ export const screens: Screen[] = [
     ),
   },
   {
-    path: '/dataset',
-    label: text.nav.dataset,
-    icon: Database,
-    min: 'maintainer',
-    element: (
-      <Suspense fallback={null}>
-        <DatasetPage />
-      </Suspense>
-    ),
-  },
-  {
-    path: '/audit',
-    label: text.nav.audit,
-    icon: ScrollText,
-    min: 'supervisor',
-    element: (
-      <Suspense fallback={null}>
-        <AuditPage />
-      </Suspense>
-    ),
-  },
-  {
-    path: '/access',
-    label: text.nav.access,
-    icon: KeyRound,
-    min: 'supervisor',
-    element: (
-      <Suspense fallback={null}>
-        <AccessPage />
-      </Suspense>
-    ),
-  },
-  {
     path: '/settings',
     label: text.nav.settings,
     icon: Settings,
+    area: 'system',
     min: 'maintainer',
     element: (
       <Suspense fallback={null}>
@@ -134,9 +113,46 @@ export const screens: Screen[] = [
     ),
   },
   {
+    path: '/dataset',
+    label: text.nav.dataset,
+    icon: Database,
+    area: 'system',
+    min: 'maintainer',
+    element: (
+      <Suspense fallback={null}>
+        <DatasetPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/access',
+    label: text.nav.access,
+    icon: KeyRound,
+    area: 'system',
+    min: 'supervisor',
+    element: (
+      <Suspense fallback={null}>
+        <AccessPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/audit',
+    label: text.nav.audit,
+    icon: ScrollText,
+    area: 'system',
+    min: 'supervisor',
+    element: (
+      <Suspense fallback={null}>
+        <AuditPage />
+      </Suspense>
+    ),
+  },
+  {
     path: '/about',
     label: text.nav.about,
     icon: Info,
+    area: 'system',
     min: 'supervisor',
     element: (
       <Suspense fallback={null}>

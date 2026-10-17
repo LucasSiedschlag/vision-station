@@ -42,5 +42,25 @@ for (const scheme of themes) {
       await expect(page.getByRole('cell', { name: 'code', exact: true })).toBeVisible()
       expect(await accessibilityProblems(page)).toEqual([])
     })
+
+    test('the shell with the menu collapsed and the Ir para… palette open has none', async ({
+      page,
+      request,
+      station,
+    }) => {
+      void station
+      await signInAs(page, request, 'maintainer')
+      await page.goto('/about')
+      await page.getByRole('button', { name: 'Recolher menu' }).click()
+      await expect(page.getByRole('button', { name: 'Expandir menu' })).toBeVisible()
+      expect(await accessibilityProblems(page)).toEqual([])
+      await page.keyboard.press('Control+k')
+      const palette = page.getByRole('dialog', { name: 'Ir para…' })
+      await expect(palette.getByRole('combobox')).toBeFocused()
+      expect(await accessibilityProblems(page)).toEqual([])
+      await page.keyboard.press('Escape')
+      await expect(palette).toBeHidden()
+      await page.getByRole('button', { name: 'Expandir menu' }).click()
+    })
   })
 }

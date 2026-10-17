@@ -159,6 +159,7 @@ frontend/
     - **Configuração:** Jobs, Máquina.
     - **Análise:** Resultados, Estatísticas.
     - **Sistema:** Configurações, Dataset, Acessos, Auditoria, Sobre.
+    - Máquina and Estatísticas join the menu when their screens exist (phases B and D); a link is never shown to a screen that is not there.
   - **Top bar:**
     - the active job and version;
     - the **station mode badge**: *Em produção* (green outline) or *Em manutenção* (amber, while an editor or the machine monitor holds the station paused);

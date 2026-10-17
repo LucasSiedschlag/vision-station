@@ -17,17 +17,21 @@ export function DialogContent({
   description,
   children,
   className,
+  onOpenAutoFocus,
 }: {
   title: string
   description?: string
   children: ReactNode
   className?: string
+  /** Where the focus goes on open; by default the first control (often Fechar). */
+  onOpenAutoFocus?: (event: Event) => void
 }) {
   return (
     <RadixDialog.Portal>
       <RadixDialog.Overlay className={overlay} />
       <RadixDialog.Content
         {...(description ? {} : { 'aria-describedby': undefined })}
+        onOpenAutoFocus={onOpenAutoFocus}
         className={cn(
           'fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-dialog -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-auto rounded-card border border-line bg-surface-1 p-6 shadow-overlay',
           className,
@@ -125,12 +129,15 @@ export function Sheet({
   onOpenChange,
   title,
   description,
+  side = 'right',
   children,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
   description?: string
+  /** `bottom` is the drawer: the filmstrip and the inspector at 1366×768 (document 05 §10). */
+  side?: 'right' | 'bottom'
   children: ReactNode
 }) {
   const returnFocus = useReturnFocus(open)
@@ -140,7 +147,13 @@ export function Sheet({
         <RadixDialog.Overlay className={overlay} />
         <RadixDialog.Content
           onCloseAutoFocus={returnFocus}
-          className="fixed inset-y-0 right-0 z-50 flex w-sheet flex-col gap-4 overflow-auto border-l border-line bg-surface-1 p-6 shadow-overlay"
+          {...(description ? {} : { 'aria-describedby': undefined })}
+          className={cn(
+            'fixed z-50 flex flex-col gap-4 overflow-auto bg-surface-1 p-6 shadow-overlay',
+            side === 'right'
+              ? 'inset-y-0 right-0 w-sheet border-l border-line'
+              : 'inset-x-0 bottom-0 max-h-[70vh] rounded-t-card border-t border-line',
+          )}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
@@ -162,4 +175,9 @@ export function Sheet({
       </RadixDialog.Portal>
     </RadixDialog.Root>
   )
+}
+
+/** A sheet that comes up from the bottom (TD-29 `Drawer`, built on the same dialog as `Sheet`, without vaul). */
+export function Drawer(props: Omit<Parameters<typeof Sheet>[0], 'side'>) {
+  return <Sheet {...props} side="bottom" />
 }

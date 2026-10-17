@@ -207,7 +207,7 @@ describe('login', () => {
       within(nav)
         .getAllByRole('link')
         .map((l) => l.textContent),
-    ).toEqual(['Estação', 'Jobs', 'Resultados', 'Auditoria', 'Acessos', 'Sobre'])
+    ).toEqual(['Estação', 'Jobs', 'Resultados', 'Acessos', 'Auditoria', 'Sobre'])
     expect(screen.getByRole('button', { name: 'Conta: Supervisor' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Entrar' })).not.toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Estado do sistema' })).toBeInTheDocument() // the strip is now in the shell footer, once
@@ -364,5 +364,65 @@ describe('station commands for the maintainer', () => {
     renderApp('/')
     await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
     await waitFor(() => expect(sent).toBe('retry'))
+  })
+})
+
+describe('the shell (document 05 §4.2)', () => {
+  it('groups the menu by the areas of work: Operação, Configuração, Análise, Sistema', async () => {
+    signIn('maintainer')
+    setLive()
+    renderApp('/')
+    const nav = await screen.findByRole('navigation', { name: 'Menu' })
+    const groups = within(nav)
+      .getAllByRole('list')
+      .map((list) =>
+        within(list)
+          .getAllByRole('link')
+          .map((l) => l.textContent),
+      )
+    expect(groups).toEqual([
+      ['Estação'],
+      ['Jobs'],
+      ['Resultados'],
+      ['Configurações', 'Dataset', 'Acessos', 'Auditoria', 'Sobre'],
+    ])
+  })
+
+  it('collapsed, the links keep their names and the rail remembers it', async () => {
+    localStorage.removeItem('vision-station-nav-collapsed')
+    signIn()
+    setLive()
+    const { unmount } = renderApp('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Recolher menu' }))
+    const expand = screen.getByRole('button', { name: 'Expandir menu' })
+    expect(expand).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('link', { name: 'Resultados' })).toBeInTheDocument()
+    unmount()
+    renderApp('/')
+    expect(await screen.findByRole('button', { name: 'Expandir menu' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Expandir menu' }))
+    localStorage.removeItem('vision-station-nav-collapsed')
+  })
+
+  it('Ctrl+K opens "Ir para…" with only the screens of the role, and goes to the one chosen', async () => {
+    server.use(
+      http.get('*/api/about', () =>
+        HttpResponse.json({ version: '9.9.9', job_format: 1, tools: [] }),
+      ),
+    )
+    signIn()
+    setLive()
+    const { router } = renderApp('/')
+    await screen.findByRole('navigation', { name: 'Menu' })
+    await userEvent.keyboard('{Control>}k{/Control}')
+    const dialog = await screen.findByRole('dialog', { name: 'Ir para…' })
+    const options = within(dialog)
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect(options).toEqual(['Estação', 'Jobs', 'Resultados', 'Acessos', 'Auditoria', 'Sobre'])
+    await userEvent.type(within(dialog).getByRole('combobox'), 'sob')
+    await userEvent.keyboard('{Enter}')
+    await waitFor(() => expect(router.state.location.pathname).toBe('/about'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

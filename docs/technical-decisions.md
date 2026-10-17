@@ -782,7 +782,7 @@ Models are added only where the classical tools can't separate good objects from
 **Decision.**
 - **Keep shadcn/ui + Radix + Tailwind** and the token and design-rule tests.
 - Add **React Aria Components** (Apache-2.0) for colour, range and number controls, through shadcn's React Aria variants where they exist and thin wrappers otherwise. Radix stays for everything else (dialogs, menus, popovers, tabs, select).
-- Add from the shadcn catalog: `Sidebar`, `Resizable` (react-resizable-panels), `Command` (cmdk), `Accordion`, `Drawer`, `Chart` (Recharts).
+- Add from the shadcn catalog: `Sidebar`, `Resizable` (react-resizable-panels), `Command` (cmdk), `Accordion`, `Drawer`, `Chart` (Recharts). `Drawer` is built on the Radix dialog, like `Sheet` but from the bottom, and not on `vaul`, which is no longer maintained (UI-C1, 2026-10-17).
 - Add `@dnd-kit/core` + `@dnd-kit/sortable` (stable 6.x) for reordering.
 - No migration plan: additions in steps UI-C0..C3 (document 05 §15.2).
 
