@@ -131,6 +131,14 @@ describe('StatusStrip', () => {
       ).toMatchObject({ tone: 'fail', word: 'sem sinal', detail: ['E601 sem sinal de vida'] })
     })
 
+    it('a link with no heartbeat seen yet is unknown, not fine', () => {
+      expect(indicators(machine({ heartbeat_age_s: null }), 'connected')[2]).toMatchObject({
+        id: 'machine',
+        tone: 'unknown',
+        word: 'aguardando sinal de vida',
+      })
+    })
+
     it('without a link to the system it is unknown, never fine', () => {
       expect(indicators(machine({}), 'offline')[2]).toMatchObject({
         id: 'machine',

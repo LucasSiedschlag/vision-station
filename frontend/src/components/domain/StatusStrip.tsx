@@ -14,7 +14,8 @@ interface Item {
 
 /**
  * The machine link (architecture §16), present in the status only while a machine connector is
- * enabled. The core does not send it yet (R3): the indicator stays hidden until it does.
+ * enabled. The core does not send it yet (R3): the indicator stays hidden until it does. The
+ * contract is written in document 05 §9.6 (`machine` in the state message).
  */
 export interface MachineStatus {
   connected: boolean
@@ -123,27 +124,38 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
           word: s.ok,
           detail: ['Os resultados estão sendo gravados.'],
         }
+  // a link counts as fine only with a heartbeat seen: an open socket alone says nothing (E601, §16)
   const machineItems: Item[] = !machine
     ? []
-    : machine.connected
+    : machine.connected === true && machine.heartbeat_age_s !== null
       ? [
           {
             id: 'machine',
             label: s.machine,
             tone: 'ok',
             word: s.machineConnected,
-            detail: machine.heartbeat_age_s === null ? [] : [s.heartbeat(machine.heartbeat_age_s)],
+            detail: [s.heartbeat(machine.heartbeat_age_s)],
           },
         ]
-      : [
-          {
-            id: 'machine',
-            label: s.machine,
-            tone: 'fail',
-            word: s.noSignal,
-            detail: [machine.last_error ?? 'A máquina não responde; nenhum disparo é aceito.'],
-          },
-        ]
+      : machine.connected === true
+        ? [
+            {
+              id: 'machine',
+              label: s.machine,
+              tone: 'unknown',
+              word: s.awaitingHeartbeat,
+              detail: ['Ligada, mas a máquina ainda não deu sinal de vida.'],
+            },
+          ]
+        : [
+            {
+              id: 'machine',
+              label: s.machine,
+              tone: 'fail',
+              word: s.noSignal,
+              detail: [machine.last_error ?? 'A máquina não responde; nenhum disparo é aceito.'],
+            },
+          ]
   return [system, camera, ...machineItems, log]
 }
 

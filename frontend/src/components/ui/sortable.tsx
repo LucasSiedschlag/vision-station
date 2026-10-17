@@ -22,7 +22,8 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
 // A list reordered by dragging a handle, or with the keyboard (dnd-kit 6, TD-29): tools and anchors
-// in the editor. The screen-reader texts are Portuguese (dnd-kit's own are English).
+// in the editor. The screen-reader texts are Portuguese (dnd-kit's own are English). Inside a Sheet or
+// Drawer, pass the live region into the dialog (`accessibility.container`): a modal hides the body.
 
 export interface SortableItem {
   id: UniqueIdentifier

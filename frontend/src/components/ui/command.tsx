@@ -36,8 +36,13 @@ export function CommandInput({ className, ...props }: ComponentProps<typeof Cmdk
   )
 }
 
-export function CommandList({ className, ...props }: ComponentProps<typeof CmdkList>) {
-  return <CmdkList className={cn('max-h-80 overflow-y-auto', className)} {...props} />
+/** cmdk names the list "Suggestions" by default: it gets a Portuguese name instead. */
+export function CommandList({
+  className,
+  label = 'Sugestões',
+  ...props
+}: ComponentProps<typeof CmdkList>) {
+  return <CmdkList label={label} className={cn('max-h-80 overflow-y-auto', className)} {...props} />
 }
 
 export function CommandEmpty({ className, ...props }: ComponentProps<typeof CmdkEmpty>) {

@@ -32,6 +32,7 @@ export const text = {
     machine: 'Máquina',
     machineConnected: 'conectada',
     noSignal: 'sem sinal',
+    awaitingHeartbeat: 'aguardando sinal de vida',
     heartbeat: (seconds: number) =>
       `sinal de vida há ${seconds.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`,
     connecting: 'conectando',

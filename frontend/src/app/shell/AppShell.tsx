@@ -15,6 +15,7 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import { useReturnFocus } from '@/components/ui/use-return-focus'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,12 +73,18 @@ function CommandPalette() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const search = useRef<HTMLInputElement>(null)
+  const chosen = useRef(false)
+  const returnFocus = useReturnFocus(open)
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey)) {
-        event.preventDefault()
-        setOpen((o) => !o)
-      }
+      if (event.key.toLowerCase() !== 'k' || !(event.ctrlKey || event.metaKey)) return
+      if (event.repeat || event.defaultPrevented) return
+      // never over another dialog (a confirmation, the login): it would navigate away under it
+      const dialogs = document.querySelectorAll('[role=dialog], [role=alertdialog]')
+      const onlyPalette = [...dialogs].every((d) => d.id === 'command-palette')
+      if (!onlyPalette) return
+      event.preventDefault()
+      setOpen((o) => !o)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -96,14 +103,22 @@ function CommandPalette() {
       </DialogTrigger>
       <DialogContent
         title={text.shell.palette}
+        id="command-palette"
         onOpenAutoFocus={(event) => {
           event.preventDefault()
           search.current?.focus()
         }}
+        onCloseAutoFocus={(event) => {
+          // closed: back where the person was; a screen chosen: its content takes the focus
+          if (!chosen.current) return returnFocus(event)
+          chosen.current = false
+          event.preventDefault()
+          document.getElementById('content')?.focus()
+        }}
       >
         <Command label={text.shell.palette}>
           <CommandInput ref={search} placeholder={text.shell.palettePlaceholder} />
-          <CommandList>
+          <CommandList label={text.shell.paletteScreens}>
             <CommandEmpty>{text.shell.paletteEmpty}</CommandEmpty>
             <CommandGroup heading={text.shell.paletteScreens}>
               {visible.map(({ path, label, icon: Icon }) => (
@@ -111,6 +126,7 @@ function CommandPalette() {
                   key={path}
                   value={label}
                   onSelect={() => {
+                    chosen.current = true
                     setOpen(false)
                     void navigate(path)
                   }}

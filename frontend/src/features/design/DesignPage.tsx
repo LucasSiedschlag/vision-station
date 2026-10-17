@@ -733,7 +733,7 @@ export function DesignPage() {
           }}
           className="max-w-2xl"
         >
-          <BarChart data={reasons} accessibilityLayer={false}>
+          <BarChart data={reasons}>
             <CartesianGrid {...chartGrid} />
             <XAxis dataKey="reason" {...chartAxis} />
             <YAxis allowDecimals={false} width={32} {...chartAxis} />

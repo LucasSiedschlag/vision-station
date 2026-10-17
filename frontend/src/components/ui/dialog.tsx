@@ -18,13 +18,18 @@ export function DialogContent({
   children,
   className,
   onOpenAutoFocus,
+  onCloseAutoFocus,
+  id,
 }: {
+  id?: string
   title: string
   description?: string
   children: ReactNode
   className?: string
   /** Where the focus goes on open; by default the first control (often Fechar). */
   onOpenAutoFocus?: (event: Event) => void
+  /** Where the focus goes on close; by default the trigger, when there is one. */
+  onCloseAutoFocus?: (event: Event) => void
 }) {
   return (
     <RadixDialog.Portal>
@@ -32,6 +37,8 @@ export function DialogContent({
       <RadixDialog.Content
         {...(description ? {} : { 'aria-describedby': undefined })}
         onOpenAutoFocus={onOpenAutoFocus}
+        onCloseAutoFocus={onCloseAutoFocus}
+        id={id}
         className={cn(
           'fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-dialog -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-auto rounded-card border border-line bg-surface-1 p-6 shadow-overlay',
           className,

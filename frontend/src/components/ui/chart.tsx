@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react'
+import { cloneElement, type CSSProperties, type ReactElement } from 'react'
 import { ResponsiveContainer, Tooltip, type TooltipContentProps } from 'recharts'
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent'
 import { cn } from '@/lib/cn'
@@ -57,7 +57,11 @@ export function ChartContainer({
       </figcaption>
       <div aria-hidden className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          {children}
+          {/* the drawing is hidden from screen readers (the caption and the table say it), so it
+              must not take the focus either: Recharts' accessibility layer is turned off here */}
+          {cloneElement(children as ReactElement<{ accessibilityLayer?: boolean }>, {
+            accessibilityLayer: false,
+          })}
         </ResponsiveContainer>
       </div>
       <details className="text-sm">

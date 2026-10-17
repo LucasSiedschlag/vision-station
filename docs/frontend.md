@@ -792,6 +792,8 @@ The station stays paused while a session is open. Closing the session (or 10 min
 
 As in 0.1, plus `machine` status messages (connected, heartbeat age) for the status strip.
 
+The state message carries `machine` only while a machine connector is enabled (absent or `null` otherwise): `{ "connected": bool, "heartbeat_age_s": number | null, "last_error": string | null }`. `connected` is the adapter link; `heartbeat_age_s` is the age of the last HeartbeatIn toggle (architecture §16), `null` while none has been seen. The strip shows *conectada* only with `connected` true **and** a heartbeat seen; `connected` without a heartbeat is *aguardando sinal de vida* (unknown); anything else is *sem sinal* (fail, with `last_error`, e.g. E601). The core does not send it yet (R3).
+
 ---
 
 ## 10. Image workspace and region editor
