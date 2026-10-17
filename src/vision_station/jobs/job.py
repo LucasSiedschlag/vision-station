@@ -132,6 +132,9 @@ class Tool(_Strict):
     roi: str
     params: dict[str, Any] = {}
     reason_fail: str
+    # False: informative, run and recorded but never deciding the result (FR-INS-13). Written only when
+    # False, so a job that does not use it stays readable by older versions of the program.
+    affects_result: bool = Field(default=True, exclude_if=lambda v: v is True)
 
 
 class Job(_Strict):
@@ -156,6 +159,8 @@ class Job(_Strict):
                 raise ValueError(f"tool '{tool.id}' uses unknown ROI '{tool.roi}'")
             if tool.roi == "anchor" and self.geometry.locator is None:
                 raise ValueError(f"tool '{tool.id}' uses the anchor but the job has no locator")
+        if not any(t.affects_result for t in self.tools):
+            raise ValueError("at least one tool must decide the result: with only informative tools every part would pass")
         return self
 
 

@@ -17,7 +17,7 @@ from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
 from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.core.results import InspectionResult, Outcome, ReasonCode, ToolReport
-from vision_station.geometry.regions import RegionError, resolve_roi
+from vision_station.geometry.regions import PixelRect, RegionError, resolve_roi
 from vision_station.jobs import Job
 from vision_station.jobs.job import Tool
 from vision_station.locators import Anchor, LocatorError, run_locator
@@ -98,28 +98,20 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     reason_codes: list[ReasonCode] = []
     for tool in job.tools:
         try:
-            rect, px = resolve_roi(job, tool.roi, anchor, image.shape)
-        except RegionError as exc:
-            raise Stop(ErrorCode.REGION_OUTSIDE, str(exc)) from None
-        x0, y0, x1, y1 = px
-        t = time.perf_counter()
-        try:
-            result = run_tool(tool.type, tool.version, image[y0:y1, x0:x1], tool.params, files)
-        except (ToolError, JobFileError) as exc:
-            raise Stop(ErrorCode.TOOL_CANNOT_RUN, f"Ferramenta '{tool.id}' não pode rodar: {exc}") from exc
-        except Exception as exc:
-            log.exception("tool %s failed", tool.id)
-            raise Stop(ErrorCode.TOOL_FAILED, f"Ferramenta '{tool.id}' falhou: {type(exc).__name__}") from exc
-        per_tool[tool.id] = time.perf_counter() - t
-        score = float(result.score)
-        if not 0.0 <= score <= 1.0 or score != score:
-            raise Stop(ErrorCode.INVALID_SCORE, f"Ferramenta '{tool.id}' devolveu pontuação inválida")
+            px, result, score, elapsed = _run(tool, job, anchor, image, files)
+        except Stop as stop:
+            if tool.affects_result:
+                raise
+            # an informative tool never decides, not even by failing to run: noted on its own entry (FR-INS-13)
+            reports.append(ToolReport(tool.id, tool.type, tool.version, False, 0.0, affects_result=False, error=str(stop)))
+            continue
+        per_tool[tool.id] = elapsed
         scores[tool.id] = score
         tool_details[tool.id] = dict(result.details)
-        regions.append({"tool": tool.id, "roi": tool.roi, "rect": list(px), "passed": bool(result.passed)})
+        regions.append({"tool": tool.id, "roi": tool.roi, "rect": list(px), "passed": bool(result.passed), "affects_result": tool.affects_result})
         report = _report(tool, result, score)
         reports.append(report)
-        if not result.passed:
+        if not result.passed and tool.affects_result:
             failures.append(result.reason(tool.reason_fail))
             reason_codes.extend(ReasonCode(tool.id, f"{tool.type}.{c.code}") for c in report.criteria if not c.passed)
     timings["tools"] = time.perf_counter() - t_tools
@@ -140,6 +132,28 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports))
 
 
+def _run(tool: Tool, job: Job, anchor: Anchor | None, image: np.ndarray, files: JobFiles) -> tuple[PixelRect, ToolResult, float, float]:
+    """One tool on its region: the region, the result, the checked score and the time it took. Raises Stop."""
+    try:
+        _, px = resolve_roi(job, tool.roi, anchor, image.shape)
+    except RegionError as exc:
+        raise Stop(ErrorCode.REGION_OUTSIDE, str(exc)) from None
+    x0, y0, x1, y1 = px
+    t = time.perf_counter()
+    try:
+        result = run_tool(tool.type, tool.version, image[y0:y1, x0:x1], tool.params, files)
+    except (ToolError, JobFileError) as exc:
+        raise Stop(ErrorCode.TOOL_CANNOT_RUN, f"Ferramenta '{tool.id}' não pode rodar: {exc}") from exc
+    except Exception as exc:
+        log.exception("tool %s failed", tool.id)
+        raise Stop(ErrorCode.TOOL_FAILED, f"Ferramenta '{tool.id}' falhou: {type(exc).__name__}") from exc
+    elapsed = time.perf_counter() - t
+    score = float(result.score)
+    if not 0.0 <= score <= 1.0 or score != score:
+        raise Stop(ErrorCode.INVALID_SCORE, f"Ferramenta '{tool.id}' devolveu pontuação inválida")
+    return px, result, score, elapsed
+
+
 def _report(tool: Tool, result: ToolResult, score: float) -> ToolReport:
     """The tool's part of the result contract: its numeric measures with units, and its criteria (TD-22)."""
     values = {
@@ -148,4 +162,4 @@ def _report(tool: Tool, result: ToolResult, score: float) -> ToolReport:
         if isinstance(result.values.get(name), int | float) and not isinstance(result.values.get(name), bool)
     }
     units = {name: unit for name, unit in result.units.items() if name in values}
-    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria))
+    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result)

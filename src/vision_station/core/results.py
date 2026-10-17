@@ -49,6 +49,7 @@ class ToolReport:
     units: Mapping[str, Unit] = field(default_factory=dict)
     criteria: tuple[Criterion, ...] = ()
     affects_result: bool = True  # an informative tool is run and recorded but never decides (FR-INS-13)
+    error: str = ""  # an informative tool that could not run: why (a deciding one makes the result ERROR instead)
 
     @property
     def decisive(self) -> Criterion | None:

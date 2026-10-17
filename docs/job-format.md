@@ -105,6 +105,7 @@ Rules (checked on load, `jobs/job.py`):
 - At least one tool; tool ids unique; every tool's region exists.
 - Each tool and locator `type` + `version` must be one this software runs, and its `params` must validate. The parameters of each type, with titles and limits, are served as JSON Schema by `GET /api/tools`; their meaning is in the module of each type (`tools/*.py`, `locators/*.py`). A version that is no longer supported refuses the job instead of running different logic.
 - `reason_fail` is Portuguese for the operator in format 1; from format 2 it holds both languages, `{pt-BR: …, en: …}` (TD-30, FR-JOB-15); `{field}` placeholders take the tool's values (listed in each tool's module). A wrong placeholder leaves the text as written.
+- `affects_result` (optional, default `true`; FR-INS-13): `false` makes the tool **informative**: it runs, its values and verdict are recorded and shown, but it never decides the result. It does not make the result FAIL, its failure is not in the reason or the reason codes, and an informative tool that cannot run is noted on its own entry instead of turning the result into ERROR. A job needs at least one tool that decides. The field is written only when `false`, so a job that does not use it stays readable by programs older than 0.2.
 
 ## 4. `camera/profile.yaml`
 

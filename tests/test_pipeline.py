@@ -154,3 +154,40 @@ def test_garbage_frames_never_pass_or_raise(seed):
     img = rng.integers(0, 256, shapes[seed % 4], dtype=np.uint8)
     assert inspect_job(bundle, frame(img)).outcome is not Outcome.PASS
     assert inspect_job(bundle, frame(None)).outcome is Outcome.ERROR
+
+
+def _with_informative(bundle, **tool_changes):
+    data = bundle.job.model_dump(mode="json")
+    extra = {**data["tools"][0], "id": "info", "affects_result": False, **tool_changes}
+    data["tools"].append(extra)
+    return JobBundle(Job.model_validate(data), bundle.profile, bundle.extra)
+
+
+def test_an_informative_tool_is_recorded_but_never_decides():
+    bundle = _with_informative(make_bundle(), params={"min_count": 2})  # needs two codes: always fails here
+    r = inspect_job(bundle, frame(qr_scene("LOTE-1")))
+    assert r.outcome is Outcome.PASS and r.reason == "" and r.reason_codes == ()
+    info = next(t for t in r.tools if t.id == "info")
+    assert info.affects_result is False and info.passed is False and info.decisive.code == "min_count"
+    assert r.scores["info"] < 1.0
+
+
+def test_an_informative_tool_that_cannot_run_does_not_stop_the_inspection():
+    r = inspect_job(_with_informative(make_bundle(), version=99), frame(qr_scene("LOTE-1")))
+    assert r.outcome is Outcome.PASS
+    info = next(t for t in r.tools if t.id == "info")
+    assert "não pode rodar" in info.error and not info.passed
+
+
+def test_a_job_with_only_informative_tools_is_refused():
+    data = make_bundle().job.model_dump(mode="json")
+    data["tools"][0]["affects_result"] = False
+    with pytest.raises(ValueError, match="at least one tool must decide"):
+        Job.model_validate(data)
+
+
+def test_affects_result_is_written_only_when_false():
+    from vision_station.jobs import dump_job
+
+    assert "affects_result" not in dump_job(make_bundle().job)  # older programs still read the job
+    assert "affects_result: false" in dump_job(_with_informative(make_bundle()).job)
