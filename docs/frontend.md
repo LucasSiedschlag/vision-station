@@ -3,25 +3,42 @@
 | | |
 |---|---|
 | Document | 05 — Frontend (web interface) |
-| Version | 0.1 (draft) |
-| Date | 2026-10-14 |
+| Version | 0.3 — 0.2 (the interface of a vision system: configuration sequence, vision controls with live feedback, three settings levels, image overlays) on **shadcn/ui + Tailwind + React Aria** (TD-29, revised) and **in Portuguese and English** (TD-30) |
+| Date | 2026-10-16 |
 | Author | Lucas (developer and maintainer) |
-| Status | In use. Replaced the Preact + htm prototype, which was deleted in VIA-0033 (TD-20 revised). |
+| Status | Design for review. Replaces 0.1 (14/10/2026) and 0.2 (same day as 0.3; 0.2 planned a migration to Mantine, reverted by the owner after weighing the trade-offs). Sections 1–16 keep the numbers of 0.1, which code comments and tasks cite; sections 17–19 are new. What is built today is in §15. |
 
-Related documents: 02 — Requirements (FR-UI-*, FR-PLT-*, FR-ADM-*) · 03 — Architecture (§10 API) · 04 — Technical Decisions (TD-11, TD-19, TD-20) · `docs/design/DESIGN-IS-2026-10-14/` (audit of the prototype).
+Related documents: 02 — Requirements (FR-UI-*, FR-PLT-*, FR-ADM-*, FR-JOB-14) · 03 — Architecture (§10 API, §14 fixtures, §15 tools, §16 machine interface) · 04 — Technical Decisions (TD-11, TD-20, **TD-29**) · `docs/design-system.md` (practical guide) · `docs/design/DESIGN-IS-2026-10-14/` (audit of the prototype).
 
+**What changed in 0.2, in one paragraph.** Version 0.1 built a correct, accessible admin application. It did not yet feel like the software of a vision system. The editor asked for numbers nobody knows by heart (an HSV range, a minimum score). It showed every parameter of a tool in one long form. The image was a third of the screen. The order of the steps did not follow the order of the work: the reference image came after the tools that need it. Version 0.2 reorganizes the interface around **the order in which a station is set up** (§4.3). That order is the same in the market leaders (Cognex EasyBuilder: connect → set up image → locate part → inspect part → I/O → communication → save → run; Keyence IV: image optimization → master registration → tool settings → output assignment) and in our own pipeline (architecture §7.1). Version 0.2 also makes the image the centre of every configuration screen (§10). It replaces typed numbers with **graphical controls that show the effect on the next capture** (§19). It shows settings at **three levels** (§17). It lets the user turn the **image overlays** on and off (§18). The component base **stays shadcn/ui + Tailwind**, extended with **React Aria** for the colour, range and number controls and with shadcn's `Sidebar`, `Resizable`, `Command` and `Chart` (§3, TD-29). The interface becomes **bilingual, Portuguese and English** (§11, TD-30).
 
 ---
 
 ## 1. Purpose and scope
 
-The web interface is **how the system is operated**: the operator watches results; the supervisor manages jobs, results and backups; the maintainer sets up cameras, tools and regions, and configures the system. Like the software of a commercial vision system, but for any station (TD-19), not only the packaging one.
+The web interface is **how the system is operated**:
+- the **operator** watches results;
+- the **supervisor** manages jobs, results and backups, and fine-tunes tolerances;
+- the **maintainer** commissions the station, sets up cameras, fixtures and tools, and configures the system.
 
-In scope: every screen listed in section 7, access control in the interface (section 8), the editor with regions drawn on the live image (section 10), and the contract with the API (section 9).
+It should feel like the software of a commercial vision system, but for any fixed station (TD-19).
 
-Out of scope: a mobile app, remote access over the plant network (allowed later by configuration, NFR-SEC-3), languages other than Portuguese (the code is prepared, section 11), charts and dashboards beyond the shift counters.
+**In scope:**
+- every screen listed in §7;
+- the configuration sequence (§4.3);
+- the image workspace and region editor (§10);
+- the vision controls (§19);
+- the settings levels (§17);
+- the overlays (§18);
+- access control in the interface (§8);
+- the API the interface needs (§9);
+- the two interface languages (§11).
 
-The Preact + htm prototype of task VIA-0013 was deleted when the React operator screen reached parity (task VIA-0033).
+**Out of scope:**
+- a mobile app;
+- remote access over the plant network (allowed later by configuration, NFR-SEC-3);
+- languages other than Portuguese (pt-BR) and English;
+- a dashboard product. Statistics stay limited to what tuning and supervision need (§7.13).
 
 ---
 
@@ -29,11 +46,20 @@ The Preact + htm prototype of task VIA-0013 was deleted when the React operator 
 
 | Role | Where and how | What matters |
 |---|---|---|
-| **Operator** (no login) | Fixed monitor at the station (assumed 21–24" 1080p, possibly touch), looks from about 2 m, hands busy with the parts | The verdict, readable at once; nothing to learn (NFR-USA-1/2); no way to break the system by accident |
-| **Supervisor** | Same PC or another on the plant network, mouse and keyboard | Select the job, review failures, correct wrong results, keep the backup (NFR-USA-3) without the maintainer |
-| **Maintainer** | At the PC, with the camera in reach | Tune camera settings while watching, draw regions, test a job on the current image, change settings; full visibility of what the system did and why |
+| **Operator** (no login) | Fixed monitor at the station (21–24", 1080p, possibly touch). Looks from about 2 m with busy hands | The verdict, readable at once; on FAIL, *where* on the part; nothing to learn (NFR-USA-1/2); no way to break the system by accident |
+| **Supervisor** | Same PC or another on the plant network, mouse and keyboard | Select the job, review failures, correct wrong results, keep the backup (NFR-USA-3), and **fine-tune a tool's tolerance** when the product drifts, without touching regions, camera or tools (FR-JOB-14, §7.12) |
+| **Maintainer** | At the PC, with the camera and parts in reach | Commission the station (§7.11), build and tune jobs while watching the image, see what the system measured and why, configure the machine interface |
 
-Contexts that shape the design: shop-floor light (dark theme default, strong contrast), gloves and touch (large targets in kiosk mode), a PC with no internet (everything served locally, fonts included), unattended running (the screen must show the truth about the system, never a stale or hopeful state).
+Contexts that shape the design:
+- **Shop-floor light:** dark theme by default, strong contrast.
+- **Gloves and touch:** large targets in kiosk mode.
+- **A PC with no internet:** everything is served locally, fonts included.
+- **Unattended running:** the screen shows the truth about the system, never a stale or hopeful state.
+- **A CPU-only PC** (tier M or R, NFR-PERF-5): live feedback in the editor is rate-limited by what the PC measured (§19.1).
+
+**Screen sizes:**
+- Operator screen: 1920×1080 kiosk.
+- Configuration screens: designed for 1920×1080; they must stay fully usable at **1366×768** (§10.1).
 
 ---
 
@@ -41,52 +67,61 @@ Contexts that shape the design: shop-floor light (dark theme default, strong con
 
 ### 3.1 Decisions
 
+The foundation of 0.1 stays: it is tested, accessible and owned by us (23 base components, tokens with tested contrast, design-rule and accessibility tests, the `/design` gallery). 0.3 **adds** what the vision interface needs. Why not a full library such as Mantine: the vision controls (gauge, HSV range, histograms, image workspace) are our own code with any library, and replacing the foundation would redo a tested layer on top of the screens that are being redesigned anyway (TD-29).
+
 | Area | Choice | Why | Instead of |
 |---|---|---|---|
-| Language | **TypeScript** (strict; version 5.9 because `openapi-typescript` and `typescript-eslint` do not yet accept a newer one) | Types across 20+ screens and the API client; refactors stay safe for one developer | JavaScript |
-| UI library | **React** (current stable, pinned by lockfile) | The decision of the owner; the largest ecosystem for forms, tables, canvas and accessibility primitives | Preact + htm (prototype) |
-| Build | **Vite** | Fast dev server with proxy, one hashed bundle with route-level splitting, no custom tooling | Webpack, no build |
-| Styling | **Tailwind CSS** with design tokens as CSS variables | One visible system (audit principle #3); utilities keep components consistent; no runtime | CSS-in-JS, hand-written CSS |
-| Components | **shadcn/ui** pattern: components copied into the repo, built on **Radix UI** primitives, `class-variance-authority` for variants | Accessible dialogs, menus, selects, tabs, tooltips out of the box; we own the code, nothing hides behind a theme API; MIT | Material UI, Ant Design, Mantine (large, visually generic, harder to bend to an HMI look) |
-| Icons | **lucide-react** (ISC) | One consistent set, tree-shaken | Mixed icon sets |
-| Fonts | **IBM Plex Sans** and **IBM Plex Mono**, self-hosted via `@fontsource` (OFL) | Legible at distance, tabular figures, no CDN | System fonts, Google Fonts |
-| Routing | **React Router** (data router, browser history) | Nested layouts per role, route guards, lazy routes; server falls back to `index.html` | Hash routes |
-| Server state | **TanStack Query** | Caching, invalidation after mutations, retries, loading and error states for every REST call | Hand-written fetch state |
-| Live state | **Zustand** store fed by the WebSocket | High-frequency status and frames without re-rendering the tree; ~1 KB | Context for live data |
-| API client | **openapi-typescript** types and **openapi-fetch**, generated from the FastAPI OpenAPI document | The server defines the contract; a CI check fails if the generated file is stale | Hand-written types |
-| Forms | **React Hook Form** + **Zod** for our own forms; a small **`SchemaForm`** renderer for tool parameters (section 7.3) | Tool parameters come as JSON Schema from Pydantic; a renderer for the subset we use (about 300 lines, tested) matches our design better than a generic form library | RJSF |
-| Tables | **TanStack Table** | Sorting, column control, pagination for results and audit | Hand-built tables |
-| Toasts | **sonner** | Accessible live-region toasts | Custom |
-| Region editor | HTML `<canvas>` for the image + **SVG overlay** for shapes, pointer events, own reducer for undo/redo (section 10) | Handles, keyboard control and hit-testing are easier on SVG than on canvas | Konva, Fabric |
-| Tests | **Vitest**, **Testing Library**, **MSW**, **Playwright**, **axe-core** (dev only) | Section 13 | — |
-| Lint/format | ESLint 9 (+ `typescript-eslint`, `jsx-a11y`, `react-hooks`; version 9 because `jsx-a11y` does not yet accept 10) and Prettier | Catches accessibility and hook mistakes at commit time | — |
-| Language of the interface | **Portuguese (pt-BR) only**; every string in one module, `src/texts.ts`, no translation library | The software is not multilingual (owner, 2026-10-14) | i18n framework |
+| Language | **TypeScript** (strict) | Types across 20+ screens and the API client; refactors stay safe for one developer | JavaScript |
+| UI library | **React 19** | Owner's decision; largest ecosystem | — |
+| Build | **Vite** | Fast dev server with proxy, hashed bundle, route-level splitting | — |
+| Base components | **shadcn/ui** pattern, kept: components copied into the repo, built on **Radix** primitives, variants with `class-variance-authority` | We own the code; already built and tested (0.1) | Mantine (0.2, reverted: full re-foundation), MUI, Ant Design |
+| **Colour, range and number controls** | **React Aria Components** (Adobe, Apache-2.0), through shadcn's React Aria variants where they exist and our own wrappers otherwise: `Slider` (one or more thumbs), `NumberField` (units, locale formatting), `ColorArea`, `ColorSlider`, `ColorField` (HSB channels), `DropZone` — **TD-29** | Best-in-class accessibility for exactly the controls the vision interface leans on; HSB colour channels and multi-thumb sliders are the base of `HsvRangePicker` and `ToolToleranceGauge`; numbers and dates formatted per locale (TD-30) | Radix Slider alone (no colour primitives, no number field) |
+| Styling | **Tailwind CSS** with design tokens as CSS variables, kept | One styling system; tokens already enforced by tests (§6) | CSS modules |
+| Layout and navigation | shadcn **`Sidebar`** (shell), **`Resizable`** (workbench panels, on `react-resizable-panels`), **`Command`** (Ctrl+K palette, on `cmdk`), **`Drawer`**, **`Accordion`** | From the same catalog, same tokens | Hand-built shell and panels |
+| Forms | **React Hook Form** + **Zod** for our own forms, kept; **SchemaForm v2** for tool and locator parameters (§19.2) | The schema-driven form keeps "a new tool needs no screen code" (FR-PLT-2) | — |
+| Toasts, dialogs | **sonner** and our `ConfirmDialog` on Radix Dialog, kept | Already built and tested | — |
+| Charts (low frequency) | shadcn **`Chart`** (on Recharts, MIT) | Results trends, reason-code Pareto, margin trends (§7.13); styled with our tokens | — |
+| Charts (live, ≥ 5 Hz) | **Own canvas components** (histogram, profile, gauge) | 256-bin histograms and line profiles redrawn per capture; canvas is cheaper than SVG charts at this rate | A charting library per frame |
+| Reordering | **`@dnd-kit/core`** + **`@dnd-kit/sortable`** (MIT; the stable 6.x line, not the pre-1.0 `@dnd-kit/react`) | Drag to reorder tools and anchors, with keyboard support | Up/down buttons only |
+| **Interface languages** | **Lingui** (`@lingui/core`, `@lingui/react`, `@lingui/cli`, `@lingui/vite-plugin`; MIT) with **PO catalogs** for `pt-BR` and `en` — **TD-30** | Messages extracted from the code, compiled at build (small runtime, missing translations fail the build), ICU plurals; PO is the same format the Python side uses for its texts (gettext/Babel), so one translation workflow serves both | `texts.ts` (pt-BR only, 0.1); i18next (runtime JSON, larger, no compile-time check) |
+| Icons | **lucide-react** (ISC), kept | Already used everywhere | — |
+| Fonts | **IBM Plex Sans** and **IBM Plex Mono**, self-hosted (OFL), kept | Legible at distance; tabular figures for every measured value; Latin coverage for both languages | — |
+| Routing, server state, live state | **React Router**, **TanStack Query**, **Zustand**, kept | — | — |
+| API client | **openapi-typescript** + **openapi-fetch**, generated, kept | The server defines the contract | — |
+| Image workspace | `<canvas>` for the frame + **SVG overlay** for shapes, kept and extended (§10) | Handles, hit-testing and keyboard focus are easier on SVG | Konva, Fabric |
+| Tests | **Vitest**, **Testing Library**, **MSW**, **Playwright**, **axe-core** (dev only), kept | §13 | — |
 
-Licences (TD-18): React, Radix, Tailwind, shadcn/ui code, TanStack, Zustand, sonner, Zod, React Hook Form, Vite: MIT. lucide-react: ISC. IBM Plex: SIL OFL. axe-core is MPL-2.0 and is used only in tests, never shipped. A `THIRD_PARTY_LICENSES` list for the bundle is generated in CI and fails on a disallowed licence.
+Licences (TD-18): React, Radix, Tailwind, shadcn/ui code, Recharts, react-resizable-panels, cmdk, dnd-kit, Lingui, TanStack, Zustand, sonner, Zod, React Hook Form, Vite are MIT; React Aria Components is Apache-2.0; lucide is ISC; IBM Plex is OFL. axe-core (MPL-2.0) is used only in tests. The bundle's licence list is generated in CI and fails on a disallowed licence.
 
 ### 3.2 Project layout
 
 ```
-frontend/                       # source (needs Node only to build)
-  package.json  package-lock.json  vite.config.ts  tsconfig.json  eslint.config.js
-  index.html
+frontend/
+  lingui.config.ts                  # locales pt-BR (source) and en; PO catalogs
   src/
     main.tsx
-    app/            router.tsx  providers.tsx  shell/ (AppShell, NavRail, TopBar, StatusStrip)  guards.tsx
-    api/            client.ts  schema.d.ts (generated)  queries/ (jobs, results, system, users, audit, camera, tools)
-                    live.ts (WebSocket client + Zustand store)  errors.ts
-    features/       operator/ jobs/ editor/ camera/ results/ dataset/ settings/ access/ audit/ about/ auth/
+    app/            router.tsx  providers.tsx (I18nProvider of Lingui + React Aria, query, theme)  shell/  guards.tsx
+    locales/        pt-BR/messages.po  en/messages.po   (compiled at build)
+    api/            client.ts  schema.d.ts (generated)  queries/  live.ts  editor-session.ts (§9.5)
+    features/
+      operator/  jobs/  editor/  tune/  setup/  results/  stats/  machine/  dataset/  settings/  access/  audit/  about/  auth/
     components/
-      ui/           shadcn-based primitives (Button, Dialog, Select, Tabs, Table, Badge, Tooltip, ...)
-      domain/       VerdictPanel  LiveCanvas  StatusIndicator  RoiEditor  SchemaForm  ReportList  ImageCompare
-    lib/            format.ts  units.ts  keyboard.ts  geometry.ts
-    texts.ts                        # every user-facing string, in pt-BR (the software is not multilingual)
-    styles/         tokens.css  globals.css
-    test/           setup.ts  msw/  fixtures/
-  e2e/              *.spec.ts       # Playwright, against scripts/e2e_station.py
+      ui/           shadcn components (Radix, and React Aria variants for slider, number, colour)
+      vision/       ImageWorkspace  OverlayLayers  Filmstrip  ToolToleranceGauge  HsvRangePicker  Eyedropper  MaskPreview
+                    Histogram  ProfilePlot  AngleRangeDial  PoseMarker  TemplateCropper  FocusMeter  ExposureControl
+                    ToolList  StepRail  LevelSwitch  VerdictPanel  ResultChips
+      form/         SchemaForm (v2), widget registry (§19.2)
+    lib/            format.ts (locale-aware)  units.ts  keyboard.ts  geometry.ts  levels.ts  overlay.ts
+    styles/         tokens.css (all colour values, including overlay tokens)  globals.css
+  e2e/
 ```
 
-Rules: a feature folder owns its screens, queries and components; `components/domain` holds pieces shared by two or more features; nothing in `components/ui` knows the domain. No user-facing string outside `texts.ts`.
+**Rules:**
+- A feature folder owns its screens, queries and private components.
+- `components/ui` knows nothing of the domain.
+- `components/vision` holds the vision controls (§19). They are shared by the editor, the fine-tune screen, the camera screen and the operator screen, and know the domain.
+- No user-facing string outside the message catalogs: text is written with Lingui's `t` / `<Trans>` in the source language (pt-BR) and translated in `en/messages.po`.
+- No colour value outside `styles/tokens.css`.
 
 ---
 
@@ -95,277 +130,573 @@ Rules: a feature folder owns its screens, queries and components; `components/do
 ### 4.1 Sitemap by role
 
 ```
-/                      Operator (kiosk)                       everyone
-/jobs                  Jobs                                   supervisor+
-/jobs/:id              Job detail, versions                   supervisor+
-/jobs/:id/edit         Job editor  (steps below)              maintainer
-/camera                Camera setup (live)                    maintainer
-/results               Results                                supervisor+
-/results/:id           Result detail (also as side panel)     supervisor+
-/dataset               Dataset and collection                 maintainer
-/settings              System settings                        maintainer
-/access                Access (passwords, sessions)           maintainer
-/audit                 Audit log                              supervisor+
-/about                 Versions, licences, support bundle     supervisor+
-/login                 Login (also a dialog from anywhere)    —
-/design                Component gallery (development only)   —
+/                      Estação (operator, kiosk)                         everyone
+/setup                 Comissionamento (first start wizard, §7.11)       maintainer
+/jobs                  Jobs                                              supervisor+
+/jobs/:id              Job detail, versions                              supervisor+
+/jobs/:id/edit         Editor de job (the sequence of §4.3)              maintainer
+/jobs/:id/tune         Ajuste fino de tolerâncias (§7.12)                supervisor+
+/results               Resultados                                        supervisor+
+/results/:id           Resultado (side panel or page)                    supervisor+
+/stats                 Estatísticas e margens (§7.13)                    supervisor+
+/machine               Máquina: interface com o CLP ao vivo (§7.14)      maintainer
+/dataset               Dataset e coleta                                  maintainer
+/settings/*            Configurações: estação, câmera, armazenamento,    maintainer
+                       rede, máquina, desempenho
+/access                Acessos                                           supervisor+
+/audit                 Auditoria                                         supervisor+
+/about                 Sobre                                             supervisor+
+/login                 Entrar (also a dialog from anywhere)              —
+/design                Galeria de componentes (development only)         —
 ```
 
 ### 4.2 Shell
 
-- **Operator mode** (route `/` with no login): full-bleed, no navigation, a small lock button at the top right. This is what Edge shows in kiosk mode at start-up.
-- **Admin mode** (after login): a left navigation rail (icons + labels, collapsible) with only the entries the role may open; a top bar with the job and version in use, a **status strip** and the user menu (role, logout). The operator screen stays one click away ("Estação").
-- **Status strip**, always visible in admin mode and as the footer of the operator screen: three named indicators — **Sistema** (the browser reaches the core), **Câmera** (connected, with last-frame age), **Registro** (results are being written; red if the recorder fails). Each shows a dot **and** a word; clicking opens the detail. This replaces the single "Conectado" badge of the prototype (audit principle #6).
-- **Global behaviour:** an offline banner when the live socket is down (the screen never shows a stale verdict, section 7.1); on session expiry a login dialog opens over the current page and the page is kept; on `403` a plain "sem permissão" page; an idle timeout (setting, default 10 min) logs the supervisor or maintainer out and returns to the operator screen.
+- **Operator mode** (`/` without login): full-bleed, no navigation, a small lock button at the top right. This is what Edge shows in kiosk mode at start-up.
+- **Admin mode** (after login): the shadcn `Sidebar` layout with:
+  - **Navigation rail** (`Sidebar`, icons + labels, collapsible to icons), grouped by the four areas of work, separated by space and a divider rather than by labels:
+    - **Operação:** Estação.
+    - **Configuração:** Jobs, Máquina.
+    - **Análise:** Resultados, Estatísticas.
+    - **Sistema:** Configurações, Dataset, Acessos, Auditoria, Sobre.
+  - **Top bar:**
+    - the active job and version;
+    - the **station mode badge**: *Em produção* (green outline) or *Em manutenção* (amber, while an editor or the machine monitor holds the station paused);
+    - the user menu (role, settings level, **language**, theme, logout). Language is changed once or a few times per project, so it never sits in the top bar; the operator screen language is *Configurações › Estação*.
+  - **Editor top bar** (§7.3) adds, next to the job name, the **trigger control** (`Disparo: Pela imagem ● peça parada há 0,6 s ▾`): the job's trigger mode and what the trigger would do now on the live image (*aguardando peça*, *aguardando sinal · DI1*, *pronto*, *a cada 500 ms*, *sem câmera*). Its menu picks among the four modes, each with a one-line explanation, and links to step 5 for the presence area, still time and delays. It is a job setting (draft), shown in the top bar because it decides how every inspection starts.
+  - The operator screen is one click away ("Estação").
+- **Status strip** (footer), always visible in admin mode and on the operator screen. It has four named indicators, each a dot **and** a word; clicking one opens its detail:
+  - **Sistema:** the browser reaches the core.
+  - **Câmera:** connected, frames per second, last-frame age.
+  - **Máquina:** connected, heartbeat age. Shown only when a connector is enabled.
+  - **Registro:** results are being written.
+- **Global behaviour:**
+  - An offline banner when the live socket is down. The screen never shows a stale verdict (§7.1).
+  - Session expiry opens a login dialog over the current page and keeps the page.
+  - A `403` shows a plain "sem permissão" page.
+  - An idle timeout returns to the operator screen and **resumes the station if an editor had paused it**, with a note in the audit log.
+
+### 4.3 The order of work (new in 0.2)
+
+A station is set up in a fixed order, because each step needs the one before it:
+
+```
+ Instalação (uma vez)                      Job (por produto)                                      Produção
+┌───────────────────────┐   ┌───────────────────────────────────────────────────────────────┐   ┌──────────────┐
+│ Comissionamento §7.11 │   │ 1 Imagem → 2 Amostras → 3 Âncora → 4 Ferramentas →            │   │ Estação §7.1 │
+│ câmera, desempenho,   │──▶│ 5 Disparo e qualidade → 6 Resultado e saídas → 7 Validar →    │──▶│ Ajuste fino  │
+│ senhas, máquina       │   │ 8 Salvar e ativar                                  §7.3       │   │ §7.12        │
+└───────────────────────┘   └───────────────────────────────────────────────────────────────┘   └──────────────┘
+```
+
+**Answer to "what comes first?":**
+- **The camera is chosen once per installation**, in the commissioning wizard (and later in *Configurações › Câmera*). It is system configuration (architecture §4.5), not part of a job.
+- **A job begins with the image of this product**: exposure, focus and white balance on the camera already chosen.
+- Then the job **captures the images it will learn from**: the reference image and samples marked *Boa* and *Ruim*.
+- Only then come the fixture and the tools, because both are taught and checked on those images.
+
+The 0.1 editor captured the reference at step 6, after the tools that need it. 0.2 moves it to step 2.
+
+| # | Step | What the user does | Needs | Done when | Mirrors |
+|---|---|---|---|---|---|
+| 1 | **Imagem** | Exposure, gain, white balance, focus, zoom on the live image; histogram and focus meter guide each setting | A connected camera | Settings applied and read back without errors | Cognex *Set Up Image*, Keyence *Image optimization* |
+| 2 | **Amostras** | Capture the **imagem de referência** (a good part, nominal position) and **amostras**: more good parts (*Boa*) and known defects (*Ruim*), placed as in production | Step 1 | Reference image captured | Keyence *Master registration*; our reference set (FR-JOB-9) |
+| 3 | **Âncora** | Choose how the part is found (or *sem âncora*: the part is always in the same place); teach it on the reference; set the allowed angle and shift; see it found on every sample | Step 2 | Found on every *Boa* sample, or skipped | Cognex *Locate Part* (fixture), architecture §14 |
+| 4 | **Ferramentas** | Add tools, draw their regions on the anchor, set what they measure and their tolerances with gauges that show every sample | Step 2 (and 3 if anchored) | At least one tool; every *Boa* passes and every *Ruim* fails at least one tool | Cognex *Inspect Part*, Keyence *Tool settings* |
+| 5 | **Disparo e qualidade** | How an inspection starts (image, machine, button, continuous); the presence area; image quality gates, proposed from the samples | Step 2 | Values set (defaults are valid) | Cognex trigger settings |
+| 6 | **Resultado e saídas** | Which tools decide; the operator texts; the values published to the machine (FR-INT-11) | Step 4 | Defaults are valid | Keyence *Output assignment*, Cognex *Inputs/Outputs* |
+| 7 | **Validar** | Run the job on all samples; see the time budget on this PC (FR-ADM-5); compare with the version in production (A/B replay, FR-JOB-12) | Step 4 | All samples as expected, budget met (or accepted with a note) | Our verification (architecture §7.3) |
+| 8 | **Salvar e ativar** | Write the note, save version n+1, optionally activate it with verification | Step 7 | Saved | Cognex *Save Job* / *Run Job* |
+
+**Rules of the sequence** (FR-UI-11):
+- **Guided, not locked.** The step rail shows every step with its state:
+  - *a fazer* (empty circle);
+  - *feito* (check);
+  - *precisa de atenção* (amber, with the reason on hover);
+  - *bloqueado* (lock, with what it needs: "Capture a imagem de referência primeiro").
+  A blocked step can be opened to read but not edited. Everything else can be visited in any order. *Próximo passo* at the bottom of each step leads forward.
+- **Changes ripple visibly.** If step 1 changes the exposure after tools were tuned, steps 4 and 7 turn *precisa de atenção* ("A imagem mudou depois que as ferramentas foram ajustadas; rode Validar"). Nothing is silently invalidated.
+- **Testar is always there** (top bar). It runs the whole draft on the current image or on all samples.
+- **Editing an existing job** opens at step 4 (Ferramentas). That is where most edits happen, and the rail stays one click away.
+- **The same order** appears on the job detail page as a read-only summary ("Imagem · Amostras 12 boas / 4 ruins · Âncora forma ±15° · 5 ferramentas · Disparo pela máquina · Validado em 16/10").
+
+### 4.4 Breadboard of the editor flow
+
+`mode: candidate-shape`. It becomes `selected-design` when this document is accepted. Question resolved: does the reordered sequence reach a saved, validated job with the image always in view, and is every visible consequence fed by a real source?
+
+**Places**
+
+| ID | Place | Description |
+|---|---|---|
+| P1 | Jobs list | Entry: *Novo job* or *Editar* |
+| P2 | Editor workbench | Step rail, image workspace, inspector, result bar (§10.1). Steps are local states of P2: the image stays, the inspector changes |
+| P2.1 | Inspector: Imagem | Camera controls, histogram, focus meter |
+| P2.2 | Inspector: Amostras | Capture reference, capture and label samples, filmstrip |
+| P2.3 | Inspector: Âncora | Locator choice, teaching, angle/shift ranges, results per sample |
+| P2.4 | Inspector: Ferramentas | Tool list + selected tool's sections and gauges |
+| P2.5 | Inspector: Disparo e qualidade | Trigger mode, presence area, quality gates |
+| P2.6 | Inspector: Resultado e saídas | Deciding tools, texts, machine values |
+| P2.7 | Inspector: Validar | Run on samples, budget, A/B against production |
+| P3 | Save dialog | Note, save, optionally activate (blocking) |
+| P4 | Activation report | Verification result (blocking) |
+| P5 | Core (system) | Editor session, pipeline, camera, job store |
+
+**UI affordances**
+
+| ID | Place | Affordance | Control | Wires Out | Returns To |
+|---|---|---|---|---|---|
+| U1 | P1 | *Novo job* | click | → N1 | → P2 (step 1) |
+| U2 | P2 | Step rail item | click | → (local step state S1) | P2.x |
+| U3 | P2.1 | Exposure / focus / WB controls | drag | → N2 | U4, U5 |
+| U4 | P2.1 | Histogram with clipping % | display | — | — |
+| U5 | P2.1 | Focus meter with peak hold | display | — | — |
+| U6 | P2.2 | *Capturar referência* | click | → N3 | U7 |
+| U7 | P2.2 | Filmstrip (reference, Boa, Ruim) | display / click | → S2 select | image workspace U12 |
+| U8 | P2.2 | *Capturar como Boa / Ruim* | click | → N3 | U7 |
+| U9 | P2.3 | Locator picker + teach on reference | click / drag | → N4 | U10, pose on U12 |
+| U10 | P2.3 | Found / not found per sample | display | — | — |
+| U11 | P2.4 | Tool list (add, reorder, enable) | click / drag | → S1 draft | U12, U13 |
+| U12 | P2 | Image workspace with overlay layers | view / draw | → S1 (regions) | — |
+| U13 | P2.4 | Tolerance gauge (live needle, sample dots, draggable limits) | drag | → S1 → N2 | U13, U12, U16 |
+| U14 | P2.4 | Color eyedropper / HSV range | drag on image | → N5 | U13, mask on U12 |
+| U15 | P2.4 | *Ajustar pelas amostras* | click | → N6 | U13 (proposed limits) |
+| U16 | P2 | Result bar (verdict, per-tool chips, time vs budget) | display | — | — |
+| U17 | P2.7 | *Validar tudo* / *Comparar com produção* | click | → N6, N7 | report in P2.7, step states |
+| U18 | P2 | *Salvar* | click | → P3 | — |
+| U19 | P3 | *Salvar* / *Salvar e ativar* | click | → N8 | → P4 or P1 |
+
+**Non-UI affordances**
+
+| ID | Place | Affordance | Wires Out | Returns To |
+|---|---|---|---|---|
+| N1 | P5 | Create draft (from template or from version n) | → S1 | P2 |
+| N2 | P5 | **Editor session**: on each new frame (rate-limited, §19.1) run the draft through the pipeline; send measured values, poses, overlays | → S3 | U4, U5, U12, U13, U16 |
+| N3 | P5 | Capture frame into the draft (reference or sample with label) | → S2 | U7 |
+| N4 | P5 | Teach locator on reference; locate on every sample | → S1 | U10, U12 |
+| N5 | P5 | Propose color range from sampled pixels (percentiles) | → S1 | U14, U13 |
+| N6 | P5 | Batch test: run draft on all samples, per-tool values | → S3; propose limits | U13 dots, U15, U17 |
+| N7 | P5 | A/B replay against the active version's recorded frames | — | P2.7 report |
+| N8 | P5 | Save version (+ verify + activate) | → job store | P4, P1 |
+
+**Stores**
+
+| ID | Store | Description |
+|---|---|---|
+| S1 | Draft | Job draft in the browser (autosaved) and in the editor session |
+| S2 | Sample library | The draft's reference image and samples (become `reference/` and `tests/` of the version) |
+| S3 | Measurements | Last live result and last batch results, per tool and sample |
+
+**Trace (primary scenario):** U1 → N1 → P2.1 (U3 → N2 → U4/U5) → P2.2 (U6/U8 → N3 → S2 → U7) → P2.3 (U9 → N4 → U10) → P2.4 (U11, U12, U14 → N5 → U13; U15 → N6 → U13) → P2.7 (U17 → N6/N7) → U18 → P3 → U19 → N8 → P4.
+
+**Reverse trace of U13** (the gauge):
+- live needle ← N2 ← frames;
+- sample dots ← N6 ← S2;
+- limits ← S1 ← U13/U15.
+
+All sources exist. **Gap:** N2 and N6 need new API endpoints (§9.5).
 
 ---
 
 ## 5. Design principles
 
-The audit of the prototype (18/30) is in `docs/design/DESIGN-IS-2026-10-14/`. The redesign follows Rams' principles in this order of priority and the habits of **high-performance HMI** (ISA-101 style): the screen is calm and neutral; **colour carries meaning and only meaning**.
+The audit of the prototype is in `docs/design/DESIGN-IS-2026-10-14/`. The redesign follows Rams' principles and the habits of **high-performance HMI** (ISA-101 style): the screen is calm and neutral; **colour carries meaning and only meaning**.
 
-1. **Useful (#2).** The operator reads the verdict in under a second from 2 m. The supervisor and maintainer reach any task in at most three clicks.
-2. **Understandable (#4).** Every control has a plain Portuguese name; one concept, one word (glossary, section 11). No jargon on the operator screen.
-3. **As little design as possible (#10).** No decoration; no gradients or shadows on the dark theme except overlays; elements are removed until removing one breaks the task.
-4. **Honest (#6).** Indicators claim only what they measure; a state the system does not know is shown as unknown, never as OK.
-5. **Thorough (#8).** Every screen has designed loading, empty, error, success, disabled, focus and offline states; they are part of the definition of done.
-6. **Aesthetic (#3).** One visible system of tokens (section 6). No orphan values.
-7. **Unobtrusive, long-lasting, innovative-with-restraint (#5, #7, #1).** Neutral graphite surfaces, a single accent, system-quality typography. Nothing that dates itself.
+The principles of 0.1 stay:
+1. Useful.
+2. Understandable.
+3. As little design as possible.
+4. Honest.
+5. Thorough.
+6. Aesthetic.
+7. Long-lasting.
+
+Version 0.2 adds five principles of **vision software**:
+
+8. **The image is the workspace.** Every configuration step shows the image, as large as the screen allows. Settings live beside it, never instead of it. Whatever a setting changes is visible on the image.
+9. **Every number has a picture.** A threshold is never only a number field. It is a gauge that shows where the current measurement is, where the samples are, and where the limit sits (§19.3). A colour range is a band on a colour bar plus a mask on the image (§19.4). The number box stays, for precision.
+10. **Measure before you tune.** The user sees the measured value before choosing a limit. Limits can be proposed from labelled samples (*Ajustar pelas amostras*, FR-UI-14), as vision sensors do with OK/NG registration. The user always confirms.
+11. **Essential first.** Each tool shows the few settings that decide most jobs. More appear when the user asks for them (§17). Hiding a setting never hides that it was changed.
+12. **The same layout everywhere.** Every tool's inspector has the same sections in the same order (§19.2). The image workspace, filmstrip and result bar look and behave the same in the editor, the fine-tune screen and the camera screen.
 
 ---
 
 ## 6. Design system
 
-All values are CSS variables in `styles/tokens.css`; Tailwind is configured to expose only these. Dark is the default; light follows `prefers-color-scheme` and a user setting. Contrast figures below are WCAG ratios computed from these values.
+The values and the mechanism of 0.1 are kept: CSS variables in `styles/tokens.css`, written once per token with `light-dark()`, exposed to Tailwind by `globals.css`, audited for contrast and enforced by tests. 0.3 adds the overlay tokens (§6.1) and the vision controls (§19).
 
 ### 6.1 Colour tokens
 
-Neutrals (8 steps) carry the layout; **four status hues** carry meaning; one accent marks the primary action and focus.
+The neutral, accent and status values of 0.1 are unchanged:
+- **Neutrals:** `--bg-0..3`, `--border`, `--border-strong`, `--border-control`, `--fg`, `--fg-muted`.
+- **Accent:** `--accent`, `--accent-text`.
+- **Status:** `--ok*`, `--fail*`, `--warn*`, `--busy*`.
+
+Each has a dark and a light value. Contrast ratios are as listed in 0.1.
 
 | Token | Dark | Light | Use |
 |---|---|---|---|
 | `--bg-0` | `#0E1116` | `#F4F6F9` | page |
-| `--bg-1` | `#151A21` | `#FFFFFF` | panels, cards |
-| `--bg-2` | `#1B222B` | `#EEF1F5` | inputs, table stripes, secondary buttons |
-| `--bg-3` | `#242D38` | `#E3E8EE` | hover, selected row |
-| `--border` | `#2D3743` | `#CBD3DD` | hairlines |
-| `--border-strong` | `#3D4957` | `#9AA6B4` | emphasised separators |
-| `--border-control` | `#738091` | `#6B7787` | edges of form controls: at least 3:1 on every surface (WCAG 1.4.11), which `--border-strong` is not |
-| `--fg` | `#E8EDF3` | `#14181D` | text (16.1:1 on bg-0 dark, 16.5:1 light) |
-| `--fg-muted` | `#A3AFBD` | `#4B5766` | secondary text (7.8:1 on bg-1 dark, 7.4:1 light) |
-| `--accent` | `#2F6FEB` | `#1F5FD6` | primary button, links, focus ring (white text 4.6:1 / 5.7:1) |
-| `--accent-text` | `#7DB0FF` | `#1F5FD6` | accent as text on surfaces (7.9:1 dark) |
-| `--ok` | `#188257` | `#14754A` | PASS solid (white text 4.8:1 / 5.7:1) |
-| `--ok-text` / `--ok-surface` | `#4CC38A` / `#0F2E22` | `#0F6A41` / `#DDF3E8` | PASS text and soft surface (6.6:1 / 5.7:1) |
-| `--fail` | `#C93338` | `#B42328` | FAIL solid (white text 5.2:1 / 6.5:1) |
-| `--fail-text` / `--fail-surface` | `#FF7C80` / `#3A1316` | `#A81E23` / `#FBE0E1` | (6.6:1 / 5.9:1) |
-| `--warn` | `#F2B01E` | `#F2B01E` | ERROR/attention solid (dark text `#14181D`, 9.3:1) |
-| `--warn-text` / `--warn-surface` | `#F7C948` / `#3B2E0A` | `#7A5200` / `#FCEFC7` | (8.5:1 / 6.0:1) |
-| `--busy-surface` / `--busy-text` | `#10284A` / `#7DB0FF` | `#DCE9FF` / `#1F5FD6` | inspecting, preparing (6.7:1 / 4.7:1) |
+| `--bg-1` | `#151A21` | `#FFFFFF` | panels |
+| `--bg-2` | `#1B222B` | `#EEF1F5` | inputs, stripes |
+| `--bg-3` | `#242D38` | `#E3E8EE` | hover, selected |
+| `--border` / `--border-strong` / `--border-control` | `#2D3743` / `#3D4957` / `#738091` | `#CBD3DD` / `#9AA6B4` / `#6B7787` | hairlines / emphasis / control edges (≥ 3:1) |
+| `--fg` / `--fg-muted` | `#E8EDF3` / `#A3AFBD` | `#14181D` / `#4B5766` | text |
+| `--accent` / `--accent-text` | `#2F6FEB` / `#7DB0FF` | `#1F5FD6` / `#1F5FD6` | primary action, focus, **selection on the image** |
+| `--ok` / `--ok-text` / `--ok-surface` | `#188257` / `#4CC38A` / `#0F2E22` | `#14754A` / `#0F6A41` / `#DDF3E8` | PASS |
+| `--fail` / `--fail-text` / `--fail-surface` | `#C93338` / `#FF7C80` / `#3A1316` | `#B42328` / `#A81E23` / `#FBE0E1` | FAIL |
+| `--warn` / `--warn-text` / `--warn-surface` | `#F2B01E` / `#F7C948` / `#3B2E0A` | `#F2B01E` / `#7A5200` / `#FCEFC7` | ERROR, attention |
+| `--busy-surface` / `--busy-text` | `#10284A` / `#7DB0FF` | `#DCE9FF` / `#1F5FD6` | inspecting, preparing |
 
-Implementation (task VIA-0032): `src/styles/tokens.css` is the only place with values, written once per token with `light-dark(<light>, <dark>)` so the theme follows `prefers-color-scheme` or `<html data-theme="dark|light">`; `globals.css` maps them to Tailwind names (`bg-surface-0..3`, `border-line`, `border-line-control`, `text-fg`, `text-fg-muted`, `bg-accent`, `text-ok-text`, `bg-ok-surface`, `text-on-fail`…) and switches the default Tailwind palette, sizes and radii **off**. `tokens.test.ts` reads the file and checks every text pair at 4.5:1 and the control edges at 3:1 in both themes; `design-rules.test.ts` fails the build on a colour value outside `tokens.css`, an arbitrary pixel value in a class name, or a default palette class.
+**Tailwind mapping** (unchanged from 0.1): `bg-surface-0..3`, `border-line`, `border-line-strong`, `border-line-control`, `text-fg`, `text-fg-muted`, `bg-accent`, `text-accent-text`, `bg-ok` / `text-ok-text` / `bg-ok-surface` (and the same for `fail`, `warn`, `busy`). `tokens.test.ts` checks text pairs at 4.5:1 and control edges at 3:1 in both themes; `design-rules.test.ts` fails the build on a colour value outside `tokens.css`, an arbitrary pixel value in a class name, or a default palette class. React Aria components are styled with the same Tailwind names (their `data-*` state attributes map to Tailwind variants).
 
-Rules: neutral surfaces never carry colour; a status colour is **always** paired with an icon and a word (never colour alone, NFR-USA-2); no more than one solid status surface visible at a time on the operator screen.
+**Overlay tokens** (new in 0.2; CSS variables `--ov-*` in `tokens.css`, read once by `lib/overlay.ts` for the canvas and SVG layers). Overlays are drawn **on camera images**, not on our surfaces, so they need their own set:
+- bright enough to be seen on any product;
+- always drawn over a **1 px dark halo** (`rgba(0,0,0,0.6)`) so they also read on white parts;
+- never used for interface surfaces.
+
+| Token | Value | Line | Tag | Use |
+|---|---|---|---|---|
+| `ov-pass` | `#2ED3B7` | 2 px solid | ✓ + tool name | a tool passed |
+| `ov-fail` | `#FF4F5E` | 3 px solid | ✕ + tool name + reason | a tool failed |
+| `ov-error` | `#FFC233` | 2 px dotted | ! + reason | could not inspect (fixture not found, region outside) |
+| `ov-select` | `#5B8CFF` | 2 px solid + handles | name | the region or fixture being edited |
+| `ov-neutral` | `#FFFFFF` at 70 % | 1 px | name (on hover) | regions not being edited, presence area |
+| `ov-mask` | `#FF3DD8` at 45 % fill, hatched | — | — | colour or threshold mask preview (§19.4) |
+| `ov-pose` | `#5B8CFF` | 2 px axes + angle arc | angle in ° | the fixture's position and angle |
+
+These five hues were run through the dataviz validator on the dark surface:
+- **Normal-vision separation:** passes (worst pair 26.2).
+- **Colour-blind separation:** pass ↔ fail reaches ΔE ≥ 8 only after the green was moved to teal (`#2ED3B7`); the earlier `#36D27E` gave 6.7 for deuteranopia.
+- **Lightness band:** "fails" the chart rule on purpose. Overlays must be bright on dark images; the halo provides the contrast.
+
+Because one pair (`ov-mask` ↔ `ov-select`) sits at 7.9, **colour is never the only code on the image**: pass, fail and error also differ by line weight, dash and tag icon. This keeps NFR-USA-2.
 
 ### 6.2 Typography
 
-IBM Plex Sans for text, IBM Plex Mono for numbers, ids and times (tabular figures). Eight sizes only:
-
-| Token | Size / line | Use |
-|---|---|---|
-| `text-xs` | 12 / 16 | table meta, captions |
-| `text-sm` | 14 / 20 | table and form text, admin default |
-| `text-base` | 16 / 24 | body, operator secondary |
-| `text-lg` | 20 / 28 | card titles, buttons in kiosk mode |
-| `text-xl` | 24 / 32 | page titles |
-| `text-2xl` | 32 / 40 | counters |
-| `text-3xl` | 48 / 56 | reason text on the operator screen |
-| `text-display` | clamp(48px, 5.5vw, 96px) | the verdict word (APROVADO, REPROVADO, ERRO); other headlines use `text-3xl` |
-
-Weights 400, 500, 600. Verdict word 700. No other sizes or weights.
+IBM Plex Sans for text, IBM Plex Mono for every measured number, id and time (tabular figures). The eight sizes and three weights of 0.1 are kept (`text-xs` 12 … `text-3xl` 48, and `text-display` for the verdict, clamp 48–96 px). Measured values in gauges and the result bar use Mono 14 (compact) or 20 (kiosk).
 
 ### 6.3 Space, shape, depth, motion
 
-- **Spacing:** 4 px grid: 4, 8, 12, 16, 24, 32, 48, 64. Nothing else.
-- **Radius:** 6 px (controls), 10 px (cards, dialogs), pill (badges). No other radii.
-- **Depth:** on dark, separation by surface step and hairline, no shadows; dialogs and popovers use `--bg-1` with a border and one shadow token.
-- **Motion:** 120–180 ms ease-out for state changes; nothing animates while idle; a spinner only while a request or inspection is running; `prefers-reduced-motion` removes transitions. Live frames are never animated.
-- **Density:** `kiosk` (min target 56 px, base text 16–20) and `compact` (min target 36 px, base 14). The operator route is always `kiosk`; admin routes `compact`, switchable.
+These are unchanged from 0.1:
+- **Spacing:** the 4 px grid (4, 8, 12, 16, 24, 32, 48, 64).
+- **Radius:** 6 px for controls, 10 px for cards, pill for badges (`rounded-control`, `rounded-card`, `rounded-pill`). The image workspace has **no radius**: an image is a measurement, not a card.
+- **Depth:** separation by surface step and hairline. One shadow, for floating panels only.
+- **Motion:** 120–180 ms for state changes; nothing animates while idle. **Live images and gauge needles are never animated**: the needle jumps to each new measurement, because a smoothed needle would show a value that was never measured.
+- **Density:**
+  - `kiosk`: 56 px targets, 16–20 px text; operator route.
+  - `compact`: 36 px targets, 14 px text; admin routes.
+  - Implemented as in 0.1, with a `data-density` attribute and the density-aware classes (`h-control`, `fs-control`).
 
 ### 6.4 Components
 
-Built on shadcn/ui; each has loading, disabled, error and focus states in the gallery at `/design`.
+The 0.1 base components stay (`components/ui`: Button, Badge, StatusIndicator, Dialog, ConfirmDialog, Sheet, Select, Switch, SegmentedControl, Tabs, Table, Tooltip, Popover, DropdownMenu, Stepper, FileDrop, Skeleton, Spinner, EmptyState, ErrorState, toasts), each with every state in `/design`.
 
-| Component | Notes |
-|---|---|
-| Button | variants `primary`, `secondary`, `ghost`, `danger`; sizes `md`, `lg` (kiosk); icon + label; busy state keeps width |
-| Badge / StatusIndicator | dot or icon + word; tones `ok`, `fail`, `warn`, `busy`, `neutral`, `unknown` |
-| Dialog, Sheet (side panel), AlertDialog | focus trap, focus return, Escape; AlertDialog for impactful actions with a named confirmation ("Ativar versão 7 de Tampa azul?") |
-| Form controls | Input, NumberInput (unit, min/max, step), Select, Switch, Slider (with number box), SegmentedControl, Textarea, FileDrop |
-| Table | TanStack Table: sortable, sticky header, row selection, empty and loading skeleton, pagination |
-| Tabs, Stepper, Breadcrumb | Stepper for the job editor |
-| Toast | success, error (with action), info; stays 5 s, errors until dismissed |
-| Tooltip, Popover, DropdownMenu | keyboard accessible |
-| EmptyState, ErrorState, Skeleton | every list and panel uses them |
-| ReportList | list of checks with pass/fail icon and message (verification and tests) |
-| VerdictPanel | the operator verdict (section 7.1) |
-| LiveCanvas | draws JPEG frames from the live store; fit/fill; optional overlay layer |
-| ImageCompare | side by side or slider: reference vs live, raw vs overlay |
-| RoiEditor | section 10 |
-| SchemaForm | section 7.3 |
+Added in 0.3:
+
+| Component | Source | Use |
+|---|---|---|
+| `Sidebar` | shadcn catalog | Admin shell navigation (§4.2) |
+| `Resizable` | shadcn catalog (`react-resizable-panels`) | Workbench panels (§10.1) |
+| `Command` | shadcn catalog (`cmdk`) | Ctrl+K: go to a job, a step, a tool, a setting |
+| `Accordion`, `Drawer` | shadcn catalog | Inspector sections; filmstrip and inspector at 1366×768 |
+| `Chart` | shadcn catalog (Recharts) | Statistics (§7.13) |
+| `Slider` (multi-thumb), `NumberField` | React Aria (shadcn's React Aria variant, or our wrapper) | Every limit and range: replaces the 0.1 `SliderField` and `NumberInput`, adds locale formatting (`0,80` in pt-BR, `0.80` in en) |
+| `ColorArea`, `ColorSlider`, `ColorField` | React Aria | Base of `HsvRangePicker` and the reference-colour control (§19.4) |
+| `LanguageSwitch` | own | pt-BR / en, in the user menu and on the login dialog (§11) |
+
+**Vision components:** §19.
 
 ### 6.5 Patterns
 
-- **Confirm only what matters:** activate a job, override a failed verification, delete, restore a backup, change a password. Everything else saves directly with an undo toast where possible.
-- **Errors:** a failed request shows what happened in Portuguese and what to do, with a retry; the technical detail is in a collapsible "detalhes".
-- **Empty states** say what the screen is for and offer the first action ("Nenhum job ainda. Importe um arquivo ou crie um job.").
-- **Units** always shown (µs, ms, mm, %); numbers right-aligned in tables, monospaced.
-- **Time:** local time `dd/mm/aaaa hh:mm:ss`; relative time ("há 3 min") with the exact time on hover.
+The patterns of 0.1 are kept:
+- Confirm only what matters.
+- Errors say what happened and what to do.
+- Empty states invite the first action.
+- Units are always shown.
+- Local time format.
+
+New in 0.2:
+- **The draft is the unit of work.** Every change in the editor and the fine-tune screen goes to the draft, autosaved in the browser. *Desfazer/Refazer* (Ctrl+Z/Y) work across steps. Nothing reaches production before *Salvar*, and nothing reaches the station before *Ativar*.
+- **Proposals are never applied silently.** *Ajustar pelas amostras*, the colour eyedropper and *usar o valor atual* show the proposed values as a ghost on the gauge with *Aplicar* and *Descartar*.
+- **Every place that shows a result shows why.** The result bar, the operator screen, the results page and the gauges link a tool's verdict to its region on the image and to the measured value.
 
 ---
 
 ## 7. Screens
 
-For each: purpose, layout, data, actions, states. "Query" = TanStack Query; "live" = the Zustand live store.
+For each screen: purpose, layout, data, actions, states. "Query" means TanStack Query; "live" means the Zustand live store.
 
 ### 7.1 Operator (`/`, everyone)
 
-Purpose: the verdict and nothing that distracts from it (FR-UI-1..5, NFR-USA-1/2).
+**Purpose:** the verdict, and on FAIL *where*, with nothing that distracts (FR-UI-1..5, NFR-USA-1/2).
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ Tampa azul — etiqueta de lote  v7                               🔒 Entrar  │
-├────────────────────────────────────────────┬─────────────────────────────────┤
-│                                            │                                 │
-│                                            │            ✔                    │
-│              LIVE IMAGE                    │        APROVADO                 │
-│        (fit; overlay of what the           │      Tampa presente,            │
-│         last inspection looked at)         │      lote L004211 lido          │
-│                                            │                                 │
-│                                            │  14:32:07 · 310 ms              │
-│                                            │                                 │
-│                                            ├─────────────────────────────────┤
-│                                            │ Últimos: ✔ ✔ ✘ ✔ ✔ ✔ ✔ ✘ ✔ ✔    │
-│                                            │ Hoje  42 total · 39 · 2 · 1     │
-│                                            │ [Inspecionar agora] [Incorreto?]│
-├────────────────────────────────────────────┴─────────────────────────────────┤
-│ ● Sistema   ● Câmera 30 fps   ● Registro                      Aguardando peça│
-└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│ Tampa azul — etiqueta de lote  v8                       [◧ Marcações]        🔒 Entrar │
+├──────────────────────────────────────────────────────────────┬───────────────────────────┤
+│                                                              │            ✕              │
+│                                                              │        REPROVADO          │
+│                    IMAGEM (preenche a área)                  │   Tampa ausente (12% azul)│
+│          contorno vermelho na região "tampa", ✕ tampa        │                           │
+│          contorno verde nas outras, âncora tracejada         │   tampa      ✕   12%      │
+│                                                              │   lote       ✓   L004211  │
+│                                                              │   largura    ✓   29,1 mm  │
+│                                                              │   14:32:07 · 310 ms       │
+├──────────────────────────────────────────────────────────────┤───────────────────────────┤
+│ ▢▢▢▢▢▢▢▢▢▢  últimas 10 (miniaturas com ✓ / ✕ / !)            │ Hoje 42 · 39 ✓ · 2 ✕ · 1 !│
+│                                                              │ [Inspecionar] [Incorreto?]│
+├──────────────────────────────────────────────────────────────┴───────────────────────────┤
+│ ● Sistema  ● Câmera 30 fps  ● Máquina  ● Registro                          Aguardando peça│
+└──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Verdict panel** fills the height of the right column. Fill = the status surface (ok / fail / warn / busy / neutral), a large icon, the word at `text-display`, the reason at `text-3xl`, time and duration small. States: `Aguardando <objeto>` (neutral), `Inspecionando…` (busy), `APROVADO`, `REPROVADO`, `ERRO` (warn), `Câmera desconectada`, `Falha na verificação — chamar manutenção`, `Em manutenção`, `Preparando…`, and **`Conectando…` / `Sem conexão`** (neutral, with the last known state greyed out and clearly marked old; never a stale verdict presented as current).
-- **Live image:** the newest frame, fit to the area; after a result, the overlay of that inspection (regions, found anchor, failing area) until the next object. No frame for 3 s → "Sem imagem da câmera".
-- **Secondary actions** (secondary and ghost weight, below the verdict): **Inspecionar agora** (enabled only when the station is Ready or WaitingStill) and **Resultado incorreto?** (opens a dialog: "O sistema disse REPROVADO. Qual era o resultado certo? [Estava OK] [Estava NÃO OK]").
-- **Last results strip** (last 10, icon + position, hover for time and reason) and **Hoje** counters (total, aprovadas, reprovadas, erros; shift start is a setting).
-- **Footer:** status strip (section 4.2) and the waiting text of the job.
-- **Optional** (setting, off by default): audible alert on FAIL (FR-UI-7).
-- Data: `live` (status, frames, events), `GET /api/state` on connect, `POST /api/trigger`, `POST /api/results/{id}/incorrect`.
-- Accessibility: the verdict is an `aria-live="assertive"` region; the result is also announced as text; all targets 56 px; keyboard works but nothing is bound to a single key.
+**Changes from 0.1:**
+- **The image fills its area.** No letterboxed empty frame; *fit* by default, *fill* as a station setting.
+- **Per-tool lines** under the reason show each tool's verdict and measured value. Only the tools that affect the result are shown; at most 6 lines, with "+ 3 outras" beyond that.
+- **Last results as thumbnails** instead of icons. Touching one freezes that result's image and overlay on the left for 10 s (or until *Voltar ao vivo*), so the operator can show a failure to someone.
+- **Marcações toggle** (FR-UI-9, §18): shows or hides the overlays on the image. The station setting decides whether the operator may use it.
+- **Verdict states** are as in 0.1:
+  - *Aguardando*, *Inspecionando…*, *APROVADO*, *REPROVADO*, *ERRO*;
+  - *Câmera desconectada*, *Falha na verificação*, *Em manutenção*, *Preparando…*;
+  - *Conectando… / Sem conexão*, which never show a stale verdict as current.
+
+  Plus **Teste de desafio pendente** (UC-14) and **Máquina sem sinal** (E601).
+
+**Data:** live (status, frames, events), `GET /api/state` on connect, `POST /api/trigger`, `POST /api/results/{id}/incorrect`, `GET /api/results/{id}/thumb`.
+
+**Accessibility:**
+- The verdict is an `aria-live="assertive"` region and is announced as text.
+- All targets are 56 px.
+- Every verdict has an icon and a word.
 
 ### 7.2 Jobs (`/jobs`, `/jobs/:id`, supervisor+)
 
-Purpose: choose the active job, move jobs between PCs, keep backups (UC-02, UC-04, UC-05, NFR-USA-3).
+These are as built in 0.1 (list, versions, activate with verification, import, export, backup), with three additions:
+- **Detail summary in the order of work (§4.3)**, with each step's state and a link straight to that step in the editor.
+- **Per version:**
+  - *Ajuste fino* (supervisor+, §7.12);
+  - *Editar* (maintainer);
+  - *Comparar com…*, showing the diff as **a list of changes in plain words**, not YAML. For example: "Ferramenta *tampa*: fração mínima 0,80 → 0,75". The YAML diff is available at the Especialista level.
+- **Job number** for the machine (from system configuration, FR-INT-8), shown on the row and editable by the maintainer in *Configurações › Máquina*.
 
-```
-Jobs                                   [Importar arquivo]  [Fazer backup]  [Backups…]
-┌───────────────────────────────────────────────────────────────────────────────┐
-│ Nome               Ativo   Versões  Última alteração     Autor      Ações      │
-│ Tampa azul — etiq… ● v7    7        02/10/2026 15:40     lucas      ⋯          │
-│ Suporte — furos            3        10/10/2026 09:12     lucas      ⋯          │
-└───────────────────────────────────────────────────────────────────────────────┘
-```
-- **List:** name, the active version as a badge, number of versions, last change, author, row menu (Abrir, Exportar, Duplicar (maintainer), Editar (maintainer)).
-- **Detail (side panel or page):** versions as a timeline (number, date, author, notes, parent), the active one marked; per version: **Ativar** (opens the verification dialog), **Exportar .vjob**, **Comparar com…** (diff of job.yaml, read-only), **Abrir no editor** (creates a draft from this version).
-- **Activate flow:** AlertDialog "Ativar versão 7 de Tampa azul?" → runs the verification, shows a **ReportList** (settings, view against reference, reference set) with pass/fail → if all pass **Ativar**; if some fail: the report and, for the maintainer only, **Ativar mesmo assim** which requires a written reason (recorded in the audit log).
-- **Import:** FileDrop for `.vjob` or `.vbak`; shows what the file contains and what it will add ("3 versões de 2 jobs; 1 já existe") before confirming; result list per job (added, already present, renumbered). Importing never activates.
-- **Backup:** "Fazer backup" writes to the configured folder and shows name and size; "Backups…" lists the folder with download; restore = import of a `.vbak`.
-- States: loading skeleton rows; empty ("Nenhum job ainda…"); import error with the server's reason; offline.
-- Data: `GET /api/jobs`, `GET /api/jobs/{id}`, `POST /api/jobs/{id}/versions/{v}/activate`, `GET …/export`, `POST /api/jobs/import`, `POST /api/backup`, `GET /api/backup`.
-- **Built (VIA-0027, 15/10/2026):** `/jobs` (list, row menu, import, backup, backups with download, new job and edit for the maintainer) and `/jobs/:id` (versions newest first with notes and parent; activate, export, compare, open in editor, duplicate). Differences from the sketch above: activating is one call that verifies and activates, and a failed verification opens the report with the maintainer's override; the import does not preview the file before storing it (it only adds versions, never activates or replaces), it shows what was added afterwards. Exports and backups are downloaded with the login (`src/api/download.ts`).
+### 7.3 Job editor (`/jobs/:id/edit`, maintainer)
 
-### 7.3 Job editor (`/jobs/:id/edit`, maintainer) and Camera setup (`/camera`)
+**Purpose:** build and tune a job while looking at the real image, in the order of §4.3 (UC-03, UC-13, FR-JOB-2/4/5, FR-PLT-*). This is the largest screen. Layout in §10.1; each step below says what its inspector holds and what it adds to the image.
 
-Purpose: create and tune a job while looking at the real image (UC-03, FR-JOB-2/4/5, FR-PLT-*). The largest screen.
+**Common to every step:**
+- the image workspace with its layer menu (§18);
+- the filmstrip (reference, *Boa* and *Ruim* samples, *Ao vivo*);
+- the **result bar**: last test verdict, per-tool chips, total time against the job's budget on this PC (FR-ADM-5).
 
-```
-┌ Tampa azul — etiqueta de lote · rascunho de v7 ─── [Descartar] [Testar] [Salvar…] ┐
-│ ① Câmera        │                                          │ Inspetor (do passo)  │
-│ ② Gatilho       │                                          │                      │
-│ ③ Qualidade     │            IMAGE + REGIONS               │  Exposição  [8000] µs│
-│ ④ Âncora/regiões│       (live, or a captured still)        │  Ganho      [ 0 ]    │
-│ ⑤ Ferramentas   │                                          │  …                   │
-│ ⑥ Referência    │                                          │  [Aplicar na câmera] │
-│ ⑦ Revisar       │                                          │                      │
-└─────────────────┴──────────────────────────────────────────┴──────────────────────┘
-```
+The station is paused (*Em manutenção*) while the editor holds a camera session, and resumes when the editor is closed or idle.
 
-- **Draft model:** the editor works on a draft held in memory and autosaved to the browser; the server never sees a half-edited job. **Salvar…** asks for a note and creates version n+1 (parent n); **Descartar** drops the draft. Leaving with unsaved changes asks first. Validation errors from the server (Pydantic) are shown on the field.
-- **Steps:**
-  1. **Câmera** — the camera profile (resolution, format, exposure, gain, white balance, focus, zoom, power-line, low-light), live image, brightness and sharpness readouts, histogram. **Aplicar na câmera** pauses the station, applies, reads back and shows the per-setting result (applied / not supported / rejected) with the reason. Also available alone at `/camera` for tuning without a job.
-  2. **Gatilho** — mode (`image_presence`, `manual`, `external`, `continuous`), the presence area drawn on the image, stillness time, thresholds; a live "presença / movimento / parado há 0,6 s" readout so the maintainer sees the trigger decide.
-  3. **Qualidade** — brightness range, minimum sharpness ratio, minimum similarity, anchor tolerance; the live image's current values are shown next to each limit with a "usar o valor atual ±20%" helper.
-  4. **Âncora e regiões** — the locator (type and parameters) and the regions, drawn on the image (section 10), named, relative to the anchor or the frame.
-  5. **Ferramentas** — ordered list (drag to reorder); **Adicionar ferramenta** lists the registered types with a one-line description; selecting one shows its form, drawn from the tool's JSON Schema (below), the region it looks at, and the failure text (`reason_fail`, with the available `{fields}` listed). Each tool has **Testar**: runs on the current image and shows the result, score and what it looked at as an overlay.
-  6. **Referência** — capture the reference image from the live view; the system measures brightness, sharpness and anchor; manage the **reference set**: capture frames or upload images, label each with the expected outcome (and optional expected scores and reason text), set the tolerance, **Executar tudo** to see every case pass or fail in a ReportList.
-  7. **Revisar** — a summary of what changed from the parent version, the verification report on the draft, and the save button.
-- **Testar** (top bar) runs the whole job on the current image through the same pipeline the station uses and shows PASS/FAIL/ERROR, the reason and per-tool scores.
-- **SchemaForm** renders the subset of JSON Schema that our Pydantic models produce: `string` (with `enum` as select, `format` hints), `number`/`integer` (with min/max and `x-unit` shown as a suffix), `boolean` (switch), arrays of primitives (list editor), nested objects (group), nullable (`anyOf null`) as "usar valor opcional" toggle, defaults and descriptions as hints. Server-side field names in errors map onto fields. Unknown constructs render as a JSON text area with validation, never silently dropped. New tool types therefore need no screen code (FR-PLT-2).
-- Data: `GET /api/jobs/{id}/versions/{v}`, `POST /api/jobs/validate`, `POST /api/jobs/{id}/versions`, `GET /api/tools`, `POST /api/camera/apply`, `GET /api/camera/state`, `POST /api/jobs/test`, `GET /api/snapshot.jpg`, the live socket.
-- States: no camera (steps needing the image show "Sem imagem da câmera" and stay editable as text), station busy (the editor pauses it and shows a banner; leaving the editor resumes it), a failed apply shows the report instead of an error page.
-- **Built (VIA-0022, 15/10/2026):** `/jobs/:id/edit` (`?from=v` to start from an older version) and `/jobs/new/edit`, maintainer only. The draft is kept in the browser (`localStorage`) and comes back after a reload ("Rascunho recuperado"), with undo/redo (Ctrl+Z / Ctrl+Y) and a question before leaving with unsaved changes. The image is the job's reference image (full size) or a live snapshot (reduced); regions, the presence area, the fixed locator and template crops are drawn on it (drag to draw, move and resize with eight handles; arrows nudge 1 px, Shift 10 px; Delete removes), with the RGB and HSV of the pixel under the pointer. Tool and locator forms are drawn from their JSON Schema with Portuguese titles from the server (`vision_station/schema_labels.py`); the color tool can propose a hue range from a region. **Testar** runs the draft on the newest full-size frame and draws each tool's region green or red. Step 6 captures the reference image and reference-set cases from the live view. Not yet: zoom and pan, snapping, the histogram, the trigger's live presence readout, drag to reorder tools (buttons instead), the summary of changes against the parent, and "Executar tudo" on the reference set (the verification runs when the version is activated).
+**1 · Imagem**
+
+| Level | Controls |
+|---|---|
+| Essencial | Exposure (`ExposureControl`: log slider in µs, with "Auto uma vez" that measures and then locks the value), focus (slider + `FocusMeter` with peak hold), white balance (eyedropper on a grey or white area: "Clique numa área cinza ou branca") |
+| Avançado | Gain, resolution, frame rate, power-line frequency, zoom (motorized lens) |
+| Especialista | Raw driver settings (read-only list with values), low-light compensation, pixel format |
+
+**Image aids:**
+- A live **histogram** with the percentage of clipped pixels at each end. It turns amber above 1 %: "2,4 % da imagem saturada".
+- Optional **focus peaking** layer: edges tinted in `ov-select`.
+
+*Aplicar na câmera* runs the existing apply + read-back and shows the per-setting report inline.
+
+**2 · Amostras**
+- *Capturar referência*: freezes the current frame as the reference image. The reference is shown first in the filmstrip, with a star.
+- *Capturar como Boa* / *Capturar como Ruim* (with an optional note: "sem fita", "aba aberta"). *Importar imagens* adds files.
+- Each sample shows a thumbnail, its label and, after a test, ✓ or ✕ for whether the job agrees with the label.
+- **Guidance:** "Recomendado: 10 boas e 1 ruim de cada defeito". Shown as a target count, never as a gate: activation is never blocked by missing samples. *Ajustar pelas amostras* needs at least 3 *Boa* and 1 *Ruim* (§16).
+- The samples become the version's reference set (`tests/`, FR-JOB-9). The same images feed the gauges and the automatic tuning, so **what the job was tuned on is what it is verified on**.
+
+**3 · Âncora**
+
+The locator picker shows a card per type, each with a one-line use and a small diagram:
+- *Sem âncora*: the part is always in the same place.
+- *Contorno* (`shape`): finds the outline; tolerates rotation.
+- *Modelo* (`template`): finds a picture; tolerates shift only.
+- *Mancha de cor ou contraste* (`blob`).
+- *Duas bordas* (`edges`).
+
+Then:
+- **Teach on the reference:** draw the model area (`TemplateCropper`) or the two calipers.
+- **Search area:** drawn on the image.
+- **Allowed range** (Essencial):
+  - angle with `AngleRangeDial` (default ±15°);
+  - shift as the search area;
+  - scale range at Avançado.
+- **Result on every sample:** a grid of thumbnails with the found pose drawn (`PoseMarker`) and the score. Not found is shown in amber with the reason.
+- **Fixture chains** (FR-INS-12) at Avançado: *Adicionar âncora dentro desta*.
+
+**4 · Ferramentas**
+
+The inspector is split vertically (§10.1):
+- **Tool list** on top (`ToolList`):
+  - add with a catalog dialog: a card per type with what it measures, an icon and "Melhor para…";
+  - drag to reorder;
+  - enable / disable;
+  - a live ✓ / ✕ chip per tool;
+  - a warning icon when the tool does not separate the samples.
+- **Selected tool** below, always in the same sections (§19.2):
+  1. **Região:** draw on the image, relative to an anchor or the frame. The region list includes the anchors.
+  2. **O que medir:** the tool's essential measurement settings, with their graphical control. For example, colour → `HsvRangePicker` with eyedropper; pattern → `TemplateCropper`; edge → caliper on the image + `ProfilePlot`; blob → threshold on a `Histogram`.
+  3. **Critérios:** one `ToolToleranceGauge` per criterion (§19.3), with *Ajustar pelas amostras*.
+  4. **Resultado:** decides the result or is informative only (FR-INS-13); the failure text with the available `{campos}` as clickable chips and a preview with the current values.
+  5. **Avançado / Especialista:** collapsed sections with the remaining parameters (§17). A badge shows how many are changed from their defaults.
+
+  Selecting a tool in the list or clicking its region on the image are the same action: both select the tool, and the image scrolls and zooms to its region if it is off-screen.
+
+- **Separation indicator** per tool and for the job:
+  - "Todas as boas passam · 3 de 4 ruins reprovam (falta *aba aberta*)", computed from the batch test;
+  - shown again in step 7.
+
+**5 · Disparo e qualidade**
+- **Trigger mode:** a segmented control with a one-line explanation each (*Pela imagem*, *Pela máquina*, *Botão*, *Contínuo*); the same choice as the trigger control in the editor top bar. *Pela máquina* covers every external source (24 V input, S7, Modbus, OPC UA, local API): the source is chosen once in *Configurações › Máquina*, not per job.
+- **Timing** (TD-31): *Pela máquina* shows **Atraso após o sinal** (0–1000 ms, default 0, FR-TRG-6), with the frame it would take shown against the live image; *Contínuo* shows **Intervalo mínimo** (default 500 ms, FR-TRG-7).
+- **For image presence:**
+  - the presence area drawn on the image;
+  - the stillness time;
+  - a live **"presença / movimento / parado há 0,6 s"** readout, so the maintainer sees the trigger decide.
+- **Quality gates:**
+  - brightness range on the histogram;
+  - sharpness ratio against the reference;
+  - colour-reference patch (FR-INS-16);
+  - each proposed from the samples: "valores das amostras ± 20 %".
+
+**6 · Resultado e saídas**
+- **Deciding tools:** a summary table, editable here or in each tool.
+- **Operator texts:** waiting text and reason texts, each in pt-BR and en side by side (FR-JOB-15, §11.1).
+- **Machine values:** pick up to 8 tool values (FR-INT-11), each with its unit. A preview of the interface map shows which `UserValue` each value lands in.
+- The **job number** is shown read-only, with a link to *Configurações › Máquina*.
+
+**7 · Validar**
+- *Validar tudo* runs the draft on every sample. It shows a matrix of samples × tools (✓ / ✕ / value) and the outcome against the label. Mismatches come first.
+- **Budget:** the time per stage against this PC's tier and the job's budget (FR-ADM-5).
+- *Comparar com produção* runs the A/B replay (FR-JOB-12): "Esta versão teria reprovado 3 das últimas 500 peças aprovadas", with those images.
+- *Verificação da câmera* (architecture §7.3, part 1) is shown here too, so nothing in the activation is a surprise.
+
+**8 · Salvar e ativar**
+- A summary of changes in plain words (as in §7.2) and the note (required).
+- *Salvar* or *Salvar e ativar*. Activation runs the verification and shows the report (P4). The maintainer's override with a written reason is kept.
+
+**Testar** (top bar, always available) runs the draft on the current frame, or on all samples with Shift. **Testar a cada captura** (toggle in the image toolbar; called *Captura contínua* before 17/10, renamed so it is not confused with the *Contínuo* trigger mode) runs it on every new frame through the editor session (§9.5), at the rate the PC allows (§19.1).
 
 ### 7.4 Results (`/results`, supervisor+)
 
-Purpose: understand failures and correct wrong results (UC-07, FR-LOG-4).
-
-- **Filter bar:** period chips (Hoje, 7 dias, 30 dias, Personalizado), job, result (Todos, Aprovadas, Reprovadas, Erros), "só incorretos"; the filters live in the URL so a view can be shared.
-- **Table:** time, job and version, result (badge), reason, duration, a thumbnail on hover. Server-side pagination (100 per page). **Exportar CSV** exports exactly the filtered set.
-- **Detail side panel:** the image with a **Original / Marcado** toggle, zoom; per-tool scores and timings; the job version used; **Marcar como incorreto** (PASS↔FAIL) with the effect explained ("a imagem vai para o treinamento"); **Baixar imagem**. If the image was not kept, the panel says so and disables the actions that need it.
-- States: loading skeleton, empty ("Nenhum resultado neste período"), error with retry.
-- Data: `GET /api/results`, `GET /api/results/{id}`, `GET /api/results/{id}/image`, `POST /api/results/{id}/incorrect`, `GET /api/results.csv`.
+As built in 0.1 (filters in the URL, CSV, side panel with original/marked image, mark incorrect). In 0.2:
+- the side panel uses the same image workspace (zoom, layers, §18);
+- it lists per-tool values with their tolerance gauges, frozen at that result;
+- a filter by **reason code** (FR-INS-14).
 
 ### 7.5 Dataset and collection (`/dataset`, maintainer)
 
-Purpose: gather and export training images (FR-MDL-1/2, TD-10, UC-08).
+As built in 0.1, plus the image grid preview with labels (lazy, virtualized).
 
-- Per job: **Modo de coleta** switch (every inspection frame is also saved), counters (collected, corrected, per label), and a clear note that images stay on this PC.
-- **Exportar dataset:** choose the job, see the count, export; the result shows the **dataset id**, the folder and a download; exporting the same content twice reuses the id.
-- A grid preview of the latest collected images with their labels (lazy-loaded).
+### 7.6 Settings (`/settings/*`, maintainer)
 
-### 7.6 Settings (`/settings`, maintainer)
+The page is split into sub-pages, each with the same layout as the editor's inspector (sections, levels):
 
-Purpose: the installation's configuration (system configuration, architecture §4.5).
+| Sub-page | Content |
+|---|---|
+| **Estação** | Name, **station language (pt-BR / en)**, shift starts, idle timeout, audible alert, **Marcações on the operator screen** (§18: sempre / só em reprovação / nunca; the operator may toggle: sim/não), operator image fit/fill |
+| **Câmera** | Driver and device (picked from a list with names and a live thumbnail), *Testar câmera*, connection details |
+| **Armazenamento** | Backup folder and schedule, recording limits, data folder |
+| **Rede** | Listening address and port, with the security warning |
+| **Máquina** | Enabled adapters (S7, Modbus TCP server, remote I/O, OPC UA), addresses, interface map version, cycle, heartbeat, acknowledge mode, buffer depth, **job numbers** and **products** (tables), allowed client IPs |
+| **Desempenho** | Last benchmark report (tier M/R, per-stage times), *Rodar teste de desempenho*, editor live-feedback rate (§19.1) |
 
-- **Câmera:** driver (UVC, Hikvision later, file), device (picked from a list, shown by name and path), a **Testar conexão** button.
-- **Armazenamento:** backup folder with a **Testar** (write and read a file), automatic backup schedule and number to keep (FR-JOB-10), recording limits (keep everything / PASS sampling / retention days / minimum free disk), data folder shown read-only.
-- **Estação:** name, shift start times (counters), language (Portuguese), audible alert on FAIL, idle timeout.
-- **Rede:** port and listening address; opening the API to the network shows a warning and requires a password to exist for the supervisor (NFR-SEC-3).
-- Fields that need a restart are marked, and a **Reiniciar o sistema** banner appears after saving them. Saving shows what changed and asks to confirm.
-- Data: `GET/PUT /api/system`, `POST /api/system/test-camera`, `POST /api/system/test-folder`.
-
-- **Built (VIA-0028, 15/10/2026):** results (`/results`: period, job, result and "só incorretos" in the URL; 100 per page; CSV of the filtered set; side panel with the original or marked image, scores, timings, mark as incorrect, download), dataset (`/dataset`: collection switch per job, counts, export per job or all to `<data>/exports/`; no image grid yet), settings (`/settings`: station, camera by driver with **Testar câmera**, recording, backup with **Testar pasta**, network; sections that need a restart are announced). Fields that need a restart are listed after saving, not marked one by one.
+Fields that need a restart are marked one by one. Saving shows what changed and asks to confirm.
 
 ### 7.7 Access (`/access`, supervisor+)
 
-- Table of the two protected roles (Supervisor, Mantenedor): whether a password is set, last change; **Definir/trocar senha** dialog (twice, minimum 8 characters, strength hint, never shown again); **Encerrar todas as sessões**.
-- A supervisor can change only their own password; the maintainer both.
-- Data: `GET /api/users`, `PUT /api/users/{role}/password`, `POST /api/users/sessions/revoke`.
+Unchanged.
 
 ### 7.8 Audit (`/audit`, supervisor+)
 
-- Table of events (when, what — activate, activate with override, import, backup, password change, settings change — job and version, role, reason); filters by kind and job; detail drawer with the raw record; **Exportar CSV**.
-- Data: `GET /api/audit`.
-
-- **Built (VIA-0028):** `/access` (both roles listed; a supervisor changes only their own password, confirming the current one; a new password ends that role's sessions; the maintainer ends every session) and `/audit` (events in plain words, filter by kind, 100 per page, CSV; no detail drawer yet: the details are on the row).
+As in 0.1, with three new event kinds:
+- *ajuste fino* (§7.12);
+- *troca de job pela máquina*;
+- *saída forçada* (§7.14).
 
 ### 7.9 About (`/about`, supervisor+)
 
-- Application version, job file format version, tool types and versions, camera driver in use, licences of the shipped components (FR-ADM-3, NFR-LIC-2), and **Gerar pacote de suporte** (zip of logs, system config without secrets, last results; NFR-MAI-2).
+As in 0.1, plus the benchmark summary and the tier.
 
 ### 7.10 Login and errors
 
-- **Login dialog:** role select (Supervisor, Mantenedor), password, clear messages for wrong password and for the 30 s lock (with a countdown). Reachable from the lock button and from any expired session.
-- **Pages:** `403` "Sem permissão", `404`, an **error boundary** per route with retry, and **offline** handled by the shell banner.
+Unchanged.
+
+### 7.11 Commissioning (`/setup`, maintainer) — new
+
+**Purpose:** take a fresh installation to its first job in the right order (FR-ADM-8).
+
+**When it opens:** automatically after the first login when the system has no camera or no job. Later it is reachable from *Configurações*.
+
+A full-page stepper (the 0.1 `Stepper`), each step with a clear *done* condition:
+
+| # | Step | Done when |
+|---|---|---|
+| 1 | **Câmera:** pick the device from the list (thumbnail for each), test, see the live image | Frames arriving |
+| 2 | **Desempenho:** run the benchmark (about a minute); shows the tier and what it means ("Este PC roda trabalhos clássicos; modelos grandes podem ficar lentos") | Report stored |
+| 3 | **Senhas:** set the supervisor and maintainer passwords | Both set |
+| 4 | **Máquina** (optional): choose the adapter or *Sem máquina*, enter addresses, test the connection with a heartbeat | Connected or skipped |
+| 5 | **Backup:** choose the folder, *Testar pasta* | Tested |
+| 6 | **Primeiro job:** opens the editor at step 1 | — |
+
+### 7.12 Fine-tune (`/jobs/:id/tune`, supervisor+) — new
+
+**Purpose:** let the supervisor adjust **tolerances only** when the product or the light drifts, without the maintainer (FR-JOB-14).
+
+```
+┌ Ajuste fino — Tampa azul v8 ─────────────────────────────────── [Descartar] [Salvar como v9…] ┐
+│  IMAGEM (ao vivo ou amostra), marcações                  │ tampa      ✓  fração azul           │
+│                                                          │   ├──────[████████▌····]──┤  0,92   │
+│                                                          │   mín 0,80   ● boas  ✕ ruins        │
+│                                                          │ largura    ✓  29,1 mm               │
+│                                                          │   ├──[···████████···]──┤  28,0–30,5 │
+├──────────────────────────────────────────────────────────┤ lote       ✓  (sem tolerância)      │
+│ filmstrip: amostras ✓ / ✕                                │                                      │
+└──────────────────────────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+- **Shows:** every tool that affects the result, with only its **Essencial-level criteria** as gauges. The live needle and sample dots are shown, plus *Ajustar pelas amostras*. The supervisor can capture new samples (*Boa*, *Ruim*) for the gauges.
+- **Does not show:**
+  - regions;
+  - the camera;
+  - locators;
+  - adding, removing or reordering tools;
+  - measurement settings (such as the colour range itself);
+  - Avançado and Especialista.
+
+  The server enforces the same: a fine-tune save is refused if anything other than the allowed tolerance parameters changed.
+- **Save:** a note is required. Saving creates version n+1, marked *ajuste fino*, then runs verification. The supervisor may activate it if verification passes; an override stays maintainer-only. The audit log records every changed value.
+
+### 7.13 Statistics (`/stats`, supervisor+) — new
+
+**Purpose:** see drift before it becomes rejects (FR-LOG-7).
+
+Per job version, three views:
+- **Pareto of reason codes** (bar chart, shadcn `Chart`).
+- **Per-tool margin trend:** line chart with the warning limit as a reference line, built from the score monitor.
+- **Value distribution against the limits:** histogram, PASS vs FAIL, with the tolerance band.
+- **Disparos recusados:** count per shift and day (FR-INT-14), next to the inspection count; a rise points at a machine that triggers too early or too fast.
+- **Aprovadas com pouca margem:** the low-margin PASS images kept by FR-LOG-9, one click from each margin warning.
+
+Time range filter in one row above the charts. Every chart has a table view.
+
+Each margin warning links to *Ajuste fino* (supervisor) or the editor (maintainer) for that tool.
+
+### 7.14 Machine monitor (`/machine`, maintainer) — new
+
+**Purpose:** commission and debug the machine interface (FR-ADM-7).
+
+- A live table of the interface map (architecture §16.2): inputs and outputs with value, last change time and a sparkline of the last 30 s for bits. Heartbeat ages and last errors.
+- **Forçar saídas:** only while the station is *Em manutenção*. Each forced value is shown in amber with *forçado*. Leaving the page releases every force. Everything is logged.
+- *Simular gatilho*: sends a machine trigger to test the handshake end to end. The result is marked simulated and not signalled.
+- **Remote I/O outputs** (architecture §16.7): each line with its function, polarity and live state; the **reject queue** with the pending entries (sequence, outcome, inspections or ms left).
+- In *Configurações › Máquina* each remote I/O line gets a function, a polarity (*normal* / *invertida*) and, for *rejeito*, the results, the delay (*em peças* or *em ms*) and the pulse.
 
 ---
 
@@ -373,20 +704,21 @@ Purpose: the installation's configuration (system configuration, architecture §
 
 | Capability | Operator | Supervisor | Maintainer |
 |---|---|---|---|
-| See state, live image, results of the day | ✔ | ✔ | ✔ |
+| See state, live image, results of the day; toggle overlays (if the station allows) | ✔ | ✔ | ✔ |
 | Manual trigger, mark a result wrong | ✔ | ✔ | ✔ |
 | Jobs: list, activate (verified), export, import, backup | | ✔ | ✔ |
-| Results history, images, CSV | | ✔ | ✔ |
+| **Fine-tune tolerances (new version, verified, audited)** | | ✔ | ✔ |
+| Results history, statistics, images, CSV | | ✔ | ✔ |
 | Audit, About | | ✔ | ✔ |
 | Activate despite failed verification (with reason) | | | ✔ |
-| Editor, camera setup, tools | | | ✔ |
+| Commissioning, editor, camera, tools, anchors | | | ✔ |
+| Machine monitor, forced outputs | | | ✔ |
 | Dataset and collection mode | | | ✔ |
 | Settings, access, pause/resume/retry | | | ✔ |
 
-- The router hides entries and blocks routes by role; **the server enforces the same table on every endpoint** (the interface is convenience, not security).
-- Token kept in memory and `sessionStorage` (cleared on tab close), sent as `Authorization: Bearer`; the 8 h session, the lock after 5 wrong passwords and the idle timeout come from the API and settings.
-- Requests from other origins are refused by the server; the interface calls only same-origin `/api`.
-- Sensitive actions (override, password change, settings change, restore) are recorded in the audit log by the server.
+- **Settings levels are not permissions** (§17). A level changes what is shown, never what is allowed.
+- The router hides entries and blocks routes by role. **The server enforces the same table on every endpoint**, including the parameter allow-list of a fine-tune save.
+- Token handling, session length, lock-out and idle timeout are as in 0.1.
 
 ---
 
@@ -394,148 +726,486 @@ Purpose: the installation's configuration (system configuration, architecture §
 
 ### 9.1 Conventions
 
-- **Prefix:** every API path moves under `/api` (the prototype used the root, which collides with the interface's own routes). The WebSocket is `/api/live`. Everything else is the interface: `/assets/*` (hashed, `immutable`), `index.html` (`no-cache`), and **a fallback to `index.html` for any other GET** so deep links and reloads work. Unknown `/api/*` paths return JSON `404`.
-- **Contract:** every endpoint declares Pydantic request and response models, so the OpenAPI document is complete; `npm run gen:api` regenerates `src/api/schema.d.ts`; CI fails if the committed file differs.
-- **Errors:** `{ "detail": "<Portuguese message>", "code": "<machine code>", "fields": {"path.to.field": "message"} }`; `422` for validation, `401` no login, `403` wrong role, `409` state conflict (station not ready, verification failed), `429` login lock with `Retry-After`.
-- **Pagination:** `limit`, `offset`; responses carry `total`.
-- **Time:** ISO 8601 with offset.
+Unchanged from 0.1:
+- the `/api` prefix and fallback to `index.html`;
+- the contract generated from Pydantic models and checked in CI;
+- the error shape `{detail, code, fields}`;
+- pagination and ISO time.
 
-### 9.2 Existing endpoints (move under `/api`)
+New in 0.3:
+- **Language:** every request carries `Accept-Language` (`pt-BR` or `en`); texts the server returns (messages, error-code texts, tool labels, reports) come in that language. Codes, never texts, are what clients act on.
 
-`GET state`, `GET result/last`, `GET snapshot.jpg`, `POST trigger`, `POST results/{id}/incorrect`, `WS live`, `POST login`, `POST logout`, `GET whoami`, `GET jobs`, `POST jobs/{id}/versions/{v}/activate`, `GET jobs/{id}/versions/{v}/export`, `POST jobs/import`, `POST backup`, `GET backup/{name}`, `GET results`, `GET results.csv`, `GET results/{id}`, `GET results/{id}/image`, `POST collection/{job_id}`, `POST station/{command}`.
+### 9.2 Existing endpoints
 
-### 9.3 New endpoints (task VIA-0025 and VIA-0026)
+As listed in 0.1 §9.2–9.3 (all implemented in VIA-0025/0026).
+
+### 9.3 Tool metadata for the vision controls (new)
+
+`GET /api/tools` already returns each tool's and locator's JSON Schema. Version 0.2 adds metadata to each property, written in the tool's Pydantic model (`json_schema_extra`), so the screen still needs no per-tool code (FR-PLT-2):
+
+| Key | Meaning | Example |
+|---|---|---|
+| `x-group` | Inspector section | `measure`, `criteria`, `result` |
+| `x-level` | 1 Essencial, 2 Avançado, 3 Especialista | `min_fraction: 1`, `line_min: 2`, `work_width: 3` |
+| `x-widget` | Graphical control from the registry (§19.2) | `hsv-range`, `template`, `caliper`, `angle-range`, `code-formats`, `regex`, `region` |
+| `x-unit` | Unit shown and used by the gauge | `%`, `px`, `mm`, `°`, `ms` |
+| `x-tunable` | May be changed in fine-tune (§7.12) | `true` for limits only |
+
+Plus, per tool type, a **`criteria`** list that tells the gauge what to draw:
+- the measured value's name;
+- its range and unit;
+- the parameter(s) that hold its limit(s);
+- the direction (`at_least`, `at_most`, `between`).
+
+Example:
+
+```json
+{"value": "fraction", "label": "Fração com a cor", "unit": "%", "range": [0, 1],
+ "limits": {"min": "min_fraction", "max": "max_fraction"}, "level": 1}
+```
+
+### 9.4 New endpoints
 
 | Endpoint | Purpose | Role |
 |---|---|---|
-| `GET /api/tools` | tool types with versions, description and **JSON Schema** of the parameters | maintainer |
-| `GET /api/jobs/{id}` | versions with date, author, notes, parent, active flag | supervisor |
-| `GET /api/jobs/{id}/versions/{v}` | the full job (job.yaml as JSON, camera profile, list of extra files, reference meta, expected set) | maintainer |
-| `POST /api/jobs/validate` | validates a draft; returns field errors | maintainer |
-| `POST /api/jobs` / `POST /api/jobs/{id}/versions` | create a job / save version n+1 with a note | maintainer |
-| `POST /api/jobs/{id}/duplicate` | new job from a version | maintainer |
-| `POST /api/jobs/test` | run a draft on the current frame (or a given image); returns outcome, reason, per-tool scores, overlay | maintainer |
-| `GET /api/jobs/{id}/versions/{v}/diff?against=` | read-only diff of the definitions | supervisor |
-| `GET/POST /api/camera/state`, `POST /api/camera/apply` | live camera settings and apply with the per-setting report (station paused during the call) | maintainer |
-| `POST /api/reference/capture`, `POST /api/reference/cases` | reference image and reference-set cases from the live frame or an upload | maintainer |
-| `GET /api/backup` | list backups in the folder | supervisor |
-| `GET/PUT /api/system`, `POST /api/system/test-camera`, `POST /api/system/test-folder` | system configuration (`system.yaml`) | maintainer |
-| `GET /api/users`, `PUT /api/users/{role}/password`, `POST /api/users/sessions/revoke` | access management | maintainer |
-| `GET /api/audit` | audit events with filters and CSV | supervisor |
-| `POST /api/dataset/export`, `GET /api/dataset` | dataset counts and export | maintainer |
-| `GET /api/about` | versions, tool types, driver, licences; `POST /api/support-bundle` | supervisor |
+| `POST /api/editor/batch` | Run a draft on its samples; per sample and tool: passed, score, measured values (feeds gauge dots, separation, Validar) | maintainer, supervisor (fine-tune) |
+| `POST /api/editor/suggest/color` | Sampled pixels (a drawn area or clicked points, with *incluir/excluir*) → proposed HSV range (percentiles), and how much of the region it covers | maintainer |
+| `POST /api/editor/suggest/limits` | Per criterion: the values on *Boa* and *Ruim* samples → proposed limit in the middle of the widest gap, with the resulting margin, or "as amostras se sobrepõem" | maintainer, supervisor |
+| `POST /api/editor/locate` | Teach and run a locator on the reference and all samples → pose and score per sample | maintainer |
+| `GET /api/editor/debug/{layer}.png` | Debug image of the last live or sample result: colour mask, binarized blob image, edge map, anomaly map, for one tool | maintainer |
+| `POST /api/jobs/{id}/versions/{v}/tune` | Fine-tune save: refuses any change outside `x-tunable` parameters | supervisor+ |
+| `GET /api/machine/map`, `POST /api/machine/force`, `POST /api/machine/simulate-trigger` | Machine monitor (§7.14) | maintainer |
+| `POST /api/bench`, `GET /api/bench/last` | Benchmark (FR-ADM-5) | maintainer |
+| `GET /api/results/{id}/thumb` | Thumbnail for the operator's last results | everyone |
 
-**Status (15/10/2026):** implemented in VIA-0025 and VIA-0026, with the request and response models in `src/vision_station/api/schemas.py`. Details that differ from the table: `GET /api/tools` returns tools and locators (`TypesOut`); a saved version's files are served by `GET /api/jobs/{id}/versions/{v}/files/{path}`; a draft (`JobDraft`) names a saved `base` version whose files it keeps, plus `add_files` (base64) and `remove_files`; `POST /api/jobs/{id}/versions` answers 409 `stale_draft` if the draft's base is not the latest version; the camera endpoints are `GET /api/camera/state` and `POST /api/camera/apply`. Not yet: `POST /api/support-bundle`, the licences in `/api/about`, and `camera_settings` events on the live socket.
+### 9.5 Editor session (new, WebSocket `/api/editor/live`)
 
-### 9.4 Live socket (`/api/live`)
+The live feedback of §19.1. The client opens the session with the draft, then sends **patches** (only what changed: a limit, a region). On each new camera frame, at no more than the session rate, the server:
+1. runs the draft through the same pipeline as the station;
+2. sends a JSON message with the verdict, per-tool values, scores and margins, fixture poses, stage timings and the frame id;
+3. sends a binary JPEG with the frame (the overlay is drawn by the client from the JSON, so toggling layers needs no new request).
 
-Text messages (JSON): `status` (full state, camera, counters, job — at connect and every 2 s), `state`, `result` (with `record_id`), and new `camera_settings` events during tuning. Binary messages: JPEG frames, at most 10 per second, 960 px wide by default (a query parameter asks for another width in the editor). The client reconnects with backoff and drops frames older than the newest.
+The station stays paused while a session is open. Closing the session (or 10 min without messages) resumes it.
 
----
+### 9.6 Live socket (`/api/live`)
 
-## 10. Region editor
-
-Used by the editor steps 2, 4 and 5 and by the camera screen.
-
-- **Geometry:** all shapes are stored **normalised** (0–1) relative to the frame or the anchor; the editor converts to pixels for display. Rectangles first (all tools in TD-19 use rectangles); polygons later behind the same interface.
-- **Rendering:** the image on a `<canvas>` (ImageBitmap), shapes on an **SVG overlay**; layers for regions, the trigger area, the located anchor, and the last tool results, each toggled from a small layer menu.
-- **Interaction (pointer events, mouse and touch):** draw by dragging; move by dragging; eight resize handles; keep inside the image; snap to the image edges and to other regions (hold Alt to disable); wheel zoom up to 16× around the pointer, pan with Space+drag or two fingers; double-click a region to rename.
-- **Keyboard:** Tab cycles regions; arrows nudge 1 px (Shift: 10 px); Delete removes; Ctrl+Z / Ctrl+Y undo and redo (a reducer with a history stack); Enter edits the name; Escape cancels a drag.
-- **Readouts:** the size and position in pixels and in fractions; with the pointer over the image, the **RGB and HSV** of the pixel (needed by the `color` tool), and a **colour picker mode** that samples a region and proposes a hue range for the tool's parameters.
-- **Anchor-relative regions** are drawn relative to the located anchor: while editing, the anchor is located on the current image, and a banner says when it cannot be found (regions then show relative to the frame, marked "sem âncora").
-- **Accessibility:** every region is a focusable SVG group with a name and an `aria-label` giving size and position; all operations are reachable by keyboard.
-- **Tests:** geometry helpers (clamp, snap, resize) unit-tested; interactions tested with Playwright on the editor.
+As in 0.1, plus `machine` status messages (connected, heartbeat age) for the status strip.
 
 ---
 
-## 11. Language and copy
+## 10. Image workspace and region editor
 
-- **Portuguese (pt-BR) only.** The software is not multilingual: all strings live in `src/texts.ts` as plain typed constants (functions for the ones that take values), with no translation library. Reasons the jobs define (`reason_fail`) arrive already written in Portuguese.
-- **Voice:** short, plain, active; numbers and units instead of adjectives; no jargon for the operator; no exclamation marks; no blame ("Câmera desconectada. Reconectando automaticamente.").
-- **Glossary (one concept, one word):**
+### 10.1 The workbench layout (editor, fine-tune, camera)
 
-| Use | Not |
+At **1920×1080**:
+
+```
+┌ Job · v8 · [Disparo: Pela imagem ● parada 0,6 s ▾] ─ [Nível ▾] ─ [▶ Testar] [Salvar…] ─ (LS ▾) ┐
+│ ① Imagem     ✓ │ ● Ao vivo                       [◧ Marcações · 5/5 ▾]│ Ferramentas            │
+│ ② Amostras   ✓ │                                                      │ ┌────────────────────┐ │
+│ ③ Âncora     ✓ │                  IMAGEM                              │ │ ⠿ tampa    ✓ cor   │ │
+│ ④ Ferramentas ●│          zoom / pan, camadas, réguas                 │ │ ⠿ lote     ✓ código│ │
+│ ⑤ Disparo      │                                                      │ │ ⠿ largura  ✕ borda │ │
+│ ⑥ Resultado    │                                                      │ └────────────────────┘ │
+│ ⑦ Validar    ! │                                                      │ largura · borda        │
+│ ⑧ Salvar       │                                                      │ ▸ Região               │
+│                │                                                      │ ▾ O que medir          │
+│                │                                                      │ ▾ Critérios  [régua]   │
+│                │                                                      │ ▸ Resultado            │
+│ [Próximo ▸]    ├──────────────────────────────────────────────────────┤ ▸ Avançado (2)         │
+│                │ ★ ref │ ✓ ✓ ✓ ✓ ✓ │ ✕ ✕ │ ● Ao vivo   [+ Boa] [+ Ruim]│                        │
+├────────────────┴──────────────────────────────────────────────────────┴────────────────────────┤
+│ ✕ REPROVADO · Largura fora do limite (31,2 mm) · ✕ largura ✓ tampa ✓ lote · 182 ms · ● 4/s     │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Panel sizes:**
+- step rail 200 px;
+- image at least 50 % of the width;
+- inspector 400–520 px, resizable and remembered per user;
+- filmstrip 96 px high, collapsible;
+- result bar 40 px.
+
+**At 1366×768:**
+- the step rail collapses to numbered icons with tooltips;
+- the filmstrip collapses to a button that opens it as a drawer;
+- the inspector keeps 360 px.
+
+The image never drops below 60 % of the height.
+
+**Keyboard:**
+- F6 cycles the panels;
+- `[` / `]` previous / next step;
+- `Ctrl+K` opens the command palette;
+- Space + drag pans;
+- `Ctrl+0` fits the image;
+- `1` shows the image at 100 %.
+
+### 10.2 Image workspace
+
+- **Rendering:** frame on `<canvas>` (ImageBitmap); shapes, poses, measurements and labels on an **SVG overlay**; masks and debug images as a second canvas layer with opacity.
+- **Zoom and pan:**
+  - wheel zoom up to 16× around the pointer;
+  - pan with Space+drag or two fingers;
+  - a mini-map appears above 2×;
+  - pixel grid above 8×.
+- **Readouts** under the pointer:
+  - x, y in pixels and in the anchor's coordinates;
+  - RGB and HSV of the pixel;
+  - mm when the job is calibrated.
+- **Layers** (§18): a menu with a switch per layer and a master switch.
+- **Frozen vs live:**
+  - a badge says what is shown: *Ao vivo*, *Referência*, *Amostra 4 (Ruim: sem fita)*, or *Resultado 14:32:07*;
+  - live frames never replace a frozen image without the user asking.
+
+### 10.3 Shapes and editing
+
+These are as in 0.1:
+- normalized geometry;
+- draw, move, eight handles;
+- keyboard nudge;
+- undo/redo;
+- snapping (Alt disables);
+- focusable SVG groups with accessible names.
+
+New in 0.2:
+- **Rotated regions on anchored jobs.** Regions are drawn in the anchor's axes. When the anchor is found turned, the regions turn with it on screen, exactly as the pipeline cuts them (architecture §14.3).
+- **Shape per widget:**
+  - rectangle (regions, presence area, search area);
+  - line or arc with width (calipers for `edge` and `edges`);
+  - crop (templates).
+- **Region selection follows the tool**, in both directions: selecting a tool selects its region on the image, and clicking a region selects its tool.
+
+---
+
+## 11. Languages and copy
+
+### 11.1 Two languages (TD-30)
+
+The interface is available in **Portuguese (pt-BR)** and **English (en)**. Portuguese is the source language: every message is written in pt-BR in the code and translated in the English catalog.
+
+| What | Language rule |
 |---|---|
-| Job | receita, programa, configuração |
-| Versão | revisão |
-| Ferramenta | check, teste, filtro |
-| Região | ROI, área (in the UI; "área de presença" only for the trigger) |
-| Âncora | referência (that is the image), objeto localizado |
-| Resultado: Aprovado / Reprovado / Erro | OK / NOK, sucesso / falha |
-| Estação | máquina, sistema (for the station as a whole; "Sistema" only in the status strip) |
-| Mantenedor / Supervisor / Operador | admin, usuário |
-| Imagem de referência / Conjunto de referência | golden, baseline |
+| **Operator screen** | The **station language** (`system.yaml`, *Configurações › Estação*). The operator has no login, so the station decides |
+| **Admin screens** | The user's choice (user menu, login dialog), remembered per browser; default: the station language |
+| **Interface texts** | Lingui catalogs `pt-BR` and `en`; a missing English translation fails the build |
+| **Texts from the server** (state messages, error-code texts of architecture §10.3, tool and locator labels and descriptions, verification reports) | Catalogs on the server (PO files, gettext/Babel), chosen by the request's `Accept-Language`; codes stay the contract, texts are rendered in the viewer's language |
+| **Texts written in a job** (`reason_fail`, `ui.waiting`, sample notes) | **Both languages in the job** (job format 2, FR-JOB-15): the editor shows a pt-BR and an en field side by side; an empty translation falls back to the other language, marked in *Validar*. Format-1 jobs: the existing text is pt-BR |
+| **Numbers, dates, units** | Formatted by locale (`Intl`, React Aria): `1.234,5` and `16/10/2026` in pt-BR, `1,234.5` and `10/16/2026` in en. Number fields accept the locale's decimal separator |
+| **Records, CSV, audit** | Store codes and values; the reason text of the station language at the time is kept for traceability. CSV exports use the viewer's language and say which |
+| **Guides** (`docs/guias/`) | Portuguese first; English versions when a project needs them |
 
-- **Dates and numbers** in pt-BR formats (`1.234,5`, `dd/mm/aaaa`).
-- Every string is reviewed against the **honesty check**: it states only what the system measured.
+### 11.2 Voice
+
+Short, plain, active, numbers and units instead of adjectives, no blame, no exclamation marks, in both languages. The English text is written for an operator, not translated word by word ("Tampa ausente" → "Cap missing", not "Absent cap").
+
+### 11.3 Glossary
+
+One concept, one word, in each language. The glossary of 0.1 is kept; additions in 0.2–0.3:
+
+| pt-BR | en | Not | Meaning |
+|---|---|---|---|
+| Âncora | Anchor | fixture, referencial | What a locator finds; regions follow it (architecture §14). Several anchors are allowed |
+| Amostras · Boa / Ruim | Samples · Good / Bad | OK/NG, golden, master set | The images a job learns from and is checked on (the reference set) |
+| Imagem de referência | Reference image | golden, master | The one good image taken first |
+| Critério · Tolerância · Limite | Criterion · Tolerance · Limit | threshold, setpoint | What a tool checks · the allowed band · each end of the band |
+| Margem | Margin | slack, headroom | How far a passing value is from its limit |
+| Ajustar pelas amostras | Set from samples | auto tune, teach | Propose limits from Good/Bad samples |
+| Marcações | Overlays | graphics | What is drawn on the image |
+| Nível: Essencial / Avançado / Especialista | Level: Essential / Advanced / Expert | básico / pro | Settings levels (§17) |
+| Ajuste fino | Fine-tune | recalibração | The supervisor's tolerance-only edit |
+| Em produção / Em manutenção | In production / In maintenance | online / offline | Whether the station is inspecting |
+| Comissionamento | Commissioning | setup, instalação | The first-start wizard |
+| Aprovado / Reprovado / Erro | Pass / Fail / Error | OK / NOK | The three outcomes |
+
+The 0.1 editor showed tool descriptions from the server in English only ("Code tool: reads 1D bar codes…"). From 0.3, every label and description shown to users comes from the server's catalogs in the viewer's language. A test fails if a tool or locator property lacks a label in either language.
 
 ---
 
 ## 12. Accessibility, kiosk and touch
 
-- **Target:** WCAG 2.2 AA on every screen: contrast (tokens in 6.1 are checked), focus visible (2 px accent ring + 2 px offset), target size ≥ 24 px (admin) and 56 px (kiosk), keyboard operation for everything including the editor, `prefers-reduced-motion`, `prefers-color-scheme`, `lang="pt-BR"`, one `h1` per page, landmarks, a skip link, focus trap and return in dialogs, live regions for results and toasts.
-- **Kiosk (Edge `--kiosk`):** the operator route fills the screen, hides the cursor after 5 s of inactivity (touch and mouse bring it back), disables text selection and the context menu on that route only, and never shows scrollbars. Zoom and shortcuts are blocked by kiosk mode itself. An idle login falls back to the operator screen.
-- **Touch:** no hover-only function; drags in the editor work with touch; dialogs scroll inside themselves.
-- **Colour independence:** every status has an icon and a word.
-- **Reading distance:** operator text sizes in 7.1 are chosen for 2 m on a 24" 1080p monitor (verdict word up to 96 px, reason 48 px).
+Unchanged from 0.1: WCAG 2.2 AA, focus visible, targets ≥ 24 px (admin) and 56 px (kiosk), keyboard for everything including the image workspace, reduced motion, colour schemes, landmarks, live regions; kiosk behaviour; touch without hover-only functions; status always with icon and word.
+
+New in 0.2:
+- **Gauges and sliders:**
+  - each is a React Aria slider underneath, with `aria-valuetext` in words (in the interface language) ("Limite mínimo 80 %; valor atual 92 %; 12 de 12 boas acima");
+  - arrows step by the parameter's step, Shift by ten steps.
+- **Colour controls** never rely on colour perception alone:
+  - the HSV picker shows numbers on every handle;
+  - the mask preview has a hatched fill, not only a tint.
+- **Overlays:** the fail outline is thicker and tagged ✕ (§6.1). With the overlays off, the per-tool list on the operator screen still says which tool failed.
 
 ---
 
 ## 13. Testing and quality gates
 
-| Level | Tool | What |
-|---|---|---|
-| Unit | Vitest | view-model functions (state → what the screen shows; ported from `viewmodel.js` and its tests), geometry, formatting, schema-form mapping |
-| Component | Testing Library + MSW | each screen against a mocked API in loading, empty, error, success and forbidden states; dialogs (focus trap and return); the verdict panel for every station state |
-| Contract | CI script | regenerate `schema.d.ts` from the running API and fail if it differs; every endpoint the client uses exists in the OpenAPI document |
-| End to end | Playwright against `scripts/e2e_station.py` (the demo with controls: `POST /__e2e/object/on`, `/__e2e/outcome/FAIL`…) | operator cycle (object in, verdict, object out), login and role menus, activate a job (verified and refused), import and export, results filter and mark incorrect, editor: draw a region, test a tool, save a version, camera apply report |
-| Accessibility | `@axe-core/playwright` | zero serious or critical violations on every route in both themes |
-| Tokens and components in the browser | Playwright on `/design`, in four theme situations (dark and light by the system, and each forced over the other) | computed styles equal the tokens (background, density 36/56 px, bundled fonts, reduced motion); screenshot baselines are not used because text rendering differs between Windows, macOS and Linux, so they would fail on every other machine |
-| Budget | `size-limit` | initial JS for the operator route ≤ 150 KB gzip, total initial ≤ 300 KB gzip; editor loaded lazily |
-| Lint/type | ESLint (`jsx-a11y`, hooks), `tsc --noEmit` | zero warnings |
+The levels of 0.1 are kept: unit, component, contract, end to end, accessibility, tokens, budget, lint. Changes in 0.2:
 
-Run locally: `cd frontend && npm run build && npm run e2e` (starts the simulated station by itself; `npm run e2e:ui` for the debugger, `npm run e2e:report` after a failure). The first run needs `npx playwright install chromium`. Every page load is also checked to be free of console errors and of requests that leave this machine, which is how the invalid `ws://[::1]` source in the content policy was found.
+| Level | What changes |
+|---|---|
+| Unit | Gauge geometry (value ↔ position, limits, proposals), HSV range math including red wrap-around, level filtering (hidden-but-changed count), schema metadata mapping to sections and widgets |
+| Component | Each vision component (§19) in the `/design` gallery with fixtures: live value inside/outside, overlapping samples, no samples, wrap-around hue, rotated anchor; SchemaForm v2 against every registered tool's schema |
+| Contract | Every tool and locator schema has `x-group`, `x-level` and labels in pt-BR and en; every `criteria` entry names existing parameters |
+| Languages | Lingui extraction in CI: no message without an English translation; the operator e2e runs in both station languages; numbers typed with `,` and `.` per locale |
+| End to end | The full sequence on the simulated station: new job → image → samples (3 Boa, 1 Ruim) → anchor → colour tool with eyedropper → *Ajustar pelas amostras* → Validar → save and activate; fine-tune as supervisor (and refusal of a non-tolerance change); overlay toggle on the operator screen; 1366×768 run of the editor |
+| Tokens | As in 0.1; the overlay tokens are added to the contrast and design-rule tests |
+| Budget | Operator route ≤ 160 KB gzip JS (0.1 limit 150 KB + 10 KB for the i18n runtime and one compiled catalog; the other language is loaded on demand); editor, statistics and charts are lazy routes |
 
-**Definition of done for a screen:** all states designed and tested (loading, empty, error, success, disabled, focus, offline, forbidden); keyboard-only run-through; axe clean in both themes; strings in `pt-BR.ts`; seen in a real browser at 1920×1080 and at 1280×720; budget respected.
+**Definition of done for a screen** (as in 0.1, plus):
+- every vision control on it works with the live session and with frozen samples;
+- it is checked at 1920×1080 and 1366×768.
 
 ---
 
 ## 14. Build, serving and CI
 
-- **Node** is needed to build, not to run: `frontend/` builds with `npm run build` into `frontend/dist/`; the API serves that folder (`VISION_STATION_WEB` points it elsewhere), and the installer copies it next to the program (task VIA-0017). Nothing of the interface lives inside the Python package. The built files are **not** committed; CI builds them and the installer includes them.
-- **Dev:** `npm run dev` (Vite, hot reload, port 5173) with a proxy of `/api` and the WebSocket to `127.0.0.1:8765`; run `uv run python scripts/e2e_station.py --port 8765` (the simulated station) next to it.
-- **Commands** (in `frontend/`): `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run gen:api` (regenerates `src/api/openapi.json` and `schema.d.ts` from the API; commit both), `npm run build`, `npm run size`.
-- **Without a build:** the server answers `/` with a clear page ("A interface não foi compilada. Rode `npm run build` em `frontend/`.") and keeps the API working.
-- **Serving:** `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`; `index.html` with `no-cache`; fallback for client routes. CSP becomes stricter than the prototype's: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'` (for the style attributes Radix sets), `img-src 'self' blob: data:`, `connect-src 'self'` plus the same-host WebSocket, `frame-ancestors 'none'`. No inline script, so the import-map hash of the prototype goes away.
-- **CI** (GitHub Actions, Windows and Linux): `npm ci`, lint, typecheck, unit and component tests, API contract check, build, size budget, then the Python tests against the built files, then Playwright (Linux).
-- **Prototype removal:** done in VIA-0033 (the Preact files and `tests/web/` are gone); `src/vision_station/web/` is gone too, the interface lives only in `frontend/`.
+Unchanged from 0.1, plus:
+- `lingui extract` runs in CI and fails if a message is missing in `en`; `@lingui/vite-plugin` compiles the catalogs at build.
+- The server's PO catalogs are compiled into the Python package at build (Babel) and checked the same way.
 
 ---
 
-## 15. Work plan and task map
+## 15. Current state and migration plan
 
+### 15.1 What exists (built in 0.1)
 
-| Task | Content | Sections | Estimate | Deadline |
-|---|---|---|---|---|
-| VIA-0030 | This document and the audit | all | 3 h | 14/10 (done) |
-| VIA-0031 | React + Vite + TypeScript project, Tailwind, lint and tests set up, API under `/api` with response models and generated types, serving the build with fallback, CI with Node | 3, 9.1, 14 | 10 h | 17/10 |
-| VIA-0032 | Design system: tokens, light and dark themes, local fonts, base components, `/design` gallery | 5, 6 | 8 h | 20/10 |
-| VIA-0033 | App shell (routes, roles, login, navigation, status strip, error pages) and the redesigned operator screen; remove the prototype | 4, 7.1, 7.10, 8 | 12 h | 22/10 |
-| VIA-0034 | Interface tests: Vitest, Testing Library, MSW, Playwright against the demo, axe, size budget | 13 | 6 h | 24/10 |
+Operator screen, jobs, editor (7 steps, regions, SchemaForm, test), results, dataset, settings, access, audit, about, login, `/design` gallery. All of it is on shadcn/ui + Radix + Tailwind, with tests (Vitest, Playwright, axe) and the token and design-rule tests (tasks VIA-0022, VIA-0027, VIA-0028, VIA-0031..0034).
 
-Existing tasks now carried out in React, estimates raised for the scope: VIA-0026 API for management (10 → 12 h, response models), VIA-0027 Jobs screen (8 → 10 h, section 7.2), VIA-0028 Results, dataset, settings, access, audit, about (10 → 14 h, sections 7.4–7.9), VIA-0022 Job editor with regions (20 → 24 h, sections 7.3 and 10).
+### 15.2 Additions to the foundation (TD-29, TD-30)
 
-Order: backend pieces (VIA-0008 pipeline, VIA-0025 configuration, VIA-0026 API) run in parallel with VIA-0031 and VIA-0032; screens follow in the order operator → jobs → results and the rest → editor, each closed only when its definition of done (section 13) is met.
+No migration: the 0.1 foundation stays and grows. Each step keeps every test green.
+
+| Step | Content | Exit |
+|---|---|---|
+| UI-C0 | Add React Aria Components; `Slider` (multi-thumb) and `NumberField` replace `SliderField` and `NumberInput`; `ColorArea` / `ColorSlider` / `ColorField` wrappers; all in `/design` with every state | Component and axe tests green |
+| UI-C1 | Add shadcn `Sidebar`, `Resizable`, `Command`, `Accordion`, `Drawer`, `Chart`; `@dnd-kit/core` + `sortable`; shell moves to `Sidebar` with the four areas and the Máquina indicator | Shell e2e and roles green |
+| UI-C2 | i18n: Lingui set up, `texts.ts` moved into `pt-BR` messages, `en` catalog written, `LanguageSwitch`, station language on the operator screen, locale-aware formatting | Both catalogs complete; operator e2e green in both languages |
+| UI-C3 | Server i18n: PO catalogs for state messages, error-code texts, tool and locator labels, verification reports; `Accept-Language`; job format 2 texts in both languages (with R1) | Contract test: every label in both languages |
+
+### 15.3 The new interface (alongside the additions)
+
+| Step | Content | Depends on (architecture §18) |
+|---|---|---|
+| UI-1 | Workbench layout (§10.1), image workspace v2 (zoom, layers, frozen/live), filmstrip, result bar | UI-C1 |
+| UI-2 | The sequence: step rail with states, steps reordered (§4.3), samples step, *Validar* | UI-1 |
+| UI-3 | Schema metadata (`x-group`, `x-level`, `x-widget`, `criteria`) on the server; SchemaForm v2; levels (§17) | — (server: small) |
+| UI-4 | Editor session (`/api/editor/live`) and batch test; `ToolToleranceGauge`; *Ajustar pelas amostras* | R2 (result contract) for per-tool values |
+| UI-5 | Colour controls (`HsvRangePicker`, eyedropper, mask preview), camera controls (histogram, focus meter, exposure) | UI-4 |
+| UI-6 | Anchor step with pose, angle range and per-sample results | R1 (pose-based fixtures) |
+| UI-7 | Fine-tune screen (§7.12) and the server's allow-list | UI-4 |
+| UI-8 | Commissioning wizard, machine monitor, statistics | R3, R6 |
+| UI-9 | Controls for the new tools as they arrive (`ProfilePlot` for edge, threshold histogram for blob, `TemplateCropper` for pattern v2) | R5 |
+
+### 15.4 Mapping of 0.1 sections to 0.2
+
+Sections 1–16 keep their numbers. §11 was "Language and copy" (pt-BR only) and is now "Languages and copy". Within §7, the subsections 7.1–7.10 keep their meaning. §4.3 (order of work), §4.4 (breadboard), §7.11–7.14, §9.3–9.5 and §17–19 are new. §10 was "Region editor" and is now "Image workspace and region editor"; its 0.1 content is §10.3.
 
 ---
 
 ## 16. Open questions
 
-1. **Shift:** when do the counters start and reset (fixed times? a "novo turno" button)? Today: since midnight.
-2. **Audible alert on FAIL** (FR-UI-7 is a Could): wanted at the station? Which sound and volume?
-3. **Branding:** client logo or colours on the screen? Today: product name only.
-4. **Station monitor:** size, resolution and touch? The kiosk sizes assume 21–24" 1080p.
-5. **Who edits jobs:** only the maintainer (FR-JOB-4) or also the supervisor for thresholds? Today: maintainer only.
-6. **Idle timeout** length for supervisor and maintainer sessions (proposed 10 min).
-7. **Network access:** will the supervisor use the interface from another PC (then the listening address and a password are mandatory, section 7.6)?
-8. **Operator correction:** may the operator mark results wrong without login (FR-MDL-2 says supervisor or operator), or should it need a PIN?
+From 0.1, still open:
+1. **Shift counters:** when do they reset?
+2. **Audible alert:** is it wanted?
+3. **Branding:** client logo or colours?
+4. **Station monitor:** size and touch.
+5. **Idle timeout** length.
+6. **Network access:** will the interface be used from other PCs?
+7. **Operator correction:** without a PIN?
+
+Answered in 0.2 and 0.3:
+- Who edits jobs: the maintainer, plus the supervisor for tolerances only (§7.12).
+- Minimum screen: 1366×768.
+
+- Overlays on the operator screen (owner, 17/10): *sempre* by default, and the operator may toggle them; the station setting can change both (§18).
+- Live feedback rate in the editor (owner, 17/10): up to 2 runs per second on tier M and 5 on tier R, changeable in *Configurações › Desempenho* (§19.1).
+- Samples (owner, 17/10): recommended, never required for activation. *Ajustar pelas amostras* needs at least 3 *Boa* and 1 *Ruim*; the target shown is 10 *Boa* and 1 *Ruim* per known defect; *Validar* shows the gap (§7.3, §19.1).
+- Fine-tune and activation (owner, 17/10): the supervisor may activate a fine-tuned version once verification passes, with the audit record; an override after a failed verification stays maintainer-only (§7.12).
+
+---
+
+## 17. Settings levels (new in 0.2)
+
+Three levels, chosen in the top bar (`LevelSwitch`, FR-UI-10):
+
+| Level | Shows | For |
+|---|---|---|
+| **Essencial** | What decides most jobs: the region, the main measurement, the tolerances. Typically 3–6 fields per tool | Building a normal job; fine-tune |
+| **Avançado** | Adds secondary measurement settings (morphology, line coverage, scale range, anchor chains, quality gate details) | Difficult parts, tuning robustness |
+| **Especialista** | Adds performance and internal settings (work widths, decoder options, raw camera settings), the job's YAML view and diff | Diagnosis, the developer |
+
+**Rules:**
+- **A level is a view, not a permission.** The maintainer can switch freely. The level is remembered per user and per screen family (editor, settings). The supervisor's fine-tune screen is always Essencial.
+- **Every parameter has a level** in its schema (`x-level`, §9.3). A parameter without one is treated as Especialista, so a forgotten tag hides a field rather than cluttering the screen.
+- **Hidden is never invisible.** When a section hides parameters that differ from their defaults:
+  - the section shows a badge ("2 ajustes avançados alterados");
+  - the badge opens just those fields, even at the current level.
+
+  Testing with a hidden parameter changed is allowed; the result bar shows the same badge.
+- **Levels never change values.** Switching level changes no value, never resets anything, and never adds a version.
+- **The same levels** apply to the camera step, the anchor step, the quality gates and the settings sub-pages.
+
+---
+
+## 18. Image overlays — *Marcações* (new in 0.2)
+
+FR-UI-9. Overlays are drawn by the client from the result contract (architecture §10.3), never burned into the image. They can therefore be turned on and off without a new request.
+
+**Layers:**
+
+| Layer | Shows | Editor default | Operator default |
+|---|---|---|---|
+| Regiões | Each tool's region, in its tool's verdict style (§6.1); not-yet-tested regions in `ov-neutral` | on | on |
+| Âncoras | Found anchors: outline, axes and angle (`PoseMarker`); search areas at Avançado | on | on (outline only) |
+| Medições | What each tool measured: matches, edges and widths, blobs, codes with their text, defect areas | on | on FAIL only |
+| Rótulos | Tool names and values next to their regions | on | off |
+| Máscara | The selected tool's mask or debug image (§19.4) | off (on while a colour or threshold control has focus) | never |
+| Área de presença | The trigger area and its live state | step 5 only | off |
+| Grade e réguas | Pixel grid (zoom ≥ 8×), rulers in px or mm | off | never |
+
+**Controls:**
+- In the editor, one **split button** above the image (`◧ Marcações · 4/5` and `▾`): the button toggles the master switch, the arrow opens the **layer menu** with *Todas as marcações* and one check per layer (with what it shows, in a few words). The shortcut `M` toggles the master switch. The layers are never a row of buttons on the image bar (prototype review of 17/10).
+- On the operator screen there is one **Marcações** button that toggles the master switch.
+- *Configurações › Estação* sets:
+  - the default: *sempre* / *só em reprovação* / *nunca*;
+  - whether the operator may toggle.
+
+**Rule:** turning overlays off **never hides the verdict or the reason**. With overlays off, the operator screen still lists the failing tools by name (§7.1).
+
+---
+
+## 19. Vision controls (new in 0.2)
+
+The components that make the interface a vision system. All live in `components/vision/`, are built on React Aria (Slider, NumberField, ColorArea, ColorSlider) and the shadcn primitives (Popover, SegmentedControl, Accordion) plus canvas or SVG, and have every state in the `/design` gallery.
+
+### 19.1 Live feedback (FR-UI-12)
+
+Every control that changes a measurement shows its effect on the **next capture**:
+- a gauge's needle;
+- the mask;
+- the overlay;
+- the result bar.
+
+Feedback comes from the editor session (§9.5). The **rate** is set by the benchmark tier, and changeable in *Configurações › Desempenho*:
+- tier R: up to 5 runs per second;
+- tier M: up to 2.
+
+A small indicator in the result bar ("Captura ● 4/s") shows the real rate. A slow run is never queued behind a newer one: the newest settings win.
+
+On a frozen image (reference or a sample), the run happens once per change, on that image.
+
+**States of the workspace.** The editor screens are designed for these states as well as the normal one (prototype review of 17/10):
+
+| State | Image | Gauge and tool list | Result bar | Way out |
+|---|---|---|---|---|
+| **Carregando** | skeleton over the image, "Carregando a imagem e medindo as amostras…" | no needle, no dots; chips *…* | *Medindo…* (busy) | — |
+| **Sem amostras** | normal | reference dot only; "only the reference was measured…" in place of the margin; *Ajustar pelas amostras* disabled; filmstrip shows *Nenhuma amostra ainda* with the minimum to propose limits (3 *Boa*, 1 *Ruim*; recommended 10 *Boa* and 1 *Ruim* per defect, never required, §16); step ② *Amostras* marked ! | normal | *+ Boa* / *+ Ruim* |
+| **Âncora não encontrada** (E201/E202 on the live image) | no regions; the anchor's search area in `ov-error`, dashed, with the score and its minimum; a banner over the image names the error | value *não medido*, no needle; chips *–* (did not run); sample dots stay | *! ERRO · E201 · …* and "As ferramentas não rodaram" | *Abrir passo Âncora*; samples and reference still open normally; step ③ marked ! |
+| **Câmera perdida** (E401) | last frame dimmed, with its age, under a dialog-like card | as above | *! ERRO · E401 · Câmera desconectada* | *Reconectar*; *Ajustar na referência* (tuning goes on with the reference and samples) |
+
+In every one of them the controls stay usable on the reference and the samples: only the live image is lost.
+
+### 19.2 SchemaForm v2 and the widget registry
+
+The inspector for any tool or locator is drawn from its schema (§9.3), in these sections:
+
+| Section | Holds | From |
+|---|---|---|
+| Região | Region picker and drawing | the tool's `roi` |
+| O que medir | Measurement parameters, each with its widget | `x-group: measure` |
+| Critérios | One gauge per `criteria` entry; limits as handles | `criteria` + `x-group: criteria` |
+| Resultado | Affects result, failure text with field chips and preview | `affects_result`, `reason_fail` |
+| Avançado / Especialista | Remaining parameters by level, collapsed | `x-level` 2 / 3 |
+
+**Widget registry:** `x-widget` → component.
+
+| `x-widget` | Component |
+|---|---|
+| `hsv-range` | `HsvRangePicker` + eyedropper + mask preview |
+| `reference-color` | swatch + eyedropper + ΔE readout |
+| `template` | `TemplateCropper` (crop on the reference, preview, rotation range for shape models) |
+| `caliper` | caliper drawn on the image + `ProfilePlot` |
+| `gray-threshold` | `Histogram` with a draggable threshold, Otsu proposal, binarized preview |
+| `angle-range` | `AngleRangeDial` |
+| `code-formats` | chip multi-select with format icons |
+| `regex` | input with live test against the codes read now |
+| `region` | region picker |
+| (none) | the plain input for the type (React Aria `NumberField` with unit, `Switch`, `Select`, `SegmentedControl` for small enums) |
+
+An unknown construct still renders as a validated JSON field and is never dropped (as in 0.1).
+
+### 19.3 `ToolToleranceGauge` — the signature control
+
+One gauge per criterion. It is the same in every tool, the fine-tune screen and the results panel. This is the one place where the interface spends its visual boldness.
+
+```
+  Fração da região com a cor                                       92 %  ✓
+  Boas    ┆           │                        ● ●●● ●● ●
+          ┆           │                             ▼ atual
+          ┆ 0 ────────┼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100 %
+  Ruins   ┆  ✕ ✕   ✕  │
+                      80 (mín)  [◀ arrastar]   [ 80 %]
+  Margem: a pior boa (95 %) está 15 pontos percentuais acima do limite; a ruim mais alta, 52 abaixo.
+  12 de 12 boas acima · 3 de 3 ruins abaixo                    [Ajustar pelas amostras]
+```
+
+- **Scale:** the measured value's full range from `criteria.range`, in its unit. Logarithmic where the unit asks for it (µs).
+- **Band:** the allowed band is shaded in the neutral `--bg-3`. The area outside the band is not coloured red: colour stays for status.
+- **Handles:** the limits are draggable thumbs of a React Aria `Slider` (one or two thumbs), with a `NumberField` beside each for exact values. `between` criteria have two handles.
+- **Needle:** the **current value** (live or the frozen image) as a ▼ marker on the band, in the tool's verdict colour. It jumps, it does not animate (§6.3). With no current measurement (loading, anchor not found, camera lost) there is no needle and the value reads *não medido*.
+- **One place for the value:** the current value is written **only** in the gauge header (Mono, with ✓/✕). The tool list and the result bar show the verdict only (✓ ✕ – …); the image shows it only when the *Medições* layer is on. A failing value reaches the result bar through the failure text, not a chip.
+- **Sample dots, on two rows:** *Boa* samples as filled dots on the row **above** the band, *Ruim* samples as ✕ on the row **below**, each row labelled (*Boas* / *Ruins*), at their measured values from the batch test. The reference is a dot in the accent colour. A dot on the wrong side of the limit is ringed in the fail colour; the sample shown in the image is ringed in the selection colour. Each dot is a button: clicking it shows that sample in the image (hover shows its name and value). The limit line crosses both rows.
+- **Margin line:** in words **and in the criterion's unit** — for a percentage, *pontos percentuais* ("a pior boa (95 %) está 15 pontos percentuais acima do limite; a ruim mais alta, 52 abaixo"), for a length, mm. Never a bare fraction such as "margem 0,15". A second line counts the samples on the right side.
+- **No samples:** with no *Boa* or *Ruim* yet, the gauge shows the reference only and says that the limit cannot be checked or proposed; *Ajustar pelas amostras* is disabled with that reason (`aria-disabled`, tooltip).
+- **Proposal:** *Ajustar pelas amostras* (FR-UI-14) puts a ghost handle at the proposed limit (the middle of the widest gap, or an agreed margin from the worst *Boa* if no *Ruim* exist), with *Aplicar* / *Descartar*. If the samples overlap, it says so ("As amostras se sobrepõem; a medição não separa boas de ruins") and proposes nothing.
+- **Accessible name:** see §12.
+
+### 19.4 Colour: `HsvRangePicker`, eyedropper, mask preview
+
+**Why:** nobody knows an HSV range by heart. The 0.1 editor already proposed a hue range from a region; 0.2 makes colour a direct-manipulation task.
+
+```
+  Cor                                                 [◉ Conta-gotas]  [＋ incluir] [－ excluir]
+  Matiz    ▕▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▕   (barra de cores reais)
+                       ▲━━━━━━━━━━▲          103–128       histograma de matiz da região ▁▃▇▅▂
+  Saturação ▕░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▕  ▲━━━━━━━━━━━━━━━━▲ 120–255
+  Brilho    ▕░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▕     ▲━━━━━━━━━━━━━━▲ 70–255
+  Folga     ─────●──────  +6        [Máscara na imagem ◧]
+```
+
+- **Eyedropper:** click or drag on the image to sample pixels; *incluir* adds them, *excluir* removes a colour (for example the label next to a blue cap). The server proposes the range (percentiles 2–98 %) and the picker shows it as a ghost to apply (§6.5).
+- **Hue bar** shows real colours at the current saturation and value. Its range wraps around for reds: the band continues from 170 to 10.
+- **Saturation and value bars** are gradients at the selected hue.
+- **Hue histogram of the region** under the hue bar, so the user sees where the region's colours actually are.
+- **Folga:** one slider that widens or narrows all three ranges together. This is the control most people need after the eyedropper.
+- **Mask preview:** the pixels inside the range are hatched in `ov-mask` on the image while the control has focus (or always, by the layer switch). Live, at the session rate.
+- **Reference colour mode** (distance ΔE to a picked colour): swatch, eyedropper, a single *distância máxima* slider and the same mask.
+- **Numbers:** visible on every handle. At Essencial and Avançado, hue in **degrees** (0–360°, handles in 2° steps), saturation and value in **%**, *Folga* in degrees. The OpenCV scales (H 0–179, S and V 0–255) appear **only at Especialista**, beside the degrees, and in the job parameters. The stored job keeps the OpenCV values; only the display changes (levels never change values, §17). The pixel readout under the image follows the same rule.
+
+### 19.5 Other controls
+
+| Component | What it does | Used by |
+|---|---|---|
+| `Histogram` | 256-bin luminance or channel histogram on canvas; clipping percentages; optional draggable threshold (single or range) with Otsu proposal | camera, brightness tool, blob threshold, quality gates |
+| `ExposureControl` | Log slider in µs with stops, NumberInput, *Auto uma vez* (measure, then lock), clipping warning from the histogram | camera step |
+| `FocusMeter` | Sharpness value as a bar with **peak hold** ("melhor: 412"); the bar turns green within 5 % of the peak; optional focus-peaking layer | camera step |
+| `ProfilePlot` | Intensity profile along a caliper and its derivative; edge threshold as a draggable line; found edges marked and numbered on both the plot and the image | `edge` tool, `edges` locator |
+| `AngleRangeDial` | Half-circle dial with two handles for the allowed angle range; the found angle as a needle | anchor step |
+| `PoseMarker` | Found anchor: outline, origin cross, axis arrows, angle arc and value | image overlay |
+| `TemplateCropper` | Crop on the reference, preview at 1:1, "pontos de contorno" count for shape models, warning when the crop is flat or too small | pattern, template and shape locators |
+| `Filmstrip` | Reference, samples (Boa/Ruim with ✓/✕ agreement), live; keyboard navigation; virtualized | editor, fine-tune |
+| `ResultChips` | Per-tool ✓ / ✕ / – (did not run) / … (measuring) chips, **without values** (the value lives in the tool's gauge, §19.3); clicking selects the tool | editor result bar, fine-tune. The operator screen has no gauge, so it shows per-tool **lines with the value** in `VerdictPanel` (§7.1) instead |
+| `StepRail` | The sequence with step states and reasons (§4.3) | editor |
+| `LevelSwitch` | Essencial / Avançado / Especialista with the hidden-changes count | top bar |
+| `VerdictPanel` | The operator verdict (as in 0.1) plus per-tool lines | operator screen |
+
+---
+
+## Sources
+
+- Cognex In-Sight EasyBuilder: [Application Steps](https://docs.cognex.com/is_621/web/EN/ise/Content/EasyBuilder/AppSteps.htm).
+- Keyence IV series user manual (Setup Navigator: image optimization, master registration, tool settings, output assignment; tool auto tuning with OK/NG images): [manualsdir](https://www.manualsdir.com/manuals/658109/keyence-iv-series.html).
+- shadcn/ui: [Slider on React Aria](https://ui.shadcn.com/docs/components/aria/slider) · [Slider on Radix](https://ui.shadcn.com/docs/components/radix/slider).
+- React Aria Components: [ColorPicker, ColorSlider, ColorArea](https://react-aria.adobe.com/ColorPicker) · [Slider](https://react-aria.adobe.com/Slider) (npm `react-aria-components` 1.22.1, Apache-2.0).
+- Lingui (npm `@lingui/core` 6.10.0, MIT) · dnd-kit (npm `@dnd-kit/core` 6.3.1, MIT).
+- Research and architecture behind the sequence: project documents 05 and 06; architecture §7.1, §14, §15, §16.

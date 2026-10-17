@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 01 — Project Scope |
-| Version | 0.2 |
-| Date | 2026-10-15 |
+| Version | 0.3 — deliverables D12–D13 and the hardening phases A–F (document 03 §19) |
+| Date | 2026-10-16 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform scope (TD-19) |
 
@@ -26,7 +26,7 @@ Define what Vision Station does and does not do, what it delivers and under whic
 
 ## 3. Objectives
 
-1. Inspect an object at a fixed station and give a clear **PASS / FAIL / ERROR** with a reason in Portuguese, never a false PASS.
+1. Inspect an object at a fixed station and give a clear **PASS / FAIL / ERROR** with a reason in Portuguese or English (the station's language), never a false PASS.
 2. Be configured, not programmed: a **job** holds the camera settings and an ordered list of **tools** (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, relative to the frame or to an **anchor** found by a **locator**.
 3. Keep every setting that affects a result in the job; export a job or a full backup to a **single file**; restore it on a replacement PC or camera and **verify automatically** that it behaves the same.
 4. Treat the camera as a plugin: a USB webcam (Logitech C920) now, a Hikvision IP camera and others later, with no change to jobs or inspection code.
@@ -41,7 +41,7 @@ Define what Vision Station does and does not do, what it delivers and under whic
 - Inspection pipeline: image quality gate, locator, regions, tools, `all_pass` decision, reason text.
 - Tools by type, each a versioned module: `color`, `pattern`, `code`, `detect` (trained model, ONNX).
 - Jobs: create, edit (from the screen), version, export/import `.vjob`, full backup `.vbak`, verification before activation.
-- Operator screen (live image, result, reason, overlay, counters), Supervisor and Maintainer screens (jobs, results, settings, users, audit), all in Portuguese.
+- Operator screen (live image, result, reason, overlay, counters), Supervisor and Maintainer screens (jobs, results, settings, users, audit), in Portuguese and English (TD-30).
 - Results and images in a local store; collection mode and dataset export for training.
 - Installer, Windows service, installation and operation guides.
 
@@ -76,6 +76,8 @@ Define what Vision Station does and does not do, what it delivers and under whic
 | D9 | Model tooling (training and export guide) | Markdown + scripts |
 | D10 | Installation guide, operator guide, backup/restore procedure | Markdown / PDF |
 | D11 | Web interface specification | Markdown (document 05) |
+| D12 | Machine interface map v1, with a TIA Portal interface DB and function block for S7-1200/1500 | Markdown + PLC source |
+| D13 | Tools reference: one section per tool and locator (validation check V10) | Markdown |
 
 ## 7. Phases
 
@@ -88,6 +90,8 @@ Define what Vision Station does and does not do, what it delivers and under whic
 | 4 — First project on site | A customer project configured with the platform | That project's acceptance (owned by the project) |
 
 The first delivery (30/10/2026) is phase 1 complete, with the C920.
+
+After phase 1, the platform is hardened in phases **A–F** (document 03 §19: robust core, machine connectors, minimum tool set, operations, standards and models, industrial cameras). They have no dates yet and run alongside phases 2–4; requirements say which phase delivers them (document 02 §1).
 
 ## 8. Roles
 

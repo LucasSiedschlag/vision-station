@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.6 — TD-19 amended: general platform, customer projects outside the repository |
-| Date | 2026-10-15 |
+| Version | 0.10 — TD-31: trigger timing and remote I/O outputs, decided from the market reference (document 09). 0.9 — TD-29 revised: shadcn/ui + Tailwind kept, React Aria added (the Mantine plan of 0.8 reverted); TD-30: interface in Portuguese and English. 0.7 — TD-21..TD-28: pose-based fixtures, result contract, machine interface, OPC UA, algorithms, OCR, teaching from good parts, CPU-only PC tiers; TD-18 amended |
+| Date | 2026-10-17 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
 
@@ -40,6 +40,17 @@ Each decision follows the same format: **context → options → decision → co
 | TD-18 | Licence compliance | Only permissive licences in the shipped product; licence list generated at build |
 | TD-19 | General platform | **Vision Station is a general vision system for fixed stations** (still object, fixed camera). Inspection steps are **tools** (color, code, pattern, detect), configured per job. Customer projects use it and live outside this repository. |
 | TD-20 | Web interface | The system is **controlled from a web interface served by the API**. **React + TypeScript + Vite**, Tailwind and shadcn/ui (Radix), TanStack Query, generated API types; design system with tokens. Details in document 05 (`docs/frontend.md`). |
+| TD-21 | Pose-based fixtures | Locators return a **pose** (x, y, angle, scale); regions are cut **upright** for the tools; fixture chains; job **format 2** with a migrator. |
+| TD-22 | Result contract | One structured result everywhere, with a stable **error-code catalog** and **reason codes**. |
+| TD-23 | Machine interface | One fail-safe **handshake** (interface map v1); adapters: **S7 client** (python-snap7, MIT), **Modbus TCP server** and **remote 24 V I/O** (pymodbus, BSD-3). No PROFINET device stack. |
+| TD-24 | OPC UA | **OPC 40100-1** server (Simple Inline target) on **asyncua** (LGPL-3.0, shipped unmodified and replaceable), after S7 and Modbus. |
+| TD-25 | Vision algorithms | Own shape matching, calipers and variation model in `algorithms/`; **Fullseye** (Apache 2.0) code may be ported with attribution, never a dependency. |
+| TD-26 | OCR | Tier-2 `ocr` tool on **RapidOCR** (Apache 2.0, ONNX), to be evaluated; Tesseract as fallback. |
+| TD-27 | Teaching from good parts | `compare` (variation model) and `anomaly` (ONNX backbone + memory bank) taught on the station, NumPy only, no PyTorch. |
+| TD-28 | PC tiers | **Tier M** (Intel N100 class) and **tier R** (Core i5 12th+), both without a dedicated GPU; built-in **benchmark** classifies the PC; iGPU optional. |
+| TD-29 | UI components | **shadcn/ui + Radix + Tailwind kept**; **React Aria Components** for colour, range and number controls; shadcn `Sidebar`, `Resizable`, `Command`, `Chart`; `@dnd-kit`. Extends TD-20. |
+| TD-30 | Interface languages | **Portuguese (pt-BR) and English**; **Lingui** with PO catalogs in the interface, gettext/Babel PO catalogs on the server; job texts in both languages (format 2). Supersedes the pt-BR-only rule of TD-20/document 05 0.1. |
+| TD-31 | Trigger timing and remote I/O outputs | Trigger delay 0–1 000 ms per job; continuous interval 500 ms; refused triggers counted and assignable to an output; Error output stays normal; delayed reject in inspections or ms with a queue; low-margin PASS images kept; output polarity per line. From document 09 (market reference). |
 
 ---
 
@@ -464,7 +475,7 @@ Models are added only where the classical tools can't separate good objects from
 
 **Decision.**
 - Only MIT, BSD, Apache 2.0, PSF, public domain or similarly permissive licences in the shipped product.
-- LGPL is acceptable only when dynamically linked and unmodified (the FFmpeg inside OpenCV).
+- LGPL is acceptable only when dynamically linked and unmodified (the FFmpeg inside OpenCV), or, for a Python package, when it ships unmodified outside the bundled archive so the user can replace it (asyncua, TD-24).
 - **No AGPL or GPL code ships.** The PyInstaller bootloader exception is the one GPL-licensed exception, and it explicitly allows this use.
 - The build generates `THIRD_PARTY_LICENSES.txt` (e.g. with `pip-licenses`) and fails if a disallowed licence appears.
 
@@ -478,6 +489,10 @@ Models are added only where the classical tools can't separate good objects from
 | ONNX Runtime | MIT |
 | OpenVINO | Apache 2.0 |
 | duvc-ctl | MIT |
+| python-snap7 (S7 adapter, TD-23) | MIT |
+| pymodbus (Modbus adapters, TD-23) | BSD-3-Clause |
+| Babel (server text catalogs, TD-30) | BSD-3-Clause |
+| asyncua (OPC UA adapter, TD-24) | LGPL-3.0, shipped unmodified and replaceable |
 | requests | Apache 2.0 |
 | FastAPI / Uvicorn / Pydantic | MIT / BSD / MIT |
 | PyYAML | MIT |
@@ -560,6 +575,8 @@ Models are added only where the classical tools can't separate good objects from
 
 ### TD-20 — The web interface controls the system
 
+> **Extended by TD-29 and TD-30 (2026-10-16):** React Aria and more shadcn components are added (TD-29); the interface becomes bilingual (TD-30). The rest of this decision stands.
+
 **Context.**
 - TD-11 chose a local web UI in Edge kiosk mode, "plain HTML, CSS and JavaScript with no build step and no framework". At that point the UI was an operator screen plus a few admin pages.
 - The decision (2026-10-14) is that the interface is *how the system is operated*, like the software of a commercial vision system: parameters, settings, access, live view, job import and export, region drawing, results and training data. That is more than twenty screens with shared state, forms, tables and a canvas editor.
@@ -595,22 +612,261 @@ Models are added only where the classical tools can't separate good objects from
 
 ---
 
+### TD-21 — Pose-based fixtures and job format 2
+
+**Context.**
+- Locators return an axis-aligned rectangle (`Anchor.rect`). The `template` locator tolerates a shift, not a rotation or a change of size; `blob` returns the upright rectangle around the region.
+- NFR-ACC-4 already asks for ±10° of placement tolerance, so jobs cannot meet it today.
+- Every commercial system reviewed (Cognex fixtures, Keyence position adjustment, QuaSolo coordinate-system tool) inspects in the part's own coordinate system.
+
+**Options.**
+
+| Option | For | Against |
+|---|---|---|
+| Keep rectangles; ask projects to use jigs | No work | NFR-ACC-4 unmet; every rotated part is a FAIL or an ERROR |
+| Rotation-aware tools (each tool handles angle) | No geometry layer | Every tool gets more complex; easy to get one wrong |
+| **Pose-based fixtures + upright region cut** | Tools unchanged; one place handles geometry; fixture chains possible | Job format change (2) and a migrator; interpolation on rotated cuts |
+
+**Decision.**
+- A locator returns a fixture with a pose `(x, y, angle, scale)` and a taught size. ROIs are fractions of a fixture's size in its own axes. The geometry component cuts each region **upright** with `cv2.warpAffine`, so tools keep their contract (architecture §14).
+- Fixtures are an ordered list; each may search inside a previous one. Each states its allowed angle, scale and position range; outside it is ERROR E202.
+- Job format 2; format 1 migrates (anchor = fixture `anchor`, angle 0, scale 1) with identical results on the reference set.
+
+**Consequences.**
+- New locators: `blob` v2 (angle from `minAreaRect`), `shape` (TD-25), `edges` (two-edge corner).
+- Tool details with coordinates are mapped back to frame pixels for the overlay by the geometry component.
+- The editor must draw rotated fixtures and let the user set the allowed ranges.
+
+**Revisit when:** a project needs perspective (tilted part surfaces); then the pose becomes a homography.
+
+---
+
+### TD-22 — Result contract and error-code catalog
+
+**Context.** Results carry an outcome, a Portuguese reason and scores. A PLC cannot act on Portuguese text, records cannot be counted by cause, and OPC 40100 needs a typed result content.
+
+**Decision.**
+- One result structure (architecture §10.3) for the pipeline, the records, the API, the machine interface and OPC UA: sequence, job version and content hash, trigger source and part id, outcome, **error code** from a stable catalog (E1xx image, E2xx location, E3xx region/tool, E4xx camera, E5xx system, E6xx machine), **reason codes** `<tool type>.<criterion>`, per-tool values with units, fixture poses, stage timings, `simulated`.
+- Codes are never reused or renumbered; texts may be reworded.
+- The API keeps today's fields and adds the new ones.
+
+**Consequences.** Every internal "stop" in the pipeline carries a code; a test checks that each code in the catalog is reachable and documented.
+
+---
+
+### TD-23 — Machine interface: one handshake, thin adapters (S7, Modbus TCP, remote I/O)
+
+**Context.**
+- Typical customers use, in order: Siemens S7 (S7-1200/1500), Modbus TCP, OPC UA, plain 24 V I/O.
+- PLC programmers expect the smart-camera handshake (trigger enable/ready/ack, acquisition done, results valid, acknowledge, error and clear error, job number).
+- Requirement: never a false PASS at the PLC.
+
+**Options for Siemens.**
+
+| Option | For | Against |
+|---|---|---|
+| **S7 protocol, PC as client of an interface DB** (python-snap7, MIT) | What Siemens integrators expect (a DB); no PLC code beyond the DB and a small FB | PUT/GET must be enabled and the DB must not be optimized; PUT/GET is unauthenticated plaintext |
+| **Modbus TCP, PC as server, PLC as client** (pymodbus, BSD-3) | Works with any brand; no PUT/GET; PLC-side code with the standard Modbus client instruction | No authentication in Modbus; register mapping is less readable |
+| PROFINET device stack on the PC | Native to Siemens | Needs a licensed or GPL stack; the PC becomes an I/O device; much more work |
+| OPC UA (S7-1500 as client, or MES) | Secure, typed | Not every S7-1200 can be a client; heavier for a cyclic handshake |
+
+**Decision.**
+- One **handshake engine** with a versioned **interface map v1** (architecture §16.2). Adapters only move fields: **S7 client** (python-snap7) and **Modbus TCP server** (pymodbus) first; **remote I/O** as a Modbus TCP client of a 24 V I/O module (pymodbus); OPC UA later (TD-24).
+- Adapters run in their own threads at a fixed cycle (proposed 10 ms) and drive the controller only through its existing commands.
+- Fail-safe rules (architecture §16.3–16.5): edges start actions; fields before valid; Pass/Fail/Error only while ResultValid; heartbeats both ways; simulated results never signalled.
+- Job numbers and products are system configuration, not job content.
+- No PROFINET/EtherNet/IP device stack. No USB I/O boxes.
+
+**Consequences.**
+- New dependencies: python-snap7 (MIT; since 3.x pure Python per its PyPI page) and pymodbus (BSD-3). Both are permissive (TD-18).
+- Installation guide: how to enable PUT/GET and a non-optimized interface DB, with the security note and the Modbus alternative (NFR-SEC-6).
+- Deliverable D12: interface map document, TIA Portal interface DB and function block (handshake + heartbeat check) for S7-1200/1500.
+- Test suite: a simulated PLC for both adapters; fail-safe tests (kill the core, drop the link, stop the heartbeat); 72-hour soak (NFR-REL-9).
+
+**Revisit when:** a customer requires PROFINET or EtherNet/IP natively, or OPC UA replaces the cyclic handshake at a site.
+
+---
+
+### TD-24 — OPC UA server (OPC 40100-1) on asyncua, shipped replaceable
+
+**Context.**
+- OPC 40100-1 is the standard way to expose a vision system to MES and modern PLCs (project doc 05). Target profile: *Simple Inline Vision System*.
+- asyncua is the only maintained Python OPC UA server. It is **LGPL-3.0**; its server supports encryption and certificates, and its user model distinguishes admin and user roles (a custom `UserManager` can be supplied). Importing the MachineVision NodeSet has a known open issue around `ResultType`.
+- TD-18 allows LGPL only dynamically linked and unmodified.
+
+**Decision.**
+- OPC UA adapter on asyncua, after S7 and Modbus (phase E).
+- Shipped **unmodified and replaceable**: the asyncua package is kept outside the PyInstaller archive, as plain files the user can replace, with its licence and a source offer (NFR-LIC-3). TD-18 is amended accordingly.
+- SignAndEncrypt by default; state-changing methods check the session's user and role in our handlers.
+- First task: load the official MachineVision NodeSet; if the import fails, build the needed types in code.
+
+**Consequences.** The licence list gains one LGPL entry with the replacement instructions. A third-party 40100 client (e.g. the OPC Foundation .NET samples, `Opc.Ua.Vision*`) is used to test the server.
+
+**Revisit when:** a permissively licensed Python OPC UA server appears, or a customer requires certification.
+
+---
+
+### TD-25 — Algorithms for shape matching, calipers and the variation model
+
+**Context.**
+- The minimum tool set needs rotation- and scale-tolerant shape matching (`pattern` v2, `shape` locator), 1D calipers with subpixel edges (`edge`, `edges` locator) and a per-pixel variation model (`compare`).
+- OpenCV has the building blocks (Sobel, pyramids, `matchTemplate`, `warpAffine`) but no ready shape matcher of this kind.
+- Fullseye (Apache 2.0) contains NumPy implementations of all three (`shapematch.py`, `measuring1d.py`, `inspection.py`) but is ~770 k lines across ~1 700 flat modules, one author, beta (0.6.0, Oct 2026), with a scope far beyond ours.
+
+**Decision.**
+- Implement the three algorithms in `algorithms/`, small and tested, following the published methods (gradient-direction shape matching on a pyramid; 1D projection with Gaussian-derivative edges and subpixel interpolation; mean ± k·σ per pixel after alignment).
+- Fullseye code may be **ported** where it helps, keeping the Apache-2.0 attribution (THIRD_PARTY_LICENSES, NOTICE). **Fullseye is not a dependency.**
+- For shape matching, benchmark the NumPy implementation against an OpenCV multi-angle NCC pyramid on tier M; keep the faster one that passes V4.
+
+**Consequences.** Three algorithm modules with their own golden and invariance tests (V2–V4) and benchmarks (V8).
+
+**Revisit when:** a permissive library offers a maintained, faster shape matcher.
+
+---
+
+### TD-26 — OCR
+
+**Decision.** Tier-2 `ocr` tool (read, or verify an expected text or pattern) on **RapidOCR** (Apache 2.0, PaddleOCR models in ONNX), to be evaluated on lot and date prints at the station before it is committed. Tesseract (Apache 2.0) is the fallback. No cloud OCR.
+
+**Revisit when:** the evaluation shows poor results on dot-matrix or inkjet prints; then consider a small model trained offline for the font (document 07).
+
+---
+
+### TD-27 — Teaching from good parts on the station
+
+**Context.** Integrators expect to teach "what good looks like" at the station (Keyence Learning, Cognex Flaw Detection, QuaSolo "looks-right"). TD-09 forbids PyTorch in production.
+
+**Decision.**
+- **`compare`** (tier 1): variation model — per-pixel mean and tolerance from N aligned good regions; defect = pixels outside mean ± k·σ, filtered by area. Pure NumPy/OpenCV.
+- **`anomaly`** (tier 2): patch features from a small backbone in ONNX (candidates: ResNet-18 from torchvision, BSD; DINOv2 ViT-S/14, Apache 2.0 — not the XRay/Cell DINO variants, which are non-commercial), a coreset memory bank stored in the job's `taught/`, nearest-neighbour distance as the anomaly map. Teaching is NumPy on the CPU; fixed random seed.
+- Heavier anomaly models stay offline with Anomalib (Apache 2.0) and are exported (document 07).
+
+**Consequences.** The backbone file and its licence are part of the program (not of each job) and listed in THIRD_PARTY_LICENSES; the job records which backbone version taught it and refuses to run with another.
+
+**Revisit when:** benchmark B-1 shows tier M cannot teach within NFR-PERF-5.
+
+---
+
+### TD-28 — CPU-only PC tiers and the built-in benchmark
+
+**Context.** Stations will not have a dedicated GPU. Some customers want low-cost fanless mini-PCs; others accept a desktop-class CPU.
+
+**Decision.**
+- Two tiers, both without a dedicated GPU: **M** (Intel N100/N97/N150 class, 16 GB) and **R** (Core i5 12th gen or newer / Core Ultra 5, 16–32 GB). Section 3 replaces the single specification.
+- A built-in **benchmark** (FR-ADM-5) runs at first start and on demand: a fixed workload plus the jobs' reference sets; it records times per stage and tool, classifies the PC and sets thread caps.
+- The Intel integrated GPU may be used through OpenVINO only when the benchmark shows a gain, and never as a requirement (NFR-PERF-3).
+- Targets per tier are in document 02 (NFR-PERF-5) and stay *proposed* until **bench test B-1** (section 7) on one real unit of each tier.
+
+**Consequences.** Model cards state latency per tier (FR-MDL-6); the editor compares each job with its budget on the PC it runs on.
+
+**Revisit when:** B-1 results are in.
+
+---
+
+### TD-29 — Interface components: keep shadcn/ui + Tailwind, add React Aria
+
+**Context.**
+- TD-20 chose React + TypeScript + Vite with shadcn/ui on Radix and Tailwind. The result (document 05 v0.1) is accessible and tested: 23 base components (~1 600 lines), tokens with tested contrast, design-rule and accessibility tests, a gallery. It did not yet feel like vision software (document 05 v0.2).
+- The redesign needs rich controls: multi-thumb sliders, number fields with units and locale formatting, colour channels in HSB, resizable panels, a command palette, charts. On top of them it builds its own vision controls (tolerance gauge, HSV range picker, histograms, profiles, image workspace) — **with any library**.
+- The screens of the editor and the operator are redesigned whichever library is used.
+- Document 04 v0.8 recorded a migration to Mantine. The owner reviewed the trade-offs the same day and reverted it.
+
+**Options.**
+
+| Option | For | Against |
+|---|---|---|
+| Migrate to **Mantine 9** | Complete library with RangeSlider, NumberInput, Stepper, AppShell, Spotlight, charts out of the box; we stop owning base components | Re-founds a tested layer (components, tokens pipeline, design-rule tests) on top of the screen redesign; Tailwind removed or run beside a second styling system; Mantine's ColorPicker has no HSV ranges, so the vision controls stay custom anyway |
+| **Keep shadcn + Tailwind, add React Aria and catalog components** | Keeps the tested foundation; React Aria brings the exact primitives the vision controls need (multi-thumb `Slider`, `NumberField`, `ColorArea`/`ColorSlider`/`ColorField` in HSB) with strong accessibility and locale formatting; shadcn now publishes React Aria variants of its components | We keep owning the base components; two primitive families (Radix and React Aria) side by side |
+| Ark UI / Park UI, Blueprint, MUI, Ant Design | Complete sets | A third foundation (Ark), a dated look (Blueprint), or a strong identity hard to bend to an HMI (MUI, Ant) |
+
+**Decision.**
+- **Keep shadcn/ui + Radix + Tailwind** and the token and design-rule tests.
+- Add **React Aria Components** (Apache-2.0) for colour, range and number controls, through shadcn's React Aria variants where they exist and thin wrappers otherwise. Radix stays for everything else (dialogs, menus, popovers, tabs, select).
+- Add from the shadcn catalog: `Sidebar`, `Resizable` (react-resizable-panels), `Command` (cmdk), `Accordion`, `Drawer`, `Chart` (Recharts).
+- Add `@dnd-kit/core` + `@dnd-kit/sortable` (stable 6.x) for reordering.
+- No migration plan: additions in steps UI-C0..C3 (document 05 §15.2).
+
+**Consequences.**
+- One styling system (Tailwind + tokens), as today.
+- React Aria components are styled through their `data-*` state attributes with the same Tailwind names; a rule in the design-rules test keeps them on tokens.
+- Operator-route JS budget: 150 → 160 KB gzip, for the i18n runtime (TD-30), re-measured after UI-C2.
+
+**Revisit when:** keeping the base components costs more time than the screens, or a single library covers the colour and range primitives with the same accessibility.
+
+---
+
+### TD-30 — Interface in Portuguese and English
+
+**Context.** Document 05 v0.1 made the interface pt-BR only (owner, 2026-10-14), with every string in `texts.ts`. On 2026-10-16 the owner asked for Portuguese **and** English. Texts come from three places: the interface, the server (state messages, error-code texts, tool labels, reports) and the jobs (`reason_fail`, `ui.waiting`).
+
+**Options.**
+
+| Option | For | Against |
+|---|---|---|
+| **Lingui** (MIT) | Messages written in the code in the source language and extracted; catalogs compiled at build (small runtime; a missing translation fails the build); ICU plurals; **PO files**, the same format as Python's gettext/Babel, so one workflow serves interface and server | Build step (Vite plugin, CLI) |
+| i18next / react-i18next (MIT) | Most used; runtime JSON | No compile-time check; larger runtime; JSON on the client and PO on the server would be two formats |
+| Keep `texts.ts` with two objects | No dependency | No extraction, no plurals, no translator tooling |
+
+**Decision.**
+- **Lingui** in the interface, source language **pt-BR**, second language **en**; PO catalogs in `frontend/src/locales/`.
+- **Server texts** in PO catalogs compiled with **Babel**, chosen by `Accept-Language`; codes stay the contract (TD-22).
+- **Operator screen** follows the **station language** (`system.yaml`); admin users choose theirs.
+- **Job texts** in both languages from job format 2 (`reason_fail: {pt-BR: …, en: …}`); a missing translation falls back to the other language and is flagged in *Validar*; format-1 texts are read as pt-BR (FR-JOB-15).
+- Numbers and dates formatted by locale (`Intl`; React Aria `NumberField`).
+
+**Consequences.**
+- `texts.ts` is migrated into the pt-BR catalog (UI-C2); `schema_labels.py` gains English labels (UI-C3).
+- CI fails on a message without an English translation, on both sides.
+- Records keep codes and values, plus the station-language reason for traceability.
+
+**Revisit when:** a third language is needed (add a catalog; nothing else changes).
+
+### TD-31 — Trigger timing and remote I/O outputs, from the market reference
+
+**Context.** Document 09 (2026-10-17) compared Vision Station with Cognex In-Sight and Keyence IV/IV3, feature by feature. Six gaps touched the trigger and the outputs a machine sees. The owner decided them on 2026-10-17, plus the output polarity.
+
+**Decisions.**
+
+| # | Topic | Market | Decision |
+|---|---|---|---|
+| 1 | Trigger delay, mode *Pela máquina* | Cognex 0–10 000 ms; Keyence 0–1 000 ms, default 0 | **0–1 000 ms, default 0, per job** (`trigger.delay_ms`). It depends on the part and the mechanics, as in both vendors (FR-TRG-6). The wider Cognex range mostly admits configuration mistakes |
+| 2 | Interval, mode *Contínuo* | Cognex default 500 ms; Keyence *Internal* default 50 ms | **Minimum interval 500 ms by default, per job** (`trigger.interval_ms`; 0 = as fast as possible). Leaves CPU on tier M and keeps the record readable; the still-scene rule of FR-TRG-5 stays (FR-TRG-7) |
+| 3 | Refused triggers | Cognex *ERR: Missed Acquisition*, *Acquisition Error*; Keyence *Trigger Error* output and count | Keep the `TriggerRefused` pulse (§16.2). **Add a counter** per job, shift and day in the statistics, and make it **assignable to a remote I/O output** (FR-INT-14). No alert in this version |
+| 4 | Error output polarity | Keyence: Error is N.C. by default | **Error stays normal** (energized on error), as are all outputs. The owner prefers the behaviour every integrator reads at a glance. Consequence: a cut wire or an unpowered I/O module is not seen on that line; it is caught by the PLC heartbeat (NFR-REL-8) or, on lines without a PLC, by wiring the *Online* output as a "healthy" lamp or relay. The integrator can invert any output (decision 7) |
+| 5 | Delayed reject | Cognex *Acquisition Delay (N)* 0–1 000 and *Time After Trigger* 0–10 000 ms; pulse 1–1 000 ms | **Both forms**: after **N inspections** (fixed-pitch conveyor) or **T ms** after the trigger (constant speed). Pulse 10–1 000 ms, default 100. Rejects on **FAIL and ERROR** by default, each switchable, because an unjudged object must not pass. Pending rejects in a queue. On stop, job change or restart the queue is cleared, the loss logged, and Error raised until acknowledged: a lost reject must never look like a pass (FR-INT-15). Station configuration, not job: it depends on where the rejector sits |
+| 6 | Images of low-margin passes | Keyence image history *NG and OK near threshold* | **Keep every PASS whose margin on a deciding tool is below twice the margin warning limit** (default 0.05 → below 0.10), besides the 1-in-20 sample. These are the border cases fine-tune needs. Under disk pressure they go after the sampled PASS images (FR-LOG-9) |
+| 7 | Output polarity | Keyence N.O./N.C. per output | **Normal or inverted per remote I/O output**, all normal by default (FR-INT-16). Lets an integrator build a fail-safe line without code |
+
+**Consequences.**
+- Job format 2 gains `trigger.delay_ms` and `trigger.interval_ms` (defaults keep old jobs unchanged).
+- `system.yaml › machine.remote_io.outputs` becomes a list of `{line, function, polarity}`; the `reject` function carries `on`, `delay` (`{inspections: N}` or `{ms: T}`) and `pulse_ms` (architecture §16.7).
+- The handshake engine owns the reject queue; R3 adds tests for the queue, for clearing on stop and for the Error raised on a lost reject.
+- Statistics (document 05 §7.13) show refused triggers; the machine monitor (§7.14) shows the reject queue.
+
+**Revisit when:** a project needs an encoder-based tracking delay (pulses rather than inspections), or a site asks for the Error output fail-safe by default.
+
+---
+
 ## 3. PC specification (for the client to buy)
 
-| Item | Minimum | Recommended | Why |
-|---|---|---|---|
-| CPU | Intel Core i5, 12th gen | Intel Core i5/i7 13th–14th gen or Core Ultra | Intel for OpenVINO speed-up (TD-09); no GPU needed (NFR-PERF-3) |
-| RAM | 16 GB | 16–32 GB | Models + image buffers + browser |
-| Storage | 512 GB NVMe SSD | 1 TB NVMe SSD | Result images with 90-day retention (NFR-ENV-2) |
-| Network | 2 × Gigabit Ethernet | 2 × Gigabit Ethernet | One port **only for the camera**, one for the plant network (NFR-SEC-2) |
-| USB | 2 × USB 3 | — | C920 during the prototype, backup drive |
-| OS | Windows 11 Pro 64-bit | Windows 11 IoT Enterprise LTSC | TD-01 |
-| Form factor | Desktop or mini-PC | Fanless industrial mini-PC if the area is dusty | Reliability |
-| Monitor | 21" | 24" | Readable from 2 m (NFR-USA-2) |
-| Power | — | **UPS** (small, line-interactive) | Avoids corrupting data on power loss; gives a clean shutdown |
-| Camera power | **PoE+ (IEEE 802.3at) injector**, or a small 802.3at PoE switch, on the camera port | — | DS-2CD3666G2T-IZS is PoE Class 4 (max 15 W); an 802.3af injector is not enough |
+Two tiers, both **without a dedicated GPU** (TD-28, NFR-PERF-5). The project chooses the tier; the built-in benchmark confirms it on the delivered unit.
 
-The final CPU choice is confirmed by running the model benchmark (TD-08) on the candidate machine, or on one with the same CPU, before purchase.
+| Item | Tier M (minimum) | Tier R (recommended) | Why |
+|---|---|---|---|
+| CPU | Intel N100 / N97 / N150 class (4 cores, AVX2) | Intel Core i5 12th gen or newer, or Core Ultra 5 | Intel for OpenVINO (TD-09); tier M for classical jobs and one small model, tier R for several models and teaching at full size |
+| GPU | Integrated only | Integrated only | No dedicated GPU (NFR-PERF-3); the iGPU is an optional accelerator chosen by the benchmark |
+| RAM | 16 GB | 16–32 GB | Models + image buffers + browser |
+| Storage | 256 GB SSD | 512 GB – 1 TB NVMe SSD | Result images with the retention of FR-LOG-3 (NFR-ENV-2) |
+| Network | 2 × Gigabit Ethernet | 2 × Gigabit Ethernet | One port **only for the camera**, one for the machine/plant network (NFR-SEC-2, NFR-SEC-4) |
+| USB | 2 × USB 3 | 2 × USB 3 | C920 during the prototype, backup drive |
+| OS | Windows 11 IoT Enterprise LTSC or Pro, 64-bit | Windows 11 IoT Enterprise LTSC or Pro, 64-bit | TD-01 |
+| Form factor | Fanless industrial mini-PC | Desktop, or fanless industrial PC if the area is dusty | Reliability |
+| Monitor | 21" | 24" | Readable from 2 m (NFR-USA-2) |
+| Power | **UPS** (small, line-interactive) | **UPS** | Avoids corrupting data on power loss; gives a clean shutdown |
+| Camera power | **PoE+ (IEEE 802.3at) injector** or switch on the camera port | same | DS-2CD3666G2T-IZS is PoE Class 4 (max 15 W); an 802.3af injector is not enough |
+| Remote I/O (if the project uses 24 V signals) | Modbus TCP digital I/O module on the machine network | same | FR-INT-6; no USB I/O |
+
+The tier is confirmed by running the benchmark (FR-ADM-5, test B-1 in section 7) on the candidate machine, or on one with the same CPU, before purchase.
 
 ---
 
@@ -663,6 +919,10 @@ Job files are the same on both, so a backup made on Windows restores on Linux an
 | 18 | Barrel distortion at the wide end of the zoom | Production | Use the middle/tele half of the zoom; choose height accordingly (TD-06) |
 | 19 | C920 sends overexposed frames after each apply | Prototype | Frames dropped for `camera.settle_ms` after every apply (TD-04) |
 | 20 | Unplugged C920 sends black frames with no error | Prototype | Uniform frames for `camera.dead_after_s` = lost; UVC device-list check (TD-04) |
+| 21 | A turned part is not found, or regions land beside the feature | Both | Pose-based fixtures with allowed ranges (TD-21) |
+| 22 | S7 PUT/GET is unauthenticated and needs non-optimized DBs | Machine | Segmented machine network; Modbus server alternative (TD-23, NFR-SEC-6) |
+| 23 | asyncua may fail to import the MachineVision NodeSet (`ResultType`) | OPC UA | Test first; build the types in code if needed (TD-24) |
+| 24 | A model that is fast on tier R is too slow on tier M | Model | Latency per tier in the model card; benchmark; INT8 (TD-28, FR-MDL-6) |
 
 ---
 
@@ -678,11 +938,15 @@ Run these first, on the bench, in this order. Each one closes a decision above.
 | 4 | Benchmark RF-DETR Nano/Small vs YOLOX-S/Tiny, ONNX Runtime CPU vs OpenVINO, on a PC with the target CPU | TD-08, TD-09, section 3 |
 | 5 | On the DS-2CD3666G2T-IZS: read capabilities; set and read back image settings, day/night mode, focus and zoom over ISAPI, then reboot and check they persist and restore; compare RTSP-TCP and snapshot quality and delay at 3200 × 1800 and 1920 × 1080; read alarm input events and switch an output, measuring the delay; run 8 hours without stopping | TD-05, TD-06, §13 open point 2 |
 | 6 | Export a backup on one PC, install fresh on another, restore, run verification | NFR-REL-4/5 |
+| B-1 | Benchmark on one tier-M and one tier-R unit: fixed workload, a classical job, a job with one model (FP32 and INT8, CPU and iGPU), `compare` and `anomaly` teaching | TD-28, NFR-PERF-5 |
+| B-2 | Handshake against a real S7-1200 (S7 adapter) and a Modbus client (PLC or simulator): UC-11 and UC-12 for 8 h, then the fail-safe tests (kill the core, pull the cable, stop the heartbeat) | TD-23, NFR-REL-7/8 |
+| B-3 | Load the official MachineVision NodeSet in asyncua; run a 40100 client against the server | TD-24 |
 
 ---
 
 ## 8. Sources
 
+- TD-21..TD-28: project research documents 05 and 06 · [Cognex industrial communication signals](https://docs.cognex.com/is3d_132/web/EN/Help_IS3D/Content/Topics/IndustrialCommunications/comms-signals-vidi.htm) · [Keyence IV3 specifications](https://www.keyence.com/products/vision/vision-sensor/iv3/specs/) · [python-snap7](https://pypi.org/project/python-snap7/) · [pymodbus](https://pypi.org/project/pymodbus/) · [asyncua](https://pypi.org/project/asyncua/) · [asyncua #651](https://github.com/FreeOpcUa/opcua-asyncio/issues/651) · [S7-1200/1500 settings for PC clients (EMQX)](https://docs.emqx.com/en/neuronex/latest/configuration/south-devices/siemens-s7/plc/siemens-s7-1200-1500.html) · [Fullseye](https://github.com/furuse-kazufumi/fullseye) · [RapidOCR](https://pypi.org/project/rapidocr/) · [Anomalib](https://pypi.org/project/anomalib/) · [DINOv2 licence](https://github.com/facebookresearch/dinov2)
 - C920 firmware and focus/exposure behavior: [crowsnest issue #96](https://www.github.com/mainsail-crew/crowsnest/issues/96) · [OctoPrint community thread](https://community.octoprint.org/t/anyway-to-disable-the-autofocus-for-cameras/801/21) · [udev rule gist](https://gist.github.com/fornellas/b9a00066faf67a34beea529ff2156e46)
 - C920 frame rate (YUYV, MJPG, low-light compensation): [OpenCV forum](https://forum.opencv.org/t/opencv-camera-low-fps/567) · [BeagleBoard forum](https://forum.beagleboard.org/t/problems-with-webcams/13172?page=5)
 - OpenCV backends on Windows: [MSMF slow init](https://forum.opencv.org/t/the-msmf-backend-is-slow-to-acquire-the-initial-frame/24121) · [auto-exposure semantics](https://forum.opencv.org/t/set-camera-paramter-without-reset-of-it/15021) · [Arducam UVC + OpenCV](https://docs.arducam.com/UVC-Camera/Appilcation-Note/Access%20UVC%20Cameras%20using%20OpenCV%2C%20Python%2C%20and%20GStreamer/)

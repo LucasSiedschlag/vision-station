@@ -14,13 +14,14 @@ Sibling project: `../vision-sim` (Bancada Virtual de Visão, project VIS, public
 | File | Content |
 |---|---|
 | `docs/project-scope.md` | 01: what a fixed station is, in/out of scope, deliverables D1–D11, phases, risks |
-| `docs/requirements-and-use-cases.md` | 02: `FR-*` / `NFR-*` requirements (MoSCoW), use cases `UC-01..10`, project values |
-| `docs/architecture.md` | 03: components, the **job** model, `.vjob` / `.vbak` formats, camera abstraction, state machine, flows |
-| `docs/technical-decisions.md` | 04: decisions `TD-01..20`, PC spec, network, known problems, bench tests |
-| `docs/frontend.md` | 05: the web interface (React + Vite + TypeScript): design system, screens by role, API contract, editor, tests, build |
+| `docs/requirements-and-use-cases.md` | 02: `FR-*` / `NFR-*` requirements (MoSCoW + phase letter), use cases `UC-01..14`, PC tiers M/R, project values |
+| `docs/architecture.md` | 03: components, the **job** model, `.vjob` / `.vbak` formats, camera abstraction, state machine, flows; new in 0.4: pose-based fixtures (§14), tool catalog and validation checklist (§15), machine interface (§16), robustness patterns (§17), refactors R0–R9 (§18), phases A–F (§19) |
+| `docs/technical-decisions.md` | 04: decisions `TD-01..30`, PC tiers M/R, network, known problems, bench tests |
+| `docs/frontend.md` | 05 (v0.3): the web interface (shadcn + Tailwind + React Aria, TD-29; pt-BR + en, TD-30): the order of work (§4.3), screens by role, workbench and image workspace (§10), settings levels (§17), overlays (§18), vision controls (§19), API contract, migration plan (§15) |
 | `docs/integration.md` | 06: how another program uses Vision Station through the local API (inspections with an id, result and pictures, live view, allowed origins) |
 | `docs/models.md` | 07: the `detect` tool, training offline, ONNX export, the model card |
 | `docs/job-format.md` | 08: `.vjob`/`.vbak` format (D8) |
+| `docs/reference-cognex-keyence.md` | 09: market reference, Cognex In-Sight and Keyence IV/IV3 feature by feature; §18 says what we adopt (TD-31) |
 | `docs/guias/` | Portuguese guides: installation, operator, backup and restore (D10), building the installer |
 
 Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs stable; when a decision changes, update the TD record and every place that cites it.
@@ -35,6 +36,8 @@ Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs s
 6. **The camera is a plugin** behind one interface (`open/capabilities/apply/read_back/frames/snapshot/health`). Drivers: UVC (C920), Hikvision (ISAPI + RTSP/snapshot), File (tests). Inspection and job code never name a camera.
 7. **Core is OS-independent**; OS-specific code only in camera drivers, service wrapper, installer.
 8. **Simple for one maintainer**: one process, SQLite + files, no brokers, containers or cloud.
+9. **Machine outputs fail safe** (architecture §16): Pass/Fail/Error only while ResultValid; everything off on start, on any loss and between results; simulated results are never signalled.
+10. **Jobs carry data, never code** (FR-PLT-12): inspection logic ships only in the program, versioned per tool type.
 
 ## Commands
 
@@ -53,14 +56,14 @@ Layout: `src/vision_station/` (platform, no customer words), `frontend/`, `tests
 
 ## Chosen stack (TD-02..TD-18)
 
-Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `requests` Digest + ISAPI (Hikvision, no SDK) · ONNX Runtime CPU (OpenVINO on Intel) · FastAPI + Uvicorn (localhost) · web UI in Edge kiosk (React + TypeScript + Vite, all of it in `frontend/`; the API serves `frontend/dist`) · SQLite · YAML + Pydantic · WinSW service · PyInstaller + Inno Setup · pytest.
+Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `requests` Digest + ISAPI (Hikvision, no SDK) · ONNX Runtime CPU (OpenVINO on Intel) · FastAPI + Uvicorn (localhost) · web UI in Edge kiosk (React + TypeScript + Vite, shadcn/ui on Radix + Tailwind, **React Aria** for colour/range/number controls (TD-29), **Lingui** pt-BR + en (TD-30); all of it in `frontend/`; the API serves `frontend/dist`) · SQLite · YAML + Pydantic · WinSW service · PyInstaller + Inno Setup · pytest.
 
 **Licensing is a hard constraint (NFR-LIC-1, TD-08, TD-18):** no AGPL/GPL in the shipped product. **Never use Ultralytics/YOLOv8/11.** RF-DETR only Nano–Large (XL/2XL are not Apache). Training stack (CVAT, Supervision, Anomalib, PyTorch) stays offline and out of the install.
 
 ## Conventions
 
-- Vocabulary (TD-19): a **tool** (not check) inspects a region; the **anchor** (not box) is what the locator finds; ROIs are relative to the `anchor` or the `frame`. No product words in platform code; examples and tests use neutral samples (a part with a blue cap and a lot label).
-- Operator-facing text is **Portuguese** (e.g. "Tampa ausente ou de outra cor", "Aguardando peça"); the job supplies its own texts. Docs, code and identifiers are English.
+- Vocabulary (TD-19, TD-21): a **tool** (not check) inspects a region; a **locator** finds a **fixture** with a **pose** (x, y, angle, scale); ROIs are relative to a fixture or to the `frame`. In format-1 jobs the only fixture is called `anchor`. No product words in platform code; examples and tests use neutral samples (a part with a blue cap and a lot label).
+- Interface text is **Portuguese and English** (TD-30): Lingui catalogs in `frontend/` (source pt-BR), PO catalogs on the server; the operator screen uses the station language. Jobs supply their own texts in both languages (format 2). Docs, code and identifiers are English.
 - Reference requirement/decision IDs in code comments and commits (`TD-04`, `FR-ACQ-4`).
 - Project values (time to result, accuracy, retention…) are configuration, never constants in code (document 02 §7).
 

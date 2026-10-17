@@ -74,6 +74,8 @@ trigger:
   diff_threshold: 25                         # gray levels that count as a change (1–255)
   min_area: 0.05                             # fraction of the area that must differ to count as present
   motion_area: 0.01                          # fraction that must change between frames to count as moving
+  delay_ms: 0                                # external: wait 0–1000 ms after the trigger before the frame (FR-TRG-6)
+  interval_ms: 500                           # continuous: minimum time between inspections; 0 = as fast as possible (FR-TRG-7)
 quality:
   brightness: {min: 15, max: 245}             # outside: ERROR
   sharpness_min_ratio: 0.5                   # vs. the reference image; below: ERROR
@@ -102,7 +104,7 @@ Rules (checked on load, `jobs/job.py`):
 - `frame` and `anchor` are built-in region names; `anchor` and anchor-relative regions need a locator.
 - At least one tool; tool ids unique; every tool's region exists.
 - Each tool and locator `type` + `version` must be one this software runs, and its `params` must validate. The parameters of each type, with titles and limits, are served as JSON Schema by `GET /api/tools`; their meaning is in the module of each type (`tools/*.py`, `locators/*.py`). A version that is no longer supported refuses the job instead of running different logic.
-- `reason_fail` is Portuguese for the operator; `{field}` placeholders take the tool's values (listed in each tool's module). A wrong placeholder leaves the text as written.
+- `reason_fail` is Portuguese for the operator in format 1; from format 2 it holds both languages, `{pt-BR: …, en: …}` (TD-30, FR-JOB-15); `{field}` placeholders take the tool's values (listed in each tool's module). A wrong placeholder leaves the text as written.
 
 ## 4. `camera/profile.yaml`
 

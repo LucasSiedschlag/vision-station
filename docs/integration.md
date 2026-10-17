@@ -24,7 +24,7 @@ The camera is opened **only** by Vision Station. A USB camera serves one program
 
 ## 2. Station state
 
-`GET /api/state` → `state` (`Starting`, `Preparing`, `Ready`, `WaitingStill`, `Inspecting`, `ShowingResult`, `CameraLost`, `Fault`, `Paused`), `message` (Portuguese, for a screen), `detail`, `job` (the active one), `camera` (`connected`, `last_frame_age_s`, `last_error`), `last_result`, `counters`.
+`GET /api/state` → `state` (`Starting`, `Preparing`, `Ready`, `WaitingStill`, `Inspecting`, `ShowingResult`, `CameraLost`, `Fault`, `Paused`), `message` (for a screen, in the `Accept-Language` of the request), `detail`, `job` (the active one), `camera` (`connected`, `last_frame_age_s`, `last_error`), `last_result`, `counters`.
 
 Use it to show the operator why the vision step is not available ("Câmera desconectada", "Nenhum job ativo…").
 
@@ -60,7 +60,7 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
 ```
 
 - `expired`: the request did not turn into an inspection within 30 s (the station stopped, the camera was lost, a job change). `message` says the station's state. Treat it as an error.
-- `reason` is the job's text in Portuguese, ready for an operator screen.
+- `reason` is the job's text in the language the request asks for with `Accept-Language` (`pt-BR` or `en`; default: the station language), ready for an operator screen. Act on `outcome` and the codes, never on the text.
 
 ### Pictures
 
