@@ -1,5 +1,6 @@
 import { Download, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { parseColor } from 'react-aria-components'
 import { toast } from 'sonner'
 import { Badge, StatusIndicator, type Tone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,10 +23,12 @@ import {
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { Field } from '@/components/ui/field'
 import { FileDrop } from '@/components/ui/file-drop'
-import { Input, NumberInput, Textarea } from '@/components/ui/input'
+import { ColorArea, ColorField, ColorSlider } from '@/components/ui/color'
+import { Input, Textarea } from '@/components/ui/input'
+import { NumberField } from '@/components/ui/number-field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Select } from '@/components/ui/select'
-import { SliderField } from '@/components/ui/slider-field'
+import { Slider } from '@/components/ui/slider'
 import { Spinner } from '@/components/ui/spinner'
 import { Stepper, type Step } from '@/components/ui/stepper'
 import { Switch } from '@/components/ui/switch'
@@ -135,9 +138,11 @@ export function DesignPage() {
   const { preference, setPreference } = useTheme()
   const [kiosk, setKiosk] = useState(false)
   const [mode, setMode] = useState('image_presence')
-  const [exposure, setExposure] = useState(8000)
+  const [exposure, setExposure] = useState<number | null>(8000)
   const [gain, setGain] = useState<number | null>(null)
-  const [thr, setThr] = useState(0.9)
+  const [thr, setThr] = useState([0.9])
+  const [hue, setHue] = useState([95, 125])
+  const [color, setColor] = useState(() => parseColor('hsb(210, 80%, 70%)'))
   const [on, setOn] = useState(true)
   const [pick, setPick] = useState<string>()
   const [confirm, setConfirm] = useState(false)
@@ -282,10 +287,10 @@ export function DesignPage() {
           </Field>
           <Field label="Exposição" hint="Use vírgula para decimais.">
             {(p) => (
-              <NumberInput
+              <NumberField
                 {...p}
                 value={exposure}
-                onChange={(v) => setExposure(v ?? 0)}
+                onChange={setExposure}
                 unit="µs"
                 min={100}
                 max={33000}
@@ -295,7 +300,7 @@ export function DesignPage() {
           </Field>
           <Field label="Ganho" required error={gain === null ? 'Informe o ganho.' : undefined}>
             {(p) => (
-              <NumberInput {...p} value={gain} onChange={setGain} unit="dB" min={0} max={24} />
+              <NumberField {...p} value={gain} onChange={setGain} unit="dB" min={0} max={24} />
             )}
           </Field>
           <Field label="Modo do gatilho">
@@ -317,15 +322,6 @@ export function DesignPage() {
             {(p) => <Textarea {...p} placeholder="Notas desta versão" />}
           </Field>
         </div>
-        <SliderField
-          label="Cobertura mínima da cor"
-          value={thr}
-          onValueChange={setThr}
-          min={0}
-          max={1}
-          step={0.01}
-          decimals={2}
-        />
         <div className="flex flex-wrap items-center gap-6">
           <Switch
             checked={on}
@@ -348,6 +344,103 @@ export function DesignPage() {
           label="Escolher arquivo de job"
           onFiles={(files) => toast.success(`Arquivo recebido: ${files[0]?.name}`)}
         />
+      </Section>
+
+      <Section id="ranges" title="Números, faixas e cores">
+        <p className="text-fg-muted">
+          React Aria (TD-29): números no idioma da interface; fora da faixa fica marcado, nunca
+          trocado.
+        </p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="Atraso do disparo" hint="Fora da faixa: marcado, não corrigido.">
+            {(p) => (
+              <NumberField {...p} value={1200} onChange={() => {}} unit="ms" min={0} max={1000} />
+            )}
+          </Field>
+          <Field label="Altura da peça">
+            {(p) => (
+              <NumberField
+                {...p}
+                value={42.5}
+                onChange={() => {}}
+                unit="mm"
+                decimals={1}
+                isDisabled
+              />
+            )}
+          </Field>
+          <Field label="Pontuação mínima" hint="Vazio usa o padrão do tipo.">
+            {(p) => (
+              <NumberField
+                {...p}
+                value={null}
+                onChange={() => {}}
+                min={0}
+                max={1}
+                step={0.01}
+                decimals={2}
+                placeholder="padrão: 0,6"
+              />
+            )}
+          </Field>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Slider
+            label="Cobertura mínima da cor"
+            value={thr}
+            onChange={setThr}
+            min={0}
+            max={1}
+            step={0.01}
+            decimals={2}
+            fields
+          />
+          <Slider
+            label="Matiz"
+            thumbLabels={['Início', 'Fim']}
+            value={hue}
+            onChange={setHue}
+            min={0}
+            max={179}
+            unit="°"
+            fields
+          />
+          <Slider
+            label="Folga"
+            value={[5]}
+            onChange={() => {}}
+            min={0}
+            max={20}
+            unit="°"
+            isDisabled
+          />
+        </div>
+        <div className="flex flex-wrap items-start gap-6">
+          <ColorArea
+            aria-label="Cor de referência"
+            value={color}
+            onChange={setColor}
+            className="w-56"
+          />
+          <div className="flex min-w-64 flex-1 flex-col gap-4">
+            <ColorSlider label="Matiz" channel="hue" value={color} onChange={setColor} />
+            <ColorSlider label="Saturação" channel="saturation" value={color} onChange={setColor} />
+            <ColorSlider label="Brilho" channel="brightness" value={color} onChange={setColor} />
+            <ColorSlider
+              label="Matiz (desativado)"
+              channel="hue"
+              value={color}
+              onChange={() => {}}
+              isDisabled
+            />
+            <ColorField
+              label="Cor (hex)"
+              value={color}
+              onChange={(c) => c && setColor(c)}
+              className="w-40"
+            />
+          </div>
+        </div>
       </Section>
 
       <Section id="overlays" title="Diálogos, painéis e avisos">

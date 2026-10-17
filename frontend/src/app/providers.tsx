@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { startLive } from '@/api/live'
 import { Toaster } from '@/components/ui/toaster'
+import { LocaleProvider } from './locale'
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -10,9 +11,11 @@ export function Providers({ children }: { children: ReactNode }) {
   )
   useEffect(() => startLive(), []) // one live socket for the whole app
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-      <Toaster />
-    </QueryClientProvider>
+    <LocaleProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <Toaster />
+      </QueryClientProvider>
+    </LocaleProvider>
   )
 }

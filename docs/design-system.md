@@ -50,7 +50,7 @@ The living reference is the gallery: run the interface and open **`/design`**. I
 |---|---|
 | Action | `Button` (`primary`, `secondary`, `ghost`, `danger`; `loading`) |
 | Status | `StatusIndicator` (icon + word; `unknown` is never shown as OK), `Badge` |
-| Form | `Field` (label, hint, error, ids wired) around `Input`, **`NumberField`** (React Aria: unit, range, locale decimals, arrows), `Textarea`, `Select`, `Switch`, **`Slider`** (React Aria, one or more thumbs), `SegmentedControl`, `FileDrop` |
+| Form | `Field` (label, hint, error, ids wired) around `Input`, **`NumberField`** (React Aria: unit, locale decimals, arrows within the range; a value out of range is flagged, never changed; a typed `.` or `,` is the decimal mark of the language, so `0.8` is never read as 8; no thousands separator), `Textarea`, `Select`, `Switch`, **`Slider`** (React Aria, one or more thumbs that never cross; `fields` adds a `NumberField` per thumb), `SegmentedControl`, `FileDrop` |
 | Colour | **`ColorArea`, `ColorSlider`, `ColorField`** (React Aria, HSB channels): building blocks of `HsvRangePicker` |
 | Overlays | `Dialog`, `ConfirmDialog`, `Sheet`, `Drawer`, `DropdownMenu`, `Popover`, `Tooltip`, toasts with `toast` from `sonner` |
 | Structure | `Sidebar` (shell), `Resizable` (panels), `Accordion` (inspector sections), `Card`, `Tabs`, `Table` parts, `Stepper` |

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Field } from '@/components/ui/field'
-import { Input, NumberInput, Textarea } from '@/components/ui/input'
+import { Input, Textarea } from '@/components/ui/input'
+import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { formatNumber } from '@/lib/number'
@@ -282,7 +283,7 @@ function Control({
     return (
       <Field label={label} hint={hint} error={error}>
         {(props) => (
-          <NumberInput
+          <NumberField
             {...props}
             value={typeof value === 'number' ? value : null}
             onChange={(v) =>
@@ -322,7 +323,7 @@ function Control({
           {items.map((item, i) => {
             const { min, max } = range(item)
             return (
-              <NumberInput
+              <NumberField
                 key={i}
                 aria-label={`${label}, ${i + 1}º valor`}
                 className="w-24"

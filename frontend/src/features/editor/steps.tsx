@@ -7,7 +7,8 @@ import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { FileDrop } from '@/components/ui/file-drop'
-import { Input, NumberInput, Textarea } from '@/components/ui/input'
+import { Input, Textarea } from '@/components/ui/input'
+import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
@@ -69,7 +70,7 @@ function ModeValue({
       {mode === 'manual' ? (
         <Field label={valueLabel}>
           {(props) => (
-            <NumberInput
+            <NumberField
               {...props}
               value={value}
               onChange={onValue}
@@ -116,7 +117,7 @@ export function CameraStep({ draft }: StepProps) {
       <div className="flex gap-2">
         <Field label={t.width}>
           {(props) => (
-            <NumberInput
+            <NumberField
               {...props}
               value={num(p.resolution?.[0])}
               onChange={(v) => set((q) => (q.resolution = [v ?? 1920, q.resolution?.[1] ?? 1080]))}
@@ -127,7 +128,7 @@ export function CameraStep({ draft }: StepProps) {
         </Field>
         <Field label={t.height}>
           {(props) => (
-            <NumberInput
+            <NumberField
               {...props}
               value={num(p.resolution?.[1])}
               onChange={(v) => set((q) => (q.resolution = [q.resolution?.[0] ?? 1920, v ?? 1080]))}
@@ -248,7 +249,7 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
           </Button>
           <Field label={t.stillMs} hint={t.stillHint}>
             {(props) => (
-              <NumberInput
+              <NumberField
                 {...props}
                 value={num(trigger.still_ms)}
                 onChange={(v) => set((tr) => (tr.still_ms = v))}
@@ -260,7 +261,7 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
           </Field>
           <Field label={t.diffThreshold} hint={t.diffHint}>
             {(props) => (
-              <NumberInput
+              <NumberField
                 {...props}
                 value={num(trigger.diff_threshold)}
                 placeholder="padrão: 25"
@@ -275,7 +276,7 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
           </Field>
           <Field label={t.minArea} hint={t.minAreaHint}>
             {(props) => (
-              <NumberInput
+              <NumberField
                 {...props}
                 value={num(trigger.min_area)}
                 placeholder="padrão: 0,05"
@@ -323,7 +324,7 @@ export function QualityStep({ draft }: StepProps) {
       <div className="flex gap-2">
         <Field label={t.brightnessMin}>
           {(props) => (
-            <NumberInput
+            <NumberField
               {...props}
               value={num(q.brightness?.min)}
               onChange={(v) => set((qq) => ((qq.brightness ??= {}).min = v))}
@@ -335,7 +336,7 @@ export function QualityStep({ draft }: StepProps) {
         </Field>
         <Field label={t.brightnessMax}>
           {(props) => (
-            <NumberInput
+            <NumberField
               {...props}
               value={num(q.brightness?.max)}
               onChange={(v) => set((qq) => ((qq.brightness ??= {}).max = v))}
@@ -348,7 +349,7 @@ export function QualityStep({ draft }: StepProps) {
       </div>
       <Field label={t.sharpness} hint={t.sharpnessHint}>
         {(props) => (
-          <NumberInput
+          <NumberField
             {...props}
             value={num(q.sharpness_min_ratio)}
             onChange={(v) => set((qq) => (qq.sharpness_min_ratio = v))}
@@ -359,7 +360,7 @@ export function QualityStep({ draft }: StepProps) {
       </Field>
       <Field label={t.similarity} hint={t.similarityHint}>
         {(props) => (
-          <NumberInput
+          <NumberField
             {...props}
             value={num(q.similarity_min)}
             placeholder="padrão: 0,6"

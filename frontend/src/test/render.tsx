@@ -7,6 +7,7 @@ import { useLoginDialog } from '@/api/auth'
 import { useLive } from '@/api/live'
 import { useSession } from '@/api/session'
 import { Toaster } from '@/components/ui/toaster'
+import { LocaleProvider } from '@/app/locale'
 import { routes } from '@/app/routes'
 
 // One mock API for a test file: call server.use(http.get('*/api/about', ...)) inside a test.
@@ -37,10 +38,12 @@ export function renderApp(path = '/') {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const result = render(
-    <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
-      <Toaster />
-    </QueryClientProvider>,
+    <LocaleProvider>
+      <QueryClientProvider client={client}>
+        <RouterProvider router={router} />
+        <Toaster />
+      </QueryClientProvider>
+    </LocaleProvider>,
   )
   return { router, ...result }
 }

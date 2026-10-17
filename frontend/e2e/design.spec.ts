@@ -126,11 +126,14 @@ test.describe('gallery behaviour', () => {
 
   test('a number is read the way it is written in Portuguese', async ({ page }) => {
     const field = page.getByLabel('Exposição')
-    await field.fill('1.500,5')
+    await field.fill('')
+    await field.pressSequentially('1500.5') // the dot of a numeric keypad is the decimal mark
     await field.blur()
     await expect(field).toHaveValue('1500,5')
     await field.fill('999999')
+    await field.blur()
     await expect(field).toHaveAttribute('aria-invalid', 'true')
+    await expect(field).toHaveValue('999999') // flagged, not changed
   })
 
   test('the file drop refuses a file of another type with a message', async ({ page }) => {

@@ -8,7 +8,7 @@ import { ConfirmDialog, Dialog, DialogContent, DialogTrigger } from './dialog'
 import { EmptyState, ErrorState } from './feedback'
 import { Field } from './field'
 import { FileDrop } from './file-drop'
-import { Input, NumberInput } from './input'
+import { Input } from './input'
 import { SegmentedControl } from './segmented-control'
 import { Select } from './select'
 import { Stepper } from './stepper'
@@ -78,89 +78,6 @@ describe('Field', () => {
     const input = screen.getByLabelText('Nome')
     expect(input).not.toHaveAttribute('aria-invalid')
     expect(input).not.toHaveAttribute('aria-describedby')
-  })
-})
-
-function Number({ start = 8000 }: { start?: number | null }) {
-  const [value, setValue] = useState<number | null>(start)
-  return (
-    <>
-      <NumberInput
-        aria-label="Exposição"
-        value={value}
-        onChange={setValue}
-        unit="µs"
-        min={100}
-        max={33000}
-        step={100}
-      />
-      <output>{value === null ? 'vazio' : value}</output>
-    </>
-  )
-}
-
-describe('NumberInput', () => {
-  it('reads numbers with a comma and shows the unit', async () => {
-    render(<Number start={null} />)
-    await userEvent.type(screen.getByLabelText('Exposição'), '1.500,5')
-    expect(screen.getByText('1500.5')).toBeInTheDocument()
-    expect(screen.getByText('µs')).toBeInTheDocument()
-  })
-
-  it('flags a value out of range without changing it', async () => {
-    render(<Number />)
-    const input = screen.getByLabelText('Exposição')
-    await userEvent.clear(input)
-    await userEvent.type(input, '50')
-    expect(input).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByText('50')).toBeInTheDocument() // kept as typed
-  })
-
-  it('flags text that is not a number', async () => {
-    render(<Number />)
-    const input = screen.getByLabelText('Exposição')
-    await userEvent.clear(input)
-    await userEvent.type(input, 'abc')
-    expect(input).toHaveAttribute('aria-invalid', 'true')
-  })
-
-  it('steps with the arrows inside the range', async () => {
-    render(<Number start={32950} />)
-    const input = screen.getByLabelText('Exposição')
-    input.focus()
-    await userEvent.keyboard('{ArrowUp}')
-    expect(screen.getByText('33000')).toBeInTheDocument()
-    await userEvent.keyboard('{ArrowUp}')
-    expect(screen.getByText('33000')).toBeInTheDocument() // stays at the maximum
-    await userEvent.keyboard('{ArrowDown}')
-    expect(screen.getByText('32900')).toBeInTheDocument()
-  })
-
-  it('writes the value back in the standard format when the field is left', async () => {
-    render(<Number start={null} />)
-    const input = screen.getByLabelText('Exposição')
-    await userEvent.type(input, '1.234,5')
-    await userEvent.tab()
-    expect(input).toHaveValue('1234,5')
-  })
-})
-
-describe('NumberInput inside a Field', () => {
-  it('still flags an out-of-range value (the Field passes aria-invalid down and must not hide it)', async () => {
-    function Host() {
-      const [value, setValue] = useState<number | null>(8000)
-      return (
-        <Field label="Exposição">
-          {(p) => <NumberInput {...p} value={value} onChange={setValue} min={100} max={33000} />}
-        </Field>
-      )
-    }
-    render(<Host />)
-    const input = screen.getByLabelText('Exposição')
-    expect(input).not.toHaveAttribute('aria-invalid')
-    await userEvent.clear(input)
-    await userEvent.type(input, '999999')
-    expect(input).toHaveAttribute('aria-invalid', 'true')
   })
 })
 

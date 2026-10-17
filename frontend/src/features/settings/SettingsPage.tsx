@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field } from '@/components/ui/field'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
-import { Input, NumberInput } from '@/components/ui/input'
+import { Input } from '@/components/ui/input'
+import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { text } from '@/texts'
@@ -173,7 +174,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         </Field>
         <Field label={t.idle} error={err('station.idle_logout_min')}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.station.idle_logout_min}
               onChange={(v) => set('station', { idle_logout_min: v ?? 10 })}
@@ -186,7 +187,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         </Field>
         <Field label={t.resultMin} hint={t.resultMinHint} error={err('station.result_min_s')}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.station.result_min_s}
               onChange={(v) => set('station', { result_min_s: v ?? 2 })}
@@ -237,7 +238,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
             </Field>
             <Field label={t.deviceIndex}>
               {(p) => (
-                <NumberInput
+                <NumberField
                   {...p}
                   value={typeof conn.device_index === 'number' ? conn.device_index : null}
                   onChange={(v) => setConn('device_index', v)}
@@ -265,7 +266,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
             />
             <Field label={t.fps}>
               {(p) => (
-                <NumberInput
+                <NumberField
                   {...p}
                   value={typeof conn.fps === 'number' ? conn.fps : null}
                   onChange={(v) => setConn('fps', v)}
@@ -289,7 +290,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
             </Field>
             <Field label={t.port}>
               {(p) => (
-                <NumberInput
+                <NumberField
                   {...p}
                   value={typeof conn.port === 'number' ? conn.port : null}
                   onChange={(v) => setConn('port', v)}
@@ -331,7 +332,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
       <Section title={t.recording}>
         <Field label={t.sample} hint={t.sampleHint}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.recording.pass_sample_every}
               onChange={(v) => set('recording', { pass_sample_every: v ?? 1 })}
@@ -343,7 +344,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         </Field>
         <Field label={t.retention} hint={t.retentionHint}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.recording.retention_days ?? null}
               onChange={(v) => set('recording', { retention_days: v })}
@@ -355,7 +356,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         </Field>
         <Field label={t.minFree} hint={t.retentionHint}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.recording.min_free_gb ?? null}
               onChange={(v) => set('recording', { min_free_gb: v })}
@@ -393,7 +394,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         <CheckResult check={folderCheck} />
         <Field label={t.every} hint={t.everyHint}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.backup.every_hours ?? null}
               onChange={(v) => set('backup', { every_hours: v })}
@@ -405,7 +406,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         </Field>
         <Field label={t.keep}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.backup.keep}
               onChange={(v) => set('backup', { keep: v ?? 30 })}
@@ -442,7 +443,7 @@ function SettingsForm({ system }: { system: SystemOut }) {
         </Field>
         <Field label={t.port}>
           {(p) => (
-            <NumberInput
+            <NumberField
               {...p}
               value={config.network.port}
               onChange={(v) => set('network', { port: v ?? 8765 })}
