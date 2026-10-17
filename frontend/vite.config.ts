@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url'
+import { lingui } from '@lingui/vite-plugin'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
@@ -8,7 +9,8 @@ import { defineConfig } from 'vite'
 const api = 'http://127.0.0.1:8765'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  // the Lingui macros (t, msg, plural) are compiled by the plugin itself, without Babel (TD-30)
+  plugins: [react(), lingui({ macroTransform: true }), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: {
     // the API serves this folder (frontend/dist); it is not committed: CI builds it and the installer copies it

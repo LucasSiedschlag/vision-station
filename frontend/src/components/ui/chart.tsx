@@ -1,3 +1,4 @@
+import { currentLocale } from '@/app/locale'
 import { cloneElement, type CSSProperties, type ReactElement } from 'react'
 import { ResponsiveContainer, Tooltip, type TooltipContentProps } from 'recharts'
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent'
@@ -79,7 +80,7 @@ export function ChartContainer({
               <TR key={i}>
                 {row.map((cell, j) => (
                   <TD key={j} numeric={typeof cell === 'number'}>
-                    {typeof cell === 'number' ? cell.toLocaleString('pt-BR') : cell}
+                    {typeof cell === 'number' ? cell.toLocaleString(currentLocale()) : cell}
                   </TD>
                 ))}
               </TR>
@@ -124,7 +125,7 @@ function TooltipBody({
             />
             <span className="text-fg-muted">{config[key]?.label ?? key}</span>
             <span className="ml-auto font-mono tabular-nums">
-              {typeof p.value === 'number' ? p.value.toLocaleString('pt-BR') : p.value}
+              {typeof p.value === 'number' ? p.value.toLocaleString(currentLocale()) : p.value}
             </span>
           </p>
         )

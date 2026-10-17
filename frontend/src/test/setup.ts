@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom/vitest'
+import { i18n } from '@lingui/core'
 import { configure } from '@testing-library/react'
+import { messages } from '@/locales/pt-BR/messages.po'
+
+// every test starts in Portuguese, the source language, with its catalog (TD-30)
+i18n.loadAndActivate({ locale: 'pt-BR', messages })
 
 // the whole-app tests are slow on a busy machine: wait longer before saying an element is not there
 configure({ asyncUtilTimeout: 5000 })

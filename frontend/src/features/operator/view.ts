@@ -1,3 +1,4 @@
+import { currentLocale } from '@/app/locale'
 import type { StateOut } from '@/api/live'
 
 export type Tone = 'ok' | 'fail' | 'warn' | 'busy' | 'neutral'
@@ -34,7 +35,11 @@ export function clockTime(iso: string | null | undefined): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime())
     ? ''
-    : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : d.toLocaleTimeString(currentLocale(), {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
 }
 
 export function verdictOf(status: StateOut | null, connection: Connection): Verdict {
