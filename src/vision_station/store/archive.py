@@ -86,6 +86,13 @@ def build_manifest(kind: str, files: Mapping[str, bytes], meta: Mapping[str, Any
     }
 
 
+def content_hash(manifest: Mapping[str, Any]) -> str:
+    """One hash for a saved version's files: of each file's SHA-256 in its manifest, by name. It changes with any
+    file and with nothing else (not the dates or the program version of the manifest); results carry it (TD-22)."""
+    listed = {name: entry["sha256"] for name, entry in sorted(manifest["files"].items())}
+    return sha256(json.dumps(listed, sort_keys=True).encode("utf-8"))
+
+
 def manifest_bytes(manifest: Mapping[str, Any]) -> bytes:
     return json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False).encode("utf-8")
 

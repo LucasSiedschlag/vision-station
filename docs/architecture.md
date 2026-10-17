@@ -647,17 +647,17 @@ One result structure is used by the pipeline, the records, the API, the machine 
 |---|---|---|
 | `inspection_id` | string | Unique id (API) |
 | `sequence` | uint32 | Increments by one per inspection, wraps at 2³²; the PLC's way to detect a missed result |
-| `job` | {id, name, version, number, content_hash} | Exactly which job version decided |
-| `trigger` | {source: image / manual / api / machine, part_id, reference, t0} | What started it |
+| `job` | {id, name, version, number, content_hash} | Exactly which job version decided. `content_hash` is the SHA-256 of the saved version's per-file SHA-256 by name (`store.archive.content_hash`): it changes with any file of the version and with nothing else; `null` for a draft; `number` comes with R3 |
+| `trigger` | {source: image / manual / api / machine, part_id, reference, at} | What started it: `image` is the presence detector or the continuous mode, `manual` the screen, `api` another program (with the `reference` it gave); `at` is the wall-clock time of the trigger |
 | `acquired_at`, `decided_at` | timestamps | For timing and audit |
 | `outcome` | PASS / FAIL / ERROR | The verdict |
 | `error_code` | int, 0 when not ERROR | Stable code from the catalog below |
 | `reason` | string, in the station language (pt-BR or en, TD-30) | For the operator, from the job's texts or the catalog; screens may re-render it in the viewer's language from `error_code` / `reason_codes` and the job's texts |
 | `reason_codes` | list of {tool, code} | Which tools failed and why, machine-readable |
 | `tools` | list of {id, type, version, passed, score, margin, values{name: number}, units{name: fraction / count / score}, criteria, affects_result} | Per-tool results. Each criterion is {code, kind: min / max / rule, measure, value, limit, passed, margin}; `margin` is how far the value is inside the limit in the value's unit (negative: outside), and the tool's `margin` is the one of its decisive criterion (the lowest score); a rule has none. Fractions are 0..1 |
-| `fixtures` | list of {name, x, y, angle, scale, score} | Poses found |
+| `fixtures` | list of {name, x, y, angle, scale, score} | Poses found; `x`, `y` are the centre as fractions of the frame. `angle` and `scale` are `null` until the locators measure them (R1): never reported as 0 and 1 |
 | `timings` | {stage: seconds} | Per stage and per tool |
-| `simulated` | bool | From the file camera, the editor, the A/B replay or the benchmark (FR-INT-12) |
+| `simulated` | bool | From a camera whose capabilities say its pictures are not the real station (the file camera), the editor, the A/B replay or the benchmark (FR-INT-12); never settable by a caller |
 | `frame_ref`, `overlay_ref` | strings | Where the pictures are |
 
 **Error-code catalog (FR-INS-14, `core/errors.py`).** Codes are stable across versions; texts can be reworded. A test keeps this table and the catalog equal. Codes not raised yet (planned): E105 (R5), E202 (R1), E502, E503, E504 (R3), E505 (R6), E601 (R3). Grouped by cause so a PLC program or a dashboard can react by group:

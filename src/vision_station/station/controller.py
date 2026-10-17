@@ -21,7 +21,7 @@ from typing import Any
 
 from vision_station.cameras import Frame, SettingStatus
 from vision_station.core.errors import CATALOG, ErrorCode
-from vision_station.core.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Outcome, ResultJob, TriggerInfo, TriggerSource
 from vision_station.station.acquisition import Acquisition
 from vision_station.station.trigger import PresenceDetector
 from vision_station.store import JobBundle
@@ -102,6 +102,7 @@ class _Command:
     name: str
     bundle: JobBundle | None = None
     detail: str = ""
+    trigger: TriggerInfo | None = None
 
 
 @dataclass
@@ -128,6 +129,8 @@ class StationController:
         hold_s: float = 2.0,
         absent_s: float = 0.3,
         inspect_timeout_s: float = 5.0,
+        wall: Callable[[], float] = time.time,
+        first_sequence: int = 0,
     ):
         self._acq = acquisition
         self._inspect = inspect
@@ -137,6 +140,9 @@ class StationController:
         self._hold_s = hold_s
         self._absent_s = absent_s
         self._inspect_timeout_s = inspect_timeout_s
+        self._wall = wall  # wall-clock time for the result; `clock` is monotonic, like the frames' timestamps
+        self._sequence = first_sequence % 2**32  # the next result's number: seeded from the records (R2)
+        self._job_ref: ResultJob | None = None
 
         self._commands: queue.Queue[_Command] = queue.Queue()
         self._bundle: JobBundle | None = None
@@ -147,6 +153,8 @@ class StationController:
         self._last_result: InspectionResult | None = None
         self._trigger_requested = False
         self._trigger_reference = ""
+        self._pending_trigger: TriggerInfo | None = None
+        self._trigger: TriggerInfo | None = None  # of the inspection running now
         self._trigger_lock = threading.Lock()
         self._trigger_taken = False  # a trigger was accepted and its inspection has not started yet (VIA-0051)
         self._reference = ""  # of the inspection running now
@@ -168,12 +176,13 @@ class StationController:
         """Stop in Fault with this reason, e.g. the active job could not be loaded."""
         self._commands.put(_Command("fault", detail=detail))
 
-    def request_trigger(self, reference: str = "") -> None:
+    def request_trigger(self, reference: str = "", source: TriggerSource = "manual", caller_reference: str = "") -> None:
         """Manual or external trigger (FR-TRG-2/3). `reference` comes back on the result event, so another
-        program can tell which result answers its request (FR-INT-1)."""
-        self._commands.put(_Command("trigger", detail=reference))
+        program can tell which result answers its request (FR-INT-1); `caller_reference` is what that program
+        gave, kept in the result's trigger."""
+        self._commands.put(_Command("trigger", detail=reference, trigger=TriggerInfo(source, caller_reference)))
 
-    def try_request_trigger(self, reference: str = "") -> bool:
+    def try_request_trigger(self, reference: str = "", source: TriggerSource = "manual", caller_reference: str = "") -> bool:
         """Accept a trigger only if the station is ready and no other trigger is waiting to start: checking and
         taking the turn happen together, so two requests at once are one inspection and one refusal, never two
         accepted with one of them silently dropped (VIA-0051)."""
@@ -181,7 +190,7 @@ class StationController:
             if self._trigger_taken or self._state not in (State.READY, State.WAITING_STILL):
                 return False
             self._trigger_taken = True
-        self.request_trigger(reference)
+        self.request_trigger(reference, source, caller_reference)
         return True
 
     def pause(self) -> None:
@@ -290,6 +299,7 @@ class StationController:
         elif command.name == "trigger":
             self._trigger_requested = True
             self._trigger_reference = command.detail
+            self._pending_trigger = command.trigger
         elif command.name == "pause" and self._state in (State.READY, State.WAITING_STILL, State.SHOWING_RESULT):
             self._go(State.PAUSED)
         elif command.name == "resume" and self._state is State.PAUSED:
@@ -306,6 +316,8 @@ class StationController:
         if self._state is State.INSPECTING:
             self._finish(self._error(ErrorCode.JOB_SWITCHED), None)
         self._bundle = bundle
+        info = bundle.job.job
+        self._job_ref = ResultJob(str(info.id), info.name, info.version, content_hash=bundle.content_hash)
         trigger = bundle.job.trigger
         self._detector = PresenceDetector(trigger) if trigger.presence_roi is not None else None
         self._prepare()
@@ -314,6 +326,7 @@ class StationController:
         assert self._bundle is not None
         self._trigger_requested = False
         self._trigger_reference = ""
+        self._pending_trigger = None
         with self._trigger_lock:
             self._trigger_taken = False  # a trigger accepted before is dropped with the preparation
         self._shown_at = float("-inf")  # a verdict from before is not shown again after preparing
@@ -375,6 +388,9 @@ class StationController:
     def _begin_inspection(self) -> None:
         # a pending reference goes with the inspection that starts now, whatever started it
         self._reference, self._trigger_reference = self._trigger_reference, ""
+        pending, self._pending_trigger = self._pending_trigger, None
+        source = pending if pending is not None and self._trigger_requested else TriggerInfo("image")
+        self._trigger = replace(source, at=self._wall())
         self._trigger_requested = False
         with self._trigger_lock:
             self._trigger_taken = False
@@ -438,6 +454,18 @@ class StationController:
             result = replace(result, duration_s=self._clock() - started)
         if result.outcome is Outcome.ERROR and not result.error_code:
             result = replace(result, error_code=int(ErrorCode.INTERNAL))  # an inspector without codes: never an ERROR without one
+        now, wall = self._clock(), self._wall()
+        result = replace(
+            result,
+            sequence=self._sequence,
+            job=self._job_ref,
+            trigger=self._trigger,
+            acquired_at=None if frame is None else wall - (now - frame.timestamp),
+            decided_at=wall,
+            simulated=bool(self._acq.simulated),
+        )
+        self._sequence = (self._sequence + 1) % 2**32
+        self._trigger = None
         self._last_result = result
         self._shown_at = self._clock()
         job = self._bundle.job.job if self._bundle else None

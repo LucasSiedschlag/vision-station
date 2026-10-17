@@ -16,7 +16,7 @@ import shutil
 import stat
 import uuid
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -30,6 +30,7 @@ from vision_station.store.archive import (
     Archive,
     build_manifest,
     check_path,
+    content_hash,
     manifest_bytes,
     pack,
     refuse_secrets,
@@ -112,7 +113,8 @@ class JobStore:
         return Archive(manifest=manifest, files=files)
 
     def load(self, ref: JobRef) -> JobBundle:
-        return bundle_from_files(self.read_files(ref).files)
+        archive = self.read_files(ref)
+        return replace(bundle_from_files(archive.files), content_hash=content_hash(archive.manifest))
 
     # --- saving ------------------------------------------------------------
 

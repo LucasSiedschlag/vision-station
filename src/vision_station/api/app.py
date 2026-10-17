@@ -351,7 +351,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
     def request_inspection(body: m.InspectionRequest | None = None) -> m.InspectionOut:
         """Trigger an inspection and get an id to follow it (FR-INT-1). Only when the station is ready."""
         item = deps.inspections.new((body or m.InspectionRequest()).reference)
-        if not deps.controller.try_request_trigger(item.id):  # checks and takes the turn at once (VIA-0051)
+        if not deps.controller.try_request_trigger(item.id, "api", item.reference):  # checks and takes the turn at once (VIA-0051)
             deps.inspections.discard(item.id)
             raise Problem(409, "A estação não está pronta", "station_not_ready", state=deps.controller.state.value, message=deps.controller.status().message)
         return inspection_out(item)

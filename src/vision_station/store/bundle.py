@@ -21,6 +21,7 @@ class JobBundle:
     profile: CameraProfile
     # camera/raw/*, models/*, reference/*, tests/*: kept as they are, by relative path
     extra: Mapping[str, bytes] = field(default_factory=dict)
+    content_hash: str | None = None  # of the saved version it was loaded from (archive.content_hash); None for a draft
 
     def files(self) -> dict[str, bytes]:
         files = {

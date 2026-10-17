@@ -62,7 +62,7 @@ class FileCamera(Camera):
         self._open = False
 
     def capabilities(self) -> Capabilities:
-        return Capabilities(has_snapshot=True)
+        return Capabilities(has_snapshot=True, simulated=True)
 
     def apply(self, profile: CameraProfile, raw: Mapping[str, bytes] | None = None) -> ApplyReport:
         self._require_open()

@@ -58,6 +58,7 @@ class Acquisition:
         self._next_try = 0.0
         self._failures = 0
         self.generation = 0  # counts connections
+        self.simulated = False  # the camera says its pictures are not the real station (Capabilities.simulated)
         self.last_apply: ApplyReport | None = None
         self.last_error: str | None = None
         self._thread: threading.Thread | None = None
@@ -158,6 +159,7 @@ class Acquisition:
 
     def _connect(self) -> None:
         self._camera.open(self._connection)
+        self.simulated = bool(self._camera.capabilities().simulated)
         self._frames = self._camera.frames()
         self._connected = True
         self.generation += 1

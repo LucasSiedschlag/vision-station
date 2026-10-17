@@ -16,7 +16,7 @@ import numpy as np
 from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
 from vision_station.core.jobfiles import JobFileError, JobFiles
-from vision_station.core.results import InspectionResult, Outcome, ReasonCode, ToolReport
+from vision_station.core.results import FixturePose, InspectionResult, Outcome, ReasonCode, ToolReport
 from vision_station.geometry.regions import PixelRect, RegionError, resolve_roi
 from vision_station.jobs import Job
 from vision_station.jobs.job import Tool
@@ -119,6 +119,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
 
     total = time.perf_counter() - started
     timings["total"] = total
+    fixtures = () if anchor is None else (_pose(anchor),)
     details: Mapping[str, Any] = {
         "timings": timings,
         "anchor": None if anchor is None else {"rect": list(anchor.rect), "score": anchor.score},
@@ -127,9 +128,15 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     }
     if failures:
         return InspectionResult(
-            Outcome.FAIL, "; ".join(failures), scores=scores, details=details, duration_s=total, reason_codes=tuple(reason_codes), tools=tuple(reports)
+            Outcome.FAIL, "; ".join(failures), scores=scores, details=details, duration_s=total,
+            reason_codes=tuple(reason_codes), tools=tuple(reports), fixtures=fixtures,
         )
-    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports))
+    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports), fixtures=fixtures)
+
+
+def _pose(anchor: Anchor) -> FixturePose:
+    x0, y0, x1, y1 = anchor.rect
+    return FixturePose("anchor", (x0 + x1) / 2, (y0 + y1) / 2, angle=None, scale=None, score=float(anchor.score))
 
 
 def _run(tool: Tool, job: Job, anchor: Anchor | None, image: np.ndarray, files: JobFiles) -> tuple[PixelRect, ToolResult, float, float]:

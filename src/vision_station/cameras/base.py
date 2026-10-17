@@ -41,6 +41,7 @@ class Capabilities:
     settings: frozenset[str] = frozenset()
     readable: frozenset[str] = frozenset()
     has_snapshot: bool = False
+    simulated: bool = False  # pictures that are not the real station (the file camera): results never reach a machine (FR-INT-12)
 
 
 @dataclass(frozen=True)
