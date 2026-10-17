@@ -172,6 +172,10 @@ msgstr "Nenhum backup na pasta."
 msgid "Pasta: {folder}"
 msgstr "Pasta: {folder}"
 
+msgctxt "leave the editor"
+msgid "Sair"
+msgstr "Sair"
+
 msgid "Movimento cancelado. {name} voltou ao lugar."
 msgstr "Movimento cancelado. {name} voltou ao lugar."
 
@@ -346,14 +350,17 @@ msgstr "Esta tela está ligada ao programa da estação."
 msgid "Desenhar a área de presença"
 msgstr "Desenhar a área de presença"
 
+msgid "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
+msgstr "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
+
+msgid "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
+msgstr "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
+
 msgid "Resultado esperado"
 msgstr "Resultado esperado"
 
 msgid "Ligando esta tela ao programa da estação."
 msgstr "Ligando esta tela ao programa da estação."
-
-msgid "{n, plural, one {# imagem no dataset} other {# imagens no dataset}}"
-msgstr "{n, plural, one {# imagem no dataset} other {# imagens no dataset}}"
 
 msgid "{name}: relativa a"
 msgstr "{name}: relativa a"
@@ -547,9 +554,6 @@ msgstr "ERRO"
 msgid "Nenhum resultado neste período"
 msgstr "Nenhum resultado neste período"
 
-msgid "{n, plural, one {# resultado não gravado} other {# resultados não gravados}}"
-msgstr "{n, plural, one {# resultado não gravado} other {# resultados não gravados}}"
-
 msgid "Ativar mesmo assim"
 msgstr "Ativar mesmo assim"
 
@@ -588,9 +592,6 @@ msgstr "Inspeciona quando um objeto entra na área e fica parado"
 
 msgid "Pular para o conteúdo"
 msgstr "Pular para o conteúdo"
-
-msgid "{n, plural, one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
-msgstr "{n, plural, one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
 
 msgid "passo atual"
 msgstr "passo atual"
@@ -1027,6 +1028,9 @@ msgstr "Padrão (logo, marca)"
 msgid "Imagem guardada por amostragem."
 msgstr "Imagem guardada por amostragem."
 
+msgid "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} other {# sessões encerradas.}}"
+msgstr "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} other {# sessões encerradas.}}"
+
 msgid "Todos"
 msgstr "Todos"
 
@@ -1261,9 +1265,6 @@ msgstr "HH:MM separados por vírgula; os contadores recomeçam em cada um."
 msgid "Definir a senha do {role}"
 msgstr "Definir a senha do {role}"
 
-msgid "{n, plural, one {# sessão encerrada.} other {# sessões encerradas.}}"
-msgstr "{n, plural, one {# sessão encerrada.} other {# sessões encerradas.}}"
-
 msgid "Jobs"
 msgstr "Jobs"
 
@@ -1341,6 +1342,9 @@ msgstr "Estava OK"
 
 msgid "Descrição"
 msgstr "Descrição"
+
+msgid "{n, plural, =0 {Nenhuma imagem no dataset} one {# imagem no dataset} other {# imagens no dataset}}"
+msgstr "{n, plural, =0 {Nenhuma imagem no dataset} one {# imagem no dataset} other {# imagens no dataset}}"
 
 msgid "Resultado incorreto?"
 msgstr "Resultado incorreto?"

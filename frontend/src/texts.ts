@@ -135,7 +135,11 @@ export const text = {
       return t`último quadro há ${age} s`
     },
     failures: (n: number) =>
-      plural(n, { one: '# resultado não gravado', other: '# resultados não gravados' }),
+      plural(n, {
+        0: 'Nenhum resultado deixou de ser gravado',
+        one: '# resultado não gravado',
+        other: '# resultados não gravados',
+      }),
   },
   operator: {
     get trigger() {
@@ -534,7 +538,7 @@ export const text = {
       return t`O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo.`
     },
     get leave() {
-      return t`Sair`
+      return t({ message: 'Sair', context: 'leave the editor' }) // not the logout "Sair"
     },
     get presenceArea() {
       return t`presença`
@@ -905,6 +909,8 @@ export const text = {
     },
     files: (n: number) =>
       plural(n, {
+        // in Portuguese 0 takes the singular form: "0 arquivo" would be wrong
+        0: 'Nenhum arquivo no job (referência, gabaritos, conjunto de referência).',
         one: '# arquivo no job (referência, gabaritos, conjunto de referência).',
         other: '# arquivos no job (referência, gabaritos, conjunto de referência).',
       }),
@@ -1051,7 +1057,12 @@ export const text = {
     get empty() {
       return t`Nenhum job ainda`
     },
-    total: (n: number) => plural(n, { one: '# imagem no dataset', other: '# imagens no dataset' }),
+    total: (n: number) =>
+      plural(n, {
+        0: 'Nenhuma imagem no dataset',
+        one: '# imagem no dataset',
+        other: '# imagens no dataset',
+      }),
     get loadError() {
       return t`Não foi possível ler o dataset.`
     },
@@ -1319,7 +1330,11 @@ export const text = {
       return t`Todos saem, inclusive você, e precisam entrar de novo.`
     },
     revoked: (n: number) =>
-      plural(n, { one: '# sessão encerrada.', other: '# sessões encerradas.' }),
+      plural(n, {
+        0: 'Nenhuma sessão encerrada.',
+        one: '# sessão encerrada.',
+        other: '# sessões encerradas.',
+      }),
   },
   audit: {
     get title() {

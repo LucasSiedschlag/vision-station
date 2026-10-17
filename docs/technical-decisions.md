@@ -790,6 +790,7 @@ Models are added only where the classical tools can't separate good objects from
 - One styling system (Tailwind + tokens), as today.
 - React Aria components are styled through their `data-*` state attributes with the same Tailwind names; a rule in the design-rules test keeps them on tokens.
 - Operator-route JS budget: 150 → 160 KB gzip, for the i18n runtime (TD-30), re-measured after UI-C2.
+- **Measured after UI-C2 (2026-10-17):** the operator route loads its entry chunk, the chunks `index.html` preloads and the catalog of its language: **187 KB + 9 KB gzip**. Before UI-C2 the same count was 177 KB, already above 150: the size check (`npm run size`, `dist/assets/index-*.js`) counts only the entry chunk, which now holds 67 KB after the catalogs became chunks of their own. The check still passes but covers about a third of what the screen loads. Open decision (Lucas): raise the budget, trim the preloaded chunks, or measure the entry plus its preloads. All JS: 459 of 500 KB.
 
 **Revisit when:** keeping the base components costs more time than the screens, or a single library covers the colour and range primitives with the same accessibility.
 

@@ -1,9 +1,10 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useSession } from '@/api/session'
+import { activate, chooseLocale } from '@/app/locale'
 import { mockApi, renderApp, server } from '@/test/render'
 import schemas from '@/test/tool-schemas.json'
 import { useDraft } from './draft'
@@ -295,6 +296,25 @@ describe('the job editor', () => {
     await waitFor(() => expect(saved).not.toBeNull())
     expect(saved.base).toEqual({ id: JOB, version: 1 })
     expect(saved.latest).toBe(2)
+  })
+
+  it('a draft survives a change of language (the pages are mounted again, the draft is kept)', async () => {
+    await openEditor()
+    await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
+    const fraction = screen.getByLabelText('Fração mínima da área')
+    await userEvent.clear(fraction)
+    await userEvent.type(fraction, '0,6')
+    await userEvent.tab()
+    expect(screen.getByText('não salvo')).toBeInTheDocument()
+    await act(async () => {
+      chooseLocale('en')
+      await activate('en')
+    })
+    expect(await screen.findByText('not saved')).toBeInTheDocument()
+    expect(
+      JSON.parse(localStorage.getItem(`vision-station-draft:${JOB}`)!).job.tools[0].params
+        .min_fraction,
+    ).toBe(0.6)
   })
 
   it('undo and redo', async () => {
