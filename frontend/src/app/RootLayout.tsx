@@ -38,7 +38,7 @@ export function RootLayout() {
         href="#content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-control focus:bg-surface-1 focus:px-4 focus:py-2"
       >
-        Pular para o conteúdo
+        {text.ui.skipToContent}
       </a>
       {role === 'operator' ? (
         <div id="content" tabIndex={-1} className="h-full outline-none">

@@ -11,6 +11,7 @@ import {
   type Rect,
 } from './geometry'
 import { pixelAt, pixelsOf, type EditorImage } from './image'
+import { text } from '@/texts'
 
 /** What is drawn over the image. Only `editable` shapes can be selected, moved and resized. */
 export interface Shape {
@@ -172,7 +173,7 @@ export function RegionCanvas({
         <img src={image.url} alt="" className="absolute inset-0 size-full" draggable={false} />
         <svg
           role="group"
-          aria-label="Regiões sobre a imagem"
+          aria-label={text.ui.regionsLabel}
           className={cn(
             'absolute inset-0 size-full touch-none',
             drawing ? 'cursor-crosshair' : 'cursor-default',
@@ -259,7 +260,11 @@ export function RegionCanvas({
       </div>
       <p aria-live="off" className="min-h-5 font-mono text-xs text-fg-muted tabular-nums">
         {readout ||
-          `${image.width} × ${image.height} px · ${image.source === 'reference' ? 'imagem de referência' : 'imagem ao vivo (reduzida)'}`}
+          text.ui.imageSize(
+            image.width,
+            image.height,
+            image.source === 'reference' ? text.ui.referenceImage : text.ui.liveImageReduced,
+          )}
       </p>
     </div>
   )

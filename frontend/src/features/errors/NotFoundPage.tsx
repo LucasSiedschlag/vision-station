@@ -10,7 +10,7 @@ export function NotFoundPage() {
       <EmptyState
         heading="h1"
         icon={<SearchX aria-hidden className="size-8" />}
-        title="Página não encontrada"
+        title={text.ui.notFoundTitle}
         description={text.errors.notFoundBody}
         action={
           <Link to="/" className={buttonVariants({ variant: 'primary' })}>

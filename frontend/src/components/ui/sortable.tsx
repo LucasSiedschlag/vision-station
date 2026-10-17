@@ -20,6 +20,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { text } from '@/texts'
 
 // A list reordered by dragging a handle, or with the keyboard (dnd-kit 6, TD-29): tools and anchors
 // in the editor. The screen-reader texts are Portuguese (dnd-kit's own are English). Inside a Sheet or
@@ -33,14 +34,14 @@ function announcements(
   name: (id: UniqueIdentifier) => string,
   ids: UniqueIdentifier[],
 ): Announcements {
-  const place = (id: UniqueIdentifier) => `posição ${ids.indexOf(id) + 1} de ${ids.length}`
+  const place = (id: UniqueIdentifier) => text.ui.place(ids.indexOf(id) + 1, ids.length)
   return {
-    onDragStart: ({ active }) => `${name(active.id)} pego para mover, na ${place(active.id)}.`,
+    onDragStart: ({ active }) => text.ui.dragStart(name(active.id), place(active.id)),
     onDragOver: ({ active, over }) =>
-      over ? `${name(active.id)} na ${place(over.id)}.` : `${name(active.id)} fora da lista.`,
+      over ? text.ui.dragOver(name(active.id), place(over.id)) : text.ui.dragOut(name(active.id)),
     onDragEnd: ({ active, over }) =>
-      over ? `${name(active.id)} solto na ${place(over.id)}.` : `${name(active.id)} solto.`,
-    onDragCancel: ({ active }) => `Movimento cancelado. ${name(active.id)} voltou ao lugar.`,
+      over ? text.ui.dragEnd(name(active.id), place(over.id)) : text.ui.dropped(name(active.id)),
+    onDragCancel: ({ active }) => text.ui.dragCancel(name(active.id)),
   }
 }
 
@@ -86,8 +87,7 @@ export function SortableList<T extends SortableItem>({
           items.map((i) => i.id),
         ),
         screenReaderInstructions: {
-          draggable:
-            'Para mover, pressione Espaço ou Enter; use as setas para cima e para baixo; Espaço ou Enter de novo para soltar, Esc para cancelar.',
+          draggable: text.ui.dragHelp,
         },
       }}
     >
@@ -128,8 +128,8 @@ function Row({ id, name, children }: { id: UniqueIdentifier; name: string; child
         ref={setActivatorNodeRef}
         {...attributes}
         {...listeners}
-        aria-label={`Mover ${name}`}
-        aria-roledescription="item que pode ser movido"
+        aria-label={text.ui.move(name)}
+        aria-roledescription={text.ui.movable}
         className="flex min-h-control w-8 shrink-0 cursor-grab touch-none items-center justify-center text-fg-muted active:cursor-grabbing"
       >
         <GripVertical aria-hidden className="size-4" />

@@ -37,7 +37,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
           label: s.system,
           tone: 'ok',
           word: s.connected,
-          detail: ['Esta tela está ligada ao programa da estação.'],
+          detail: [text.live.systemConnected],
         }
       : connection === 'connecting'
         ? {
@@ -45,14 +45,14 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
             label: s.system,
             tone: 'busy',
             word: s.connecting,
-            detail: ['Ligando esta tela ao programa da estação.'],
+            detail: [text.live.systemConnecting],
           }
         : {
             id: 'system',
             label: s.system,
             tone: 'fail',
             word: s.offline,
-            detail: ['Esta tela perdeu a ligação com o programa e tenta de novo sozinha.'],
+            detail: [text.live.systemOffline],
           }
 
   const machine = machineOf(status)
@@ -63,7 +63,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
           label: s.machine,
           tone: 'unknown',
           word: s.unknown,
-          detail: ['Sem ligação com o sistema, o estado da máquina não é conhecido.'],
+          detail: [text.live.machineUnknown],
         },
       ]
     : []
@@ -77,7 +77,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
         label: s.camera,
         tone: 'unknown',
         word: s.unknown,
-        detail: ['Sem ligação com o sistema, o estado da câmera não é conhecido.'],
+        detail: [text.live.cameraUnknown],
       },
       ...unknownMachine,
       {
@@ -85,7 +85,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
         label: s.log,
         tone: 'unknown',
         word: s.unknown,
-        detail: ['Sem ligação com o sistema, não se sabe se os resultados estão sendo gravados.'],
+        detail: [text.live.logUnknown],
       },
     ]
   }
@@ -106,7 +106,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
         label: s.camera,
         tone: 'fail',
         word: s.disconnected,
-        detail: [status.camera.last_error ?? 'Reconectando automaticamente.'],
+        detail: [status.camera.last_error ?? text.live.reconnecting],
       }
   const log: Item =
     status.recording_failures > 0
@@ -122,7 +122,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
           label: s.log,
           tone: 'ok',
           word: s.ok,
-          detail: ['Os resultados estão sendo gravados.'],
+          detail: [text.live.logOk],
         }
   // a link counts as fine only with a heartbeat seen: an open socket alone says nothing (E601, §16)
   const machineItems: Item[] = !machine
@@ -144,7 +144,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
               label: s.machine,
               tone: 'unknown',
               word: s.awaitingHeartbeat,
-              detail: ['Ligada, mas a máquina ainda não deu sinal de vida.'],
+              detail: [text.live.machineAwaiting],
             },
           ]
         : [
@@ -153,7 +153,7 @@ export function indicators(status: StateOut | null, connection: Connection): Ite
               label: s.machine,
               tone: 'fail',
               word: s.noSignal,
-              detail: [machine.last_error ?? 'A máquina não responde; nenhum disparo é aceito.'],
+              detail: [machine.last_error ?? text.live.machineSilent],
             },
           ]
   return [system, camera, ...machineItems, log]
@@ -167,7 +167,7 @@ export function StatusStrip({
   connection: Connection
 }) {
   return (
-    <ul aria-label="Estado do sistema" className="flex flex-wrap items-center gap-x-6 gap-y-1">
+    <ul aria-label={text.live.statusLabel} className="flex flex-wrap items-center gap-x-6 gap-y-1">
       {indicators(status, connection).map((item) => (
         <li key={item.id}>
           <Popover>

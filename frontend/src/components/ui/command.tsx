@@ -10,6 +10,7 @@ import {
 import { Search } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { cn } from '@/lib/cn'
+import { text } from '@/texts'
 
 // A filtered list to pick from with the keyboard (cmdk, TD-29): the Ctrl+K palette. Shown inside our
 // own Dialog (title, focus trap, focus return), never in cmdk's dialog.
@@ -37,12 +38,14 @@ export function CommandInput({ className, ...props }: ComponentProps<typeof Cmdk
 }
 
 /** cmdk names the list "Suggestions" by default: it gets a Portuguese name instead. */
-export function CommandList({
-  className,
-  label = 'Sugestões',
-  ...props
-}: ComponentProps<typeof CmdkList>) {
-  return <CmdkList label={label} className={cn('max-h-80 overflow-y-auto', className)} {...props} />
+export function CommandList({ className, label, ...props }: ComponentProps<typeof CmdkList>) {
+  return (
+    <CmdkList
+      label={label ?? text.ui.suggestions}
+      className={cn('max-h-80 overflow-y-auto', className)}
+      {...props}
+    />
+  )
 }
 
 export function CommandEmpty({ className, ...props }: ComponentProps<typeof CmdkEmpty>) {

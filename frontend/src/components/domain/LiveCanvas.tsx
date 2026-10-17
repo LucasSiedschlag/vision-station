@@ -72,7 +72,7 @@ export function LiveCanvas({ frame, className }: { frame: Blob | null; className
         className,
       )}
     >
-      <canvas ref={canvas} role="img" aria-label="Imagem ao vivo da câmera" className="size-full" />
+      <canvas ref={canvas} role="img" aria-label={text.live.imageLabel} className="size-full" />
       {frame ? null : (
         <div className="absolute inset-0 grid place-items-center text-lg text-fg-muted">
           {text.operator.noImage}

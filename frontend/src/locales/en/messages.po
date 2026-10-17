@@ -6,3 +6,1560 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
+
+msgid "Semelhança mínima com a referência"
+msgstr ""
+
+msgid "Para mover, pressione Espaço ou Enter; use as setas para cima e para baixo; Espaço ou Enter de novo para soltar, Esc para cancelar."
+msgstr ""
+
+msgid "Caminho do dispositivo"
+msgstr ""
+
+msgid "Versão salva"
+msgstr ""
+
+msgid "Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups."
+msgstr ""
+
+msgid "No backup, a versão ativa era a v{v}: ative-a aqui depois de conferir."
+msgstr ""
+
+msgid "Voltar para a estação"
+msgstr ""
+
+msgid "Versão"
+msgstr ""
+
+msgid "Imagens fora destes limites viram ERRO com o motivo, nunca APROVADO."
+msgstr ""
+
+msgid "Ajustes gravados e lidos de volta."
+msgstr ""
+
+msgid "O nome da entrada, nunca a senha."
+msgstr ""
+
+msgid "{name} pego para mover, na {place}."
+msgstr ""
+
+msgid "Região"
+msgstr ""
+
+msgid "Definida"
+msgstr ""
+
+msgid "A estação está pausada (ajuste de câmera)."
+msgstr ""
+
+msgid "Senha nova"
+msgstr ""
+
+msgid "{name} (cópia)"
+msgstr ""
+
+msgid "Toda imagem inspecionada também vai para o dataset."
+msgstr ""
+
+msgid "Corrigido: o certo era {o}."
+msgstr ""
+
+msgid "item que pode ser movido"
+msgstr ""
+
+msgid "Sem âncora: rode Testar para localizar o objeto e ver as regiões relativas a ele."
+msgstr ""
+
+msgid "Nome da tela"
+msgstr ""
+
+msgid "Só a última versão de cada job"
+msgstr ""
+
+msgid "Versões"
+msgstr ""
+
+msgid "Valor"
+msgstr ""
+
+msgid "Inspecionar agora"
+msgstr ""
+
+msgid "Estação"
+msgstr ""
+
+msgid "Brilho máximo"
+msgstr ""
+
+msgid "Hoje"
+msgstr ""
+
+msgid "{name} · v{v}"
+msgstr ""
+
+msgid "Importe um arquivo .vjob ou .vbak, ou crie um job no editor."
+msgstr ""
+
+msgid "Sugestões"
+msgstr ""
+
+msgid "Não foi possível inspecionar."
+msgstr ""
+
+msgid "Fica no histórico de versões."
+msgstr ""
+
+msgid "Abrir"
+msgstr ""
+
+msgid "A máquina não responde; nenhum disparo é aceito."
+msgstr ""
+
+msgid "Tentar de novo"
+msgstr ""
+
+msgid "Reprovados e erros sempre guardam a imagem."
+msgstr ""
+
+msgid "sem nota"
+msgstr ""
+
+msgid "Gabarito guardado no job."
+msgstr ""
+
+msgid "Use pelo menos 8 caracteres."
+msgstr ""
+
+msgid "Nem todos os ajustes foram gravados:"
+msgstr ""
+
+msgid "Quanto um pixel muda para contar como objeto (1 a 255)."
+msgstr ""
+
+msgid "Ativo"
+msgstr ""
+
+msgid "h"
+msgstr ""
+
+msgid "Sem permissão"
+msgstr ""
+
+msgid "Páginas de outros programas"
+msgstr ""
+
+msgid "Propor a cor a partir da região"
+msgstr ""
+
+msgid "Estava {o}"
+msgstr ""
+
+msgid "imagem de referência"
+msgstr ""
+
+msgid "Escolha uma região relativa à imagem para amostrar a cor."
+msgstr ""
+
+msgid "Perfil"
+msgstr ""
+
+msgid "REPROVADO"
+msgstr ""
+
+msgid "Nenhum backup na pasta."
+msgstr ""
+
+msgid "Pasta: {folder}"
+msgstr ""
+
+msgid "Movimento cancelado. {name} voltou ao lugar."
+msgstr ""
+
+msgid "Descartar"
+msgstr ""
+
+msgid "Resultado"
+msgstr ""
+
+msgid "Duplicar"
+msgstr ""
+
+msgid "APROVADO"
+msgstr ""
+
+msgid "Adicionar ferramenta"
+msgstr ""
+
+msgid "Quando"
+msgstr ""
+
+msgid "Desenhe um recorte em volta do objeto na imagem de referência e use-o como gabarito."
+msgstr ""
+
+msgid "Acessos"
+msgstr ""
+
+msgid "Ex.: http://localhost:8800, separadas por vírgula."
+msgstr ""
+
+msgid "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
+msgstr ""
+
+msgid "Estava NÃO OK"
+msgstr ""
+
+msgid "{name} solto na {place}."
+msgstr ""
+
+msgid "Gatilho"
+msgstr ""
+
+msgid "Ao vivo"
+msgstr ""
+
+msgid "Rascunho recuperado deste navegador."
+msgstr ""
+
+msgid "Diferenças"
+msgstr ""
+
+msgid "v{v} (era v{original}) · {status}"
+msgstr ""
+
+msgid "Pasta de rede ou pen drive. Vazio: dentro da pasta de dados."
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Reprovadas"
+msgstr ""
+
+msgid "Tudo"
+msgstr ""
+
+msgid "posição {position} de {total}"
+msgstr ""
+
+msgid "Não foi possível falar com o programa da estação."
+msgstr ""
+
+msgid "Marcar como incorreto"
+msgstr ""
+
+msgid "Modo de coleta de {name}"
+msgstr ""
+
+msgid "Ativar versão {v} de {name}?"
+msgstr ""
+
+msgid "Pontuações"
+msgstr ""
+
+msgid "Foco"
+msgstr ""
+
+msgid "Dataset exportado"
+msgstr ""
+
+msgid "Porta"
+msgstr ""
+
+msgid "Regiões sobre a imagem"
+msgstr ""
+
+msgid "Sair"
+msgstr ""
+
+msgid "Últimos resultados"
+msgstr ""
+
+msgid "Cor"
+msgstr ""
+
+msgid "Entrar"
+msgstr ""
+
+msgid "Subir {id}"
+msgstr ""
+
+msgid "Pelo menos 8 caracteres. Ela não é mostrada de novo."
+msgstr ""
+
+msgid "Salvar o job novo"
+msgstr ""
+
+msgid "Tipo de arquivo não aceito: {files}. Use {accept}."
+msgstr ""
+
+msgid "adicionada"
+msgstr ""
+
+msgid "Tipo de câmera"
+msgstr ""
+
+msgid "Usar o brilho atual ±20%"
+msgstr ""
+
+msgid "Falhou"
+msgstr ""
+
+msgid "Ações de {name}"
+msgstr ""
+
+msgid "Baixar"
+msgstr ""
+
+msgid "Um sinal de outro equipamento dispara a inspeção"
+msgstr ""
+
+msgid "Evento"
+msgstr ""
+
+msgid "Sem ligação com o sistema, o estado da câmera não é conhecido."
+msgstr ""
+
+msgid "Os resultados estão sendo gravados."
+msgstr ""
+
+msgid "Nenhuma pasta de backup configurada."
+msgstr ""
+
+msgid "Salvar configurações"
+msgstr ""
+
+msgid "imagem toda"
+msgstr ""
+
+msgid "Mude os filtros ou o período."
+msgstr ""
+
+msgid "Ferramenta"
+msgstr ""
+
+msgid "Esta tela está ligada ao programa da estação."
+msgstr ""
+
+msgid "Desenhar a área de presença"
+msgstr ""
+
+msgid "Resultado esperado"
+msgstr ""
+
+msgid "Ligando esta tela ao programa da estação."
+msgstr ""
+
+msgid "{n, plural, one {# imagem no dataset} other {# imagens no dataset}}"
+msgstr ""
+
+msgid "{name}: relativa a"
+msgstr ""
+
+msgid "Nome do caso"
+msgstr ""
+
+msgid "s"
+msgstr ""
+
+msgid "A imagem deste resultado não foi guardada (amostragem de aprovados ou limpeza do disco)."
+msgstr ""
+
+msgid "Ex.: C920. Ou use o caminho ou o índice."
+msgstr ""
+
+msgid "Pasta de imagens (testes)"
+msgstr ""
+
+msgid "Este perfil não pode abrir esta tela."
+msgstr ""
+
+msgid "Importando…"
+msgstr ""
+
+msgid "Nenhum (regiões fixas na imagem)"
+msgstr ""
+
+msgid "Expandir menu"
+msgstr ""
+
+msgid "sem sinal"
+msgstr ""
+
+msgid "com falhas"
+msgstr ""
+
+msgid "Conjunto de referência"
+msgstr ""
+
+msgid "Manual"
+msgstr ""
+
+msgid "Imagem mostrada"
+msgstr ""
+
+msgid "O backup trouxe a configuração do sistema; ela não é aplicada sozinha."
+msgstr ""
+
+msgid "Não foi possível ler a auditoria."
+msgstr ""
+
+msgid "Imagens"
+msgstr ""
+
+msgid "Para a ferramenta de padrão: desenhe um recorte do logo ou marca na imagem de referência."
+msgstr ""
+
+msgid "Voltar para Jobs"
+msgstr ""
+
+msgid "Testar câmera"
+msgstr ""
+
+msgid "Preparando…"
+msgstr ""
+
+msgid "Reprovado"
+msgstr ""
+
+msgid "Cor ou contraste"
+msgstr ""
+
+msgid "v{v}"
+msgstr ""
+
+msgid "Endereço de escuta"
+msgstr ""
+
+msgid "Encerrar todas as sessões"
+msgstr ""
+
+msgid "Duração"
+msgstr ""
+
+msgid "rascunho a partir da v{v}"
+msgstr ""
+
+msgid "Resultados"
+msgstr ""
+
+msgid "Ocultar detalhes"
+msgstr ""
+
+msgid "Todos os jobs"
+msgstr ""
+
+msgid "Job criado"
+msgstr ""
+
+msgid "aguardando sinal de vida"
+msgstr ""
+
+msgid "Rede elétrica"
+msgstr ""
+
+msgid "Fechar"
+msgstr ""
+
+msgid "Ativado, com avisos:"
+msgstr ""
+
+msgid "Entrou como {role}."
+msgstr ""
+
+msgid "não salvo"
+msgstr ""
+
+msgid "Editar"
+msgstr ""
+
+msgid "Esta tela perdeu a ligação com o programa e tenta de novo sozinha."
+msgstr ""
+
+msgid "Tipo de ferramenta que este programa não conhece."
+msgstr ""
+
+msgid "Tema"
+msgstr ""
+
+msgid "Registro"
+msgstr ""
+
+msgid "Mostrar o resultado por pelo menos"
+msgstr ""
+
+msgid "Job ativado sem passar na verificação"
+msgstr ""
+
+msgid "Sessão encerrada por inatividade."
+msgstr ""
+
+msgid "Descartar o rascunho"
+msgstr ""
+
+msgid "Diferença de cinza"
+msgstr ""
+
+msgid "Sua sessão terminou. Entre de novo para continuar."
+msgstr ""
+
+msgid "desconectada"
+msgstr ""
+
+msgid "Conferir o rascunho"
+msgstr ""
+
+msgid "Muitas tentativas. Aguarde um pouco e tente de novo."
+msgstr ""
+
+msgid "Imagem ao vivo da câmera"
+msgstr ""
+
+msgid "Retomar a estação"
+msgstr ""
+
+msgid "concluído"
+msgstr ""
+
+msgid "Auditoria"
+msgstr ""
+
+msgid "Período"
+msgstr ""
+
+msgid "Mantenedor"
+msgstr ""
+
+msgid "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
+msgstr ""
+
+msgid "à imagem"
+msgstr ""
+
+msgid "ERRO"
+msgstr ""
+
+msgid "Nenhum resultado neste período"
+msgstr ""
+
+msgid "{n, plural, one {# resultado não gravado} other {# resultados não gravados}}"
+msgstr ""
+
+msgid "Ativar mesmo assim"
+msgstr ""
+
+msgid "Esse endereço não existe."
+msgstr ""
+
+msgid "Caso {name}: o rascunho diz {now}; esperado {expected}."
+msgstr ""
+
+msgid "O último backup automático falhou: {e}"
+msgstr ""
+
+msgid "Repetir as imagens"
+msgstr ""
+
+msgid "Nenhum job ainda"
+msgstr ""
+
+msgid "Sair do editor?"
+msgstr ""
+
+msgid "Arquivo importado"
+msgstr ""
+
+msgid "Nome do job novo"
+msgstr ""
+
+msgid "{hint} (não usado)"
+msgstr ""
+
+msgid "conectada"
+msgstr ""
+
+msgid "Inspeciona quando um objeto entra na área e fica parado"
+msgstr ""
+
+msgid "Pular para o conteúdo"
+msgstr ""
+
+msgid "{n, plural, one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
+msgstr ""
+
+msgid "passo atual"
+msgstr ""
+
+msgid "Tempos"
+msgstr ""
+
+msgid "Âncora e regiões"
+msgstr ""
+
+msgid "Nada mudou."
+msgstr ""
+
+msgid "Não foi possível ler as configurações."
+msgstr ""
+
+msgid "Pasta de dados: {path}"
+msgstr ""
+
+msgid "Imagem"
+msgstr ""
+
+msgid "Modo de coleta"
+msgstr ""
+
+msgid "Apagar registros com mais de"
+msgstr ""
+
+msgid "Backups…"
+msgstr ""
+
+msgid "Solte o arquivo aqui ou escolha um"
+msgstr ""
+
+msgid "Sistema"
+msgstr ""
+
+msgid "Regiões"
+msgstr ""
+
+msgid "Em português, para o operador. Pode usar valores da ferramenta, ex.: {example}."
+msgstr ""
+
+msgid "Recolher menu"
+msgstr ""
+
+msgid "Quanto tempo o objeto precisa ficar parado antes da foto."
+msgstr ""
+
+msgid "Versão do programa"
+msgstr ""
+
+msgid "Acha o objeto na imagem, para as regiões acompanharem quando ele muda de lugar."
+msgstr ""
+
+msgid "já existia"
+msgstr ""
+
+msgid "Supervisor"
+msgstr ""
+
+msgid "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
+msgstr ""
+
+msgid "Página anterior"
+msgstr ""
+
+msgid "Data"
+msgstr ""
+
+msgid "Ferramentas"
+msgstr ""
+
+msgid "Senha atual"
+msgstr ""
+
+msgid "Sinal externo"
+msgstr ""
+
+msgid "O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil."
+msgstr ""
+
+msgid "Todas as versões"
+msgstr ""
+
+msgid "Objeto parado na área"
+msgstr ""
+
+msgid "Abrir no editor"
+msgstr ""
+
+msgid "Original"
+msgstr ""
+
+msgid "Encerrar todas as sessões?"
+msgstr ""
+
+msgid "Não usado"
+msgstr ""
+
+msgid "Próxima página"
+msgstr ""
+
+msgid "Tempo de exposição"
+msgstr ""
+
+msgid "Cria um job novo a partir da versão {v}, com todos os arquivos."
+msgstr ""
+
+msgid "Carregando a imagem…"
+msgstr ""
+
+msgid "Vazio: guardar tudo."
+msgstr ""
+
+msgid "O que incluir"
+msgstr ""
+
+msgid "Não foi possível ler as informações do programa."
+msgstr ""
+
+msgid "Nomes aceitos na rede"
+msgstr ""
+
+msgid "Testar pasta"
+msgstr ""
+
+msgid "Usar como gabarito"
+msgstr ""
+
+msgid "Tempo de cada ferramenta"
+msgstr ""
+
+msgid "Não foi possível ler a lista de jobs."
+msgstr ""
+
+msgid "Letras, números, - e _."
+msgstr ""
+
+msgid "Largura"
+msgstr ""
+
+msgid "padrão: {value}"
+msgstr ""
+
+msgid "com erro"
+msgstr ""
+
+msgid "Mesmo quando a estação já está pronta para a próxima peça."
+msgstr ""
+
+msgid "{name} na {place}."
+msgstr ""
+
+msgid "Novo job"
+msgstr ""
+
+msgid "Senha do {role} definida. As sessões dele foram encerradas."
+msgstr ""
+
+msgid "Capturar a imagem de referência"
+msgstr ""
+
+msgid "Trocar a senha do {role}"
+msgstr ""
+
+msgid "Manter livre no disco pelo menos"
+msgstr ""
+
+msgid "Vazio: só quando pedido."
+msgstr ""
+
+msgid "Separados por vírgula"
+msgstr ""
+
+msgid "A imagem vai para o treinamento com o resultado certo."
+msgstr ""
+
+msgid "Chamar a manutenção."
+msgstr ""
+
+msgid "Corrigido: o certo era {o} (por {by})."
+msgstr ""
+
+msgid "Resultado marcado como incorreto. A imagem vai para o treinamento."
+msgstr ""
+
+msgid "Ações"
+msgstr ""
+
+msgid "Altura"
+msgstr ""
+
+msgid "Última troca"
+msgstr ""
+
+msgid "Nenhum evento"
+msgstr ""
+
+msgid "ao objeto (âncora)"
+msgstr ""
+
+msgid "Sem conexão com o programa da estação. O que aparece nesta tela pode estar desatualizado."
+msgstr ""
+
+msgid "Nenhum caso ainda."
+msgstr ""
+
+msgid "Não há cor suficiente na região para propor uma faixa."
+msgstr ""
+
+msgid "ok"
+msgstr ""
+
+msgid "Descer {id}"
+msgstr ""
+
+msgid "Aprovado"
+msgstr ""
+
+msgid "Detalhes"
+msgstr ""
+
+msgid "{width} × {height} px · {source}"
+msgstr ""
+
+msgid "Senha definida"
+msgstr ""
+
+msgid "O rascunho pode ser salvo."
+msgstr ""
+
+msgid "Motivo da reprovação"
+msgstr ""
+
+msgid "Um job (.vjob) ou um backup (.vbak). Importar guarda as versões; ativar é um passo à parte, com verificação."
+msgstr ""
+
+msgid "Redesenhar"
+msgstr ""
+
+msgid "falhou"
+msgstr ""
+
+msgid "Todos os eventos"
+msgstr ""
+
+msgid "Job {name} criado."
+msgstr ""
+
+msgid "Capture a imagem de referência (passo Referência) para recortar um gabarito."
+msgstr ""
+
+msgid "Câmera desconectada"
+msgstr ""
+
+msgid "Inspeciona uma imagem atrás da outra"
+msgstr ""
+
+msgid "Último resultado: {word}. Pode estar desatualizado."
+msgstr ""
+
+msgid "Job"
+msgstr ""
+
+msgid "Som na reprovação"
+msgstr ""
+
+msgid "âncora"
+msgstr ""
+
+msgid "Usar como padrão de {id}"
+msgstr ""
+
+msgid "Use letras, números, - e _, sem repetir."
+msgstr ""
+
+msgid "Temperatura"
+msgstr ""
+
+msgid "Salvar como versão {v}"
+msgstr ""
+
+msgid "Restauração de backup"
+msgstr ""
+
+msgid "recorte"
+msgstr ""
+
+msgid "Sair por inatividade após"
+msgstr ""
+
+msgid "Claro"
+msgstr ""
+
+msgid "Nome"
+msgstr ""
+
+msgid "Ajuste de câmera"
+msgstr ""
+
+msgid "o objeto (âncora)"
+msgstr ""
+
+msgid "Backups"
+msgstr ""
+
+msgid "Configurações"
+msgstr ""
+
+msgid "conectando"
+msgstr ""
+
+msgid "Configurações salvas: {sections}."
+msgstr ""
+
+msgid "Sua sessão terminou"
+msgstr ""
+
+msgid "gravação"
+msgstr ""
+
+msgid "Na verificação ao ativar: câmera movida ou cena diferente."
+msgstr ""
+
+msgid "Job ativado"
+msgstr ""
+
+msgid "Ganho"
+msgstr ""
+
+msgid "min"
+msgstr ""
+
+msgid "Backup falhou"
+msgstr ""
+
+msgid "Baixar {name}"
+msgstr ""
+
+msgid "Resultado esperado de {image}"
+msgstr ""
+
+msgid "Desenhando… (arraste na imagem)"
+msgstr ""
+
+msgid "Máquina"
+msgstr ""
+
+msgid "As duas versões têm a mesma definição."
+msgstr ""
+
+msgid "Pasta das imagens"
+msgstr ""
+
+msgid "presença"
+msgstr ""
+
+msgid "Verificar e ativar"
+msgstr ""
+
+msgid "Escuro"
+msgstr ""
+
+msgid "Testar"
+msgstr ""
+
+msgid "Atualizar imagem"
+msgstr ""
+
+msgid "Nome do dispositivo"
+msgstr ""
+
+msgid "conectado"
+msgstr ""
+
+msgid "A imagem de referência é a vista de um objeto bom. Ela serve para comparar nitidez e a vista da câmera ao ativar."
+msgstr ""
+
+msgid "Sessões encerradas"
+msgstr ""
+
+msgid "Comparar com"
+msgstr ""
+
+msgid "Arraste sobre a imagem para desenhar"
+msgstr ""
+
+msgid "Importar arquivo"
+msgstr ""
+
+msgid "dias"
+msgstr ""
+
+msgid "Usuário"
+msgstr ""
+
+msgid "30 dias"
+msgstr ""
+
+msgid "Remover a região {name}"
+msgstr ""
+
+msgid "Solte aqui o modelo (.onnx) e o cartão (.card.yaml)"
+msgstr ""
+
+msgid "novo job"
+msgstr ""
+
+msgid "Imagem de referência capturada ({w} × {h})."
+msgstr ""
+
+msgid "Contínuo"
+msgstr ""
+
+msgid "Desfazer"
+msgstr ""
+
+msgid "Versão {v} salva."
+msgstr ""
+
+msgid "ativo: v{v}"
+msgstr ""
+
+msgid "sem conexão"
+msgstr ""
+
+msgid "Padrão (logo, marca)"
+msgstr ""
+
+msgid "Imagem guardada por amostragem."
+msgstr ""
+
+msgid "Todos"
+msgstr ""
+
+msgid "Adicionar"
+msgstr ""
+
+msgid "Mover {name}"
+msgstr ""
+
+msgid "Exportar CSV"
+msgstr ""
+
+msgid "Este resultado estava errado?"
+msgstr ""
+
+msgid "Desenhar a posição do objeto"
+msgstr ""
+
+msgid "Revisar"
+msgstr ""
+
+msgid "Endereço"
+msgstr ""
+
+msgid "Falha na verificação"
+msgstr ""
+
+msgid "Página não encontrada"
+msgstr ""
+
+msgid "Conta"
+msgstr ""
+
+msgid "Ir para…"
+msgstr ""
+
+msgid "pendente"
+msgstr ""
+
+msgid "Gravação"
+msgstr ""
+
+msgid "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
+msgstr ""
+
+msgid "sinal de vida há {age} s"
+msgstr ""
+
+msgid "fora da faixa"
+msgstr ""
+
+msgid "não suportado"
+msgstr ""
+
+msgid "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha)."
+msgstr ""
+
+msgid "Localizador"
+msgstr ""
+
+msgid "Última alteração"
+msgstr ""
+
+msgid "Versão {v} de {name} ativada."
+msgstr ""
+
+msgid "{name} (valor exato)"
+msgstr ""
+
+msgid "Telas"
+msgstr ""
+
+msgid "Inspecionando…"
+msgstr ""
+
+msgid "{name} fora da lista."
+msgstr ""
+
+msgid "Passos do job"
+msgstr ""
+
+msgid "Dataset {id}: {count} imagens em {folder}"
+msgstr ""
+
+msgid "As mudanças não salvas são perdidas. A versão salva continua como estava."
+msgstr ""
+
+msgid "O sistema disse {said}. Qual era o resultado certo?"
+msgstr ""
+
+msgid "O que a tela do operador mostra enquanto espera, ex.: Aguardando peça."
+msgstr ""
+
+msgid "Nenhum job"
+msgstr ""
+
+msgid "Pelo botão Inspecionar agora ou por outro programa"
+msgstr ""
+
+msgid "Tempo parado"
+msgstr ""
+
+msgid "Exportar tudo"
+msgstr ""
+
+msgid "Backup"
+msgstr ""
+
+msgid "desconhecido"
+msgstr ""
+
+msgid "O que mudou"
+msgstr ""
+
+msgid "{name} solto."
+msgstr ""
+
+msgid "Automático: a câmera decide (evite na estação)"
+msgstr ""
+
+msgid "Rede"
+msgstr ""
+
+msgid "Em manutenção"
+msgstr ""
+
+msgid "Aprovadas"
+msgstr ""
+
+msgid "Não foi possível ler o dataset."
+msgstr ""
+
+msgid "Índice do dispositivo"
+msgstr ""
+
+msgid "A versão salva nunca muda. Para usar na estação, ative-a na tela Jobs (com verificação)."
+msgstr ""
+
+msgid "Escolha o tipo"
+msgstr ""
+
+msgid "Sem imagem da câmera"
+msgstr ""
+
+msgid "Exportar"
+msgstr ""
+
+msgid "Área mínima com objeto"
+msgstr ""
+
+msgid "O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo."
+msgstr ""
+
+msgid "Dataset"
+msgstr ""
+
+msgid "Balanço de branco"
+msgstr ""
+
+msgid "Detecção por modelo"
+msgstr ""
+
+msgid "backup"
+msgstr ""
+
+msgid "Senha"
+msgstr ""
+
+msgid "JSON inválido"
+msgstr ""
+
+msgid "Abrir o resultado de {when}"
+msgstr ""
+
+msgid "rede"
+msgstr ""
+
+msgid "Operador"
+msgstr ""
+
+msgid "Algumas mudanças só valem depois de reiniciar o programa:"
+msgstr ""
+
+msgid "Remover {id}"
+msgstr ""
+
+msgid "Algo deu errado ao montar esta tela."
+msgstr ""
+
+msgid "Medir a imagem atual"
+msgstr ""
+
+msgid "Os ajustes vão no job e são gravados na câmera a cada abertura. Aplicar pausa a estação até você retomá-la."
+msgstr ""
+
+msgid "Remover"
+msgstr ""
+
+msgid "Importação"
+msgstr ""
+
+msgid "Brilho mínimo"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "Quantos guardar"
+msgstr ""
+
+msgid "estação"
+msgstr ""
+
+msgid "Modo do gatilho"
+msgstr ""
+
+msgid "Gabarito"
+msgstr ""
+
+msgid "Hikvision (IP)"
+msgstr ""
+
+msgid "{from}–{to} de {total}"
+msgstr ""
+
+msgid "Todos saem, inclusive você, e precisam entrar de novo."
+msgstr ""
+
+msgid "HH:MM separados por vírgula; os contadores recomeçam em cada um."
+msgstr ""
+
+msgid "Definir a senha do {role}"
+msgstr ""
+
+msgid "{n, plural, one {# sessão encerrada.} other {# sessões encerradas.}}"
+msgstr ""
+
+msgid "Jobs"
+msgstr ""
+
+msgid "USB (UVC, ex. C920)"
+msgstr ""
+
+msgid "Perfil ou senha incorretos."
+msgstr ""
+
+msgid "aplicado"
+msgstr ""
+
+msgid "Nitidez mínima"
+msgstr ""
+
+msgid "Aguardando objeto"
+msgstr ""
+
+msgid "Fração da área de presença (0 a 1)."
+msgstr ""
+
+msgid "Baixar imagem"
+msgstr ""
+
+msgid "Imagem atual: brilho {b}, nitidez {s}."
+msgstr ""
+
+msgid "câmera"
+msgstr ""
+
+msgid "Fazer backup"
+msgstr ""
+
+msgid "Ligada, mas a máquina ainda não deu sinal de vida."
+msgstr ""
+
+msgid "As duas senhas não são iguais."
+msgstr ""
+
+msgid "Imagens por segundo"
+msgstr ""
+
+msgid "Backup automático a cada"
+msgstr ""
+
+msgid "Filtros"
+msgstr ""
+
+msgid "Conectando…"
+msgstr ""
+
+msgid "Capturar caso"
+msgstr ""
+
+msgid "Faixa de matiz proposta: {a} a {b}. Teste e ajuste."
+msgstr ""
+
+msgid "Nome inválido ou já usado."
+msgstr ""
+
+msgid "Pasta de backup"
+msgstr ""
+
+msgid "Ferramentas que este programa executa"
+msgstr ""
+
+msgid "Esta tela falhou"
+msgstr ""
+
+msgid "Páginas"
+msgstr ""
+
+msgid "Estava OK"
+msgstr ""
+
+msgid "Descrição"
+msgstr ""
+
+msgid "Resultado incorreto?"
+msgstr ""
+
+msgid "Exposição"
+msgstr ""
+
+msgid "Aparece nas pontuações e no registro."
+msgstr ""
+
+msgid "Comparar com…"
+msgstr ""
+
+msgid "Nome do job"
+msgstr ""
+
+msgid "O job não passou na verificação:"
+msgstr ""
+
+msgid "Nada encontrado."
+msgstr ""
+
+msgid "Repita a senha nova"
+msgstr ""
+
+msgid "Remover {image}"
+msgstr ""
+
+msgid "Backup {name} ({size}) gravado."
+msgstr ""
+
+msgid "Sem conexão"
+msgstr ""
+
+msgid "Sem ligação com o sistema, não se sabe se os resultados estão sendo gravados."
+msgstr ""
+
+msgid "Texto de espera"
+msgstr ""
+
+msgid "Imagens com o resultado esperado. Ao ativar, o job precisa acertar todas."
+msgstr ""
+
+msgid "a partir da v{v}"
+msgstr ""
+
+msgid "imagem ao vivo (reduzida)"
+msgstr ""
+
+msgid "Referência"
+msgstr ""
+
+msgid "Marcado"
+msgstr ""
+
+msgid "Salvar…"
+msgstr ""
+
+msgid "recusado"
+msgstr ""
+
+msgid "Não definida"
+msgstr ""
+
+msgid "Erro"
+msgstr ""
+
+msgid "Código de barras ou 2D"
+msgstr ""
+
+msgid "Formato dos arquivos de job"
+msgstr ""
+
+msgid "renumerada"
+msgstr ""
+
+msgid "Câmera"
+msgstr ""
+
+msgid "Estado do sistema"
+msgstr ""
+
+msgid "Algo deu errado"
+msgstr ""
+
+msgid "Exportar .vjob"
+msgstr ""
+
+msgid "passou"
+msgstr ""
+
+msgid "v{v} · {status}"
+msgstr ""
+
+msgid "O que mudou na estação, quando e por quem. Não se apaga."
+msgstr ""
+
+msgid "Não foi possível ler os resultados."
+msgstr ""
+
+msgid "Guardar a imagem de 1 aprovado a cada"
+msgstr ""
+
+msgid "Aplicar na câmera"
+msgstr ""
+
+msgid "Ativar"
+msgstr ""
+
+msgid "Erros"
+msgstr ""
+
+msgid "Inícios de turno"
+msgstr ""
+
+msgid "Dataset e coleta"
+msgstr ""
+
+msgid "(atual)"
+msgstr ""
+
+msgid "Sobre"
+msgstr ""
+
+msgid "Autor"
+msgstr ""
+
+msgid "Duplicar job"
+msgstr ""
+
+msgid "Ver como tabela"
+msgstr ""
+
+msgid "Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz."
+msgstr ""
+
+msgid "Adicionado ao job: {paths}"
+msgstr ""
+
+msgid "Campos com problema"
+msgstr ""
+
+msgid "Marcado como incorreto. A imagem vai para o treinamento."
+msgstr ""
+
+msgid "Arquivo"
+msgstr ""
+
+msgid "7 dias"
+msgstr ""
+
+msgid "Só o Mantenedor. O motivo fica registrado na auditoria."
+msgstr ""
+
+msgid "O rascunho tem problemas."
+msgstr ""
+
+msgid "Qualidade"
+msgstr ""
+
+msgid "Refazer"
+msgstr ""
+
+msgid "Nova região"
+msgstr ""
+
+msgid "Configurações alteradas"
+msgstr ""
+
+msgid "Descartar o rascunho?"
+msgstr ""
+
+msgid "Comparar a versão {v}"
+msgstr ""
+
+msgid "{hint} · separados por vírgula"
+msgstr ""
+
+msgid "Cancelar"
+msgstr ""
+
+msgid "Sem ligação com o sistema, o estado da máquina não é conhecido."
+msgstr ""
+
+msgid "Job duplicado"
+msgstr ""
+
+msgid "Exportar o dataset de {name}"
+msgstr ""
+
+msgid "Fração da nitidez da imagem de referência (0,5 = metade)."
+msgstr ""
+
+msgid "Desenhar recorte"
+msgstr ""
+
+msgid "Nenhuma ferramenta ainda. Um job precisa de pelo menos uma."
+msgstr ""
+
+msgid "último quadro há {age} s"
+msgstr ""
+
+msgid "Só os marcados como incorretos"
+msgstr ""
+
+msgid "Compilação"
+msgstr ""
+
+msgid "Motivo"
+msgstr ""
+
+msgid "imagens"
+msgstr ""
+
+msgid "Posição fixa"
+msgstr ""
+
+msgid "Nome da estação"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+msgid "Reconectando automaticamente."
+msgstr ""
+
+msgid "Capturar de novo"
+msgstr ""
+
+msgid "Senha da câmera (entrada no cofre do Windows)"
+msgstr ""

@@ -5,6 +5,7 @@ import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { formatNumber } from '@/lib/number'
+import { text as texts } from '@/texts'
 
 /**
  * A form drawn from a tool's or locator's JSON Schema (docs/frontend.md §7.3), so a new tool type needs no
@@ -78,7 +79,7 @@ function WordList({
   return (
     <Field
       label={label}
-      hint={hint ? `${hint} · separados por vírgula` : 'Separados por vírgula'}
+      hint={hint ? texts.ui.commaSeparatedHint(hint) : texts.ui.commaSeparated}
       error={error}
     >
       {(props) => (
@@ -115,7 +116,11 @@ function JsonField({
   const [text, setText] = useState(JSON.stringify(value ?? null))
   const [bad, setBad] = useState(false)
   return (
-    <Field label={label} hint={hint ?? 'JSON'} error={error ?? (bad ? 'JSON inválido' : undefined)}>
+    <Field
+      label={label}
+      hint={hint ?? 'JSON'}
+      error={error ?? (bad ? texts.ui.invalidJson : undefined)}
+    >
       {(props) => (
         <Textarea
           {...props}
@@ -181,7 +186,7 @@ function Property({
               : onChange(null, !nullable)
           }
           label={label}
-          hint={on ? undefined : hint ? `${hint} (não usado)` : 'Não usado'}
+          hint={on ? undefined : hint ? texts.ui.notUsedHint(hint) : texts.ui.notUsed}
         />
         {on ? (
           <Control
@@ -244,7 +249,11 @@ function Control({
 }) {
   const placeholder =
     placeholderDefault !== undefined && placeholderDefault !== null
-      ? `padrão: ${typeof placeholderDefault === 'number' ? formatNumber(placeholderDefault) : String(placeholderDefault)}`
+      ? texts.ui.defaultValue(
+          typeof placeholderDefault === 'number'
+            ? formatNumber(placeholderDefault)
+            : String(placeholderDefault),
+        )
       : undefined
 
   if (s.type === 'string' && Array.isArray(s.enum)) {

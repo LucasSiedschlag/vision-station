@@ -1,539 +1,1635 @@
-/** Every user-facing string, in Portuguese (the software is pt-BR only). */
+import { plural, t } from '@lingui/core/macro'
+import { formatNumber } from '@/lib/number'
+
+/**
+ * Every user-facing string of the interface, written in Portuguese, the source language (TD-30). Each one is a
+ * Lingui message read when a screen draws it (a getter or a function), never when a module loads, so it comes
+ * in the language on screen; the English texts are in src/locales/en/messages.po (`npm run i18n:extract`).
+ */
 export const text = {
   nav: {
-    station: 'Estação',
-    about: 'Sobre',
-    jobs: 'Jobs',
-    results: 'Resultados',
-    dataset: 'Dataset',
-    settings: 'Configurações',
-    access: 'Acessos',
-    audit: 'Auditoria',
+    get station() {
+      return t`Estação`
+    },
+    get about() {
+      return t`Sobre`
+    },
+    get jobs() {
+      return t`Jobs`
+    },
+    get results() {
+      return t`Resultados`
+    },
+    get dataset() {
+      return t`Dataset`
+    },
+    get settings() {
+      return t`Configurações`
+    },
+    get access() {
+      return t`Acessos`
+    },
+    get audit() {
+      return t`Auditoria`
+    },
   },
-  roles: { operator: 'Operador', supervisor: 'Supervisor', maintainer: 'Mantenedor' },
+  roles: {
+    get operator() {
+      return t`Operador`
+    },
+    get supervisor() {
+      return t`Supervisor`
+    },
+    get maintainer() {
+      return t`Mantenedor`
+    },
+  },
   login: {
-    open: 'Entrar',
-    title: 'Entrar',
-    role: 'Perfil',
-    password: 'Senha',
-    submit: 'Entrar',
-    cancel: 'Cancelar',
-    wrong: 'Perfil ou senha incorretos.',
-    locked: 'Muitas tentativas. Aguarde um pouco e tente de novo.',
-    expired: 'Sua sessão terminou. Entre de novo para continuar.',
-    welcome: (role: string) => `Entrou como ${role}.`,
-    logout: 'Sair',
-    idleLogout: 'Sessão encerrada por inatividade.',
+    get open() {
+      return t`Entrar`
+    },
+    get title() {
+      return t`Entrar`
+    },
+    get role() {
+      return t`Perfil`
+    },
+    get password() {
+      return t`Senha`
+    },
+    get submit() {
+      return t`Entrar`
+    },
+    get cancel() {
+      return t`Cancelar`
+    },
+    get wrong() {
+      return t`Perfil ou senha incorretos.`
+    },
+    get locked() {
+      return t`Muitas tentativas. Aguarde um pouco e tente de novo.`
+    },
+    get expired() {
+      return t`Sua sessão terminou. Entre de novo para continuar.`
+    },
+    welcome: (role: string) => t`Entrou como ${role}.`,
+    get logout() {
+      return t`Sair`
+    },
+    get idleLogout() {
+      return t`Sessão encerrada por inatividade.`
+    },
   },
   status: {
-    system: 'Sistema',
-    camera: 'Câmera',
-    log: 'Registro',
-    machine: 'Máquina',
-    machineConnected: 'conectada',
-    noSignal: 'sem sinal',
-    awaitingHeartbeat: 'aguardando sinal de vida',
-    heartbeat: (seconds: number) =>
-      `sinal de vida há ${seconds.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`,
-    connecting: 'conectando',
-    connected: 'conectado',
-    offline: 'sem conexão',
-    ok: 'ok',
-    disconnected: 'desconectada',
-    failing: 'com falhas',
-    unknown: 'desconhecido',
-    lastFrame: (seconds: number) =>
-      `último quadro há ${seconds.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} s`,
-    failures: (n: number) => `${n} resultado${n === 1 ? '' : 's'} não gravado${n === 1 ? '' : 's'}`,
+    get system() {
+      return t`Sistema`
+    },
+    get camera() {
+      return t`Câmera`
+    },
+    get log() {
+      return t`Registro`
+    },
+    get machine() {
+      return t`Máquina`
+    },
+    get machineConnected() {
+      return t`conectada`
+    },
+    get noSignal() {
+      return t`sem sinal`
+    },
+    get awaitingHeartbeat() {
+      return t`aguardando sinal de vida`
+    },
+    heartbeat: (seconds: number) => {
+      const age = formatNumber(seconds, 1)
+      return t`sinal de vida há ${age} s`
+    },
+    get connecting() {
+      return t`conectando`
+    },
+    get connected() {
+      return t`conectado`
+    },
+    get offline() {
+      return t`sem conexão`
+    },
+    get ok() {
+      return t`ok`
+    },
+    get disconnected() {
+      return t`desconectada`
+    },
+    get failing() {
+      return t`com falhas`
+    },
+    get unknown() {
+      return t`desconhecido`
+    },
+    lastFrame: (seconds: number) => {
+      const age = formatNumber(seconds, 1)
+      return t`último quadro há ${age} s`
+    },
+    failures: (n: number) =>
+      plural(n, { one: '# resultado não gravado', other: '# resultados não gravados' }),
   },
   operator: {
-    trigger: 'Inspecionar agora',
-    retry: 'Tentar de novo',
-    resume: 'Retomar a estação',
-    wrong: 'Resultado incorreto?',
-    wrongTitle: 'Este resultado estava errado?',
-    wrongBody: (said: string) => `O sistema disse ${said}. Qual era o resultado certo?`,
-    wasOk: 'Estava OK',
-    wasNotOk: 'Estava NÃO OK',
-    wrongDone: 'Marcado como incorreto. A imagem vai para o treinamento.',
-    noImage: 'Sem imagem da câmera',
-    today: 'Hoje',
-    recent: 'Últimos resultados',
-    total: 'Total',
-    pass: 'Aprovadas',
-    fail: 'Reprovadas',
-    error: 'Erros',
-    outcome: { PASS: 'Aprovado', FAIL: 'Reprovado', ERROR: 'Erro' },
+    get trigger() {
+      return t`Inspecionar agora`
+    },
+    get retry() {
+      return t`Tentar de novo`
+    },
+    get resume() {
+      return t`Retomar a estação`
+    },
+    get wrong() {
+      return t`Resultado incorreto?`
+    },
+    get wrongTitle() {
+      return t`Este resultado estava errado?`
+    },
+    wrongBody: (said: string) => t`O sistema disse ${said}. Qual era o resultado certo?`,
+    get wasOk() {
+      return t`Estava OK`
+    },
+    get wasNotOk() {
+      return t`Estava NÃO OK`
+    },
+    get wrongDone() {
+      return t`Marcado como incorreto. A imagem vai para o treinamento.`
+    },
+    get noImage() {
+      return t`Sem imagem da câmera`
+    },
+    get today() {
+      return t`Hoje`
+    },
+    get recent() {
+      return t`Últimos resultados`
+    },
+    get total() {
+      return t`Total`
+    },
+    get pass() {
+      return t`Aprovadas`
+    },
+    get fail() {
+      return t`Reprovadas`
+    },
+    get error() {
+      return t`Erros`
+    },
+    outcome: {
+      get PASS() {
+        return t`Aprovado`
+      },
+      get FAIL() {
+        return t`Reprovado`
+      },
+      get ERROR() {
+        return t`Erro`
+      },
+    },
   },
   errors: {
-    forbiddenTitle: 'Sem permissão',
-    forbiddenBody: 'Este perfil não pode abrir esta tela.',
-    notFoundBody: 'Esse endereço não existe.',
-    backToStation: 'Voltar para a estação',
-    routeTitle: 'Esta tela falhou',
-    routeBody: 'Algo deu errado ao montar esta tela.',
-    retry: 'Tentar de novo',
-    expiredTitle: 'Sua sessão terminou',
+    get forbiddenTitle() {
+      return t`Sem permissão`
+    },
+    get forbiddenBody() {
+      return t`Este perfil não pode abrir esta tela.`
+    },
+    get notFoundBody() {
+      return t`Esse endereço não existe.`
+    },
+    get backToStation() {
+      return t`Voltar para a estação`
+    },
+    get routeTitle() {
+      return t`Esta tela falhou`
+    },
+    get routeBody() {
+      return t`Algo deu errado ao montar esta tela.`
+    },
+    get retry() {
+      return t`Tentar de novo`
+    },
+    get expiredTitle() {
+      return t`Sua sessão terminou`
+    },
   },
   about: {
-    title: 'Sobre',
-    version: 'Versão do programa',
-    build: 'Compilação',
-    jobFormat: 'Formato dos arquivos de job',
-    tools: 'Ferramentas que este programa executa',
-    loadError: 'Não foi possível ler as informações do programa.',
+    get title() {
+      return t`Sobre`
+    },
+    get version() {
+      return t`Versão do programa`
+    },
+    get build() {
+      return t`Compilação`
+    },
+    get jobFormat() {
+      return t`Formato dos arquivos de job`
+    },
+    get tools() {
+      return t`Ferramentas que este programa executa`
+    },
+    get loadError() {
+      return t`Não foi possível ler as informações do programa.`
+    },
   },
   jobs: {
-    title: 'Jobs',
-    import: 'Importar arquivo',
-    backup: 'Fazer backup',
-    backups: 'Backups…',
-    name: 'Nome',
-    active: 'Ativo',
-    versions: 'Versões',
-    updated: 'Última alteração',
-    author: 'Autor',
-    actions: 'Ações',
-    actionsOf: (name: string) => `Ações de ${name}`,
-    open: 'Abrir',
-    export: 'Exportar .vjob',
-    duplicate: 'Duplicar',
-    edit: 'Editar',
-    newJob: 'Novo job',
-    empty: 'Nenhum job ainda',
-    emptyBody: 'Importe um arquivo .vjob ou .vbak, ou crie um job no editor.',
-    loadError: 'Não foi possível ler a lista de jobs.',
-    back: 'Voltar para Jobs',
-    version: (v: number) => `v${v}`,
-    activeVersion: (v: number) => `ativo: v${v}`,
-    parent: (v: number) => `a partir da v${v}`,
-    noNotes: 'sem nota',
-    activate: 'Ativar',
-    compare: 'Comparar com…',
-    openInEditor: 'Abrir no editor',
-    activateTitle: (v: number, name: string) => `Ativar versão ${v} de ${name}?`,
-    activateBody:
-      'O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar.',
-    activateConfirm: 'Verificar e ativar',
-    activated: (v: number, name: string) => `Versão ${v} de ${name} ativada.`,
-    activatedWithWarnings: 'Ativado, com avisos:',
-    verificationFailed: 'O job não passou na verificação:',
-    overrideTitle: 'Ativar mesmo assim',
-    overrideHint: 'Só o Mantenedor. O motivo fica registrado na auditoria.',
-    overrideReason: 'Motivo',
-    overrideConfirm: 'Ativar mesmo assim',
-    importTitle: 'Importar arquivo',
-    importBody:
-      'Um job (.vjob) ou um backup (.vbak). Importar guarda as versões; ativar é um passo à parte, com verificação.',
-    importDrop: 'Solte o arquivo aqui ou escolha um',
-    importDone: 'Arquivo importado',
-    importStatus: { added: 'adicionada', already_present: 'já existia', renumbered: 'renumerada' },
+    get title() {
+      return t`Jobs`
+    },
+    get import() {
+      return t`Importar arquivo`
+    },
+    get backup() {
+      return t`Fazer backup`
+    },
+    get backups() {
+      return t`Backups…`
+    },
+    get name() {
+      return t`Nome`
+    },
+    get active() {
+      return t`Ativo`
+    },
+    get versions() {
+      return t`Versões`
+    },
+    get updated() {
+      return t`Última alteração`
+    },
+    get author() {
+      return t`Autor`
+    },
+    get actions() {
+      return t`Ações`
+    },
+    actionsOf: (name: string) => t`Ações de ${name}`,
+    get open() {
+      return t`Abrir`
+    },
+    get export() {
+      return t`Exportar .vjob`
+    },
+    get duplicate() {
+      return t`Duplicar`
+    },
+    get edit() {
+      return t`Editar`
+    },
+    get newJob() {
+      return t`Novo job`
+    },
+    get empty() {
+      return t`Nenhum job ainda`
+    },
+    get emptyBody() {
+      return t`Importe um arquivo .vjob ou .vbak, ou crie um job no editor.`
+    },
+    get loadError() {
+      return t`Não foi possível ler a lista de jobs.`
+    },
+    get back() {
+      return t`Voltar para Jobs`
+    },
+    version: (v: number) => t`v${v}`,
+    activeVersion: (v: number) => t`ativo: v${v}`,
+    parent: (v: number) => t`a partir da v${v}`,
+    get noNotes() {
+      return t`sem nota`
+    },
+    get activate() {
+      return t`Ativar`
+    },
+    get compare() {
+      return t`Comparar com…`
+    },
+    get openInEditor() {
+      return t`Abrir no editor`
+    },
+    activateTitle: (v: number, name: string) => t`Ativar versão ${v} de ${name}?`,
+    get activateBody() {
+      return t`O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar.`
+    },
+    get activateConfirm() {
+      return t`Verificar e ativar`
+    },
+    activated: (v: number, name: string) => t`Versão ${v} de ${name} ativada.`,
+    get activatedWithWarnings() {
+      return t`Ativado, com avisos:`
+    },
+    get verificationFailed() {
+      return t`O job não passou na verificação:`
+    },
+    get overrideTitle() {
+      return t`Ativar mesmo assim`
+    },
+    get overrideHint() {
+      return t`Só o Mantenedor. O motivo fica registrado na auditoria.`
+    },
+    get overrideReason() {
+      return t`Motivo`
+    },
+    get overrideConfirm() {
+      return t`Ativar mesmo assim`
+    },
+    get importTitle() {
+      return t`Importar arquivo`
+    },
+    get importBody() {
+      return t`Um job (.vjob) ou um backup (.vbak). Importar guarda as versões; ativar é um passo à parte, com verificação.`
+    },
+    get importDrop() {
+      return t`Solte o arquivo aqui ou escolha um`
+    },
+    get importDone() {
+      return t`Arquivo importado`
+    },
+    importStatus: {
+      get added() {
+        return t`adicionada`
+      },
+      get already_present() {
+        return t`já existia`
+      },
+      get renumbered() {
+        return t`renumerada`
+      },
+    },
     importItem: (v: number, status: string, original: number) =>
-      original !== v ? `v${v} (era v${original}) · ${status}` : `v${v} · ${status}`,
-    importBackupNote: 'O backup trouxe a configuração do sistema; ela não é aplicada sozinha.',
+      original !== v ? t`v${v} (era v${original}) · ${status}` : t`v${v} · ${status}`,
+    get importBackupNote() {
+      return t`O backup trouxe a configuração do sistema; ela não é aplicada sozinha.`
+    },
     importActiveWas: (v: number) =>
-      `No backup, a versão ativa era a v${v}: ative-a aqui depois de conferir.`,
-    backupDone: (name: string, size: string) => `Backup ${name} (${size}) gravado.`,
-    backupsTitle: 'Backups',
-    backupsFolder: (folder: string) => `Pasta: ${folder}`,
-    backupsNone: 'Nenhum backup na pasta.',
-    backupsNoFolder: 'Nenhuma pasta de backup configurada.',
-    download: 'Baixar',
-    downloadOf: (name: string) => `Baixar ${name}`,
-    diffTitle: (v: number) => `Comparar a versão ${v}`,
-    diffAgainst: 'Comparar com',
-    diffSame: 'As duas versões têm a mesma definição.',
-    duplicateTitle: 'Duplicar job',
+      t`No backup, a versão ativa era a v${v}: ative-a aqui depois de conferir.`,
+    backupDone: (name: string, size: string) => t`Backup ${name} (${size}) gravado.`,
+    get backupsTitle() {
+      return t`Backups`
+    },
+    backupsFolder: (folder: string) => t`Pasta: ${folder}`,
+    get backupsNone() {
+      return t`Nenhum backup na pasta.`
+    },
+    get backupsNoFolder() {
+      return t`Nenhuma pasta de backup configurada.`
+    },
+    get download() {
+      return t`Baixar`
+    },
+    downloadOf: (name: string) => t`Baixar ${name}`,
+    diffTitle: (v: number) => t`Comparar a versão ${v}`,
+    get diffAgainst() {
+      return t`Comparar com`
+    },
+    get diffSame() {
+      return t`As duas versões têm a mesma definição.`
+    },
+    get duplicateTitle() {
+      return t`Duplicar job`
+    },
     duplicateBody: (v: number) =>
-      `Cria um job novo a partir da versão ${v}, com todos os arquivos.`,
-    duplicateName: 'Nome do job novo',
-    duplicateDone: (name: string) => `Job ${name} criado.`,
-    copyOf: (name: string) => `${name} (cópia)`,
+      t`Cria um job novo a partir da versão ${v}, com todos os arquivos.`,
+    get duplicateName() {
+      return t`Nome do job novo`
+    },
+    duplicateDone: (name: string) => t`Job ${name} criado.`,
+    copyOf: (name: string) => t`${name} (cópia)`,
   },
   editor: {
     steps: {
-      camera: 'Câmera',
-      trigger: 'Gatilho',
-      quality: 'Qualidade',
-      regions: 'Âncora e regiões',
-      tools: 'Ferramentas',
-      reference: 'Referência',
-      review: 'Revisar',
+      get camera() {
+        return t`Câmera`
+      },
+      get trigger() {
+        return t`Gatilho`
+      },
+      get quality() {
+        return t`Qualidade`
+      },
+      get regions() {
+        return t`Âncora e regiões`
+      },
+      get tools() {
+        return t`Ferramentas`
+      },
+      get reference() {
+        return t`Referência`
+      },
+      get review() {
+        return t`Revisar`
+      },
     },
-    stepsLabel: 'Passos do job',
-    imageLabel: 'Imagem',
-    imageSource: 'Imagem mostrada',
-    sourceReference: 'Referência',
-    sourceLive: 'Ao vivo',
-    refreshImage: 'Atualizar imagem',
-    loadingImage: 'Carregando a imagem…',
-    drawingHint: 'Arraste sobre a imagem para desenhar',
-    drawingNow: 'Desenhando… (arraste na imagem)',
-    noAnchor: 'Sem âncora: rode Testar para localizar o objeto e ver as regiões relativas a ele.',
-    newJob: 'novo job',
-    draftOf: (v: number) => `rascunho a partir da v${v}`,
-    unsaved: 'não salvo',
-    undo: 'Desfazer',
-    redo: 'Refazer',
-    discard: 'Descartar',
-    test: 'Testar',
-    save: 'Salvar…',
-    recovered: 'Rascunho recuperado deste navegador.',
-    discardRecovered: 'Descartar o rascunho',
-    stationPaused: 'A estação está pausada (ajuste de câmera).',
-    resume: 'Retomar a estação',
-    testNote: 'Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz.',
-    outcome: { PASS: 'Aprovado', FAIL: 'Reprovado', ERROR: 'Erro' },
-    saveTitle: (v: number) => `Salvar como versão ${v}`,
-    saveNewTitle: 'Salvar o job novo',
-    saveBody:
-      'A versão salva nunca muda. Para usar na estação, ative-a na tela Jobs (com verificação).',
-    notes: 'O que mudou',
-    notesHint: 'Fica no histórico de versões.',
-    saved: (v: number) => `Versão ${v} salva.`,
-    discardTitle: 'Descartar o rascunho?',
-    discardBody: 'As mudanças não salvas são perdidas. A versão salva continua como estava.',
-    leaveTitle: 'Sair do editor?',
-    leaveBody:
-      'O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo.',
-    leave: 'Sair',
-    presenceArea: 'presença',
-    anchorLabel: 'âncora',
-    cropLabel: 'recorte',
+    get stepsLabel() {
+      return t`Passos do job`
+    },
+    get imageLabel() {
+      return t`Imagem`
+    },
+    get imageSource() {
+      return t`Imagem mostrada`
+    },
+    get sourceReference() {
+      return t`Referência`
+    },
+    get sourceLive() {
+      return t`Ao vivo`
+    },
+    get refreshImage() {
+      return t`Atualizar imagem`
+    },
+    get loadingImage() {
+      return t`Carregando a imagem…`
+    },
+    get drawingHint() {
+      return t`Arraste sobre a imagem para desenhar`
+    },
+    get drawingNow() {
+      return t`Desenhando… (arraste na imagem)`
+    },
+    get noAnchor() {
+      return t`Sem âncora: rode Testar para localizar o objeto e ver as regiões relativas a ele.`
+    },
+    get newJob() {
+      return t`novo job`
+    },
+    draftOf: (v: number) => t`rascunho a partir da v${v}`,
+    get unsaved() {
+      return t`não salvo`
+    },
+    get undo() {
+      return t`Desfazer`
+    },
+    get redo() {
+      return t`Refazer`
+    },
+    get discard() {
+      return t`Descartar`
+    },
+    get test() {
+      return t`Testar`
+    },
+    get save() {
+      return t`Salvar…`
+    },
+    get recovered() {
+      return t`Rascunho recuperado deste navegador.`
+    },
+    get discardRecovered() {
+      return t`Descartar o rascunho`
+    },
+    get stationPaused() {
+      return t`A estação está pausada (ajuste de câmera).`
+    },
+    get resume() {
+      return t`Retomar a estação`
+    },
+    get testNote() {
+      return t`Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz.`
+    },
+    outcome: {
+      get PASS() {
+        return t`Aprovado`
+      },
+      get FAIL() {
+        return t`Reprovado`
+      },
+      get ERROR() {
+        return t`Erro`
+      },
+    },
+    saveTitle: (v: number) => t`Salvar como versão ${v}`,
+    get saveNewTitle() {
+      return t`Salvar o job novo`
+    },
+    get saveBody() {
+      return t`A versão salva nunca muda. Para usar na estação, ative-a na tela Jobs (com verificação).`
+    },
+    get notes() {
+      return t`O que mudou`
+    },
+    get notesHint() {
+      return t`Fica no histórico de versões.`
+    },
+    saved: (v: number) => t`Versão ${v} salva.`,
+    get discardTitle() {
+      return t`Descartar o rascunho?`
+    },
+    get discardBody() {
+      return t`As mudanças não salvas são perdidas. A versão salva continua como estava.`
+    },
+    get leaveTitle() {
+      return t`Sair do editor?`
+    },
+    get leaveBody() {
+      return t`O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo.`
+    },
+    get leave() {
+      return t`Sair`
+    },
+    get presenceArea() {
+      return t`presença`
+    },
+    get anchorLabel() {
+      return t`âncora`
+    },
+    get cropLabel() {
+      return t`recorte`
+    },
     // camera
-    cameraIntro:
-      'Os ajustes vão no job e são gravados na câmera a cada abertura. Aplicar pausa a estação até você retomá-la.',
-    width: 'Largura',
-    height: 'Altura',
-    exposure: 'Exposição',
-    exposureValue: 'Tempo de exposição',
-    gain: 'Ganho',
-    whiteBalance: 'Balanço de branco',
-    kelvin: 'Temperatura',
-    focus: 'Foco',
-    value: 'Valor',
-    manual: 'Manual',
-    auto: 'Automático: a câmera decide (evite na estação)',
-    powerLine: 'Rede elétrica',
-    applyCamera: 'Aplicar na câmera',
-    applied: 'Ajustes gravados e lidos de volta.',
-    notApplied: 'Nem todos os ajustes foram gravados:',
+    get cameraIntro() {
+      return t`Os ajustes vão no job e são gravados na câmera a cada abertura. Aplicar pausa a estação até você retomá-la.`
+    },
+    get width() {
+      return t`Largura`
+    },
+    get height() {
+      return t`Altura`
+    },
+    get exposure() {
+      return t`Exposição`
+    },
+    get exposureValue() {
+      return t`Tempo de exposição`
+    },
+    get gain() {
+      return t`Ganho`
+    },
+    get whiteBalance() {
+      return t`Balanço de branco`
+    },
+    get kelvin() {
+      return t`Temperatura`
+    },
+    get focus() {
+      return t`Foco`
+    },
+    get value() {
+      return t`Valor`
+    },
+    get manual() {
+      return t`Manual`
+    },
+    get auto() {
+      return t`Automático: a câmera decide (evite na estação)`
+    },
+    get powerLine() {
+      return t`Rede elétrica`
+    },
+    get applyCamera() {
+      return t`Aplicar na câmera`
+    },
+    get applied() {
+      return t`Ajustes gravados e lidos de volta.`
+    },
+    get notApplied() {
+      return t`Nem todos os ajustes foram gravados:`
+    },
     setting: {
-      applied: 'aplicado',
-      not_supported: 'não suportado',
-      out_of_range: 'fora da faixa',
-      failed: 'falhou',
-      rejected: 'recusado',
+      get applied() {
+        return t`aplicado`
+      },
+      get not_supported() {
+        return t`não suportado`
+      },
+      get out_of_range() {
+        return t`fora da faixa`
+      },
+      get failed() {
+        return t`falhou`
+      },
+      get rejected() {
+        return t`recusado`
+      },
     },
     // trigger
-    triggerMode: 'Modo do gatilho',
+    get triggerMode() {
+      return t`Modo do gatilho`
+    },
     triggerModes: {
-      image_presence: [
-        'Objeto parado na área',
-        'Inspeciona quando um objeto entra na área e fica parado',
-      ],
-      manual: ['Manual', 'Pelo botão Inspecionar agora ou por outro programa'],
-      external: ['Sinal externo', 'Um sinal de outro equipamento dispara a inspeção'],
-      continuous: ['Contínuo', 'Inspeciona uma imagem atrás da outra'],
+      get image_presence() {
+        return [
+          t`Objeto parado na área`,
+          t`Inspeciona quando um objeto entra na área e fica parado`,
+        ] as const
+      },
+      get manual() {
+        return [t`Manual`, t`Pelo botão Inspecionar agora ou por outro programa`] as const
+      },
+      get external() {
+        return [t`Sinal externo`, t`Um sinal de outro equipamento dispara a inspeção`] as const
+      },
+      get continuous() {
+        return [t`Contínuo`, t`Inspeciona uma imagem atrás da outra`] as const
+      },
     },
-    drawPresence: 'Desenhar a área de presença',
-    stillMs: 'Tempo parado',
-    stillHint: 'Quanto tempo o objeto precisa ficar parado antes da foto.',
-    diffThreshold: 'Diferença de cinza',
-    diffHint: 'Quanto um pixel muda para contar como objeto (1 a 255).',
-    minArea: 'Área mínima com objeto',
-    minAreaHint: 'Fração da área de presença (0 a 1).',
-    waiting: 'Texto de espera',
-    waitingHint: 'O que a tela do operador mostra enquanto espera, ex.: Aguardando peça.',
+    get drawPresence() {
+      return t`Desenhar a área de presença`
+    },
+    get stillMs() {
+      return t`Tempo parado`
+    },
+    get stillHint() {
+      return t`Quanto tempo o objeto precisa ficar parado antes da foto.`
+    },
+    get diffThreshold() {
+      return t`Diferença de cinza`
+    },
+    get diffHint() {
+      return t`Quanto um pixel muda para contar como objeto (1 a 255).`
+    },
+    get minArea() {
+      return t`Área mínima com objeto`
+    },
+    get minAreaHint() {
+      return t`Fração da área de presença (0 a 1).`
+    },
+    get waiting() {
+      return t`Texto de espera`
+    },
+    get waitingHint() {
+      return t`O que a tela do operador mostra enquanto espera, ex.: Aguardando peça.`
+    },
     // quality
-    qualityIntro: 'Imagens fora destes limites viram ERRO com o motivo, nunca APROVADO.',
-    brightnessMin: 'Brilho mínimo',
-    brightnessMax: 'Brilho máximo',
-    sharpness: 'Nitidez mínima',
-    sharpnessHint: 'Fração da nitidez da imagem de referência (0,5 = metade).',
-    similarity: 'Semelhança mínima com a referência',
-    similarityHint: 'Na verificação ao ativar: câmera movida ou cena diferente.',
-    measure: 'Medir a imagem atual',
-    measured: (b: string, s: string) => `Imagem atual: brilho ${b}, nitidez ${s}.`,
-    useMeasured: 'Usar o brilho atual ±20%',
-    // regions
-    locator: 'Localizador',
-    locatorHint: 'Acha o objeto na imagem, para as regiões acompanharem quando ele muda de lugar.',
-    noLocator: 'Nenhum (regiões fixas na imagem)',
-    locatorNames: { fixed: 'Posição fixa', template: 'Gabarito', blob: 'Cor ou contraste' },
-    drawLocator: 'Desenhar a posição do objeto',
-    cropHint:
-      'Desenhe um recorte em volta do objeto na imagem de referência e use-o como gabarito.',
-    patternCropHint:
-      'Para a ferramenta de padrão: desenhe um recorte do logo ou marca na imagem de referência.',
-    cropNeedsReference:
-      'Capture a imagem de referência (passo Referência) para recortar um gabarito.',
-    drawCrop: 'Desenhar recorte',
-    useCrop: 'Usar como gabarito',
-    usePatternFor: (id: string) => `Usar como padrão de ${id}`,
-    templateSaved: 'Gabarito guardado no job.',
-    regions: 'Regiões',
-    noRegions: 'Nenhuma região. Uma ferramenta pode olhar a imagem toda.',
-    relativeTo: (name: string) => `${name}: relativa a`,
-    relFrame: 'à imagem',
-    relAnchor: 'ao objeto (âncora)',
-    redraw: 'Redesenhar',
-    removeRegion: (name: string) => `Remover a região ${name}`,
-    newRegion: 'Nova região',
-    newRegionHint: 'Letras, números, - e _.',
-    badName: 'Nome inválido ou já usado.',
-    addRegion: 'Adicionar',
-    // tools
-    noTools: 'Nenhuma ferramenta ainda. Um job precisa de pelo menos uma.',
-    passed: 'passou',
-    failed: 'falhou',
-    moveUp: (id: string) => `Subir ${id}`,
-    moveDown: (id: string) => `Descer ${id}`,
-    removeTool: (id: string) => `Remover ${id}`,
-    toolId: 'Nome',
-    toolIdHint: 'Aparece nas pontuações e no registro.',
-    toolRoi: 'Região',
-    wholeFrame: 'imagem toda',
-    wholeAnchor: 'o objeto (âncora)',
-    proposeColour: 'Propor a cor a partir da região',
-    modelDrop: 'Solte aqui o modelo (.onnx) e o cartão (.card.yaml)',
-    modelHint: 'O modelo é treinado fora da estação (docs/models.md) e vai dentro do job.',
-    modelAdded: (paths: string) => `Adicionado ao job: ${paths}`,
-    colourNeedsFrameRegion: 'Escolha uma região relativa à imagem para amostrar a cor.',
-    colourNone: 'Não há cor suficiente na região para propor uma faixa.',
-    colourProposed: (a: number, b: number) =>
-      `Faixa de matiz proposta: ${a} a ${b}. Teste e ajuste.`,
-    unknownType: 'Tipo de ferramenta que este programa não conhece.',
-    reasonFail: 'Motivo da reprovação',
-    reasonHint:
-      'Em português, para o operador. Pode usar valores da ferramenta, ex.: {fraction:.0%}.',
-    defaultReason: 'Falhou',
-    addTool: 'Adicionar ferramenta',
-    chooseType: 'Escolha o tipo',
-    toolNames: {
-      code: 'Código de barras ou 2D',
-      color: 'Cor',
-      pattern: 'Padrão (logo, marca)',
-      detect: 'Detecção por modelo',
+    get qualityIntro() {
+      return t`Imagens fora destes limites viram ERRO com o motivo, nunca APROVADO.`
     },
-    add: 'Adicionar',
+    get brightnessMin() {
+      return t`Brilho mínimo`
+    },
+    get brightnessMax() {
+      return t`Brilho máximo`
+    },
+    get sharpness() {
+      return t`Nitidez mínima`
+    },
+    get sharpnessHint() {
+      return t`Fração da nitidez da imagem de referência (0,5 = metade).`
+    },
+    get similarity() {
+      return t`Semelhança mínima com a referência`
+    },
+    get similarityHint() {
+      return t`Na verificação ao ativar: câmera movida ou cena diferente.`
+    },
+    get measure() {
+      return t`Medir a imagem atual`
+    },
+    measured: (b: string, s: string) => t`Imagem atual: brilho ${b}, nitidez ${s}.`,
+    get useMeasured() {
+      return t`Usar o brilho atual ±20%`
+    },
+    // regions
+    get locator() {
+      return t`Localizador`
+    },
+    get locatorHint() {
+      return t`Acha o objeto na imagem, para as regiões acompanharem quando ele muda de lugar.`
+    },
+    get noLocator() {
+      return t`Nenhum (regiões fixas na imagem)`
+    },
+    locatorNames: {
+      get fixed() {
+        return t`Posição fixa`
+      },
+      get template() {
+        return t`Gabarito`
+      },
+      get blob() {
+        return t`Cor ou contraste`
+      },
+    },
+    get drawLocator() {
+      return t`Desenhar a posição do objeto`
+    },
+    get cropHint() {
+      return t`Desenhe um recorte em volta do objeto na imagem de referência e use-o como gabarito.`
+    },
+    get patternCropHint() {
+      return t`Para a ferramenta de padrão: desenhe um recorte do logo ou marca na imagem de referência.`
+    },
+    get cropNeedsReference() {
+      return t`Capture a imagem de referência (passo Referência) para recortar um gabarito.`
+    },
+    get drawCrop() {
+      return t`Desenhar recorte`
+    },
+    get useCrop() {
+      return t`Usar como gabarito`
+    },
+    usePatternFor: (id: string) => t`Usar como padrão de ${id}`,
+    get templateSaved() {
+      return t`Gabarito guardado no job.`
+    },
+    get regions() {
+      return t`Regiões`
+    },
+    get noRegions() {
+      return t`Nenhuma região. Uma ferramenta pode olhar a imagem toda.`
+    },
+    relativeTo: (name: string) => t`${name}: relativa a`,
+    get relFrame() {
+      return t`à imagem`
+    },
+    get relAnchor() {
+      return t`ao objeto (âncora)`
+    },
+    get redraw() {
+      return t`Redesenhar`
+    },
+    removeRegion: (name: string) => t`Remover a região ${name}`,
+    get newRegion() {
+      return t`Nova região`
+    },
+    get newRegionHint() {
+      return t`Letras, números, - e _.`
+    },
+    get badName() {
+      return t`Nome inválido ou já usado.`
+    },
+    get addRegion() {
+      return t`Adicionar`
+    },
+    // tools
+    get noTools() {
+      return t`Nenhuma ferramenta ainda. Um job precisa de pelo menos uma.`
+    },
+    get passed() {
+      return t`passou`
+    },
+    get failed() {
+      return t`falhou`
+    },
+    moveUp: (id: string) => t`Subir ${id}`,
+    moveDown: (id: string) => t`Descer ${id}`,
+    removeTool: (id: string) => t`Remover ${id}`,
+    get toolId() {
+      return t`Nome`
+    },
+    get toolIdHint() {
+      return t`Aparece nas pontuações e no registro.`
+    },
+    get toolRoi() {
+      return t`Região`
+    },
+    get wholeFrame() {
+      return t`imagem toda`
+    },
+    get wholeAnchor() {
+      return t`o objeto (âncora)`
+    },
+    get proposeColour() {
+      return t`Propor a cor a partir da região`
+    },
+    get modelDrop() {
+      return t`Solte aqui o modelo (.onnx) e o cartão (.card.yaml)`
+    },
+    get modelHint() {
+      return t`O modelo é treinado fora da estação (docs/models.md) e vai dentro do job.`
+    },
+    modelAdded: (paths: string) => t`Adicionado ao job: ${paths}`,
+    get colourNeedsFrameRegion() {
+      return t`Escolha uma região relativa à imagem para amostrar a cor.`
+    },
+    get colourNone() {
+      return t`Não há cor suficiente na região para propor uma faixa.`
+    },
+    colourProposed: (a: number, b: number) =>
+      t`Faixa de matiz proposta: ${a} a ${b}. Teste e ajuste.`,
+    get unknownType() {
+      return t`Tipo de ferramenta que este programa não conhece.`
+    },
+    get reasonFail() {
+      return t`Motivo da reprovação`
+    },
+    get reasonHint() {
+      const example = '{fraction:.0%}' // a placeholder of the job's text, shown as is (not a message placeholder)
+      return t`Em português, para o operador. Pode usar valores da ferramenta, ex.: ${example}.`
+    },
+    get defaultReason() {
+      return t`Falhou`
+    },
+    get addTool() {
+      return t`Adicionar ferramenta`
+    },
+    get chooseType() {
+      return t`Escolha o tipo`
+    },
+    toolNames: {
+      get code() {
+        return t`Código de barras ou 2D`
+      },
+      get color() {
+        return t`Cor`
+      },
+      get pattern() {
+        return t`Padrão (logo, marca)`
+      },
+      get detect() {
+        return t`Detecção por modelo`
+      },
+    },
+    get add() {
+      return t`Adicionar`
+    },
     // reference
-    referenceIntro:
-      'A imagem de referência é a vista de um objeto bom. Ela serve para comparar nitidez e a vista da câmera ao ativar.',
-    captureReference: 'Capturar a imagem de referência',
-    recaptureReference: 'Capturar de novo',
-    referenceSaved: (w: number, h: number) => `Imagem de referência capturada (${w} × ${h}).`,
-    referenceSet: 'Conjunto de referência',
-    referenceSetIntro: 'Imagens com o resultado esperado. Ao ativar, o job precisa acertar todas.',
-    noCases: 'Nenhum caso ainda.',
-    caseImage: 'Imagem',
-    caseExpected: 'Resultado esperado',
-    expectedFor: (image: string) => `Resultado esperado de ${image}`,
-    remove: 'Remover',
-    removeCase: (image: string) => `Remover ${image}`,
-    caseName: 'Nome do caso',
-    badCaseName: 'Use letras, números, - e _, sem repetir.',
-    addCase: 'Capturar caso',
+    get referenceIntro() {
+      return t`A imagem de referência é a vista de um objeto bom. Ela serve para comparar nitidez e a vista da câmera ao ativar.`
+    },
+    get captureReference() {
+      return t`Capturar a imagem de referência`
+    },
+    get recaptureReference() {
+      return t`Capturar de novo`
+    },
+    referenceSaved: (w: number, h: number) => t`Imagem de referência capturada (${w} × ${h}).`,
+    get referenceSet() {
+      return t`Conjunto de referência`
+    },
+    get referenceSetIntro() {
+      return t`Imagens com o resultado esperado. Ao ativar, o job precisa acertar todas.`
+    },
+    get noCases() {
+      return t`Nenhum caso ainda.`
+    },
+    get caseImage() {
+      return t`Imagem`
+    },
+    get caseExpected() {
+      return t`Resultado esperado`
+    },
+    expectedFor: (image: string) => t`Resultado esperado de ${image}`,
+    get remove() {
+      return t`Remover`
+    },
+    removeCase: (image: string) => t`Remover ${image}`,
+    get caseName() {
+      return t`Nome do caso`
+    },
+    get badCaseName() {
+      return t`Use letras, números, - e _, sem repetir.`
+    },
+    get addCase() {
+      return t`Capturar caso`
+    },
     caseAdded: (name: string, now: string, expected: string) =>
-      `Caso ${name}: o rascunho diz ${now}; esperado ${expected}.`,
+      t`Caso ${name}: o rascunho diz ${now}; esperado ${expected}.`,
     // review
-    jobName: 'Nome do job',
-    description: 'Descrição',
-    validate: 'Conferir o rascunho',
-    valid: 'O rascunho pode ser salvo.',
-    invalid: 'O rascunho tem problemas.',
-    fieldErrors: 'Campos com problema',
+    get jobName() {
+      return t`Nome do job`
+    },
+    get description() {
+      return t`Descrição`
+    },
+    get validate() {
+      return t`Conferir o rascunho`
+    },
+    get valid() {
+      return t`O rascunho pode ser salvo.`
+    },
+    get invalid() {
+      return t`O rascunho tem problemas.`
+    },
+    get fieldErrors() {
+      return t`Campos com problema`
+    },
     files: (n: number) =>
-      `${n} arquivo${n === 1 ? '' : 's'} no job (referência, gabaritos, conjunto de referência).`,
+      plural(n, {
+        one: '# arquivo no job (referência, gabaritos, conjunto de referência).',
+        other: '# arquivos no job (referência, gabaritos, conjunto de referência).',
+      }),
   },
   results: {
-    title: 'Resultados',
-    period: 'Período',
-    periods: { today: 'Hoje', d7: '7 dias', d30: '30 dias', all: 'Tudo' },
-    job: 'Job',
-    allJobs: 'Todos os jobs',
-    outcome: 'Resultado',
-    outcomes: { all: 'Todos', PASS: 'Aprovadas', FAIL: 'Reprovadas', ERROR: 'Erros' },
-    incorrectOnly: 'Só os marcados como incorretos',
-    exportCsv: 'Exportar CSV',
-    when: 'Quando',
-    reason: 'Motivo',
-    duration: 'Duração',
-    empty: 'Nenhum resultado neste período',
-    emptyBody: 'Mude os filtros ou o período.',
-    loadError: 'Não foi possível ler os resultados.',
-    open: (when: string) => `Abrir o resultado de ${when}`,
-    detail: 'Resultado',
-    imageOriginal: 'Original',
-    imageMarked: 'Marcado',
-    imageView: 'Imagem mostrada',
-    noImage:
-      'A imagem deste resultado não foi guardada (amostragem de aprovados ou limpeza do disco).',
-    scores: 'Pontuações',
-    timings: 'Tempos',
-    toolTimings: 'Tempo de cada ferramenta',
-    jobVersion: (name: string, v: number) => `${name} · v${v}`,
-    markIncorrect: 'Marcar como incorreto',
-    markHint: 'A imagem vai para o treinamento com o resultado certo.',
-    shouldBe: (o: string) => `Estava ${o}`,
-    corrected: (o: string, by: string) => `Corrigido: o certo era ${o}${by ? ` (por ${by})` : ''}.`,
-    marked: 'Resultado marcado como incorreto. A imagem vai para o treinamento.',
-    downloadImage: 'Baixar imagem',
-    sampledNote: 'Imagem guardada por amostragem.',
+    get title() {
+      return t`Resultados`
+    },
+    get period() {
+      return t`Período`
+    },
+    periods: {
+      get today() {
+        return t`Hoje`
+      },
+      get d7() {
+        return t`7 dias`
+      },
+      get d30() {
+        return t`30 dias`
+      },
+      get all() {
+        return t`Tudo`
+      },
+    },
+    get job() {
+      return t`Job`
+    },
+    get allJobs() {
+      return t`Todos os jobs`
+    },
+    get outcome() {
+      return t`Resultado`
+    },
+    outcomes: {
+      get all() {
+        return t`Todos`
+      },
+      get PASS() {
+        return t`Aprovadas`
+      },
+      get FAIL() {
+        return t`Reprovadas`
+      },
+      get ERROR() {
+        return t`Erros`
+      },
+    },
+    get incorrectOnly() {
+      return t`Só os marcados como incorretos`
+    },
+    get exportCsv() {
+      return t`Exportar CSV`
+    },
+    get when() {
+      return t`Quando`
+    },
+    get reason() {
+      return t`Motivo`
+    },
+    get duration() {
+      return t`Duração`
+    },
+    get empty() {
+      return t`Nenhum resultado neste período`
+    },
+    get emptyBody() {
+      return t`Mude os filtros ou o período.`
+    },
+    get loadError() {
+      return t`Não foi possível ler os resultados.`
+    },
+    open: (when: string) => t`Abrir o resultado de ${when}`,
+    get detail() {
+      return t`Resultado`
+    },
+    get imageOriginal() {
+      return t`Original`
+    },
+    get imageMarked() {
+      return t`Marcado`
+    },
+    get imageView() {
+      return t`Imagem mostrada`
+    },
+    get noImage() {
+      return t`A imagem deste resultado não foi guardada (amostragem de aprovados ou limpeza do disco).`
+    },
+    get scores() {
+      return t`Pontuações`
+    },
+    get timings() {
+      return t`Tempos`
+    },
+    get toolTimings() {
+      return t`Tempo de cada ferramenta`
+    },
+    jobVersion: (name: string, v: number) => t`${name} · v${v}`,
+    get markIncorrect() {
+      return t`Marcar como incorreto`
+    },
+    get markHint() {
+      return t`A imagem vai para o treinamento com o resultado certo.`
+    },
+    shouldBe: (o: string) => t`Estava ${o}`,
+    corrected: (o: string, by: string) =>
+      by ? t`Corrigido: o certo era ${o} (por ${by}).` : t`Corrigido: o certo era ${o}.`,
+    get marked() {
+      return t`Resultado marcado como incorreto. A imagem vai para o treinamento.`
+    },
+    get downloadImage() {
+      return t`Baixar imagem`
+    },
+    get sampledNote() {
+      return t`Imagem guardada por amostragem.`
+    },
   },
   dataset: {
-    title: 'Dataset e coleta',
-    intro: 'Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação.',
-    collecting: 'Modo de coleta',
-    collectingHint: 'Toda imagem inspecionada também vai para o dataset.',
-    collectingOf: (name: string) => `Modo de coleta de ${name}`,
-    images: 'Imagens',
-    export: 'Exportar',
-    exportAll: 'Exportar tudo',
-    exportOf: (name: string) => `Exportar o dataset de ${name}`,
+    get title() {
+      return t`Dataset e coleta`
+    },
+    get intro() {
+      return t`Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação.`
+    },
+    get collecting() {
+      return t`Modo de coleta`
+    },
+    get collectingHint() {
+      return t`Toda imagem inspecionada também vai para o dataset.`
+    },
+    collectingOf: (name: string) => t`Modo de coleta de ${name}`,
+    get images() {
+      return t`Imagens`
+    },
+    get export() {
+      return t`Exportar`
+    },
+    get exportAll() {
+      return t`Exportar tudo`
+    },
+    exportOf: (name: string) => t`Exportar o dataset de ${name}`,
     exported: (id: string, count: number, folder: string) =>
-      `Dataset ${id}: ${count} imagens em ${folder}`,
-    empty: 'Nenhum job ainda',
-    total: (n: number) => `${n} imagem${n === 1 ? '' : 's'} no dataset`,
-    loadError: 'Não foi possível ler o dataset.',
+      t`Dataset ${id}: ${count} imagens em ${folder}`,
+    get empty() {
+      return t`Nenhum job ainda`
+    },
+    total: (n: number) => plural(n, { one: '# imagem no dataset', other: '# imagens no dataset' }),
+    get loadError() {
+      return t`Não foi possível ler o dataset.`
+    },
   },
   settings: {
-    title: 'Configurações',
-    intro: 'Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups.',
-    dataRoot: (path: string) => `Pasta de dados: ${path}`,
-    station: 'Estação',
-    name: 'Nome da estação',
-    shifts: 'Inícios de turno',
-    shiftsHint: 'HH:MM separados por vírgula; os contadores recomeçam em cada um.',
-    idle: 'Sair por inatividade após',
-    resultMin: 'Mostrar o resultado por pelo menos',
-    resultMinHint: 'Mesmo quando a estação já está pronta para a próxima peça.',
-    failSound: 'Som na reprovação',
-    camera: 'Câmera',
-    driver: 'Tipo de câmera',
+    get title() {
+      return t`Configurações`
+    },
+    get intro() {
+      return t`Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups.`
+    },
+    dataRoot: (path: string) => t`Pasta de dados: ${path}`,
+    get station() {
+      return t`Estação`
+    },
+    get name() {
+      return t`Nome da estação`
+    },
+    get shifts() {
+      return t`Inícios de turno`
+    },
+    get shiftsHint() {
+      return t`HH:MM separados por vírgula; os contadores recomeçam em cada um.`
+    },
+    get idle() {
+      return t`Sair por inatividade após`
+    },
+    get resultMin() {
+      return t`Mostrar o resultado por pelo menos`
+    },
+    get resultMinHint() {
+      return t`Mesmo quando a estação já está pronta para a próxima peça.`
+    },
+    get failSound() {
+      return t`Som na reprovação`
+    },
+    get camera() {
+      return t`Câmera`
+    },
+    get driver() {
+      return t`Tipo de câmera`
+    },
     drivers: {
-      uvc: 'USB (UVC, ex. C920)',
-      file: 'Pasta de imagens (testes)',
-      hikvision: 'Hikvision (IP)',
+      get uvc() {
+        return t`USB (UVC, ex. C920)`
+      },
+      get file() {
+        return t`Pasta de imagens (testes)`
+      },
+      get hikvision() {
+        return t`Hikvision (IP)`
+      },
     } as Record<string, string>,
-    deviceName: 'Nome do dispositivo',
-    deviceNameHint: 'Ex.: C920. Ou use o caminho ou o índice.',
-    devicePath: 'Caminho do dispositivo',
-    deviceIndex: 'Índice do dispositivo',
-    folder: 'Pasta das imagens',
-    loop: 'Repetir as imagens',
-    fps: 'Imagens por segundo',
-    host: 'Endereço',
-    port: 'Porta',
-    user: 'Usuário',
-    keyring: 'Senha da câmera (entrada no cofre do Windows)',
-    keyringHint: 'O nome da entrada, nunca a senha.',
-    testCamera: 'Testar câmera',
-    recording: 'Gravação',
-    sample: 'Guardar a imagem de 1 aprovado a cada',
-    sampleHint: 'Reprovados e erros sempre guardam a imagem.',
-    retention: 'Apagar registros com mais de',
-    retentionHint: 'Vazio: guardar tudo.',
-    minFree: 'Manter livre no disco pelo menos',
-    backup: 'Backup',
-    backupFolder: 'Pasta de backup',
-    backupFolderHint: 'Pasta de rede ou pen drive. Vazio: dentro da pasta de dados.',
-    testFolder: 'Testar pasta',
-    every: 'Backup automático a cada',
-    everyHint: 'Vazio: só quando pedido.',
-    keep: 'Quantos guardar',
-    include: 'O que incluir',
-    includeAll: 'Todas as versões',
-    includeLatest: 'Só a última versão de cada job',
-    network: 'Rede',
-    listen: 'Endereço de escuta',
-    listenHint: '127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha).',
-    allowedHosts: 'Nomes aceitos na rede',
-    allowedOrigins: 'Páginas de outros programas',
-    allowedOriginsHint: 'Ex.: http://localhost:8800, separadas por vírgula.',
-    save: 'Salvar configurações',
-    saved: (sections: string) => `Configurações salvas: ${sections}.`,
-    nothingChanged: 'Nada mudou.',
-    restart: 'Algumas mudanças só valem depois de reiniciar o programa:',
+    get deviceName() {
+      return t`Nome do dispositivo`
+    },
+    get deviceNameHint() {
+      return t`Ex.: C920. Ou use o caminho ou o índice.`
+    },
+    get devicePath() {
+      return t`Caminho do dispositivo`
+    },
+    get deviceIndex() {
+      return t`Índice do dispositivo`
+    },
+    get folder() {
+      return t`Pasta das imagens`
+    },
+    get loop() {
+      return t`Repetir as imagens`
+    },
+    get fps() {
+      return t`Imagens por segundo`
+    },
+    get host() {
+      return t`Endereço`
+    },
+    get port() {
+      return t`Porta`
+    },
+    get user() {
+      return t`Usuário`
+    },
+    get keyring() {
+      return t`Senha da câmera (entrada no cofre do Windows)`
+    },
+    get keyringHint() {
+      return t`O nome da entrada, nunca a senha.`
+    },
+    get testCamera() {
+      return t`Testar câmera`
+    },
+    get recording() {
+      return t`Gravação`
+    },
+    get sample() {
+      return t`Guardar a imagem de 1 aprovado a cada`
+    },
+    get sampleHint() {
+      return t`Reprovados e erros sempre guardam a imagem.`
+    },
+    get retention() {
+      return t`Apagar registros com mais de`
+    },
+    get retentionHint() {
+      return t`Vazio: guardar tudo.`
+    },
+    get minFree() {
+      return t`Manter livre no disco pelo menos`
+    },
+    get backup() {
+      return t`Backup`
+    },
+    get backupFolder() {
+      return t`Pasta de backup`
+    },
+    get backupFolderHint() {
+      return t`Pasta de rede ou pen drive. Vazio: dentro da pasta de dados.`
+    },
+    get testFolder() {
+      return t`Testar pasta`
+    },
+    get every() {
+      return t`Backup automático a cada`
+    },
+    get everyHint() {
+      return t`Vazio: só quando pedido.`
+    },
+    get keep() {
+      return t`Quantos guardar`
+    },
+    get include() {
+      return t`O que incluir`
+    },
+    get includeAll() {
+      return t`Todas as versões`
+    },
+    get includeLatest() {
+      return t`Só a última versão de cada job`
+    },
+    get network() {
+      return t`Rede`
+    },
+    get listen() {
+      return t`Endereço de escuta`
+    },
+    get listenHint() {
+      return t`127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha).`
+    },
+    get allowedHosts() {
+      return t`Nomes aceitos na rede`
+    },
+    get allowedOrigins() {
+      return t`Páginas de outros programas`
+    },
+    get allowedOriginsHint() {
+      return t`Ex.: http://localhost:8800, separadas por vírgula.`
+    },
+    get save() {
+      return t`Salvar configurações`
+    },
+    saved: (sections: string) => t`Configurações salvas: ${sections}.`,
+    get nothingChanged() {
+      return t`Nada mudou.`
+    },
+    get restart() {
+      return t`Algumas mudanças só valem depois de reiniciar o programa:`
+    },
     sections: {
-      station: 'estação',
-      camera: 'câmera',
-      recording: 'gravação',
-      backup: 'backup',
-      network: 'rede',
+      get station() {
+        return t`estação`
+      },
+      get camera() {
+        return t`câmera`
+      },
+      get recording() {
+        return t`gravação`
+      },
+      get backup() {
+        return t`backup`
+      },
+      get network() {
+        return t`rede`
+      },
     } as Record<string, string>,
-    backupError: (e: string) => `O último backup automático falhou: ${e}`,
-    loadError: 'Não foi possível ler as configurações.',
-    hours: 'h',
-    days: 'dias',
-    minutes: 'min',
-    seconds: 's',
-    gb: 'GB',
-    images: 'imagens',
+    backupError: (e: string) => t`O último backup automático falhou: ${e}`,
+    get loadError() {
+      return t`Não foi possível ler as configurações.`
+    },
+    get hours() {
+      return t`h`
+    },
+    get days() {
+      return t`dias`
+    },
+    get minutes() {
+      return t`min`
+    },
+    get seconds() {
+      return t`s`
+    },
+    get gb() {
+      return t`GB`
+    },
+    get images() {
+      return t`imagens`
+    },
   },
   access: {
-    title: 'Acessos',
-    intro: 'O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil.',
-    role: 'Perfil',
-    password: 'Senha',
-    changedAt: 'Última troca',
-    set: 'Definida',
-    notSet: 'Não definida',
-    change: (role: string) => `Trocar a senha do ${role}`,
-    define: (role: string) => `Definir a senha do ${role}`,
-    newPassword: 'Senha nova',
-    again: 'Repita a senha nova',
-    current: 'Senha atual',
-    rule: 'Pelo menos 8 caracteres. Ela não é mostrada de novo.',
-    mismatch: 'As duas senhas não são iguais.',
-    tooShort: 'Use pelo menos 8 caracteres.',
-    done: (role: string) => `Senha do ${role} definida. As sessões dele foram encerradas.`,
-    revoke: 'Encerrar todas as sessões',
-    revokeTitle: 'Encerrar todas as sessões?',
-    revokeBody: 'Todos saem, inclusive você, e precisam entrar de novo.',
-    revoked: (n: number) => `${n} ${n === 1 ? 'sessão encerrada' : 'sessões encerradas'}.`,
+    get title() {
+      return t`Acessos`
+    },
+    get intro() {
+      return t`O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil.`
+    },
+    get role() {
+      return t`Perfil`
+    },
+    get password() {
+      return t`Senha`
+    },
+    get changedAt() {
+      return t`Última troca`
+    },
+    get set() {
+      return t`Definida`
+    },
+    get notSet() {
+      return t`Não definida`
+    },
+    change: (role: string) => t`Trocar a senha do ${role}`,
+    define: (role: string) => t`Definir a senha do ${role}`,
+    get newPassword() {
+      return t`Senha nova`
+    },
+    get again() {
+      return t`Repita a senha nova`
+    },
+    get current() {
+      return t`Senha atual`
+    },
+    get rule() {
+      return t`Pelo menos 8 caracteres. Ela não é mostrada de novo.`
+    },
+    get mismatch() {
+      return t`As duas senhas não são iguais.`
+    },
+    get tooShort() {
+      return t`Use pelo menos 8 caracteres.`
+    },
+    done: (role: string) => t`Senha do ${role} definida. As sessões dele foram encerradas.`,
+    get revoke() {
+      return t`Encerrar todas as sessões`
+    },
+    get revokeTitle() {
+      return t`Encerrar todas as sessões?`
+    },
+    get revokeBody() {
+      return t`Todos saem, inclusive você, e precisam entrar de novo.`
+    },
+    revoked: (n: number) =>
+      plural(n, { one: '# sessão encerrada.', other: '# sessões encerradas.' }),
   },
   audit: {
-    title: 'Auditoria',
-    intro: 'O que mudou na estação, quando e por quem. Não se apaga.',
-    kind: 'Evento',
-    allKinds: 'Todos os eventos',
-    when: 'Quando',
-    details: 'Detalhes',
-    exportCsv: 'Exportar CSV',
-    empty: 'Nenhum evento',
-    loadError: 'Não foi possível ler a auditoria.',
+    get title() {
+      return t`Auditoria`
+    },
+    get intro() {
+      return t`O que mudou na estação, quando e por quem. Não se apaga.`
+    },
+    get kind() {
+      return t`Evento`
+    },
+    get allKinds() {
+      return t`Todos os eventos`
+    },
+    get when() {
+      return t`Quando`
+    },
+    get details() {
+      return t`Detalhes`
+    },
+    get exportCsv() {
+      return t`Exportar CSV`
+    },
+    get empty() {
+      return t`Nenhum evento`
+    },
+    get loadError() {
+      return t`Não foi possível ler a auditoria.`
+    },
     kinds: {
-      activate: 'Job ativado',
-      activate_override: 'Job ativado sem passar na verificação',
-      import: 'Importação',
-      restore: 'Restauração de backup',
-      backup: 'Backup',
-      backup_failed: 'Backup falhou',
-      job_create: 'Job criado',
-      job_save: 'Versão salva',
-      job_duplicate: 'Job duplicado',
-      settings: 'Configurações alteradas',
-      password_set: 'Senha definida',
-      sessions_revoked: 'Sessões encerradas',
-      camera_apply: 'Ajuste de câmera',
-      dataset_export: 'Dataset exportado',
+      get activate() {
+        return t`Job ativado`
+      },
+      get activate_override() {
+        return t`Job ativado sem passar na verificação`
+      },
+      get import() {
+        return t`Importação`
+      },
+      get restore() {
+        return t`Restauração de backup`
+      },
+      get backup() {
+        return t`Backup`
+      },
+      get backup_failed() {
+        return t`Backup falhou`
+      },
+      get job_create() {
+        return t`Job criado`
+      },
+      get job_save() {
+        return t`Versão salva`
+      },
+      get job_duplicate() {
+        return t`Job duplicado`
+      },
+      get settings() {
+        return t`Configurações alteradas`
+      },
+      get password_set() {
+        return t`Senha definida`
+      },
+      get sessions_revoked() {
+        return t`Sessões encerradas`
+      },
+      get camera_apply() {
+        return t`Ajuste de câmera`
+      },
+      get dataset_export() {
+        return t`Dataset exportado`
+      },
     } as Record<string, string>,
   },
   shell: {
-    menu: 'Menu',
-    collapse: 'Recolher menu',
-    expand: 'Expandir menu',
-    user: 'Conta',
-    theme: 'Tema',
-    themeSystem: 'Sistema',
-    themeDark: 'Escuro',
-    themeLight: 'Claro',
-    noJob: 'Nenhum job',
-    palette: 'Ir para…',
-    palettePlaceholder: 'Nome da tela',
-    paletteEmpty: 'Nada encontrado.',
-    paletteScreens: 'Telas',
+    get menu() {
+      return t`Menu`
+    },
+    get collapse() {
+      return t`Recolher menu`
+    },
+    get expand() {
+      return t`Expandir menu`
+    },
+    get user() {
+      return t`Conta`
+    },
+    get theme() {
+      return t`Tema`
+    },
+    get themeSystem() {
+      return t`Sistema`
+    },
+    get themeDark() {
+      return t`Escuro`
+    },
+    get themeLight() {
+      return t`Claro`
+    },
+    get noJob() {
+      return t`Nenhum job`
+    },
+    get palette() {
+      return t`Ir para…`
+    },
+    get palettePlaceholder() {
+      return t`Nome da tela`
+    },
+    get paletteEmpty() {
+      return t`Nada encontrado.`
+    },
+    get paletteScreens() {
+      return t`Telas`
+    },
+  },
+  live: {
+    get connecting() {
+      return t`Conectando…`
+    },
+    get offline() {
+      return t`Sem conexão`
+    },
+    get reconnecting() {
+      return t`Reconectando automaticamente.`
+    },
+    get pass() {
+      return t`APROVADO`
+    },
+    get fail() {
+      return t`REPROVADO`
+    },
+    get error() {
+      return t`ERRO`
+    },
+    get couldNotInspect() {
+      return t`Não foi possível inspecionar.`
+    },
+    get inspecting() {
+      return t`Inspecionando…`
+    },
+    get cameraLost() {
+      return t`Câmera desconectada`
+    },
+    get fault() {
+      return t`Falha na verificação`
+    },
+    get callMaintenance() {
+      return t`Chamar a manutenção.`
+    },
+    get maintenance() {
+      return t`Em manutenção`
+    },
+    get preparing() {
+      return t`Preparando…`
+    },
+    get waiting() {
+      return t`Aguardando objeto`
+    },
+    get offlineBanner() {
+      return t`Sem conexão com o programa da estação. O que aparece nesta tela pode estar desatualizado.`
+    },
+    get imageLabel() {
+      return t`Imagem ao vivo da câmera`
+    },
+    get verdictLabel() {
+      return t`Resultado`
+    },
+    get statusLabel() {
+      return t`Estado do sistema`
+    },
+    get systemConnected() {
+      return t`Esta tela está ligada ao programa da estação.`
+    },
+    get systemConnecting() {
+      return t`Ligando esta tela ao programa da estação.`
+    },
+    get systemOffline() {
+      return t`Esta tela perdeu a ligação com o programa e tenta de novo sozinha.`
+    },
+    get machineUnknown() {
+      return t`Sem ligação com o sistema, o estado da máquina não é conhecido.`
+    },
+    get cameraUnknown() {
+      return t`Sem ligação com o sistema, o estado da câmera não é conhecido.`
+    },
+    get logUnknown() {
+      return t`Sem ligação com o sistema, não se sabe se os resultados estão sendo gravados.`
+    },
+    get logOk() {
+      return t`Os resultados estão sendo gravados.`
+    },
+    get machineAwaiting() {
+      return t`Ligada, mas a máquina ainda não deu sinal de vida.`
+    },
+    get machineSilent() {
+      return t`A máquina não responde; nenhum disparo é aceito.`
+    },
+    lastResult: (word: string) => t`Último resultado: ${word}. Pode estar desatualizado.`,
+  },
+  ui: {
+    get close() {
+      return t`Fechar`
+    },
+    get cancel() {
+      return t`Cancelar`
+    },
+    get somethingWrong() {
+      return t`Algo deu errado`
+    },
+    get retry() {
+      return t`Tentar de novo`
+    },
+    get details() {
+      return t`Detalhes`
+    },
+    get hideDetails() {
+      return t`Ocultar detalhes`
+    },
+    get skipToContent() {
+      return t`Pular para o conteúdo`
+    },
+    get current() {
+      return t`(atual)`
+    },
+    get suggestions() {
+      return t`Sugestões`
+    },
+    get showTable() {
+      return t`Ver como tabela`
+    },
+    get pages() {
+      return t`Páginas`
+    },
+    get previousPage() {
+      return t`Página anterior`
+    },
+    get nextPage() {
+      return t`Próxima página`
+    },
+    get stepDone() {
+      return t`concluído`
+    },
+    get stepCurrent() {
+      return t`passo atual`
+    },
+    get stepTodo() {
+      return t`pendente`
+    },
+    get stepError() {
+      return t`com erro`
+    },
+    get movable() {
+      return t`item que pode ser movido`
+    },
+    get dragHelp() {
+      return t`Para mover, pressione Espaço ou Enter; use as setas para cima e para baixo; Espaço ou Enter de novo para soltar, Esc para cancelar.`
+    },
+    get notFoundTitle() {
+      return t`Página não encontrada`
+    },
+    get noServer() {
+      return t`Não foi possível falar com o programa da estação.`
+    },
+    get filters() {
+      return t`Filtros`
+    },
+    get importing() {
+      return t`Importando…`
+    },
+    get differences() {
+      return t`Diferenças`
+    },
+    get versionColumn() {
+      return t`Versão`
+    },
+    get commaSeparated() {
+      return t`Separados por vírgula`
+    },
+    get invalidJson() {
+      return t`JSON inválido`
+    },
+    get notUsed() {
+      return t`Não usado`
+    },
+    get regionsLabel() {
+      return t`Regiões sobre a imagem`
+    },
+    get referenceImage() {
+      return t`imagem de referência`
+    },
+    get toolColumn() {
+      return t`Ferramenta`
+    },
+    get fileColumn() {
+      return t`Arquivo`
+    },
+    get dateColumn() {
+      return t`Data`
+    },
+    get liveImageReduced() {
+      return t`imagem ao vivo (reduzida)`
+    },
+    exactValue: (name: string) => t`${name} (valor exato)`,
+    pageRange: (from: number, to: number, total: number) => t`${from}–${to} de ${total}`,
+    move: (name: string) => t`Mover ${name}`,
+    place: (position: number, total: number) => t`posição ${position} de ${total}`,
+    dragStart: (name: string, place: string) => t`${name} pego para mover, na ${place}.`,
+    dragOver: (name: string, place: string) => t`${name} na ${place}.`,
+    dragOut: (name: string) => t`${name} fora da lista.`,
+    dragEnd: (name: string, place: string) => t`${name} solto na ${place}.`,
+    dropped: (name: string) => t`${name} solto.`,
+    dragCancel: (name: string) => t`Movimento cancelado. ${name} voltou ao lugar.`,
+    badFileType: (files: string, accept: string) =>
+      t`Tipo de arquivo não aceito: ${files}. Use ${accept}.`,
+    commaSeparatedHint: (hint: string) => t`${hint} · separados por vírgula`,
+    notUsedHint: (hint: string) => t`${hint} (não usado)`,
+    defaultValue: (value: string) => t`padrão: ${value}`,
+    imageSize: (width: number, height: number, source: string) =>
+      t`${width} × ${height} px · ${source}`,
   },
 } as const
 

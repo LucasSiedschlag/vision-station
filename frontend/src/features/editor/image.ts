@@ -29,7 +29,7 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('imagem inválida'))
+    img.onerror = () => reject(new Error('the image could not be decoded'))
     img.src = url
   })
 }

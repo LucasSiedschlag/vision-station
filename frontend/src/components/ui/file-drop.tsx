@@ -1,6 +1,7 @@
 import { Upload } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
+import { text } from '@/texts'
 
 /**
  * Drop a file or press Enter/Space to choose one. `accept` lists extensions (".vjob,.vbak"); a file with
@@ -30,7 +31,7 @@ export function FileDrop({
     if (files.length === 0) return
     const bad = files.filter((f) => !allowed.some((ext) => f.name.toLowerCase().endsWith(ext)))
     if (bad.length > 0) {
-      setError(`Tipo de arquivo não aceito: ${bad.map((f) => f.name).join(', ')}. Use ${accept}.`)
+      setError(text.ui.badFileType(bad.map((f) => f.name).join(', '), accept))
       return
     }
     setError('')

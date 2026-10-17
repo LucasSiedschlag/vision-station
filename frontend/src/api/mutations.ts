@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api, call, ApiError } from './client'
+import { text } from '@/texts'
 
 /** Plain Portuguese for a failed call: the server's own message when it sent one. */
 export function describeError(error: unknown): string {
   if (error instanceof ApiError) return error.message
-  return 'Não foi possível falar com o programa da estação.'
+  return text.ui.noServer
 }
 
 export function useTrigger() {

@@ -1,5 +1,6 @@
 import { Check, TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { text } from '@/texts'
 
 export interface Step {
   id: string
@@ -9,7 +10,12 @@ export interface Step {
 
 /** The steps of a longer task (the job editor). A step's state is an icon and a word for screen readers, not colour alone. */
 export function Stepper({ steps, onSelect }: { steps: Step[]; onSelect?: (id: string) => void }) {
-  const words = { done: 'concluído', current: 'passo atual', todo: 'pendente', error: 'com erro' }
+  const words = {
+    done: text.ui.stepDone,
+    current: text.ui.stepCurrent,
+    todo: text.ui.stepTodo,
+    error: text.ui.stepError,
+  }
   return (
     <ol className="flex flex-col gap-1">
       {steps.map((step, index) => (

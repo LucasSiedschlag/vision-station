@@ -8,6 +8,7 @@ import {
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
 import { NumberField } from './number-field'
+import { text } from '@/texts'
 
 export const thumbClasses =
   'top-1/2 size-5 rounded-pill border-2 border-accent bg-surface-1 data-[dragging]:bg-accent data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-accent-text data-[disabled]:border-line-control'
@@ -163,7 +164,7 @@ function ThumbField({
   const [refused, setRefused] = useState<number | null | undefined>(undefined)
   return (
     <NumberField
-      aria-label={`${name} (valor exato)`}
+      aria-label={text.ui.exactValue(name)}
       value={refused === undefined ? value : refused}
       onChange={(next) => {
         const fits = next !== null && next >= low && next <= high

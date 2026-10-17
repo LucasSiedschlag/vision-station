@@ -46,8 +46,8 @@ export function AboutPage() {
               <Table>
                 <THead>
                   <TR>
-                    <TH>Ferramenta</TH>
-                    <TH className="text-right">Versão</TH>
+                    <TH>{text.ui.toolColumn}</TH>
+                    <TH className="text-right">{text.ui.versionColumn}</TH>
                   </TR>
                 </THead>
                 <TBody>

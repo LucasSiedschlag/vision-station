@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from './button'
 import { useReturnFocus } from './use-return-focus'
+import { text } from '@/texts'
 
 const overlay = 'fixed inset-0 z-40 bg-surface-0/80 backdrop-blur-sm'
 
@@ -54,7 +55,7 @@ export function DialogContent({
             ) : null}
           </div>
           <RadixDialog.Close asChild>
-            <Button variant="ghost" aria-label="Fechar" className="-mr-2 -mt-2 px-0">
+            <Button variant="ghost" aria-label={text.ui.close} className="-mr-2 -mt-2 px-0">
               <X aria-hidden className="size-4" />
             </Button>
           </RadixDialog.Close>
@@ -79,7 +80,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Cancelar',
+  cancelLabel,
   tone = 'primary',
   loading = false,
   onConfirm,
@@ -114,7 +115,7 @@ export function ConfirmDialog({
           {children}
           <DialogFooter>
             <AlertDialog.Cancel asChild>
-              <Button>{cancelLabel}</Button>
+              <Button>{cancelLabel ?? text.ui.cancel}</Button>
             </AlertDialog.Cancel>
             <Button
               variant={tone === 'danger' ? 'danger' : 'primary'}
@@ -172,7 +173,7 @@ export function Sheet({
               ) : null}
             </div>
             <RadixDialog.Close asChild>
-              <Button variant="ghost" aria-label="Fechar" className="-mr-2 -mt-2 px-0">
+              <Button variant="ghost" aria-label={text.ui.close} className="-mr-2 -mt-2 px-0">
                 <X aria-hidden className="size-4" />
               </Button>
             </RadixDialog.Close>

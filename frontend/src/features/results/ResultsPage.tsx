@@ -86,7 +86,7 @@ export function ResultsPage() {
           {t.exportCsv}
         </Button>
       </div>
-      <div role="search" aria-label="Filtros" className="flex flex-wrap items-end gap-4">
+      <div role="search" aria-label={text.ui.filters} className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium">{t.period}</span>
           <SegmentedControl

@@ -4,6 +4,7 @@ import { ResponsiveContainer, Tooltip, type TooltipContentProps } from 'recharts
 import type { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent'
 import { cn } from '@/lib/cn'
 import { Table, TBody, TD, TH, THead, TR } from './table'
+import { text } from '@/texts'
 
 // Low-frequency charts (Recharts 3, TD-29): result trends, the Pareto of reason codes, margin
 // trends (document 05 §7.13). Series take a token colour; axes and grid use the line and muted
@@ -66,7 +67,9 @@ export function ChartContainer({
         </ResponsiveContainer>
       </div>
       <details className="text-sm">
-        <summary className="cursor-pointer text-fg-muted hover:text-fg">Ver como tabela</summary>
+        <summary className="cursor-pointer text-fg-muted hover:text-fg">
+          {text.ui.showTable}
+        </summary>
         <Table className="mt-2">
           <THead>
             <TR>

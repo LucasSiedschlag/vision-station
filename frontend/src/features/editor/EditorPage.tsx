@@ -552,7 +552,7 @@ function Editor({
             )}
           </Field>
           <DialogFooter>
-            <Button onClick={() => setSaveOpen(false)}>Cancelar</Button>
+            <Button onClick={() => setSaveOpen(false)}>{text.ui.cancel}</Button>
             <Button variant="primary" loading={saving} onClick={() => void save()}>
               {t.save}
             </Button>

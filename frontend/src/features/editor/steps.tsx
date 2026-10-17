@@ -264,7 +264,7 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
               <NumberField
                 {...props}
                 value={num(trigger.diff_threshold)}
-                placeholder="padrão: 25"
+                placeholder={text.ui.defaultValue(formatNumber(25))}
                 onChange={(v) =>
                   set((tr) => (v === null ? delete tr.diff_threshold : (tr.diff_threshold = v)))
                 }
@@ -279,7 +279,7 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
               <NumberField
                 {...props}
                 value={num(trigger.min_area)}
-                placeholder="padrão: 0,05"
+                placeholder={text.ui.defaultValue(formatNumber(0.05))}
                 onChange={(v) => set((tr) => (v === null ? delete tr.min_area : (tr.min_area = v)))}
                 min={0}
                 max={1}
@@ -363,7 +363,7 @@ export function QualityStep({ draft }: StepProps) {
           <NumberField
             {...props}
             value={num(q.similarity_min)}
-            placeholder="padrão: 0,6"
+            placeholder={text.ui.defaultValue(formatNumber(0.6))}
             onChange={(v) =>
               set((qq) => (v === null ? delete qq.similarity_min : (qq.similarity_min = v)))
             }

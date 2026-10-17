@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { Tone, Verdict } from '@/features/operator/view'
+import { text } from '@/texts'
 
 const icons = {
   check: CheckCircle2,
@@ -41,7 +42,7 @@ export function VerdictPanel({ verdict }: { verdict: Verdict }) {
     <section
       role="status"
       aria-live="assertive"
-      aria-label="Resultado"
+      aria-label={text.live.verdictLabel}
       className={cn(
         'flex size-full min-h-0 flex-col items-center justify-center gap-4 rounded-card border-2 p-6 text-center',
         tones[verdict.tone],

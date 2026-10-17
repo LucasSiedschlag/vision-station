@@ -1,5 +1,6 @@
 import { currentLocale } from '@/app/locale'
 import type { StateOut } from '@/api/live'
+import { text } from '@/texts'
 
 export type Tone = 'ok' | 'fail' | 'warn' | 'busy' | 'neutral'
 export type Size = 'display' | 'title'
@@ -25,8 +26,8 @@ const none = { reason: '', meta: '', stale: '' }
 function describeLast(status: StateOut): string {
   const r = status.last_result
   if (!r) return ''
-  const word = { PASS: 'APROVADO', FAIL: 'REPROVADO', ERROR: 'ERRO' }[r.outcome]
-  return `Último resultado: ${word}. Pode estar desatualizado.`
+  const word = { PASS: text.live.pass, FAIL: text.live.fail, ERROR: text.live.error }[r.outcome]
+  return text.live.lastResult(word)
 }
 
 /** Local time of a result as HH:MM:SS, or empty when the server did not say. */
@@ -44,15 +45,15 @@ export function clockTime(iso: string | null | undefined): string {
 
 export function verdictOf(status: StateOut | null, connection: Connection): Verdict {
   if (connection === 'connecting' && !status) {
-    return { tone: 'neutral', icon: 'wait', headline: 'Conectando…', size: 'title', ...none }
+    return { tone: 'neutral', icon: 'wait', headline: text.live.connecting, size: 'title', ...none }
   }
   if (connection !== 'connected' || !status) {
     return {
       tone: 'neutral',
       icon: 'offline',
-      headline: 'Sem conexão',
+      headline: text.live.offline,
       size: 'title',
-      reason: 'Reconectando automaticamente.',
+      reason: text.live.reconnecting,
       meta: '',
       stale: status ? describeLast(status) : '',
     }
@@ -68,7 +69,7 @@ export function verdictOf(status: StateOut | null, connection: Connection): Verd
         return {
           tone: 'ok',
           icon: 'check',
-          headline: 'APROVADO',
+          headline: text.live.pass,
           size: 'display',
           reason: r.reason,
           meta,
@@ -78,7 +79,7 @@ export function verdictOf(status: StateOut | null, connection: Connection): Verd
         return {
           tone: 'fail',
           icon: 'cross',
-          headline: 'REPROVADO',
+          headline: text.live.fail,
           size: 'display',
           reason: r.reason,
           meta,
@@ -88,22 +89,22 @@ export function verdictOf(status: StateOut | null, connection: Connection): Verd
       return {
         tone: 'warn',
         icon: 'alert',
-        headline: 'ERRO',
+        headline: text.live.error,
         size: 'display',
-        reason: r?.reason || 'Não foi possível inspecionar.',
+        reason: r?.reason || text.live.couldNotInspect,
         meta,
         stale: '',
       }
     }
     case 'Inspecting':
-      return { tone: 'busy', icon: 'busy', headline: 'Inspecionando…', size: 'title', ...none }
+      return { tone: 'busy', icon: 'busy', headline: text.live.inspecting, size: 'title', ...none }
     case 'CameraLost':
       return {
         tone: 'warn',
         icon: 'camera',
-        headline: 'Câmera desconectada',
+        headline: text.live.cameraLost,
         size: 'title',
-        reason: 'Reconectando automaticamente.',
+        reason: text.live.reconnecting,
         meta: '',
         stale: '',
       }
@@ -111,22 +112,28 @@ export function verdictOf(status: StateOut | null, connection: Connection): Verd
       return {
         tone: 'warn',
         icon: 'wrench',
-        headline: 'Falha na verificação',
+        headline: text.live.fault,
         size: 'title',
-        reason: status.detail || 'Chamar a manutenção.',
+        reason: status.detail || text.live.callMaintenance,
         meta: '',
         stale: '',
       }
     case 'Paused':
-      return { tone: 'warn', icon: 'wrench', headline: 'Em manutenção', size: 'title', ...none }
+      return {
+        tone: 'warn',
+        icon: 'wrench',
+        headline: text.live.maintenance,
+        size: 'title',
+        ...none,
+      }
     case 'Starting':
     case 'Preparing':
-      return { tone: 'busy', icon: 'busy', headline: 'Preparando…', size: 'title', ...none }
+      return { tone: 'busy', icon: 'busy', headline: text.live.preparing, size: 'title', ...none }
     default:
       return {
         tone: 'neutral',
         icon: 'wait',
-        headline: status.message || 'Aguardando objeto',
+        headline: status.message || text.live.waiting,
         size: 'title',
         ...none,
       }

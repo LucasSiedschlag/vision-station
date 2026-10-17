@@ -111,7 +111,7 @@ export function ActivateDialog({
           </Field>
         ) : null}
         <DialogFooter>
-          <Button onClick={() => close(false)}>Fechar</Button>
+          <Button onClick={() => close(false)}>{text.ui.close}</Button>
           {mayOverride ? (
             <Button
               variant="danger"
@@ -176,7 +176,7 @@ export function ImportDialog({ open, onOpenChange }: Open) {
               onFiles={([file]) => file && importFile.mutate(file, { onSuccess: setDone })}
             />
             {importFile.isPending ? (
-              <Skeleton className="h-6 w-full" aria-label="Importando…" />
+              <Skeleton className="h-6 w-full" aria-label={text.ui.importing} />
             ) : null}
             {importFile.isError ? (
               <p role="alert" className="text-sm text-fail-text">
@@ -186,7 +186,7 @@ export function ImportDialog({ open, onOpenChange }: Open) {
           </>
         )}
         <DialogFooter>
-          <Button onClick={() => close(false)}>Fechar</Button>
+          <Button onClick={() => close(false)}>{text.ui.close}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -223,8 +223,8 @@ export function BackupsDialog({ open, onOpenChange }: Open) {
           <Table>
             <THead>
               <TR>
-                <TH>Arquivo</TH>
-                <TH>Data</TH>
+                <TH>{text.ui.fileColumn}</TH>
+                <TH>{text.ui.dateColumn}</TH>
                 <TH className="text-right">Tamanho</TH>
                 <TH>
                   <span className="sr-only">{text.jobs.download}</span>
@@ -252,7 +252,7 @@ export function BackupsDialog({ open, onOpenChange }: Open) {
           </Table>
         )}
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button onClick={() => onOpenChange(false)}>{text.ui.close}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -303,7 +303,7 @@ export function DiffDialog({
           <p className="text-sm text-fg-muted">{text.jobs.diffSame}</p>
         ) : (
           <pre
-            aria-label="Diferenças"
+            aria-label={text.ui.differences}
             className="max-h-[50vh] overflow-auto rounded-control bg-surface-2 p-3 font-mono text-xs"
           >
             {diff.data.diff.split('\n').map((line, i) => (
@@ -323,7 +323,7 @@ export function DiffDialog({
           </pre>
         )}
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button onClick={() => onOpenChange(false)}>{text.ui.close}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -357,7 +357,7 @@ export function DuplicateDialog({
           </p>
         ) : null}
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={() => onOpenChange(false)}>{text.ui.cancel}</Button>
           <Button
             variant="primary"
             disabled={newName.trim() === ''}

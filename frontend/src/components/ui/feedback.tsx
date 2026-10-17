@@ -2,6 +2,7 @@ import { AlertOctagon, Inbox } from 'lucide-react'
 import { useState, type HTMLAttributes, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from './button'
+import { text } from '@/texts'
 
 /** A placeholder with the shape of what is loading. Motion is only the soft pulse, and it stops with reduced motion. */
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -41,7 +42,7 @@ export function EmptyState({
 
 /** What went wrong in plain words, a retry, and the technical detail folded away. */
 export function ErrorState({
-  title = 'Algo deu errado',
+  title,
   message,
   detail,
   onRetry,
@@ -55,9 +56,9 @@ export function ErrorState({
   return (
     <div role="alert" className="flex flex-col items-center gap-3 px-6 py-12 text-center">
       <AlertOctagon aria-hidden className="size-8 text-fail-text" />
-      <p className="text-base font-medium">{title}</p>
+      <p className="text-base font-medium">{title ?? text.ui.somethingWrong}</p>
       {message ? <p className="max-w-md text-sm text-fg-muted">{message}</p> : null}
-      {onRetry ? <Button onClick={onRetry}>Tentar de novo</Button> : null}
+      {onRetry ? <Button onClick={onRetry}>{text.ui.retry}</Button> : null}
       {detail ? (
         <div className="max-w-md text-left text-xs">
           <button
@@ -66,7 +67,7 @@ export function ErrorState({
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? 'Ocultar detalhes' : 'Detalhes'}
+            {open ? text.ui.hideDetails : text.ui.details}
           </button>
           {open ? (
             <pre className="mt-2 overflow-auto rounded-control bg-surface-2 p-3 font-mono whitespace-pre-wrap">

@@ -203,7 +203,7 @@ function PasswordDialog({
             </p>
           ) : null}
           <DialogFooter>
-            <Button onClick={onClose}>Cancelar</Button>
+            <Button onClick={onClose}>{text.ui.cancel}</Button>
             <Button type="submit" variant="primary" loading={setPasswordCall.isPending}>
               {t.change(name).split(' ')[0]}
             </Button>

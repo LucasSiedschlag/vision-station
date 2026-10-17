@@ -70,7 +70,9 @@ export interface Screen {
 export const screens: Screen[] = [
   {
     path: '/',
-    label: text.nav.station,
+    get label() {
+      return text.nav.station
+    },
     icon: MonitorPlay,
     area: 'operation',
     min: 'operator',
@@ -78,7 +80,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/jobs',
-    label: text.nav.jobs,
+    get label() {
+      return text.nav.jobs
+    },
     icon: Layers,
     area: 'setup',
     min: 'supervisor',
@@ -90,7 +94,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/results',
-    label: text.nav.results,
+    get label() {
+      return text.nav.results
+    },
     icon: ListChecks,
     area: 'analysis',
     min: 'supervisor',
@@ -102,7 +108,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/settings',
-    label: text.nav.settings,
+    get label() {
+      return text.nav.settings
+    },
     icon: Settings,
     area: 'system',
     min: 'maintainer',
@@ -114,7 +122,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/dataset',
-    label: text.nav.dataset,
+    get label() {
+      return text.nav.dataset
+    },
     icon: Database,
     area: 'system',
     min: 'maintainer',
@@ -126,7 +136,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/access',
-    label: text.nav.access,
+    get label() {
+      return text.nav.access
+    },
     icon: KeyRound,
     area: 'system',
     min: 'supervisor',
@@ -138,7 +150,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/audit',
-    label: text.nav.audit,
+    get label() {
+      return text.nav.audit
+    },
     icon: ScrollText,
     area: 'system',
     min: 'supervisor',
@@ -150,7 +164,9 @@ export const screens: Screen[] = [
   },
   {
     path: '/about',
-    label: text.nav.about,
+    get label() {
+      return text.nav.about
+    },
     icon: Info,
     area: 'system',
     min: 'supervisor',

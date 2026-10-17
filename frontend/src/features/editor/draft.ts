@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { text } from '@/texts'
 import type { components } from '@/api/schema'
 
 export type JobJson = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any -- job.yaml as JSON; the server validates it
@@ -159,7 +160,7 @@ export function newDraft(profile: JobJson | null): Draft {
     job: {
       format: 1,
       job: {
-        name: 'Novo job',
+        name: text.jobs.newJob, // the default name of a new job, in the language on screen
         description: '',
         author: '',
         created_at: new Date().toISOString(),
