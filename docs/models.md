@@ -63,6 +63,8 @@ The licences of the code and of the starting weights are written in the card (TD
 
 Fields for the failure text: `{label}`, `{confidence}`, `{classes}`, `{count}`, `{score}`, `{threshold}`.
 
+**A detector with nothing to check is an ERROR** (R2, 0.2): with no `fail_classes`, no `require_classes` and no `count_class`, a detector used to pass every part; now it answers ERROR E302 ("a ferramenta não tem o que conferir"). The parameters alone cannot refuse it when the job is saved, because the task comes from the model card, which is read when the job's files are loaded: verification shows it, so a job like this does not activate. Reason codes of each task: `detect.class`, `detect.min_confidence`, `detect.fail_class`, `detect.require_classes`, `detect.min_count`, `detect.max_count`, `detect.max_score` (document 03 §10.3).
+
 **An output the tool cannot trust is an ERROR, never a pass** (VIA-0054): an empty output, a NaN or an infinity in any of the three tasks (a NaN is below no confidence and `argmax` takes it as the top class, which made a pass), and, for the classifier and the detector, a number of classes other than the card's `classes` (a detector box of a class past the list used to be dropped in silence, so a shifted export could hide the class that fails).
 
 **Open question, RF-DETR class indexes:** check on a real fine-tuned export whether index 0 is a reserved class (COCO-style numbering) before writing the card. If it is, the card's `classes` must list it too (for example `[_fundo, risco, amassado]`), or every box lands one class off. Test it with a reference set that has one picture of each class.
