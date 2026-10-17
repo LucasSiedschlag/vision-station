@@ -68,3 +68,42 @@ def test_the_controller_keeps_the_pipeline_fields():
     rig.tick(10)
     assert rig.controller.last_result.error_code == 104 and rig.controller.last_result.sequence == 0
     assert replace(rig.controller.last_result, sequence=None).error_code == 104
+
+
+def test_on_a_pass_the_margin_is_the_near_miss_not_the_first_criterion():
+    from vision_station.core.results import Criterion, ToolReport
+
+    wide = Criterion("min_fraction", "min", True, 1.0, "fraction", 0.9, 0.4)  # far inside
+    close = Criterion("max_gap", "max", True, 1.0, "gap", 0.19, 0.2)  # just inside
+    t = ToolReport("tampa", "color", 1, True, 1.0, criteria=(wide, close))
+    assert t.decisive is close and t.margin == close.margin
+    failing = Criterion("min_fraction", "min", False, 0.5, "fraction", 0.2, 0.4)
+    assert ToolReport("tampa", "color", 1, False, 0.5, criteria=(close, failing)).decisive is failing
+
+
+def test_a_tool_with_nothing_to_check_cannot_judge():
+    import pytest
+
+    from vision_station.tools.base import ToolError, judged
+
+    with pytest.raises(ToolError):
+        judged([])
+
+
+def test_every_number_given_is_saved_so_a_restart_never_repeats_one():
+    saved = []
+    rig = Rig(first_sequence=5, save_sequence=saved.append)
+    rig.boot()
+    rig.controller.request_trigger()
+    rig.tick(10)
+    assert saved == [5]
+
+
+def test_the_store_continues_after_the_last_number_given_even_unrecorded(tmp_path):
+    from vision_station.records import ResultStore
+
+    with ResultStore(tmp_path) as store:
+        store.record(InspectionResult(Outcome.PASS, sequence=3), None, job_id="j", job_name="n", job_version=1)
+        store.save_sequence(9)  # given to a result whose recording then failed
+    with ResultStore(tmp_path) as store:
+        assert store.next_sequence() == 10

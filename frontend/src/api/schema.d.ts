@@ -1681,7 +1681,7 @@ export interface components {
        * Simulated
        * @default false
        */
-      simulated: boolean
+      simulated: boolean | null
       /** Timings */
       timings: {
         [key: string]: number
@@ -2200,6 +2200,11 @@ export interface components {
        * @default
        */
       error: string
+      /**
+       * Error Code
+       * @default 0
+       */
+      error_code: number
       /** Id */
       id: string
       /**

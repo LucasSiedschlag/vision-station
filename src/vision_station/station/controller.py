@@ -131,6 +131,7 @@ class StationController:
         inspect_timeout_s: float = 5.0,
         wall: Callable[[], float] = time.time,
         first_sequence: int = 0,
+        save_sequence: Callable[[int], Any] | None = None,
     ):
         self._acq = acquisition
         self._inspect = inspect
@@ -142,6 +143,7 @@ class StationController:
         self._inspect_timeout_s = inspect_timeout_s
         self._wall = wall  # wall-clock time for the result; `clock` is monotonic, like the frames' timestamps
         self._sequence = first_sequence % 2**32  # the next result's number: seeded from the records (R2)
+        self._save_sequence = save_sequence  # remembers each number given, recorded or not
         self._job_ref: ResultJob | None = None
 
         self._commands: queue.Queue[_Command] = queue.Queue()
@@ -464,6 +466,11 @@ class StationController:
             decided_at=wall,
             simulated=bool(self._acq.simulated),
         )
+        if self._save_sequence is not None:
+            try:
+                self._save_sequence(result.sequence)
+            except Exception:  # a store that fails must not stop the station; the record of the result says it
+                log.exception("could not save the sequence number")
         self._sequence = (self._sequence + 1) % 2**32
         self._trigger = None
         self._last_result = result

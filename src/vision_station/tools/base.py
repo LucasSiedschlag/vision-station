@@ -43,8 +43,10 @@ class ToolResult:
 
 def judged(criteria: list[Criterion], **fields: Any) -> ToolResult:
     """A result whose score and verdict come from its criteria: the lowest score, passed only if all pass."""
-    score = min((c.score for c in criteria), default=1.0)
-    return ToolResult(passed=score >= 1.0, score=score, criteria=tuple(criteria), **fields)
+    if not criteria:
+        raise ToolError("the tool has nothing to check with these parameters")
+    score = min(c.score for c in criteria)
+    return ToolResult(passed=score >= 1.0 and all(c.passed for c in criteria), score=score, criteria=tuple(criteria), **fields)
 
 
 def minimum(code: str, measure: str, value: float, limit: float) -> Criterion:

@@ -103,7 +103,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
             if tool.affects_result:
                 raise
             # an informative tool never decides, not even by failing to run: noted on its own entry (FR-INS-13)
-            reports.append(ToolReport(tool.id, tool.type, tool.version, False, 0.0, affects_result=False, error=str(stop)))
+            reports.append(ToolReport(tool.id, tool.type, tool.version, False, 0.0, affects_result=False, error=str(stop), error_code=int(stop.code)))
             continue
         per_tool[tool.id] = elapsed
         scores[tool.id] = score

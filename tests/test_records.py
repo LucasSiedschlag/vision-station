@@ -344,7 +344,7 @@ def test_a_database_of_version_1_is_migrated_and_its_old_rows_still_read(tmp_pat
     with ResultStore(tmp_path, clock=clock) as store:
         old = store.get("old-1")
         assert old.outcome == "ERROR" and old.error_code is None and old.sequence is None  # unknown, never 0
-        assert old.tools == () and old.trigger is None and old.simulated is False
+        assert old.tools == () and old.trigger is None and old.simulated is None  # not known before the contract
         new = store.record(res(Outcome.ERROR, "x", error_code=401, sequence=7), None, **JOB)
         assert store.get(new.id).error_code == 401 and store.next_sequence() == 8
     db = sqlite3.connect(tmp_path / "results" / "results.db")

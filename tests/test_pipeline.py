@@ -191,3 +191,13 @@ def test_affects_result_is_written_only_when_false():
 
     assert "affects_result" not in dump_job(make_bundle().job)  # older programs still read the job
     assert "affects_result: false" in dump_job(_with_informative(make_bundle()).job)
+
+
+def test_verification_does_not_ask_for_the_score_of_an_informative_tool_that_could_not_run():
+    from vision_station.verification.verify import _compare
+
+    bundle = _with_informative(make_bundle(), version=99)
+    result = inspect_job(bundle, frame(qr_scene("LOTE-1")))
+    case = type("Case", (), {"outcome": "PASS", "scores": {"lote": 1.0, "info": 1.0}, "reason_contains": ""})()
+    assert _compare(case, result, 0.05, {"info"}) == []
+    assert _compare(case, result, 0.05) == ["nota de 'info' ausente"]

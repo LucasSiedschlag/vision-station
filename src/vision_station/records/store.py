@@ -127,7 +127,7 @@ class InspectionRecord:
     # the result contract (version 2); a record written before has None, empty lists and False
     sequence: int | None = None
     error_code: int | None = None
-    simulated: bool = False
+    simulated: bool | None = False  # None on a record from before the contract: not known
     job_hash: str | None = None
     reason_codes: tuple[Mapping[str, str], ...] = ()
     tools: tuple[Mapping[str, Any], ...] = ()
@@ -171,7 +171,7 @@ def _row(r: sqlite3.Row | tuple) -> InspectionRecord:
         id=r[0], at=r[1], job_id=r[2], job_name=r[3], job_version=r[4], outcome=r[5], reason=r[6],
         scores=json.loads(r[7]), timings=timings, tool_timings=tool_timings, duration_ms=r[9], image_path=r[10],
         overlay_path=r[11], sampled=bool(r[12]), correct_outcome=r[13], corrected_at=r[14], corrected_by=r[15],
-        sequence=r[16], error_code=r[17], simulated=bool(r[18]), job_hash=r[19],
+        sequence=r[16], error_code=r[17], simulated=None if r[20] is None else bool(r[18]), job_hash=r[19],
         reason_codes=tuple(contract.get("reason_codes", ())), tools=tuple(contract.get("tools", ())),
         fixtures=tuple(contract.get("fixtures", ())), trigger=contract.get("trigger"),
         acquired_at=contract.get("acquired_at"), decided_at=contract.get("decided_at"),
@@ -226,7 +226,13 @@ class ResultStore:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=NORMAL")
         self._db.executescript(_SCHEMA)
-        _migrate(self._db)
+        self._db.execute("BEGIN IMMEDIATE")  # two programs opening an old database at once: one migrates, the other sees it done
+        try:
+            _migrate(self._db)
+            self._db.execute("COMMIT")
+        except BaseException:
+            self._db.execute("ROLLBACK")
+            raise
         self._db.executescript(_INDEXES)  # after the migration: they use the added columns
         self._db.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
 
@@ -294,11 +300,19 @@ class ResultStore:
                 raise
             return self.get(rid)  # type: ignore[return-value]
 
-    def next_sequence(self) -> int:
-        """The number for the next result: one after the last one recorded, so a restart never goes back (TD-22)."""
+    def save_sequence(self, sequence: int) -> None:
+        """Remember the last number given to a result, recorded or not. In `meta`, which housekeeping never deletes:
+        a restart after a failed recording, a crash or a long idle time never gives a number again (TD-22)."""
         with self._lock:
-            row = self._db.execute("SELECT sequence FROM inspections WHERE sequence IS NOT NULL ORDER BY rowid DESC LIMIT 1").fetchone()
-        return 0 if row is None else (row[0] + 1) % 2**32
+            self._db.execute("INSERT INTO meta(key, value) VALUES('last_sequence', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (sequence,))
+
+    def next_sequence(self) -> int:
+        """The number for the next result: one after the last one given, so a restart never goes back."""
+        with self._lock:
+            saved = self._db.execute("SELECT value FROM meta WHERE key='last_sequence'").fetchone()
+            if saved is None:  # a database from before save_sequence: the last recorded result
+                saved = self._db.execute("SELECT sequence FROM inspections WHERE sequence IS NOT NULL ORDER BY rowid DESC LIMIT 1").fetchone()
+        return 0 if saved is None else (saved[0] + 1) % 2**32
 
     def _bump(self, key: str) -> int:
         self._db.execute("INSERT INTO meta(key, value) VALUES(?, 1) ON CONFLICT(key) DO UPDATE SET value = value + 1", (key,))
@@ -371,7 +385,7 @@ class ResultStore:
                 for r in page:
                     w.writerow([r.id, r.at, r.job_name, r.job_version, r.outcome, r.reason, json.dumps(dict(r.scores), sort_keys=True), f"{r.duration_ms:.0f}", r.image_path or "", r.correct_outcome or "", r.corrected_at or "", r.corrected_by or "",
                                 "" if r.sequence is None else r.sequence, "" if r.error_code is None else r.error_code,
-                                " ".join(f"{c['tool']}:{c['code']}" for c in r.reason_codes), int(r.simulated)])
+                                " ".join(f"{c['tool']}:{c['code']}" for c in r.reason_codes), "" if r.simulated is None else int(r.simulated)])
                     n += 1
             return n
 

@@ -82,6 +82,7 @@ class ToolResultOut(BaseModel):
     criteria: list[CriterionOut] = []
     affects_result: bool = True  # False: informative, never decides (FR-INS-13)
     error: str = ""  # an informative tool that could not run
+    error_code: int = 0  # and its code (E301..E304)
 
 
 class ReasonCodeOut(BaseModel):
@@ -345,6 +346,7 @@ class RecordOut(ResultContract):
     corrected_at: str | None = None
     corrected_by: str | None = None
     job_hash: str | None = None
+    simulated: bool | None = False  # None on a record from before the result contract: not known
 
 
 class ResultsOut(BaseModel):

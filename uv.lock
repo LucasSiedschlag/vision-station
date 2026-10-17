@@ -601,7 +601,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "onnxruntime", specifier = ">=1.31.0" },
     { name = "opencv-python-headless" },
-    { name = "pydantic", specifier = ">=2" },
+    { name = "pydantic", specifier = ">=2.12" },
     { name = "pyyaml" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
     { name = "zxing-cpp", specifier = ">=3.1.1" },

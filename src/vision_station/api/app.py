@@ -122,7 +122,7 @@ def _iso(epoch: float | None) -> str | None:
     return None if epoch is None else datetime.fromtimestamp(epoch).astimezone().isoformat(timespec="milliseconds")
 
 
-def _contract(c: Mapping[str, Any], *, sequence: int | None, error_code: int | None, simulated: bool) -> dict[str, Any]:
+def _contract(c: Mapping[str, Any], *, sequence: int | None, error_code: int | None, simulated: bool | None) -> dict[str, Any]:
     """The result contract fields of the API (architecture §10.3) from `contract_dict` or a record."""
     trigger = c.get("trigger")
     return dict(

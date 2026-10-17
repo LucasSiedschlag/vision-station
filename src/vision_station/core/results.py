@@ -50,11 +50,20 @@ class ToolReport:
     criteria: tuple[Criterion, ...] = ()
     affects_result: bool = True  # an informative tool is run and recorded but never decides (FR-INS-13)
     error: str = ""  # an informative tool that could not run: why (a deciding one makes the result ERROR instead)
+    error_code: int = 0  # and its code of the catalog (E301..E304)
 
     @property
     def decisive(self) -> Criterion | None:
-        """The criterion that set the score: the lowest, the first one on a tie."""
-        return min(self.criteria, key=lambda c: c.score, default=None)
+        """The criterion that decides: on a failure the one with the lowest score; when all pass, the one closest
+        to its limit (the smallest margin relative to the limit), so the margin shows the near miss."""
+        if not self.criteria:
+            return None
+        if not all(c.passed for c in self.criteria):
+            return min(self.criteria, key=lambda c: c.score)
+        measured = [c for c in self.criteria if c.margin is not None]
+        if not measured:
+            return self.criteria[0]
+        return min(measured, key=lambda c: c.margin / max(abs(c.limit or 0.0), 1e-9))  # type: ignore[operator]
 
     @property
     def margin(self) -> float | None:
@@ -132,7 +141,7 @@ def tool_dict(t: ToolReport) -> dict[str, Any]:
     return {
         "id": t.id, "type": t.type, "version": t.version, "passed": t.passed, "score": t.score, "margin": t.margin,
         "values": dict(t.values), "units": dict(t.units), "criteria": [_criterion(c) for c in t.criteria],
-        "affects_result": t.affects_result, "error": t.error,
+        "affects_result": t.affects_result, "error": t.error, "error_code": t.error_code,
     }
 
 

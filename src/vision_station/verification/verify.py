@@ -135,19 +135,21 @@ def check_decision_logic(bundle: JobBundle, inspect: Inspector, require_referenc
         except Exception as exc:  # a tool that crashes on a stored image is a failed case, not a crash of the verifier
             checks.append(Check(name, False, f"{case.image}: erro ao inspecionar ({type(exc).__name__}: {exc})"))
             continue
-        problems = _compare(case, result, expected.tolerance)
+        informative = {t.id for t in bundle.job.tools if not t.affects_result}
+        problems = _compare(case, result, expected.tolerance, informative)
         checks.append(Check(name, not problems, f"{case.image}: " + ("; ".join(problems) if problems else f"{result.outcome} como esperado")))
     return checks, []
 
 
-def _compare(case, result: InspectionResult, tolerance: float) -> list[str]:
+def _compare(case, result: InspectionResult, tolerance: float, informative: frozenset[str] | set[str] = frozenset()) -> list[str]:
     problems: list[str] = []
     if result.outcome != Outcome(case.outcome):
         problems.append(f"resultado {result.outcome}, esperado {case.outcome}")
     for tool_id, want in case.scores.items():
         got = result.scores.get(tool_id)
         if got is None:
-            problems.append(f"nota de '{tool_id}' ausente")
+            if tool_id not in informative:  # an informative tool that could not run decides nothing (FR-INS-13)
+                problems.append(f"nota de '{tool_id}' ausente")
         elif abs(got - want) > tolerance:
             problems.append(f"nota de '{tool_id}' {got:.3f}, esperada {want:.3f} ± {tolerance:g}")
     if case.reason_contains and case.reason_contains not in result.reason:

@@ -320,7 +320,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
     def capture_case(body: m.ReferenceCaseBody, role: str = Depends(need("maintainer"))) -> m.ReferenceCaseOut:
         """A reference-set image, with what the draft says about it now (the editor records the expected result)."""
         image = frame_or(body.image)
-        result = deps.inspect(placeholder(body.draft, role), Frame(image=image, timestamp=time.monotonic()))
+        result = replace(deps.inspect(placeholder(body.draft, role), Frame(image=image, timestamp=time.monotonic())), simulated=True)
         ok, png = cv2.imencode(".png", image)
         return m.ReferenceCaseOut(path=f"tests/images/{body.name}.png", image=_b64(png.tobytes()) if ok else "", result=result_out(result, None))
 

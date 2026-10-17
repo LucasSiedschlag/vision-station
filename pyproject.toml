@@ -9,7 +9,7 @@ dependencies = [
     "numpy",
     "onnxruntime>=1.31.0",
     "opencv-python-headless",
-    "pydantic>=2",
+    "pydantic>=2.12",  # Field(exclude_if=) keeps `affects_result: true` out of saved jobs
     "pyyaml",
     "uvicorn[standard]>=0.54.0",
     "zxing-cpp>=3.1.1",

@@ -1894,9 +1894,16 @@
             "title": "Sequence"
           },
           "simulated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "default": false,
-            "title": "Simulated",
-            "type": "boolean"
+            "title": "Simulated"
           },
           "timings": {
             "additionalProperties": {
@@ -2959,6 +2966,11 @@
             "default": "",
             "title": "Error",
             "type": "string"
+          },
+          "error_code": {
+            "default": 0,
+            "title": "Error Code",
+            "type": "integer"
           },
           "id": {
             "title": "Id",
