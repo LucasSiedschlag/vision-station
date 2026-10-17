@@ -64,3 +64,23 @@ for (const scheme of themes) {
     })
   })
 }
+
+// TD-30: the operator screen speaks the station language; texts from the server stay Portuguese until UI-C3
+for (const scheme of themes) {
+  test(`in English the operator screen and a verdict have no accessibility violations, ${scheme}`, async ({
+    page,
+    station,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme })
+    await station.language('en')
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: 'System: connected' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    expect(await accessibilityProblems(page)).toEqual([])
+    await station.outcome('FAIL')
+    await station.object('on')
+    await expect(page.getByRole('status', { name: 'Result' })).toContainText('FAIL', { timeout: 15_000 })
+    expect(await accessibilityProblems(page)).toEqual([])
+  })
+}

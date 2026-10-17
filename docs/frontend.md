@@ -898,6 +898,8 @@ The interface is available in **Portuguese (pt-BR)** and **English (en)**. Portu
 | **Records, CSV, audit** | Store codes and values; the reason text of the station language at the time is kept for traceability. CSV exports use the viewer's language and say which |
 | **Guides** (`docs/guias/`) | Portuguese first; English versions when a project needs them |
 
+How it is built (UI-C2, VIA-0060): `app/locale.tsx` is the one source of the language. It loads the catalog of the language on screen (each catalog is a chunk of its own), activates Lingui and React Aria, sets `<html lang>`, and mounts the pages again when the language changes (the live socket and the query cache are kept). The station language is `station.language` in `system.yaml` and `language` in the state message; a page opens in the last station language seen, so the kiosk does not flash Portuguese. A person's choice (user menu, login dialog) is kept in this browser and applies while logged in; logging out returns to the station's.
+
 ### 11.2 Voice
 
 Short, plain, active, numbers and units instead of adjectives, no blame, no exclamation marks, in both languages. The English text is written for an operator, not translated word by word ("Tampa ausente" → "Cap missing", not "Absent cap").

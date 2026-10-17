@@ -69,6 +69,7 @@ export async function activate(locale: Locale): Promise<void> {
     const { messages } = await catalogs[locale]()
     i18n.loadAndActivate({ locale, messages })
   }
+  document.documentElement.lang = locale // screen readers pronounce the page in its language
   useLocale.setState({ locale })
 }
 

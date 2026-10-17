@@ -155,10 +155,23 @@ def main() -> int:
         outcome["next"] = Outcome(value)
         return {"outcome": value}
 
+    def speak(language: str) -> None:  # the station language, as Configurações › Estação would set it (TD-30)
+        system = deps.system
+        assert system is not None
+        system._config = system.config.model_copy(update={"station": system.config.station.model_copy(update={"language": language})})
+
+    @app.post("/__e2e/language/{value}")
+    def set_language(value: str) -> dict[str, str]:
+        if value not in ("pt-BR", "en"):
+            raise HTTPException(404)
+        speak(value)
+        return {"language": value}
+
     @app.post("/__e2e/reset")
     def reset() -> dict[str, bool]:
         camera.present = False
         outcome["next"] = Outcome.PASS
+        speak("pt-BR")
         return {"ok": True}
 
     jobs = deps.jobs

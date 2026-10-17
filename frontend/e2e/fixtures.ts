@@ -13,6 +13,11 @@ export class Station {
     return this.request.post(`/__e2e/outcome/${value}`)
   }
 
+  /** The station language (TD-30). */
+  language(value: 'pt-BR' | 'en') {
+    return this.request.post(`/__e2e/language/${value}`)
+  }
+
   async state(): Promise<{
     state: string
     counters: { PASS: number; FAIL: number; ERROR: number; total: number }
