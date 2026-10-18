@@ -83,6 +83,7 @@ class ToolResultOut(BaseModel):
     affects_result: bool = True  # False: informative, never decides (FR-INS-13)
     error: str = ""  # an informative tool that could not run
     error_code: int = 0  # and its code (E301..E304)
+    region: list[float] | None = None  # where the tool looked: x0, y0, x1, y1 as fractions of the frame
 
 
 class ReasonCodeOut(BaseModel):
@@ -133,6 +134,7 @@ class RecentResult(BaseModel):
     outcome: Outcome
     reason: str
     at: str
+    record_id: str | None = None  # its picture is `/api/results/{record_id}/thumb`
 
 
 class StateOut(BaseModel):
@@ -148,6 +150,8 @@ class StateOut(BaseModel):
     camera: CameraOut
     counters: Counters
     recent: list[RecentResult]  # the last 10 results, oldest first
+    markings: Literal["always", "on_fail", "never"] = "on_fail"  # when the operator screen draws the regions on the image (frontend.md §18)
+    operator_markings: bool = True  # whether the operator may turn them on and off
     recording_failures: int
     version: str
 

@@ -51,6 +51,7 @@ class ToolReport:
     affects_result: bool = True  # an informative tool is run and recorded but never decides (FR-INS-13)
     error: str = ""  # an informative tool that could not run: why (a deciding one makes the result ERROR instead)
     error_code: int = 0  # and its code of the catalog (E301..E304)
+    region: tuple[float, float, float, float] | None = None  # x0, y0, x1, y1 as fractions of the frame: where it looked
 
     @property
     def decisive(self) -> Criterion | None:
@@ -142,6 +143,7 @@ def tool_dict(t: ToolReport) -> dict[str, Any]:
         "id": t.id, "type": t.type, "version": t.version, "passed": t.passed, "score": t.score, "margin": t.margin,
         "values": dict(t.values), "units": dict(t.units), "criteria": [_criterion(c) for c in t.criteria],
         "affects_result": t.affects_result, "error": t.error, "error_code": t.error_code,
+        "region": None if t.region is None else list(t.region),
     }
 
 

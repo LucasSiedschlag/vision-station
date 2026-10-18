@@ -647,6 +647,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/results/{record_id}/thumb': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Result Thumb
+     * @description A recorded result's picture, smaller, for the operator screen's last results (everyone, frontend.md §7.1).
+     */
+    get: operations['result_thumb']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/snapshot.jpg': {
     parameters: {
       query?: never
@@ -1650,6 +1670,11 @@ export interface components {
       outcome: 'PASS' | 'FAIL' | 'ERROR'
       /** Reason */
       reason: string
+      /**
+       * Record Id
+       * @default null
+       */
+      record_id: string | null
     }
     /** RecordOut */
     RecordOut: {
@@ -2032,8 +2057,19 @@ export interface components {
       /** Last Record Id */
       last_record_id: string | null
       last_result: components['schemas']['ResultOut'] | null
+      /**
+       * Markings
+       * @default on_fail
+       * @enum {string}
+       */
+      markings: 'always' | 'on_fail' | 'never'
       /** Message */
       message: string
+      /**
+       * Operator Markings
+       * @default true
+       */
+      operator_markings: boolean
       /** Recent */
       recent: components['schemas']['RecentResult'][]
       /** Recording Failures */
@@ -2081,10 +2117,21 @@ export interface components {
        */
       language: 'pt-BR' | 'en'
       /**
+       * Markings
+       * @default on_fail
+       * @enum {string}
+       */
+      markings: 'always' | 'on_fail' | 'never'
+      /**
        * Name
        * @default Estação de visão
        */
       name: string
+      /**
+       * Operator Markings
+       * @default true
+       */
+      operator_markings: boolean
       /**
        * Result Min S
        * @default 2
@@ -2118,8 +2165,19 @@ export interface components {
       last_record_id: string | null
       /** @default null */
       last_result: components['schemas']['ResultOut'] | null
+      /**
+       * Markings
+       * @default on_fail
+       * @enum {string}
+       */
+      markings: 'always' | 'on_fail' | 'never'
       /** Message */
       message: string
+      /**
+       * Operator Markings
+       * @default true
+       */
+      operator_markings: boolean
       /** Recent */
       recent: components['schemas']['RecentResult'][]
       /** Recording Failures */
@@ -2198,7 +2256,9 @@ export interface components {
        *       "fail_sound": false,
        *       "idle_logout_min": 10,
        *       "language": "pt-BR",
+       *       "markings": "on_fail",
        *       "name": "Estação de visão",
+       *       "operator_markings": true,
        *       "result_min_s": 2,
        *       "shift_starts": [
        *         "00:00"
@@ -2264,6 +2324,11 @@ export interface components {
       margin: number | null
       /** Passed */
       passed: boolean
+      /**
+       * Region
+       * @default null
+       */
+      region: number[] | null
       /** Score */
       score: number
       /** Type */
@@ -4528,6 +4593,67 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  result_thumb: {
+    parameters: {
+      query?: {
+        width?: number
+      }
+      header?: never
+      path: {
+        record_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+          'image/jpeg': unknown
         }
       }
       /** @description needs a login */

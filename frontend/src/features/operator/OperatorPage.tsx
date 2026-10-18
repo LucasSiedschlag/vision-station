@@ -1,12 +1,14 @@
 import { CheckCircle2, CircleDashed, TriangleAlert, XCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { fetchBlob } from '@/api/download'
 import { toast } from 'sonner'
 import { useLoginDialog } from '@/api/auth'
-import { useLive } from '@/api/live'
+import { useLive, type ResultOut, type StateOut } from '@/api/live'
 import { useMarkWrong, useStationCommand, useTrigger } from '@/api/mutations'
 import { can } from '@/lib/permissions'
 import { useSession } from '@/api/session'
-import { LiveCanvas } from '@/components/domain/LiveCanvas'
+import { LiveCanvas, type Marking } from '@/components/domain/LiveCanvas'
 import { StatusStrip } from '@/components/domain/StatusStrip'
 import { VerdictPanel } from '@/components/domain/VerdictPanel'
 import { Button } from '@/components/ui/button'
@@ -19,10 +21,15 @@ import {
   canTrigger,
   clockTime,
   connectionOf,
+  markingsOn,
   percent,
+  toolRows,
   verdictOf,
   type Connection,
 } from './view'
+
+/** How long a result looked at again stays on the image (docs/frontend.md §7.1). */
+const FREEZE_MS = 10_000
 
 const outcomeIcon = { PASS: CheckCircle2, FAIL: XCircle, ERROR: TriangleAlert } as const
 const outcomeColour = {
@@ -31,10 +38,44 @@ const outcomeColour = {
   ERROR: 'text-warn-text',
 } as const
 
+type Recent = StateOut['recent'][number]
+
+/** A result's picture, small; the icon of its outcome stays on it, since the colour is never the only signal. */
+function Thumb({ result, label }: { result: Recent; label: string }) {
+  const [broken, setBroken] = useState(false)
+  const Icon = outcomeIcon[result.outcome]
+  return (
+    <span className="relative block h-12 w-full overflow-hidden rounded-control">
+      {result.record_id && !broken ? (
+        <img
+          src={`/api/results/${result.record_id}/thumb`}
+          alt=""
+          draggable={false}
+          onError={() => setBroken(true)}
+          className="size-full object-cover"
+        />
+      ) : (
+        <span aria-hidden className="block size-full bg-surface-2" />
+      )}
+      <span
+        aria-hidden
+        className="absolute inset-0 grid place-items-center bg-surface-1/60"
+        title={label}
+      >
+        <Icon className={`size-7 ${outcomeColour[result.outcome]}`} />
+      </span>
+    </span>
+  )
+}
+
 function RecentResults({
   results,
+  frozen,
+  onPick,
 }: {
-  results: { outcome: 'PASS' | 'FAIL' | 'ERROR'; reason: string; at: string }[]
+  results: Recent[]
+  frozen: string | null
+  onPick: (result: Recent) => void
 }) {
   const slots = Array.from({ length: 10 }, (_, i) => results[results.length - 10 + i])
   return (
@@ -44,21 +85,28 @@ function RecentResults({
         {slots.map((r, i) => {
           if (!r)
             return (
-              <li key={i} className="grid h-9 min-w-0 place-items-center text-fg-muted">
+              <li key={i} className="grid h-12 min-w-0 place-items-center text-fg-muted">
                 <CircleDashed aria-hidden className="size-5 opacity-40" />
               </li>
             )
-          const Icon = outcomeIcon[r.outcome]
-          const label = `${text.operator.outcome[r.outcome]}${clockTime(r.at) ? ` às ${clockTime(r.at)}` : ''}${r.reason ? `: ${r.reason}` : ''}`
+          const label = text.operator.resultAt(
+            text.operator.outcome[r.outcome],
+            clockTime(r.at),
+            r.reason,
+          )
+          const pickable = !!r.record_id
           return (
             <li key={i} className="min-w-0">
               <Tooltip content={label}>
                 <button
                   type="button"
                   aria-label={label}
-                  className="grid h-9 w-full place-items-center rounded-control hover:bg-surface-3"
+                  aria-pressed={pickable ? frozen === r.record_id : undefined}
+                  disabled={!pickable}
+                  onClick={() => onPick(r)}
+                  className={`w-full rounded-control border-2 hover:border-line-control ${frozen === r.record_id ? 'border-accent' : 'border-transparent'}`}
                 >
-                  <Icon aria-hidden className={`size-6 ${outcomeColour[r.outcome]}`} />
+                  <Thumb result={r} label={label} />
                 </button>
               </Tooltip>
             </li>
@@ -66,6 +114,33 @@ function RecentResults({
         })}
       </ul>
     </div>
+  )
+}
+
+/** The tools that decide the result, one line each with the value that decided it (docs/frontend.md §7.1). */
+function ToolRows({ result }: { result: ResultOut }) {
+  const { rows, more } = toolRows(result)
+  if (rows.length === 0) return null
+  return (
+    <ul aria-label={text.operator.tools} className="flex flex-col gap-1 text-lg">
+      {rows.map((row) => {
+        const Icon = row.passed ? CheckCircle2 : XCircle
+        return (
+          <li key={row.id} className="flex items-center gap-2">
+            <Icon
+              aria-hidden
+              className={`size-6 shrink-0 ${row.passed ? 'text-ok-text' : 'text-fail-text'}`}
+            />
+            <span className="sr-only">
+              {row.passed ? text.operator.outcome.PASS : text.operator.outcome.FAIL}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{row.id}</span>
+            <span className="font-mono tabular-nums">{row.value}</span>
+          </li>
+        )
+      })}
+      {more > 0 ? <li className="text-fg-muted">{text.operator.moreTools(more)}</li> : null}
+    </ul>
   )
 }
 
@@ -164,12 +239,60 @@ export function OperatorPage() {
         : null
     : null
   const [asking, setAsking] = useState(false)
+  const results = useLive((s) => s.results)
+  // a past result looked at again: its picture and markings take the image for a while (docs/frontend.md §7.1)
+  const [pick, setPick] = useState<{ recent: Recent; newest: string | null } | null>(null)
+  const [chosen, setChosen] = useState<boolean | null>(null) // the operator's own choice for the markings
   // without a login the screen stands alone (kiosk): its own header and footer, a hidden cursor, no selection or context menu
   const bare = role === 'operator'
   const hidden = useHideCursor(5000, bare)
 
   const connection: Connection = connectionOf(connected, connecting)
   const verdict = verdictOf(status, connection)
+  const live = connection === 'connected'
+  const newest = status?.last_record_id ?? null
+  // a new result, or a lost connection, ends it: what is on screen is never an old picture taken for the present
+  const frozen = pick && pick.newest === newest && live ? pick.recent : null
+  useEffect(() => {
+    if (!pick) return
+    const timer = setTimeout(() => setPick(null), FREEZE_MS)
+    return () => clearTimeout(timer)
+  }, [pick])
+  const picture = useQuery({
+    queryKey: ['result-picture', frozen?.record_id],
+    enabled: !!frozen?.record_id,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: () => fetchBlob(`/api/results/${frozen!.record_id}/thumb?width=1280`),
+  })
+  // the result whose markings and lines are on screen: the one looked at again, else the one the verdict is about
+  const shown: ResultOut | null | undefined = frozen
+    ? frozen.record_id
+      ? results[frozen.record_id]
+      : null
+    : verdict.size === 'display'
+      ? status?.last_result
+      : null
+  const markings: Marking[] =
+    shown &&
+    markingsOn(status?.markings ?? 'on_fail', status?.operator_markings ?? true, chosen, shown)
+      ? (shown.tools ?? []).flatMap((t) =>
+          t.region
+            ? [{ id: t.id, rect: t.region, passed: t.passed, informative: !t.affects_result }]
+            : [],
+        )
+      : []
+  const markingsButton = status?.operator_markings ? (
+    <Button
+      variant="ghost"
+      aria-pressed={markingsOn(status.markings, true, chosen, shown ?? status.last_result)}
+      onClick={() =>
+        setChosen(!markingsOn(status.markings, true, chosen, shown ?? status.last_result))
+      }
+    >
+      {text.operator.markings}
+    </Button>
+  ) : null
   const markable = canMarkWrong(status, connection)
   const said = status?.last_result
     ? { PASS: 'APROVADO', FAIL: 'REPROVADO', ERROR: 'ERRO' }[status.last_result.outcome]
@@ -189,25 +312,52 @@ export function OperatorPage() {
               <span className="ml-2 font-normal text-fg-muted">v{status.job.version}</span>
             ) : null}
           </h1>
-          {role === 'operator' ? (
+          <div className="flex items-center gap-2">
+            {markingsButton}
             <Button variant="ghost" onClick={() => showLogin()}>
               {text.login.open}
             </Button>
-          ) : null}
+          </div>
         </header>
       ) : (
         <h1 className="sr-only">{text.nav.station}</h1>
       )}
 
       <main className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-6 pb-4 lg:grid-operator">
-        <div className="min-h-64">
-          <LiveCanvas frame={connection === 'connected' ? frame : null} />
+        <div className="relative min-h-64">
+          <LiveCanvas
+            frame={!live ? null : frozen ? (picture.data ?? null) : frame}
+            regions={markings}
+            empty={frozen && picture.isError ? text.operator.noSavedImage : undefined}
+          />
+          {frozen ? (
+            <div
+              role="status"
+              className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 rounded-t-card bg-surface-1/90 px-4 py-2"
+            >
+              <span className="text-lg font-medium">
+                {text.operator.resultOf(clockTime(frozen.at))}
+              </span>
+              <Button variant="primary" onClick={() => setPick(null)}>
+                {text.operator.backToLive}
+              </Button>
+            </div>
+          ) : null}
         </div>
         <aside className="flex min-h-0 flex-col gap-4">
           <div className="min-h-64 flex-1">
             <VerdictPanel verdict={verdict} />
           </div>
-          <RecentResults results={status?.recent ?? []} />
+          {shown ? <ToolRows result={shown} /> : null}
+          <RecentResults
+            results={status?.recent ?? []}
+            frozen={frozen?.record_id ?? null}
+            onPick={(r) =>
+              setPick((now) =>
+                now?.recent.record_id === r.record_id ? null : { recent: r, newest },
+              )
+            }
+          />
           {status ? <Counters counters={status.counters} /> : null}
           <div className="flex flex-wrap gap-2">
             <Button
@@ -227,6 +377,7 @@ export function OperatorPage() {
                 {stationCommand === 'retry' ? text.operator.retry : text.operator.resume}
               </Button>
             ) : null}
+            {bare ? null : markingsButton}
             {markable ? (
               <Button variant="ghost" onClick={() => setAsking(true)}>
                 {text.operator.wrong}

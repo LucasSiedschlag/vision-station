@@ -72,6 +72,8 @@ export const stateFixture = (over: Record<string, unknown> = {}) => ({
   camera: { connected: true, last_frame_age_s: 0.2, last_error: null },
   counters: { PASS: 0, FAIL: 0, ERROR: 0, total: 0 },
   recent: [],
+  markings: 'on_fail' as const,
+  operator_markings: true,
   recording_failures: 0,
   version: '0.1.0',
   ...over,

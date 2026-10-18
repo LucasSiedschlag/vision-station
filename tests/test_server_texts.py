@@ -89,7 +89,7 @@ def test_a_schema_is_translated_on_a_copy_and_its_validation_is_untouched():
 
 
 def station_in(env, language):  # noqa: F811
-    env.deps.system = SimpleNamespace(config=SimpleNamespace(station=SimpleNamespace(language=language)))
+    env.deps.system = SimpleNamespace(config=SimpleNamespace(station=SimpleNamespace(language=language, markings="on_fail", operator_markings=True)))
 
 
 def test_state_follows_the_language_the_request_asks_for(env):  # noqa: F811

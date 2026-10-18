@@ -170,6 +170,30 @@ export const text = {
     get noImage() {
       return t`Sem imagem da câmera`
     },
+    get tools() {
+      return t`Ferramentas`
+    },
+    moreTools: (n: number) => plural(n, { one: '+ # outra', other: '+ # outras' }),
+    get markings() {
+      return t`Marcações`
+    },
+    get backToLive() {
+      return t`Voltar ao vivo`
+    },
+    resultOf: (time: string) => t`Resultado das ${time}`,
+    get noSavedImage() {
+      return t`Esse resultado não tem imagem guardada`
+    },
+    resultAt: (outcome: string, time: string, reason: string) =>
+      time
+        ? reason
+          ? t`${outcome} às ${time}: ${reason}`
+          : t`${outcome} às ${time}`
+        : reason
+          ? t`${outcome}: ${reason}`
+          : outcome,
+    regionLabel: (id: string, passed: boolean) =>
+      passed ? t`Região de ${id}: passou` : t`Região de ${id}: reprovou`,
     get today() {
       return t`Hoje`
     },
@@ -1101,6 +1125,26 @@ export const text = {
     },
     get resultMinHint() {
       return t`Mesmo quando a estação já está pronta para a próxima peça.`
+    },
+    get markings() {
+      return t`Marcações na imagem do operador`
+    },
+    get markingsHint() {
+      return t`Quando a tela do operador desenha as regiões das ferramentas sobre a imagem.`
+    },
+    markingsOptions: {
+      get always() {
+        return t`Sempre`
+      },
+      get on_fail() {
+        return t`Só em reprovação`
+      },
+      get never() {
+        return t`Nunca`
+      },
+    },
+    get operatorMarkings() {
+      return t`O operador pode ligar e desligar as marcações`
     },
     get failSound() {
       return t`Som na reprovação`

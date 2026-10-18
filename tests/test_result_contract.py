@@ -107,3 +107,4 @@ def test_the_store_continues_after_the_last_number_given_even_unrecorded(tmp_pat
         store.save_sequence(9)  # given to a result whose recording then failed
     with ResultStore(tmp_path) as store:
         assert store.next_sequence() == 10
+

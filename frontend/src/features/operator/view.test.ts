@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import type { StateOut } from '@/api/live'
+import type { ResultOut, StateOut } from '@/api/live'
 import { stateFixture } from '@/test/render'
-import { canMarkWrong, canTrigger, clockTime, connectionOf, percent, verdictOf } from './view'
+import {
+  canMarkWrong,
+  canTrigger,
+  clockTime,
+  connectionOf,
+  markingsOn,
+  percent,
+  toolRows,
+  verdictOf,
+} from './view'
 
 const status = (over: Record<string, unknown> = {}) => stateFixture(over) as StateOut
 const showing = (
@@ -147,5 +156,97 @@ describe('helpers', () => {
     expect(clockTime(null)).toBe('')
     expect(clockTime('not a date')).toBe('')
     expect(clockTime('2026-10-14T14:32:07-03:00')).toMatch(/^\d\d:\d\d:\d\d$/)
+  })
+})
+
+// --- the lines under the verdict, and the markings (VIA-0063) ------------------------------------------
+
+const tool = (id: string, passed: boolean, over: Record<string, unknown> = {}) => ({
+  id,
+  type: 'color',
+  version: 1,
+  passed,
+  score: passed ? 1 : 0.2,
+  margin: null,
+  values: { fraction: 0.12 },
+  units: { fraction: 'fraction' },
+  criteria: [
+    {
+      code: 'min_fraction',
+      kind: 'min',
+      measure: 'fraction',
+      value: 0.12,
+      limit: 0.4,
+      passed,
+      score: 1,
+    },
+  ],
+  affects_result: true,
+  error: '',
+  error_code: 0,
+  region: [0.1, 0.1, 0.3, 0.3],
+  ...over,
+})
+const resultWith = (tools: unknown[], outcome: 'PASS' | 'FAIL' = 'FAIL') =>
+  ({ outcome, reason: '', scores: {}, duration_ms: 1, tools }) as unknown as ResultOut
+
+describe('toolRows', () => {
+  it('lists the deciding tools with the value that decided each, in the language of the interface', () => {
+    const { rows, more } = toolRows(
+      resultWith([
+        tool('tampa', false),
+        tool('lote', true, {
+          units: { matching: 'count' },
+          criteria: [
+            { code: 'min_count', kind: 'min', measure: 'matching', value: 1, passed: true },
+          ],
+        }),
+        tool('logo', true, { affects_result: false }), // informative: not a line
+      ]),
+    )
+    expect(rows).toEqual([
+      { id: 'tampa', passed: false, value: '12%' },
+      { id: 'lote', passed: true, value: '1' },
+    ])
+    expect(more).toBe(0)
+  })
+
+  it('shows at most six, the failing ones first, and counts the others', () => {
+    const tools = Array.from({ length: 8 }, (_, i) => tool(`t${i}`, i !== 7))
+    const { rows, more } = toolRows(resultWith(tools))
+    expect(rows).toHaveLength(6)
+    expect(rows.map((r) => r.id)).toContain('t7') // the one that failed is never the one left out
+    expect(rows.map((r) => r.id)).toEqual(['t7', 't0', 't1', 't2', 't3', 't4'])
+    expect(more).toBe(2)
+  })
+
+  it('has no line for a result without tools, and none for a rule with no measure', () => {
+    expect(toolRows(null)).toEqual({ rows: [], more: 0 })
+    const rule = tool('classe', false, {
+      criteria: [{ code: 'class', kind: 'rule', measure: null, value: null, passed: false }],
+    })
+    expect(toolRows(resultWith([rule])).rows).toEqual([{ id: 'classe', passed: false, value: '' }])
+  })
+})
+
+describe('markingsOn', () => {
+  const fail = resultWith([], 'FAIL')
+  const pass = resultWith([], 'PASS')
+
+  it('follows the station default: always, only on a failure, never', () => {
+    expect(markingsOn('always', true, null, pass)).toBe(true)
+    expect(markingsOn('on_fail', true, null, pass)).toBe(false)
+    expect(markingsOn('on_fail', true, null, fail)).toBe(true)
+    expect(markingsOn('never', true, null, fail)).toBe(false)
+  })
+
+  it('the operator choice wins, unless the station does not allow it', () => {
+    expect(markingsOn('never', true, true, fail)).toBe(true)
+    expect(markingsOn('always', true, false, fail)).toBe(false)
+    expect(markingsOn('never', false, true, fail)).toBe(false)
+  })
+
+  it('draws nothing when there is no result on screen', () => {
+    expect(markingsOn('always', true, true, null)).toBe(false)
   })
 })

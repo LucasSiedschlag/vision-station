@@ -46,6 +46,9 @@ class StationSettings(_Strict):
     result_min_s: Annotated[float, Field(ge=0, le=30)] = 2.0  # a verdict stays on screen at least this long (VIA-0049)
     # the language of the operator screen and the default of the other screens (TD-30); applies at once
     language: Literal["pt-BR", "en"] = "pt-BR"
+    # when the operator screen draws the regions on the image, and whether the operator may toggle it (FR-UI-9)
+    markings: Literal["always", "on_fail", "never"] = "on_fail"
+    operator_markings: bool = True
 
     @field_validator("shift_starts")
     @classmethod
@@ -138,6 +141,10 @@ def dump_config(config: SystemConfig) -> str:
     if data["station"]["language"] == "pt-BR":
         # written only when not Portuguese, so a backup of a station in Portuguese still restores on version 0.1
         del data["station"]["language"]
+    # the same for the markings: written only when changed
+    for key, default in (("markings", "on_fail"), ("operator_markings", True)):
+        if data["station"][key] == default:
+            del data["station"][key]
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
 

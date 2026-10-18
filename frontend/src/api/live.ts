@@ -4,11 +4,14 @@ import type { components } from './schema'
 
 export type LiveMessage = components['schemas']['LiveMessage']
 export type StateOut = components['schemas']['StateOut']
+export type ResultOut = components['schemas']['ResultOut']
 
 /** What the screens read: the last status, the newest camera frame, and whether the socket is up. */
 interface LiveState {
   status: StateOut | null
   frame: Blob | null
+  /** The whole result of the last ten recorded ones, by record id, to look at one again (docs/frontend.md §7.1). */
+  results: Record<string, ResultOut>
   connected: boolean
   /** true until the first status arrives, so a screen can say "connecting" instead of showing a stale verdict */
   connecting: boolean
@@ -43,21 +46,43 @@ export function applyMessage(status: StateOut | null, message: LiveMessage): Sta
     last_record_id: message.record_id ?? null,
     recent: [
       ...status.recent,
-      { outcome: message.outcome, reason: message.reason, at: message.at ?? '' },
+      {
+        outcome: message.outcome,
+        reason: message.reason,
+        at: message.at ?? '',
+        record_id: message.record_id ?? null,
+      },
     ].slice(-10),
   }
+}
+
+/** The last ten results kept: the ones the status names (most recent first), plus what arrived. */
+function remember(
+  kept: Record<string, ResultOut>,
+  status: StateOut | null,
+): Record<string, ResultOut> {
+  const wanted = new Set((status?.recent ?? []).map((r) => r.record_id).filter(Boolean))
+  const next = { ...kept }
+  if (status?.last_record_id && status.last_result) next[status.last_record_id] = status.last_result
+  for (const id of Object.keys(next)) if (!wanted.has(id)) delete next[id]
+  return next
 }
 
 export const useLive = create<LiveState>((set) => ({
   status: null,
   frame: null,
+  results: {},
   connected: false,
   connecting: true,
   apply: (message) =>
-    set((s) => ({
-      status: applyMessage(s.status, message),
-      connecting: s.connecting && message.type !== 'status',
-    })),
+    set((s) => {
+      const status = applyMessage(s.status, message)
+      return {
+        status,
+        results: remember(s.results, status),
+        connecting: s.connecting && message.type !== 'status',
+      }
+    }),
   setFrame: (frame) => set({ frame }),
   setConnected: (connected) =>
     set((s) => ({

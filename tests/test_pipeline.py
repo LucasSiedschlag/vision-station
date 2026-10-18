@@ -36,6 +36,11 @@ def test_pass_and_fail_with_the_code_tool():
     assert ok.details["regions"][0]["rect"] == [0, 0, 320, 240]
 
 
+def test_each_tool_says_where_it_looked_as_fractions_of_the_frame():
+    result = inspect_job(make_bundle(), frame(qr_scene("LOTE-1")))
+    assert [t.region for t in result.tools] == [(0.0, 0.0, 1.0, 1.0)]  # the whole 320 × 240 picture
+
+
 def test_verification_accepts_the_pipeline():
     assert verify_job(make_bundle(), inspect=inspect_job, parts="decision").ok
 

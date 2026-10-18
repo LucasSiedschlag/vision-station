@@ -209,6 +209,26 @@ function SettingsForm({ system }: { system: SystemOut }) {
             />
           )}
         </Field>
+        <Field label={t.markings} hint={t.markingsHint} error={err('station.markings')}>
+          {(p) => (
+            <Select
+              {...p}
+              value={config.station.markings}
+              onValueChange={(v) =>
+                set('station', { markings: v as 'always' | 'on_fail' | 'never' })
+              }
+              options={(['always', 'on_fail', 'never'] as const).map((value) => ({
+                value,
+                label: t.markingsOptions[value],
+              }))}
+            />
+          )}
+        </Field>
+        <Switch
+          checked={config.station.operator_markings}
+          onCheckedChange={(c) => set('station', { operator_markings: c })}
+          label={t.operatorMarkings}
+        />
         <Switch
           checked={config.station.fail_sound}
           onCheckedChange={(c) => set('station', { fail_sound: c })}

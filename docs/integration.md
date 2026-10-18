@@ -57,7 +57,7 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
       "tools": [{"id": "faixa", "type": "color", "version": 1, "passed": false, "score": 0.75, "margin": -0.2,
                  "values": {"fraction": 0.31, "coverage": 0.6}, "units": {"fraction": "fraction", "coverage": "fraction"},
                  "criteria": [{"code": "min_coverage", "kind": "min", "measure": "coverage", "value": 0.6, "limit": 0.8, "passed": false, "score": 0.75, "margin": -0.2}],
-                 "affects_result": true, "error": "", "error_code": 0}],
+                 "affects_result": true, "error": "", "error_code": 0, "region": [0.1, 0.2, 0.4, 0.5]}],
       "fixtures": [{"name": "anchor", "x": 0.5, "y": 0.48, "angle": null, "scale": null, "score": 0.93}],
       "trigger": {"source": "api", "reference": "caixa-0017", "part_id": "", "at": "…"},
       "job": {"id": "…", "name": "…", "version": 7, "number": null, "content_hash": "…"},
@@ -72,7 +72,7 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
 → 404 {"code": "inspection_not_found"}            unknown id, or no longer kept (the last 50 are kept)
 ```
 
-- The result follows the result contract of document 03 §10.3 (TD-22). The fields of version 0.1 are unchanged; the others were added with R2 and a client may ignore them. `error_code` and `reason_codes` are stable across versions: count and react on them, not on the text. `simulated: true` (a file camera, a test) is never a real part. `scores` also lists informative tools (`affects_result: false`), which never decide: take the verdict from `outcome`, never from the scores. On records written before 0.2, `error_code` and `simulated` are `null` (not known).
+- The result follows the result contract of document 03 §10.3 (TD-22). The fields of version 0.1 are unchanged; the others were added with R2 and a client may ignore them. `error_code` and `reason_codes` are stable across versions: count and react on them, not on the text. Each tool's `region` (added in 0.3) is where it looked, as `[x0, y0, x1, y1]` fractions of the frame; `null` on records from before. `simulated: true` (a file camera, a test) is never a real part. `scores` also lists informative tools (`affects_result: false`), which never decide: take the verdict from `outcome`, never from the scores. On records written before 0.2, `error_code` and `simulated` are `null` (not known).
 - `expired`: the request did not turn into an inspection within 30 s (the station stopped, the camera was lost, a job change). `message` says the station's state. Treat it as an error.
 - `reason` is ready for an operator screen. For an `ERROR` it is the text of the error code in the language of the request (see "Language" below). For a `FAIL` it is the text the job wrote (`reason_fail`): until job format 2 (R1) a job has one language, Portuguese, whatever the request asks. Act on `outcome` and the codes, never on the text.
 

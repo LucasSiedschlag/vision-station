@@ -465,6 +465,11 @@ For each screen: purpose, layout, data, actions, states. "Query" means TanStack 
 
 **Data:** live (status, frames, events), `GET /api/state` on connect, `POST /api/trigger`, `POST /api/results/{id}/incorrect`, `GET /api/results/{id}/thumb`.
 
+**As built (VIA-0063).**
+- **Tool lines:** `toolRows` lists the tools with `affects_result`, the failing ones first, at most 6 and then "+ N outras". The value is the measure of the criterion that decided the tool (the failing one, else the first with a measure), written by its unit: `fraction` as a percentage, `count` as an integer, `score` with two decimals. A yes/no rule has a line with no value.
+- **Last results:** the status lists them with their `record_id`; each is a button with its picture (`/api/results/{id}/thumb?width=160`, open to everyone, a recorded picture never changes so the server keeps the last 64) and the outcome's icon over it. A result without a record has no picture and cannot be opened. Touching one shows its picture (width 1280) and its markings on the image for 10 s, under a bar with the time and *Voltar ao vivo*. A new result, a lost connection or the time ends it: an old picture is never taken for the present. The tool lines stay those of the verdict on screen.
+- **Markings:** the contract carries each tool's `region` (fractions of the frame, set by the pipeline; `null` on records from before 0.3). The client draws them as vectors over the image, so turning them on and off asks for nothing: *Regiões* only (outline in the verdict colour with a dark edge; a failed region is thicker and crossed, an informative tool's is dashed). The other layers of §18 come with the editor's image workspace (UI-1). The station setting is `station.markings` (`always`, `on_fail` by default, `never`) and `station.operator_markings` (whether the button is shown), in *Configurações › Estação* and in the status; the button is a master switch the operator keeps until the page is closed. The full contract of a result looked at again is the one the live socket delivered (the last ten of this browser session); after a reload the picture and the verdict come back but not the markings or lines of results from before it.
+
 **Accessibility:**
 - The verdict is an `aria-live="assertive"` region and is announced as text.
 - All targets are 56 px.

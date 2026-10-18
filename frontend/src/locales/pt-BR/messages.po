@@ -43,8 +43,14 @@ msgstr "O nome da entrada, nunca a senha."
 msgid "{name} pego para mover, na {place}."
 msgstr "{name} pego para mover, na {place}."
 
+msgid "Voltar ao vivo"
+msgstr "Voltar ao vivo"
+
 msgid "Região"
 msgstr "Região"
+
+msgid "Quando a tela do operador desenha as regiões das ferramentas sobre a imagem."
+msgstr "Quando a tela do operador desenha as regiões das ferramentas sobre a imagem."
 
 msgid "Definida"
 msgstr "Definida"
@@ -148,6 +154,9 @@ msgstr "Sem permissão"
 msgid "Páginas de outros programas"
 msgstr "Páginas de outros programas"
 
+msgid "{outcome}: {reason}"
+msgstr "{outcome}: {reason}"
+
 msgid "Propor a cor a partir da região"
 msgstr "Propor a cor a partir da região"
 
@@ -160,6 +169,9 @@ msgstr "imagem de referência"
 msgid "Escolha uma região relativa à imagem para amostrar a cor."
 msgstr "Escolha uma região relativa à imagem para amostrar a cor."
 
+msgid "Resultado das {time}"
+msgstr "Resultado das {time}"
+
 msgid "Perfil"
 msgstr "Perfil"
 
@@ -171,6 +183,9 @@ msgstr "Nenhum backup na pasta."
 
 msgid "Pasta: {folder}"
 msgstr "Pasta: {folder}"
+
+msgid "O operador pode ligar e desligar as marcações"
+msgstr "O operador pode ligar e desligar as marcações"
 
 msgctxt "leave the editor"
 msgid "Sair"
@@ -620,6 +635,9 @@ msgstr "Não foi possível ler as configurações."
 msgid "Pasta de dados: {path}"
 msgstr "Pasta de dados: {path}"
 
+msgid "Sempre"
+msgstr "Sempre"
+
 msgid "Imagem"
 msgstr "Imagem"
 
@@ -1010,6 +1028,9 @@ msgstr "dias"
 msgid "Usuário"
 msgstr "Usuário"
 
+msgid "{outcome} às {time}: {reason}"
+msgstr "{outcome} às {time}: {reason}"
+
 msgid "30 dias"
 msgstr "30 dias"
 
@@ -1058,6 +1079,9 @@ msgstr "Especialista"
 msgid "Adicionar"
 msgstr "Adicionar"
 
+msgid "Marcações na imagem do operador"
+msgstr "Marcações na imagem do operador"
+
 msgid "Mover {name}"
 msgstr "Mover {name}"
 
@@ -1094,6 +1118,12 @@ msgstr "pendente"
 msgid "Gravação"
 msgstr "Gravação"
 
+msgid "Só em reprovação"
+msgstr "Só em reprovação"
+
+msgid "{n, plural, one {+ # outra} other {+ # outras}}"
+msgstr "{n, plural, one {+ # outra} other {+ # outras}}"
+
 msgid "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
 msgstr "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
 
@@ -1108,6 +1138,9 @@ msgstr "não suportado"
 
 msgid "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha)."
 msgstr "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha)."
+
+msgid "Nunca"
+msgstr "Nunca"
 
 msgid "Localizador"
 msgstr "Localizador"
@@ -1232,6 +1265,9 @@ msgstr "rede"
 msgid "Operador"
 msgstr "Operador"
 
+msgid "Região de {id}: reprovou"
+msgstr "Região de {id}: reprovou"
+
 msgid "Algumas mudanças só valem depois de reiniciar o programa:"
 msgstr "Algumas mudanças só valem depois de reiniciar o programa:"
 
@@ -1324,6 +1360,9 @@ msgstr "câmera"
 
 msgid "Fazer backup"
 msgstr "Fazer backup"
+
+msgid "Esse resultado não tem imagem guardada"
+msgstr "Esse resultado não tem imagem guardada"
 
 msgid "Ligada, mas a máquina ainda não deu sinal de vida."
 msgstr "Ligada, mas a máquina ainda não deu sinal de vida."
@@ -1439,6 +1478,9 @@ msgstr "recusado"
 msgid "Não definida"
 msgstr "Não definida"
 
+msgid "Região de {id}: passou"
+msgstr "Região de {id}: passou"
+
 msgid "Erro"
 msgstr "Erro"
 
@@ -1459,6 +1501,9 @@ msgstr "Estado do sistema"
 
 msgid "Algo deu errado"
 msgstr "Algo deu errado"
+
+msgid "Marcações"
+msgstr "Marcações"
 
 msgid "Exportar .vjob"
 msgstr "Exportar .vjob"
@@ -1510,6 +1555,9 @@ msgstr "Duplicar job"
 
 msgid "Ver como tabela"
 msgstr "Ver como tabela"
+
+msgid "{outcome} às {time}"
+msgstr "{outcome} às {time}"
 
 msgid "Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz."
 msgstr "Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz."

@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
@@ -317,6 +318,19 @@ def test_backup_is_made_in_the_configured_folder_and_downloaded(env):
 
 
 # --- results -------------------------------------------------------------------
+
+
+def test_a_result_picture_comes_small_for_everyone_and_the_recent_results_name_it(env):
+    a = env.results.record(res(Outcome.FAIL, "Tampa ausente"), np.random.default_rng(1).integers(0, 255, (480, 640, 3), np.uint8), **JOB)
+    recent = env.client.get("/api/state").json()["recent"]
+    assert recent[-1]["record_id"] == a.id
+    small = env.client.get(f"/api/results/{a.id}/thumb?width=160")  # no login: the operator screen shows it
+    assert small.status_code == 200 and small.headers["content-type"] == "image/jpeg" and small.content[:2] == b"\xff\xd8"
+    big = env.client.get(f"/api/results/{a.id}/thumb?width=64")
+    assert big.status_code == 200 and cv2.imdecode(np.frombuffer(small.content, np.uint8), 1).shape[1] == 160
+    assert cv2.imdecode(np.frombuffer(big.content, np.uint8), 1).shape[1] == 64
+    assert env.client.get(f"/api/results/{a.id}/thumb?width=8").status_code == 422
+    assert env.client.get("/api/results/nope/thumb").status_code == 404
 
 
 def test_browse_filter_download_and_export_results(env):

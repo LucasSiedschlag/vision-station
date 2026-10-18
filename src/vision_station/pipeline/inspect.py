@@ -110,7 +110,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         scores[tool.id] = score
         tool_details[tool.id] = dict(result.details)
         regions.append({"tool": tool.id, "roi": tool.roi, "rect": list(px), "passed": bool(result.passed), "affects_result": tool.affects_result})
-        report = _report(tool, result, score)
+        report = _report(tool, result, score, _fractions(px, image.shape))
         reports.append(report)
         if not result.passed and tool.affects_result:
             failures.append(result.reason(tool.reason_fail))
@@ -162,7 +162,14 @@ def _run(tool: Tool, job: Job, anchor: Anchor | None, image: np.ndarray, files: 
     return px, result, score, elapsed
 
 
-def _report(tool: Tool, result: ToolResult, score: float) -> ToolReport:
+def _fractions(px: PixelRect, shape: tuple[int, ...]) -> tuple[float, float, float, float]:
+    """A pixel rectangle as fractions of the frame, so a client can draw it on a picture of any size."""
+    height, width = shape[:2]
+    x0, y0, x1, y1 = px
+    return (x0 / width, y0 / height, x1 / width, y1 / height)
+
+
+def _report(tool: Tool, result: ToolResult, score: float, region: tuple[float, float, float, float]) -> ToolReport:
     """The tool's part of the result contract: its numeric measures with units, and its criteria (TD-22)."""
     values = {
         name: float(result.values[name])
@@ -170,4 +177,4 @@ def _report(tool: Tool, result: ToolResult, score: float) -> ToolReport:
         if isinstance(result.values.get(name), int | float) and not isinstance(result.values.get(name), bool)
     }
     units = {name: unit for name, unit in result.units.items() if name in values}
-    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result)
+    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result, region=region)

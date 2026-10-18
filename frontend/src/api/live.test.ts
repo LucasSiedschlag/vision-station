@@ -28,6 +28,8 @@ const status = (over: Partial<StateOut> = {}): StateOut => ({
   camera: { connected: true, last_frame_age_s: 0.1, last_error: null },
   counters: { PASS: 0, FAIL: 0, ERROR: 0, total: 0 },
   recent: [],
+  markings: 'on_fail',
+  operator_markings: true,
   recording_failures: 0,
   version: '0.1.0',
   ...over,
@@ -109,7 +111,12 @@ describe('applyMessage', () => {
     expect(after?.last_record_id).toBe('r1')
     expect(after?.last_result?.at).toBe('2026-10-14T14:32:07-03:00')
     expect(after?.recent).toEqual([
-      { outcome: 'FAIL', reason: 'Tampa ausente', at: '2026-10-14T14:32:07-03:00' },
+      {
+        outcome: 'FAIL',
+        reason: 'Tampa ausente',
+        at: '2026-10-14T14:32:07-03:00',
+        record_id: 'r1',
+      },
     ])
     expect(before.counters.total).toBe(0)
   })

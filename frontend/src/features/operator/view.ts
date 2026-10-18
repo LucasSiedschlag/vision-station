@@ -1,5 +1,6 @@
 import { currentLocale } from '@/app/locale'
-import type { StateOut } from '@/api/live'
+import type { ResultOut, StateOut } from '@/api/live'
+import { formatNumber, formatPercent } from '@/lib/number'
 import { text } from '@/texts'
 
 export type Tone = 'ok' | 'fail' | 'warn' | 'busy' | 'neutral'
@@ -164,4 +165,61 @@ export function connectionOf(connected: boolean, connecting: boolean): Connectio
 
 export function percent(part: number, total: number): number {
   return total ? Math.round((100 * part) / total) : 0
+}
+
+/** One tool's line under the verdict: its name, whether it passed, and the value that decided it. */
+export interface ToolRow {
+  id: string
+  passed: boolean
+  value: string
+}
+
+type Tool = ResultOut['tools'][number]
+
+/** The measure that decided a tool, written with its unit: the failing criterion, else the one nearest its limit. */
+function valueOf(tool: Tool): string {
+  const criterion =
+    tool.criteria.find((c) => !c.passed && c.measure) ?? tool.criteria.find((c) => c.measure)
+  if (!criterion?.measure || criterion.value === null || criterion.value === undefined) return ''
+  const unit = tool.units[criterion.measure]
+  if (unit === 'fraction') return formatPercent(criterion.value, 0)
+  return formatNumber(criterion.value, unit === 'count' ? 0 : 2)
+}
+
+/** At most this many tools are listed; the rest are counted (docs/frontend.md §7.1). */
+export const MAX_TOOL_ROWS = 6
+
+/**
+ * The tools that decide the result, as lines: the failing ones first (the operator must see which), then the others,
+ * each group in the job's order. The lines past the sixth are only counted.
+ */
+export function toolRows(result: ResultOut | null | undefined): {
+  rows: ToolRow[]
+  more: number
+} {
+  const deciding = (result?.tools ?? []).filter((t) => t.affects_result)
+  const ordered = [...deciding.filter((t) => !t.passed), ...deciding.filter((t) => t.passed)]
+  return {
+    rows: ordered
+      .slice(0, MAX_TOOL_ROWS)
+      .map((t) => ({ id: t.id, passed: t.passed, value: valueOf(t) })),
+    more: Math.max(0, ordered.length - MAX_TOOL_ROWS),
+  }
+}
+
+export type Markings = 'always' | 'on_fail' | 'never'
+
+/**
+ * Whether the regions are drawn on the image (FR-UI-9, docs/frontend.md §18): what the operator chose with the
+ * button, else the station's default for this result. Never on when no result is being shown.
+ */
+export function markingsOn(
+  setting: Markings,
+  operatorMay: boolean,
+  chosen: boolean | null,
+  result: ResultOut | null | undefined,
+): boolean {
+  if (!result) return false
+  if (operatorMay && chosen !== null) return chosen
+  return setting === 'always' || (setting === 'on_fail' && result.outcome === 'FAIL')
 }

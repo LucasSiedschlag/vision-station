@@ -1776,6 +1776,18 @@
           "reason": {
             "title": "Reason",
             "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Record Id"
           }
         },
         "required": ["outcome", "reason", "at"],
@@ -2665,9 +2677,20 @@
               }
             ]
           },
+          "markings": {
+            "default": "on_fail",
+            "enum": ["always", "on_fail", "never"],
+            "title": "Markings",
+            "type": "string"
+          },
           "message": {
             "title": "Message",
             "type": "string"
+          },
+          "operator_markings": {
+            "default": true,
+            "title": "Operator Markings",
+            "type": "boolean"
           },
           "recent": {
             "items": {
@@ -2725,6 +2748,8 @@
           "camera",
           "counters",
           "recent",
+          "markings",
+          "operator_markings",
           "recording_failures",
           "version"
         ],
@@ -2752,12 +2777,23 @@
             "title": "Language",
             "type": "string"
           },
+          "markings": {
+            "default": "on_fail",
+            "enum": ["always", "on_fail", "never"],
+            "title": "Markings",
+            "type": "string"
+          },
           "name": {
             "default": "Estação de visão",
             "maxLength": 80,
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "operator_markings": {
+            "default": true,
+            "title": "Operator Markings",
+            "type": "boolean"
           },
           "result_min_s": {
             "default": 2.0,
@@ -2824,9 +2860,20 @@
             ],
             "default": null
           },
+          "markings": {
+            "default": "on_fail",
+            "enum": ["always", "on_fail", "never"],
+            "title": "Markings",
+            "type": "string"
+          },
           "message": {
             "title": "Message",
             "type": "string"
+          },
+          "operator_markings": {
+            "default": true,
+            "title": "Operator Markings",
+            "type": "boolean"
           },
           "recent": {
             "items": {
@@ -2939,7 +2986,9 @@
               "fail_sound": false,
               "idle_logout_min": 10,
               "language": "pt-BR",
+              "markings": "on_fail",
               "name": "Estação de visão",
+              "operator_markings": true,
               "result_min_s": 2.0,
               "shift_starts": ["00:00"]
             }
@@ -3073,6 +3122,21 @@
           "passed": {
             "title": "Passed",
             "type": "boolean"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Region"
           },
           "score": {
             "title": "Score",
@@ -6599,6 +6663,87 @@
           }
         },
         "summary": "Mark Incorrect"
+      }
+    },
+    "/api/results/{record_id}/thumb": {
+      "get": {
+        "description": "A recorded result's picture, smaller, for the operator screen's last results (everyone, frontend.md §7.1).",
+        "operationId": "result_thumb",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "title": "Record Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "default": 160,
+              "maximum": 1280,
+              "minimum": 64,
+              "title": "Width",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/jpeg": {}
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Result Thumb"
       }
     },
     "/api/snapshot.jpg": {

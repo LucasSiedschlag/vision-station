@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import cv2
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from test_verification import make_bundle, qr_scene
@@ -26,7 +27,7 @@ from vision_station.system import (
     save_config,
     shift_start,
 )
-from vision_station.system.config import CameraSettings
+from vision_station.system.config import CameraSettings, dump_config
 from vision_station.verification import activate, verify_job
 
 HOSTS = ("testserver", "localhost", "127.0.0.1")
@@ -305,3 +306,13 @@ def test_the_station_language_is_in_the_status_and_written_only_when_not_portugu
     assert SystemConfig.model_validate({"station": {"language": "en"}}).station.language == "en"
     with pytest.raises(ValueError):
         SystemConfig.model_validate({"station": {"language": "fr"}})
+
+
+def test_the_markings_of_the_operator_screen_are_written_only_when_changed():
+    assert "markings" not in dump_config(SystemConfig())  # a backup still restores on 0.1
+    changed = SystemConfig.model_validate({"station": {"markings": "never", "operator_markings": False}})
+    text = dump_config(changed)
+    assert "markings: never" in text and "operator_markings: false" in text
+    assert SystemConfig.model_validate(yaml.safe_load(text)) == changed
+    with pytest.raises(ValueError):
+        SystemConfig.model_validate({"station": {"markings": "sometimes"}})

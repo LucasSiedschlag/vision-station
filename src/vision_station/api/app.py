@@ -254,7 +254,9 @@ def status_model(deps: ApiDeps) -> m.StateOut:
         last_record_id=deps.recorder.last_record_id if deps.recorder else None,
         camera=m.CameraOut(connected=acq.connected, last_frame_age_s=None if age is None else round(age, 2), last_error=acq.last_error),
         counters=m.Counters(**deps.results.counts(deps.shift_start())),
-        recent=[m.RecentResult(outcome=r.outcome, reason=render(r.reason), at=r.at) for r in reversed(deps.results.find(limit=10))],
+        recent=[m.RecentResult(outcome=r.outcome, reason=render(r.reason), at=r.at, record_id=r.id) for r in reversed(deps.results.find(limit=10))],
+        markings=deps.system.config.station.markings if deps.system else "on_fail",
+        operator_markings=deps.system.config.station.operator_markings if deps.system else True,
         recording_failures=deps.recorder.failures if deps.recorder else 0,
         version=__version__,
     )
@@ -315,6 +317,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(deps.allowed_hosts))
     if deps.cors_origins:  # only the pages of other programs listed in system.yaml (network.allowed_origins)
         app.add_middleware(CORSMiddleware, allow_origins=list(deps.cors_origins), allow_methods=["GET", "POST"], allow_headers=["Content-Type", "Authorization"])
+    thumbs: dict[tuple[str, int], bytes] = {}  # the last pictures served small: a recorded picture never changes
     api = APIRouter(
         prefix="/api",
         responses={401: {"model": m.Problem, "description": "needs a login"}, 403: {"model": m.Problem, "description": "needs another role"}},
@@ -656,6 +659,22 @@ def create_app(deps: ApiDeps) -> FastAPI:
         if rel is None or not (deps.results.root / rel).is_file():
             raise Problem(404, "Nenhuma imagem foi guardada para esse resultado", "no_image")
         return FileResponse(deps.results.root / rel, media_type="image/jpeg")
+
+    @api.get("/results/{record_id}/thumb", responses={200: {"content": {"image/jpeg": {}}}, 404: {"model": m.Problem}})
+    def result_thumb(record_id: str, width: int = QueryParam(160, ge=64, le=1280)) -> Response:
+        """A recorded result's picture, smaller, for the operator screen's last results (everyone, frontend.md §7.1)."""
+        key = (record_id, width)
+        data = thumbs.get(key)
+        if data is None:
+            record = deps.results.get(record_id)
+            path = deps.results.root / record.image_path if record and record.image_path else None
+            image = cv2.imread(str(path)) if path is not None and path.is_file() else None
+            if image is None:
+                raise Problem(404, "Nenhuma imagem foi guardada para esse resultado", "no_image")
+            data = thumbs[key] = encode_jpeg(image, width, 80)
+            while len(thumbs) > 64:
+                del thumbs[next(iter(thumbs))]
+        return Response(data, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
 
     @api.get("/about", response_model=m.AboutOut)
     def about(_: str = Depends(need("supervisor"))) -> m.AboutOut:
