@@ -18,6 +18,7 @@ from typing import Annotated, Self
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from vision_station.core.i18n import text_of
 from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.models import ModelError, parse_card, predict
 from vision_station.core.schema_labels import labels
@@ -71,7 +72,7 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
         card = parse_card(files.bytes(params.card_path))
         prediction = predict(files.bytes(params.model), card, region, params.min_confidence)
     except (ModelError, JobFileError) as exc:
-        raise ToolError(str(exc)) from exc
+        raise ToolError(text_of(exc)) from exc
     values: dict = {"label": None, "confidence": None, "classes": "", "count": None, "score": None, "threshold": None}
     details: dict = {"task": card.task, "model": card.name or params.model}
     criteria: list[Criterion] = []

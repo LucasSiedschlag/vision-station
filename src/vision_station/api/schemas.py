@@ -21,7 +21,7 @@ class BaseModel(_BaseModel):
 
 
 class Problem(BaseModel):
-    """Every error response: a Portuguese message, a machine code, and optional details."""
+    """Every error response: a message in the language of the request (Accept-Language), a machine code, and optional details."""
 
     detail: str
     code: str
@@ -184,7 +184,7 @@ class InspectionOut(BaseModel):
     job: JobRefOut | None = None
     frame_url: str | None = None  # the inspection frame, JPEG
     overlay_url: str | None = None  # the frame with the regions drawn (green passed, red failed)
-    message: str | None = None  # Portuguese, for an expired request
+    message: str | None = None  # for an expired request, in the language of the request
 
 
 class Accepted(BaseModel):
@@ -437,7 +437,7 @@ class JobDraft(BaseModel):
 
 class DraftCheckOut(BaseModel):
     ok: bool
-    message: str | None = None  # Portuguese, for the whole draft
+    message: str | None = None  # for the whole draft, in the language of the request
     fields: dict[str, str] = {}  # path.to.field -> message
 
 

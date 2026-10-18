@@ -21,6 +21,7 @@ from typing import Any
 
 from vision_station.cameras import Frame, SettingStatus
 from vision_station.core.errors import CATALOG, ErrorCode
+from vision_station.core.i18n import tr
 from vision_station.core.results import InspectionResult, Outcome, ResultJob, TriggerInfo, TriggerSource
 from vision_station.station.acquisition import Acquisition
 from vision_station.station.trigger import PresenceDetector
@@ -42,18 +43,18 @@ class State(StrEnum):
     PAUSED = "Paused"
 
 
-NO_JOB = "Nenhum job ativo — ativar um job na tela Jobs"
+NO_JOB = tr("Nenhum job ativo — ativar um job na tela Jobs")
 
 # What the operator screen shows (architecture §6). "waiting" can be replaced by the job (`ui.waiting`).
 MESSAGES = {
-    State.STARTING: "Preparando…",
-    State.PREPARING: "Preparando…",
-    State.READY: "Aguardando objeto",
-    State.WAITING_STILL: "Aguardando objeto",
-    State.INSPECTING: "Inspecionando…",
-    State.CAMERA_LOST: "Câmera desconectada",
-    State.FAULT: "Falha na verificação — chamar manutenção",
-    State.PAUSED: "Em manutenção",
+    State.STARTING: tr("Preparando…"),
+    State.PREPARING: tr("Preparando…"),
+    State.READY: tr("Aguardando objeto"),
+    State.WAITING_STILL: tr("Aguardando objeto"),
+    State.INSPECTING: tr("Inspecionando…"),
+    State.CAMERA_LOST: tr("Câmera desconectada"),
+    State.FAULT: tr("Falha na verificação — chamar manutenção"),
+    State.PAUSED: tr("Em manutenção"),
 }
 
 
@@ -73,11 +74,11 @@ def basic_verifier(bundle: JobBundle, acquisition: Acquisition) -> VerifyResult:
     reference image and reference set, replaces this one: FR-JOB-9.)"""
     report = acquisition.last_apply
     if report is None:
-        return VerifyResult(False, "ajustes da câmera não aplicados")
+        return VerifyResult(False, tr("ajustes da câmera não aplicados"))
     rejected = sorted(k for k, s in report.status.items() if s is SettingStatus.REJECTED)
     if rejected:
-        return VerifyResult(False, "ajuste não aplicado: " + ", ".join(rejected))
-    unsupported = tuple(sorted(f"{k}: {report.detail.get(k, 'não suportado')}" for k, s in report.status.items() if s is SettingStatus.NOT_SUPPORTED))
+        return VerifyResult(False, tr("ajuste não aplicado: {settings}", settings=", ".join(rejected)))
+    unsupported = tuple(sorted(tr("{setting}: {detail}", setting=k, detail=report.detail.get(k) or tr("não suportado")) for k, s in report.status.items() if s is SettingStatus.NOT_SUPPORTED))
     return VerifyResult(True, warnings=unsupported)
 
 
@@ -249,7 +250,7 @@ class StationController:
     def _message(self) -> str:
         if self.showing_result and self._last_result is not None:
             r = self._last_result
-            return f"{r.outcome}: {r.reason}" if r.reason else str(r.outcome)
+            return tr("{outcome}: {reason}", outcome=r.outcome, reason=r.reason) if r.reason else str(r.outcome)
         if self._state is State.STARTING and self._bundle is None:
             return NO_JOB
         if self._state in (State.READY, State.WAITING_STILL) and self._bundle and self._bundle.job.ui.waiting:
@@ -409,13 +410,13 @@ class StationController:
         try:
             result = self._inspect(self._bundle, frame)  # type: ignore[arg-type]
         except Exception as exc:
-            result = self._error(ErrorCode.INTERNAL, f"Erro interno na inspeção ({type(exc).__name__})")
+            result = self._error(ErrorCode.INTERNAL, tr("Erro interno na inspeção ({kind})", kind=type(exc).__name__))
         if not isinstance(result, InspectionResult) or result.outcome not in tuple(Outcome):
-            result = self._error(ErrorCode.INTERNAL, "Resultado de inspeção inválido")
+            result = self._error(ErrorCode.INTERNAL, tr("Resultado de inspeção inválido"))
         elif self._acq.stalled():
-            result = self._error(ErrorCode.CAMERA_LOST, "Câmera perdida durante a inspeção")  # never a PASS after doubt
+            result = self._error(ErrorCode.CAMERA_LOST, tr("Câmera perdida durante a inspeção"))  # never a PASS after doubt
         elif result.outcome is Outcome.PASS and frame.timestamp <= self._t0:
-            result = self._error(ErrorCode.NO_FRESH_FRAME, "Imagem anterior ao gatilho")
+            result = self._error(ErrorCode.NO_FRESH_FRAME, tr("Imagem anterior ao gatilho"))
         self._finish(result, frame, started)
 
     def _showing_result(self) -> None:

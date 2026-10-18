@@ -18,6 +18,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from vision_station.core.i18n import tr
+
 ROLES = ("operator", "supervisor", "maintainer")  # in increasing order of rights
 MIN_PASSWORD_LENGTH = 8
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1}
@@ -70,7 +72,7 @@ class AuthService:
         if role not in ROLES[1:]:
             raise AuthError("only supervisor and maintainer have passwords")
         if len(password) < MIN_PASSWORD_LENGTH:
-            raise AuthError(f"the password needs at least {MIN_PASSWORD_LENGTH} characters")
+            raise AuthError(tr("A senha precisa ter pelo menos {n} caracteres", n=MIN_PASSWORD_LENGTH))
         users = self._read()
         salt = os.urandom(16)
         users[role] = {"salt": salt.hex(), "hash": _hash(password, salt).hex(), **_SCRYPT, "changed_at": datetime.now().astimezone().isoformat(timespec="seconds")}

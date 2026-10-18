@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 
 from vision_station.cameras import CameraError, create_camera
+from vision_station.core.i18n import tr
 from vision_station.records import ResultStore
 from vision_station.store import JobStore
 from vision_station.system.config import RESTART_SECTIONS, CameraSettings, SystemConfig, changed_sections, dump_config, save_config
@@ -62,7 +63,7 @@ class SystemService:
 @dataclass
 class CheckReport:
     ok: bool
-    message: str  # Portuguese, for the screen
+    message: str  # a Msg, translated at the API
     width: int | None = None
     height: int | None = None
     free_gb: float | None = None
@@ -82,10 +83,10 @@ def check_folder(path: str) -> CheckReport:
             probe.unlink(missing_ok=True)
         free = shutil.disk_usage(folder).free / 1024**3
     except OSError as exc:
-        return CheckReport(False, f"Não foi possível gravar na pasta: {exc.strerror or exc}")
+        return CheckReport(False, tr("Não foi possível gravar na pasta: {why}", why=exc.strerror or exc))
     if not same:
-        return CheckReport(False, "A pasta devolveu um conteúdo diferente do gravado")
-    return CheckReport(True, f"Pasta gravável, {free:.1f} GB livres", free_gb=round(free, 1))
+        return CheckReport(False, tr("A pasta devolveu um conteúdo diferente do gravado"))
+    return CheckReport(True, tr("Pasta gravável, {free:.1f} GB livres", free=free), free_gb=round(free, 1))
 
 
 def check_camera(settings: CameraSettings, timeout_s: float = 5.0) -> CheckReport:
@@ -95,19 +96,19 @@ def check_camera(settings: CameraSettings, timeout_s: float = 5.0) -> CheckRepor
         camera = create_camera(settings.driver)
         camera.open(settings.connection)
     except (CameraError, KeyError, OSError, ValueError) as exc:
-        return CheckReport(False, f"A câmera não abriu: {exc}")
+        return CheckReport(False, tr("A câmera não abriu: {why}", why=exc))
     try:
         deadline = time.monotonic() + timeout_s
         for frame in camera.frames():
             image = frame.image
             if isinstance(image, np.ndarray) and image.size:
                 h, w = image.shape[:2]
-                return CheckReport(True, f"Câmera respondeu: imagem de {w}×{h}", width=w, height=h)
+                return CheckReport(True, tr("Câmera respondeu: imagem de {width}×{height}", width=w, height=h), width=w, height=h)
             if time.monotonic() > deadline:
                 break
-        return CheckReport(False, "A câmera abriu, mas não mandou imagem")
+        return CheckReport(False, tr("A câmera abriu, mas não mandou imagem"))
     except (CameraError, OSError) as exc:
-        return CheckReport(False, f"A câmera parou de responder: {exc}")
+        return CheckReport(False, tr("A câmera parou de responder: {why}", why=exc))
     finally:
         camera.close()
 

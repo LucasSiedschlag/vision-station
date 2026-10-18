@@ -1,0 +1,826 @@
+# English texts of the server (TD-30). The msgid is the Portuguese text in the code.
+msgid ""
+msgstr ""
+"Project-Id-Version: Vision Station \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-18 15:41-0300\n"
+"PO-Revision-Date: 2026-10-18 15:41-0300\n"
+"Last-Translator: \n"
+"Language: en\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "0 a 1"
+msgstr "0 to 1"
+
+msgid "0 a 1 do comprimento, pontas incluídas"
+msgstr "0 to 1 of the length, ends included"
+
+msgid "0 a 179 (graus ÷ 2). Se 'de' for maior que 'até', a faixa passa pelo vermelho, ex. 170 a 10"
+msgstr "0 to 179 (degrees ÷ 2). If 'from' is greater than 'to', the range wraps around red, e.g. 170 to 10"
+
+msgid "0 a 1: a cor precisa ocupar pelo menos isso da região"
+msgstr "0 to 1: the colour must fill at least this much of the region"
+
+msgid "0 a 1: para conferir que uma cor não está lá"
+msgstr "0 to 1: to check that a colour is not there"
+
+msgid "0 a 1: parte de cada coluna com a cor para ela contar como coberta"
+msgstr "0 to 1: the part of each column with the colour for it to count as covered"
+
+msgid "0 a 1: parte do comprimento que precisa estar coberta"
+msgstr "0 to 1: the part of the length that must be covered"
+
+msgid "0 a 1; 0,7 é um bom começo"
+msgstr "0 to 1; 0.7 is a good start"
+
+msgid "0 a 1; abaixo disso o objeto não foi encontrado"
+msgstr "0 to 1; below this the object was not found"
+
+msgid "0 a 255"
+msgstr "0 to 255"
+
+msgid "0 a 255 cada"
+msgstr "0 to 255 each"
+
+msgid "0 a 255. Use uns 60 ou mais com uma faixa de matiz: cinza e branco têm matiz 0"
+msgstr "0 to 255. Use about 60 or more with a hue range: grey and white have hue 0"
+
+msgid "0 a 255. Vazio: automático"
+msgstr "0 to 255. Empty: automatic"
+
+msgid "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está"
+msgstr "1: the pattern must be there; 0: with a maximum of 0, checks that it is not"
+
+msgid "A configuração do sistema não está disponível nesta execução"
+msgstr "The system configuration is not available in this run"
+
+msgid "A câmera abriu, mas não mandou imagem"
+msgstr "The camera opened but sent no image"
+
+#, python-brace-format
+msgid "A câmera não abriu: {why}"
+msgstr "The camera did not open: {why}"
+
+#, python-brace-format
+msgid "A câmera parou de responder: {why}"
+msgstr "The camera stopped responding: {why}"
+
+msgid "A estação não está pronta"
+msgstr "The station is not ready"
+
+msgid "A imagem desse resultado não foi guardada"
+msgstr "The image of this result was not kept"
+
+msgid "A imagem é comparada nesta largura, para ser rápido"
+msgstr "The image is compared at this width, to be fast"
+
+#, python-brace-format
+msgid "A inspeção não aconteceu: {why}"
+msgstr "The inspection did not happen: {why}"
+
+msgid "A pasta devolveu um conteúdo diferente do gravado"
+msgstr "The folder returned content different from what was written"
+
+msgid "A senha atual não confere"
+msgstr "The current password is wrong"
+
+#, python-brace-format
+msgid "A senha precisa ter pelo menos {n} caracteres"
+msgstr "The password needs at least {n} characters"
+
+msgid "Acha na imagem uma foto ensinada do objeto (ou de uma marca nele)."
+msgstr "Finds a taught picture of the object (or of a mark on it) in the image."
+
+msgid "Aguardando objeto"
+msgstr "Waiting for a part"
+
+msgid "Ainda não há resultado"
+msgstr "There is no result yet"
+
+msgid "Ajustes de câmera inválidos"
+msgstr "Invalid camera settings"
+
+msgid "Arquivo .onnx dentro do job (treinado fora da estação)"
+msgstr ".onnx file inside the job (trained outside the station)"
+
+msgid "Arquivo grande demais"
+msgstr "File too large"
+
+msgid "Arquivo inválido no job"
+msgstr "Invalid file in the job"
+
+#, python-brace-format
+msgid "Arquivo recusado: {why}"
+msgstr "File refused: {why}"
+
+msgid "Brilho máximo"
+msgstr "Maximum brightness"
+
+msgid "Brilho mínimo"
+msgstr "Minimum brightness"
+
+msgid "Cartão do modelo"
+msgstr "Model card"
+
+msgid "Classe contada (detector)"
+msgstr "Counted class (detector)"
+
+msgid "Classe obrigatória não detectada"
+msgstr "Required class not detected"
+
+msgid "Classe que reprova (ou fora das que aprovam)"
+msgstr "Class that fails (or not among those that pass)"
+
+msgid "Classes obrigatórias (detector)"
+msgstr "Required classes (detector)"
+
+msgid "Classes que aprovam (classificador)"
+msgstr "Classes that pass (classifier)"
+
+msgid "Classes que reprovam"
+msgstr "Classes that fail"
+
+msgid "Cobertura ao longo do eixo abaixo do mínimo"
+msgstr "Coverage along the axis below the minimum"
+
+msgid "Cobertura do padrão ao longo do eixo abaixo do mínimo"
+msgstr "Pattern coverage along the axis below the minimum"
+
+msgid "Cobertura mínima"
+msgstr "Minimum coverage"
+
+msgid "Comando desconhecido"
+msgstr "Unknown command"
+
+msgid "Confiança do modelo abaixo do mínimo"
+msgstr "Model confidence below the minimum"
+
+msgid "Confiança mínima"
+msgstr "Minimum confidence"
+
+msgid "Cor de referência (R, G, B)"
+msgstr "Reference colour (R, G, B)"
+
+msgid "Cor de referência fora do limite, verificar iluminação"
+msgstr "Reference colour out of limit, check the lighting"
+
+msgid "Cor do objeto"
+msgstr "Object colour"
+
+msgid "Câmera desconectada"
+msgstr "Camera disconnected"
+
+msgid "Câmera desconectada durante a inspeção"
+msgstr "Camera disconnected during the inspection"
+
+msgid "Câmera perdida durante a inspeção"
+msgstr "Camera lost during the inspection"
+
+#, python-brace-format
+msgid "Câmera respondeu: imagem de {width}×{height}"
+msgstr "Camera responded: {width}×{height} image"
+
+msgid "Código claro sobre fundo escuro"
+msgstr "Light code on a dark background"
+
+msgid "Códigos aceitos para aprovar"
+msgstr "Codes accepted to pass"
+
+msgid "Dados inválidos"
+msgstr "Invalid data"
+
+msgid "Detecção de uma classe que reprova"
+msgstr "Detection of a class that fails"
+
+msgid "Distância máxima (ΔE)"
+msgstr "Maximum distance (ΔE)"
+
+msgid "Em manutenção"
+msgstr "In maintenance"
+
+#, python-brace-format
+msgid "Erro interno na inspeção ({kind})"
+msgstr "Internal error in the inspection ({kind})"
+
+msgid "Essa imagem não existe"
+msgstr "This image does not exist"
+
+msgid "Essa inspeção não existe ou já saiu da memória"
+msgstr "This inspection does not exist or is no longer in memory"
+
+msgid "Essa versão do job não existe"
+msgstr "This job version does not exist"
+
+msgid "Esse arquivo não existe nesse job"
+msgstr "This file does not exist in this job"
+
+msgid "Esse backup não existe"
+msgstr "This backup does not exist"
+
+msgid "Esse caminho da API não existe"
+msgstr "This API path does not exist"
+
+msgid "Esse job não existe"
+msgstr "This job does not exist"
+
+msgid "Esse perfil não tem senha"
+msgstr "This role has no password"
+
+msgid "Esse resultado não existe"
+msgstr "This result does not exist"
+
+msgid "Este perfil não tem permissão para isso"
+msgstr "This role is not allowed to do that"
+
+msgid "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos"
+msgstr "E.g. QRCode, DataMatrix, Code128, EAN13. Empty: every one that is read"
+
+msgid "Ex.: risco, amassado"
+msgstr "E.g. scratch, dent"
+
+#, python-brace-format
+msgid "Expressão regular; ex.: L\\d{6}"
+msgstr "Regular expression; e.g. L\\d{6}"
+
+msgid "Faixa de matiz, saturação e valor, ou distância a uma cor de referência"
+msgstr "Range of hue, saturation and value, or distance to a reference colour"
+
+msgid "Falha interna na inspeção, chamar a manutenção"
+msgstr "Internal failure in the inspection, call maintenance"
+
+msgid "Falha na verificação — chamar manutenção"
+msgstr "Verification failed — call maintenance"
+
+#, python-brace-format
+msgid "Ferramenta '{tool}' devolveu pontuação inválida"
+msgstr "Tool '{tool}' returned an invalid score"
+
+#, python-brace-format
+msgid "Ferramenta '{tool}' falhou: {kind}"
+msgstr "Tool '{tool}' failed: {kind}"
+
+#, python-brace-format
+msgid "Ferramenta '{tool}' não pode rodar: {exc}"
+msgstr "Tool '{tool}' cannot run: {exc}"
+
+msgid "Ferramenta devolveu pontuação inválida"
+msgstr "Tool returned an invalid score"
+
+msgid "Ferramenta falhou"
+msgstr "Tool failed"
+
+msgid "Ferramenta não pode rodar"
+msgstr "Tool cannot run"
+
+msgid "Formatos"
+msgstr "Formats"
+
+msgid "Fração da região com a cor abaixo do mínimo"
+msgstr "Fraction of the region with the colour below the minimum"
+
+msgid "Fração da região com a cor acima do máximo"
+msgstr "Fraction of the region with the colour above the maximum"
+
+msgid "Fração da área de busca"
+msgstr "Fraction of the search area"
+
+msgid "Fração máxima da área"
+msgstr "Maximum fraction of the area"
+
+msgid "Fração mínima da área"
+msgstr "Minimum fraction of the area"
+
+msgid "Frações da imagem"
+msgstr "Fractions of the image"
+
+msgid "Frações da imagem; desenhe na imagem"
+msgstr "Fractions of the image; draw it on the image"
+
+msgid "Frações da imagem; o objeto é procurado só aqui"
+msgstr "Fractions of the image; the object is looked for only here"
+
+msgid "Gabarito"
+msgstr "Template"
+
+msgid "Imagem anterior ao gatilho"
+msgstr "Image from before the trigger"
+
+msgid "Imagem clara demais, verificar a iluminação"
+msgstr "Image too bright, check the lighting"
+
+msgid "Imagem dentro do job, recortada da imagem de referência"
+msgstr "Image inside the job, cut from the reference image"
+
+msgid "Imagem do objeto dentro do job, recortada da imagem de referência"
+msgstr "Image of the object inside the job, cut from the reference image"
+
+msgid "Imagem escura demais, verificar a iluminação"
+msgstr "Image too dark, check the lighting"
+
+msgid "Imagem fora de foco, verificar a lente e a câmera"
+msgstr "Image out of focus, check the lens and the camera"
+
+msgid "Imagem inválida da câmera"
+msgstr "Invalid image from the camera"
+
+#, python-brace-format
+msgid "Imagem inválida: {why}"
+msgstr "Invalid image: {why}"
+
+msgid "Imagem não recebida da câmera"
+msgstr "No image received from the camera"
+
+msgid "Inspecionando…"
+msgstr "Inspecting…"
+
+msgid "Job verificado"
+msgstr "Job verified"
+
+msgid "Largura de trabalho (px)"
+msgstr "Working width (px)"
+
+msgid "Limiar de cinza"
+msgstr "Grey threshold"
+
+msgid "Limite de anomalia"
+msgstr "Anomaly limit"
+
+msgid "Limpeza (px)"
+msgstr "Clean-up (px)"
+
+msgid "Localizador não pode rodar"
+msgstr "Locator cannot run"
+
+#, python-brace-format
+msgid "Localizador não pode rodar: {exc}"
+msgstr "Locator cannot run: {exc}"
+
+msgid "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região."
+msgstr "Reads bar codes (1D) and 2D codes (QR, Data Matrix...) in a region."
+
+msgid "Maior lado para comparar (px)"
+msgstr "Longest side to compare (px)"
+
+msgid "Maior trecho faltando"
+msgstr "Longest missing stretch"
+
+msgid "Maior trecho sem a cor acima do máximo"
+msgstr "Longest stretch without the colour above the maximum"
+
+msgid "Maior trecho sem o padrão acima do máximo"
+msgstr "Longest stretch without the pattern above the maximum"
+
+msgid "Mais códigos aceitos que o máximo"
+msgstr "More codes accepted than the maximum"
+
+msgid "Mais detecções da classe contada que o máximo"
+msgstr "More detections of the counted class than the maximum"
+
+msgid "Mais ocorrências do padrão que o máximo"
+msgstr "More occurrences of the pattern than the maximum"
+
+msgid "Mais que isso reprova (ex.: etiqueta colada duas vezes)"
+msgstr "More than this fails (e.g. a label stuck on twice)"
+
+msgid "Matiz (de, até)"
+msgstr "Hue (from, to)"
+
+msgid "Mede quanto de uma região tem uma cor."
+msgstr "Measures how much of a region has a colour."
+
+msgid "Medir ao longo de"
+msgstr "Measure along"
+
+msgid "Menos códigos aceitos que o mínimo"
+msgstr "Fewer codes accepted than the minimum"
+
+msgid "Menos detecções da classe contada que o mínimo"
+msgstr "Fewer detections of the counted class than the minimum"
+
+msgid "Menos ocorrências do padrão que o mínimo"
+msgstr "Fewer occurrences of the pattern than the minimum"
+
+msgid "Modelo"
+msgstr "Model"
+
+msgid "Modo"
+msgstr "Mode"
+
+#, python-brace-format
+msgid "Muitas tentativas. Tente de novo em {seconds} s"
+msgstr "Too many attempts. Try again in {seconds} s"
+
+msgid "Muitas tentativas; aguarde e tente de novo"
+msgstr "Too many attempts; wait and try again"
+
+msgid "Máquina sem sinal de vida"
+msgstr "Machine without a heartbeat"
+
+msgid "Máximo da classe contada"
+msgstr "Maximum of the counted class"
+
+msgid "Máximo de códigos"
+msgstr "Maximum codes"
+
+msgid "Máximo de ocorrências"
+msgstr "Maximum occurrences"
+
+msgid "Mínimo da classe contada"
+msgstr "Minimum of the counted class"
+
+msgid "Mínimo de códigos"
+msgstr "Minimum codes"
+
+msgid "Mínimo de ocorrências"
+msgstr "Minimum occurrences"
+
+msgid "Mínimo por coluna (ou linha)"
+msgstr "Minimum per column (or row)"
+
+msgid "Nenhum job ativo e verificado"
+msgstr "No active, verified job"
+
+msgid "Nenhum job ativo — ativar um job na tela Jobs"
+msgstr "No active job — activate a job in the Jobs screen"
+
+msgid "Nenhuma imagem foi guardada para esse resultado"
+msgstr "No image was kept for this result"
+
+msgid "Nenhuma pasta de backup foi configurada"
+msgstr "No backup folder has been set up"
+
+#, python-brace-format
+msgid "Não foi possível gravar na pasta: {why}"
+msgstr "Could not write to the folder: {why}"
+
+#, python-brace-format
+msgid "Não foi possível salvar: {why}"
+msgstr "Could not save: {why}"
+
+msgid "Não há imagens coletadas para exportar"
+msgstr "There are no collected images to export"
+
+msgid "Número de job desconhecido"
+msgstr "Unknown job number"
+
+msgid "O Supervisor só troca a própria senha"
+msgstr "The Supervisor can only change their own password"
+
+#, python-brace-format
+msgid "O job ativo não pôde ser carregado: {exc}"
+msgstr "The active job could not be loaded: {exc}"
+
+#, python-brace-format
+msgid "O job mudou: a última versão é a {latest}. Abra de novo antes de salvar."
+msgstr "The job changed: the latest version is {latest}. Open it again before saving."
+
+msgid "O job não passou na verificação"
+msgstr "The job did not pass verification"
+
+#, python-brace-format
+msgid "O job não pode rodar: {why}"
+msgstr "The job cannot run: {why}"
+
+msgid "O job tem campos inválidos"
+msgstr "The job has invalid fields"
+
+msgid "O objeto fica sempre no mesmo lugar: a âncora é um retângulo escrito no job."
+msgstr "The object is always in the same place: the anchor is a rectangle written in the job."
+
+msgid "O objeto é"
+msgstr "The object is"
+
+msgid "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo."
+msgstr "The object is the largest region of a colour, or darker or lighter than the background."
+
+msgid "O resultado deve ser PASS, FAIL ou ERROR"
+msgstr "The result must be PASS, FAIL or ERROR"
+
+msgid "Objeto fora da posição ou girado demais"
+msgstr "Object out of position or turned too far"
+
+msgid "Objeto não encontrado na posição esperada"
+msgstr "Object not found in the expected position"
+
+msgid "Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera"
+msgstr "Object not found or image out of focus, check the station and the camera"
+
+msgid "Origem não permitida"
+msgstr "Origin not allowed"
+
+msgid "Padrão do texto"
+msgstr "Text pattern"
+
+msgid "Para abrir a API na rede é preciso ter senha de Supervisor ou Mantenedor"
+msgstr "To open the API to the network, a Supervisor or Maintainer password is required"
+
+#, python-brace-format
+msgid "Pasta gravável, {free:.1f} GB livres"
+msgstr "Writable folder, {free:.1f} GB free"
+
+msgid "Perfil ou senha incorretos"
+msgstr "Wrong role or password"
+
+msgid "Pontuação de anomalia acima do limite"
+msgstr "Anomaly score above the limit"
+
+msgid "Posição do objeto (x0, y0, x1, y1)"
+msgstr "Object position (x0, y0, x1, y1)"
+
+msgid "Precisa haver pelo menos uma de cada"
+msgstr "There must be at least one of each"
+
+msgid "Preparando…"
+msgstr "Preparing…"
+
+msgid "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece."
+msgstr "Looks for a taught pattern (a logo, a mark, a detail) in a region and counts how many times it appears."
+
+msgid "Quanto a cor pode diferir da referência; 10 a 30 é comum"
+msgstr "How much the colour may differ from the reference; 10 to 30 is common"
+
+msgid "Região 'anchor' sem localizador"
+msgstr "Region 'anchor' without a locator"
+
+#, python-brace-format
+msgid "Região '{name}' depende do objeto, que não foi localizado"
+msgstr "Region '{name}' depends on the object, which was not located"
+
+#, python-brace-format
+msgid "Região '{name}' fora da imagem"
+msgstr "Region '{name}' outside the image"
+
+msgid "Região fora da imagem"
+msgstr "Region outside the image"
+
+msgid "Regiões maiores são reduzidas para comparar mais rápido"
+msgstr "Larger regions are scaled down to compare faster"
+
+msgid "Remove pontinhos e fecha furos pequenos"
+msgstr "Removes specks and closes small holes"
+
+msgid "Resultado de inspeção inválido"
+msgstr "Invalid inspection result"
+
+msgid "Roda um modelo treinado na região."
+msgstr "Runs a trained model on the region."
+
+msgid "Saturação máxima"
+msgstr "Maximum saturation"
+
+msgid "Saturação mínima"
+msgstr "Minimum saturation"
+
+msgid "Sem imagem da câmera"
+msgstr "No image from the camera"
+
+msgid "Semelhança mínima"
+msgstr "Minimum similarity"
+
+#, python-brace-format
+msgid "Senha não aceita: {why}"
+msgstr "Password not accepted: {why}"
+
+msgid "Só o Mantenedor pode liberar um job que não passou na verificação"
+msgstr "Only the Maintainer can release a job that did not pass verification"
+
+msgid "Tentar girado"
+msgstr "Try rotated"
+
+msgid "Tentar invertido"
+msgstr "Try inverted"
+
+msgid "Tentar reduzido"
+msgstr "Try scaled down"
+
+msgid "Teste de desafio pendente ou reprovado"
+msgstr "Challenge test pending or failed"
+
+msgid "Texto esperado"
+msgstr "Expected text"
+
+msgid "Troca de job durante a inspeção"
+msgstr "Job switched during the inspection"
+
+msgid "Um código só conta se tiver exatamente este texto"
+msgstr "A code only counts if it has exactly this text"
+
+msgid "Vazio: o do cartão do modelo"
+msgstr "Empty: the one on the model card"
+
+msgid "Vazio: o mesmo nome com .card.yaml"
+msgstr "Empty: the same name with .card.yaml"
+
+msgid "Vazio: qualquer classe que não reprove"
+msgstr "Empty: any class that does not fail"
+
+msgid "Vazio: sem limite"
+msgstr "Empty: no limit"
+
+msgid "Verificação do job falhou"
+msgstr "Job verification failed"
+
+msgid "a imagem não está em base64"
+msgstr "the image is not base64"
+
+#, python-brace-format
+msgid "ajuste não aplicado ({detail})"
+msgstr "setting not applied ({detail})"
+
+#, python-brace-format
+msgid "ajuste não aplicado: {settings}"
+msgstr "setting not applied: {settings}"
+
+msgid "ajustes da câmera aplicados"
+msgstr "camera settings applied"
+
+msgid "ajustes da câmera não aplicados"
+msgstr "camera settings not applied"
+
+#, python-brace-format
+msgid "brilho {value:.0f}"
+msgstr "brightness {value:.0f}"
+
+#, python-brace-format
+msgid "brilho {value:.0f} (esperado {low:g} a {high:g})"
+msgstr "brightness {value:.0f} (expected {low:g} to {high:g})"
+
+msgid "caixas"
+msgstr "boxes"
+
+msgid "classes"
+msgstr "classes"
+
+msgid "cor de referência"
+msgstr "reference colour"
+
+#, python-brace-format
+msgid "câmera não respondeu em {seconds:g} s"
+msgstr "the camera did not respond in {seconds:g} s"
+
+msgid "de uma cor"
+msgstr "of a colour"
+
+msgid "faixa (HSV)"
+msgstr "range (HSV)"
+
+msgid "horizontal (x)"
+msgstr "horizontal (x)"
+
+#, python-brace-format
+msgid "imagem diferente da referência ({value:.0%}, mínimo {minimum:.0%}): câmera movida ou cena diferente?"
+msgstr "image different from the reference ({value:.0%}, minimum {minimum:.0%}): camera moved or different scene?"
+
+msgid "imagem grande demais"
+msgstr "image too large"
+
+msgid "imagem recebida"
+msgstr "image received"
+
+msgid "job sem conjunto de referência (tests/expected.yaml)"
+msgstr "job without a reference set (tests/expected.yaml)"
+
+msgid "job sem conjunto de referência: lógica de decisão não conferida"
+msgstr "job without a reference set: decision logic not checked"
+
+msgid "job sem imagem de referência: nitidez, semelhança e posição não conferidas"
+msgstr "job without a reference image: sharpness, similarity and position not checked"
+
+msgid "mais claro que o fundo"
+msgstr "lighter than the background"
+
+msgid "mais escuro que o fundo"
+msgstr "darker than the background"
+
+#, python-brace-format
+msgid "motivo '{reason}' não contém '{expected}'"
+msgstr "reason '{reason}' does not contain '{expected}'"
+
+#, python-brace-format
+msgid "nitidez {ratio:.0%} da referência"
+msgstr "sharpness {ratio:.0%} of the reference"
+
+#, python-brace-format
+msgid "nitidez {ratio:.0%} da referência (mínimo {minimum:.0%}): foco?"
+msgstr "sharpness {ratio:.0%} of the reference (minimum {minimum:.0%}): focus?"
+
+#, python-brace-format
+msgid "nota de '{tool}' ausente"
+msgstr "score of '{tool}' missing"
+
+#, python-brace-format
+msgid "nota de '{tool}' {got:.3f}, esperada {want:.3f} ± {tolerance:g}"
+msgstr "score of '{tool}' {got:.3f}, expected {want:.3f} ± {tolerance:g}"
+
+msgid "não suportado"
+msgstr "not supported"
+
+msgid "o arquivo não é uma imagem"
+msgstr "the file is not an image"
+
+#, python-brace-format
+msgid "o modelo dá {got} classes e o cartão nomeia {named}"
+msgstr "the model gives {got} classes and its card names {named}"
+
+msgid "objeto de referência não encontrado na imagem"
+msgstr "reference object not found in the image"
+
+msgid "pontuação de anomalia"
+msgstr "anomaly score"
+
+msgid "posição conferida"
+msgstr "position checked"
+
+#, python-brace-format
+msgid "posição deslocada {shift:.1%} da imagem (máximo {maximum:.1%})"
+msgstr "position shifted {shift:.1%} of the image (maximum {maximum:.1%})"
+
+msgid "probabilidades"
+msgstr "probabilities"
+
+msgid "recusado"
+msgstr "refused"
+
+#, python-brace-format
+msgid "resultado {got}, esperado {want}"
+msgstr "result {got}, expected {want}"
+
+#, python-brace-format
+msgid "saída do modelo não é um número (NaN ou infinito) em {what}"
+msgstr "the model output is not a number (NaN or infinity) in {what}"
+
+#, python-brace-format
+msgid "saída do modelo vazia ({what})"
+msgstr "the model output is empty ({what})"
+
+msgid "sem imagem da câmera"
+msgstr "no image from the camera"
+
+#, python-brace-format
+msgid "semelhança {value:.0%}"
+msgstr "similarity {value:.0%}"
+
+msgid "vertical (y)"
+msgstr "vertical (y)"
+
+#, python-brace-format
+msgid "{image}: erro ao inspecionar ({kind}: {exc})"
+msgstr "{image}: error while inspecting ({kind}: {exc})"
+
+#, python-brace-format
+msgid "{image}: imagem ausente ou ilegível"
+msgstr "{image}: image missing or unreadable"
+
+#, python-brace-format
+msgid "{image}: {what}"
+msgstr "{image}: {what}"
+
+#, python-brace-format
+msgid "{outcome} como esperado"
+msgstr "{outcome} as expected"
+
+#, python-brace-format
+msgid "{outcome}: {reason}"
+msgstr "{outcome}: {reason}"
+
+#, python-brace-format
+msgid "{setting}: {detail}"
+msgstr "{setting}: {detail}"
+
+msgid "Área de busca (x0, y0, x1, y1)"
+msgstr "Search area (x0, y0, x1, y1)"
+
+msgid "Área máxima"
+msgstr "Maximum area"
+
+msgid "Área mínima"
+msgstr "Minimum area"
+
+msgid "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)"
+msgstr "The whole area, or the coverage along a horizontal (x) or vertical (y) strip"
+
+msgid "É a câmera em uso pela estação e ela não está mandando imagem"
+msgstr "This is the camera the station is using and it is not sending an image"
+
+#, python-brace-format
+msgid "É a câmera em uso pela estação e ela não está mandando imagem: {why}"
+msgstr "This is the camera the station is using and it is not sending an image: {why}"
+
+#, python-brace-format
+msgid "É a câmera em uso pela estação e está mandando imagem de {width}×{height}"
+msgstr "This is the camera the station is using and it is sending a {width}×{height} image"
+
+msgid "É preciso entrar como Mantenedor"
+msgstr "You need to log in as Maintainer"
+
+msgid "É preciso entrar como Supervisor"
+msgstr "You need to log in as Supervisor"
+
+msgid "área toda"
+msgstr "whole area"
+

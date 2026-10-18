@@ -7,5 +7,6 @@ class Stop(Exception):
     """The inspection cannot go on; carries the error code and the ERROR text for the operator."""
 
     def __init__(self, code: ErrorCode, reason: str | None = None):
-        super().__init__(reason if reason is not None else CATALOG[code].text)
+        self.text = CATALOG[code].text if reason is None else reason  # a Msg when it is meant for translation (TD-30)
+        super().__init__(self.text)
         self.code = code

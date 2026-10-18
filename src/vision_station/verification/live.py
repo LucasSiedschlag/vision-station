@@ -8,6 +8,7 @@ import time
 from collections.abc import Callable
 from typing import Literal
 
+from vision_station.core.i18n import tr
 from vision_station.station import Acquisition, VerifyResult
 from vision_station.store import JobBundle, JobRef, JobStore, StoreError
 from vision_station.verification.verify import (
@@ -91,7 +92,7 @@ def verify_live(
             break
         sleep(0.05)
     else:
-        return VerificationReport(camera_view=(Check("camera", False, f"câmera não respondeu em {timeout_s:g} s"),))
+        return VerificationReport(camera_view=(Check("camera", False, tr("câmera não respondeu em {seconds:g} s", seconds=timeout_s)),))
     return verify_job(
         bundle,
         inspect=inspect,

@@ -1585,7 +1585,7 @@ export interface components {
     }
     /**
      * Problem
-     * @description Every error response: a Portuguese message, a machine code, and optional details.
+     * @description Every error response: a message in the language of the request (Accept-Language), a machine code, and optional details.
      */
     Problem: {
       /** Code */

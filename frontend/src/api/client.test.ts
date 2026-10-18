@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { useLocale } from '@/app/locale'
 import { ApiError, call, createApi } from './client'
 import { useSession } from './session'
 
@@ -20,6 +21,24 @@ describe('the typed client', () => {
       http.get('http://station.test/api/whoami', () => HttpResponse.json({ role: 'operator' })),
     )
     expect(await call(api.GET('/api/whoami'))).toEqual({ role: 'operator' })
+  })
+
+  it('asks for the texts of the server in the language on screen', async () => {
+    const asked: (string | null)[] = []
+    server.use(
+      http.get('http://station.test/api/whoami', ({ request }) => {
+        asked.push(request.headers.get('Accept-Language'))
+        return HttpResponse.json({ role: 'operator' })
+      }),
+    )
+    try {
+      await call(api.GET('/api/whoami'))
+      useLocale.setState({ locale: 'en' })
+      await call(api.GET('/api/whoami'))
+    } finally {
+      useLocale.setState({ locale: 'pt-BR' })
+    }
+    expect(asked).toEqual(['pt-BR', 'en'])
   })
 
   it('turns an error answer into an ApiError with the message and the code', async () => {

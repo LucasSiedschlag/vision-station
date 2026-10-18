@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { applyMessage, useLive, type LiveMessage, type StateOut } from './live'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useLocale } from '@/app/locale'
+import { applyMessage, startLive, useLive, type LiveMessage, type StateOut } from './live'
 
 // the result contract fields every result message carries (TD-22)
 const contract = {
@@ -179,5 +180,48 @@ describe('the live store', () => {
     useLive.getState().setConnected(false)
     expect(useLive.getState().frame).toBeNull()
     expect(useLive.getState().connecting).toBe(false)
+  })
+})
+
+describe('the live socket and the language', () => {
+  const sockets: { url: string; close: () => void; onclose?: () => void }[] = []
+  class FakeSocket {
+    binaryType = ''
+    onopen?: () => void
+    onclose?: () => void
+    constructor(public url: string) {
+      sockets.push(this)
+    }
+    close() {
+      this.onclose?.()
+    }
+  }
+
+  beforeEach(() => {
+    sockets.length = 0
+    vi.useFakeTimers()
+    vi.stubGlobal('WebSocket', FakeSocket)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    useLocale.setState({ locale: 'pt-BR' })
+  })
+
+  it('says its language in the address, because a browser cannot set a header on a socket', () => {
+    useLocale.setState({ locale: 'en' })
+    const stop = startLive()
+    expect(sockets[0]?.url).toMatch(/\/api\/live\?lang=en$/)
+    stop()
+  })
+
+  it('opens again at once in the new language when the language changes', () => {
+    const stop = startLive()
+    expect(sockets).toHaveLength(1)
+    useLocale.setState({ locale: 'en' })
+    vi.advanceTimersByTime(0)
+    expect(sockets).toHaveLength(2)
+    expect(sockets[1]?.url).toMatch(/lang=en$/)
+    stop()
   })
 })

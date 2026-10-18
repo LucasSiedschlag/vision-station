@@ -65,7 +65,7 @@ for (const scheme of themes) {
   })
 }
 
-// TD-30: the operator screen speaks the station language; texts from the server stay Portuguese until UI-C3
+// TD-30: the operator screen speaks the station language, and so do the texts that come from the server (UI-C3)
 for (const scheme of themes) {
   test(`in English the operator screen and a verdict have no accessibility violations, ${scheme}`, async ({
     page,
@@ -73,12 +73,17 @@ for (const scheme of themes) {
   }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await station.language('en')
+    const sockets: string[] = []
+    page.on('websocket', (socket) => sockets.push(socket.url()))
     await page.goto('/')
     await expect(page.getByRole('button', { name: 'System: connected' })).toBeVisible({
       timeout: 15_000,
     })
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    // the server writes its texts in the language of the socket: the page opened in the last station language seen,
+    // then opened the socket again in the station's (a job's own texts stay as written until job format 2)
+    await expect.poll(() => sockets.at(-1)).toMatch(/\/api\/live\?lang=en$/)
     expect(await accessibilityProblems(page)).toEqual([])
     await station.outcome('FAIL')
     await station.object('on')

@@ -15,6 +15,7 @@ import numpy as np
 
 from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
+from vision_station.core.i18n import tr
 from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.core.results import FixturePose, InspectionResult, Outcome, ReasonCode, ToolReport
 from vision_station.geometry.regions import PixelRect, RegionError, resolve_roi
@@ -44,7 +45,7 @@ def _locate(job: Job, image: np.ndarray, files: JobFiles) -> Anchor | None:
     try:
         anchor = run_locator(locator.type, locator.version, image, locator.params, files)
     except (LocatorError, JobFileError) as exc:
-        raise Stop(ErrorCode.LOCATOR_CANNOT_RUN, f"Localizador não pode rodar: {exc}") from exc
+        raise Stop(ErrorCode.LOCATOR_CANNOT_RUN, tr("Localizador não pode rodar: {exc}", exc=exc)) from exc
     if anchor is None:
         raise Stop(ErrorCode.NOT_FOUND)
     return anchor
@@ -56,7 +57,7 @@ def inspect_job(bundle: JobBundle, frame: Frame) -> InspectionResult:
     try:
         return _inspect(bundle, frame.image, started, timings)
     except Stop as stop:
-        return _error(stop.code, str(stop), started, timings)
+        return _error(stop.code, stop.text, started, timings)
     except Exception:  # any doubt is ERROR, whatever the cause (FR-INS-6)
         log.exception("inspection failed")
         return _error(ErrorCode.INTERNAL, CATALOG[ErrorCode.INTERNAL].text, started, timings)
@@ -103,7 +104,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
             if tool.affects_result:
                 raise
             # an informative tool never decides, not even by failing to run: noted on its own entry (FR-INS-13)
-            reports.append(ToolReport(tool.id, tool.type, tool.version, False, 0.0, affects_result=False, error=str(stop), error_code=int(stop.code)))
+            reports.append(ToolReport(tool.id, tool.type, tool.version, False, 0.0, affects_result=False, error=stop.text, error_code=int(stop.code)))
             continue
         per_tool[tool.id] = elapsed
         scores[tool.id] = score
@@ -144,20 +145,20 @@ def _run(tool: Tool, job: Job, anchor: Anchor | None, image: np.ndarray, files: 
     try:
         _, px = resolve_roi(job, tool.roi, anchor, image.shape)
     except RegionError as exc:
-        raise Stop(ErrorCode.REGION_OUTSIDE, str(exc)) from None
+        raise Stop(ErrorCode.REGION_OUTSIDE, exc.text) from None
     x0, y0, x1, y1 = px
     t = time.perf_counter()
     try:
         result = run_tool(tool.type, tool.version, image[y0:y1, x0:x1], tool.params, files)
     except (ToolError, JobFileError) as exc:
-        raise Stop(ErrorCode.TOOL_CANNOT_RUN, f"Ferramenta '{tool.id}' não pode rodar: {exc}") from exc
+        raise Stop(ErrorCode.TOOL_CANNOT_RUN, tr("Ferramenta '{tool}' não pode rodar: {exc}", tool=tool.id, exc=exc)) from exc
     except Exception as exc:
         log.exception("tool %s failed", tool.id)
-        raise Stop(ErrorCode.TOOL_FAILED, f"Ferramenta '{tool.id}' falhou: {type(exc).__name__}") from exc
+        raise Stop(ErrorCode.TOOL_FAILED, tr("Ferramenta '{tool}' falhou: {kind}", tool=tool.id, kind=type(exc).__name__)) from exc
     elapsed = time.perf_counter() - t
     score = float(result.score)
     if not 0.0 <= score <= 1.0 or score != score:
-        raise Stop(ErrorCode.INVALID_SCORE, f"Ferramenta '{tool.id}' devolveu pontuação inválida")
+        raise Stop(ErrorCode.INVALID_SCORE, tr("Ferramenta '{tool}' devolveu pontuação inválida", tool=tool.id))
     return px, result, score, elapsed
 
 

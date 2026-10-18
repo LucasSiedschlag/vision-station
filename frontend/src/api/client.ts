@@ -1,10 +1,11 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { components, paths } from './schema'
+import { currentLocale } from '@/app/locale'
 import { useSession } from './session'
 
 export type Problem = components['schemas']['Problem']
 
-/** An error answer from the API, in the shape every endpoint uses: a Portuguese message and a machine code. */
+/** An error answer from the API, in the shape every endpoint uses: a message in the language asked for and a machine code. */
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
@@ -24,6 +25,8 @@ const auth: Middleware = {
   onRequest({ request }) {
     const { token } = useSession.getState()
     if (token) request.headers.set('Authorization', `Bearer ${token}`)
+    // the texts of the server (messages, error texts, tool labels) come in the language on screen (TD-30)
+    request.headers.set('Accept-Language', currentLocale())
     return request
   },
   onResponse({ response }) {

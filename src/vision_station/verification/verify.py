@@ -16,6 +16,7 @@ from typing import Literal
 import numpy as np
 
 from vision_station.cameras import ApplyReport, Frame, SettingStatus
+from vision_station.core.i18n import join, tr
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.store import JobBundle
 from vision_station.algorithms import metrics
@@ -36,7 +37,7 @@ Locator = Callable[[np.ndarray], tuple[float, float] | None]
 class Check:
     name: str
     passed: bool
-    message: str  # Portuguese, for the screen
+    message: str  # a Msg (Portuguese, translated at the API), for the screen
 
 
 @dataclass(frozen=True)
@@ -54,8 +55,8 @@ class VerificationReport:
 
     def summary(self) -> str:
         if self.ok:
-            return "Job verificado"
-        return "; ".join(c.message for c in self.failures())
+            return tr("Job verificado")
+        return join(c.message for c in self.failures())
 
 
 def check_camera_and_view(
@@ -69,48 +70,48 @@ def check_camera_and_view(
     warnings: list[str] = []
 
     if apply_report is None:
-        checks.append(Check("settings", False, "ajustes da câmera não aplicados"))
+        checks.append(Check("settings", False, tr("ajustes da câmera não aplicados")))
     else:
         rejected = sorted(k for k, s in apply_report.status.items() if s is SettingStatus.REJECTED)
         if rejected:
-            detail = "; ".join(f"{k}: {apply_report.detail.get(k, 'recusado')}" for k in rejected)
-            checks.append(Check("settings", False, f"ajuste não aplicado ({detail})"))
+            detail = join(tr("{setting}: {detail}", setting=k, detail=apply_report.detail.get(k) or tr("recusado")) for k in rejected)
+            checks.append(Check("settings", False, tr("ajuste não aplicado ({detail})", detail=detail)))
         else:
-            checks.append(Check("settings", True, "ajustes da câmera aplicados"))
-        warnings += [f"{k}: {apply_report.detail.get(k, 'não suportado')}" for k, s in sorted(apply_report.status.items()) if s is SettingStatus.NOT_SUPPORTED]
+            checks.append(Check("settings", True, tr("ajustes da câmera aplicados")))
+        warnings += [tr("{setting}: {detail}", setting=k, detail=apply_report.detail.get(k) or tr("não suportado")) for k, s in sorted(apply_report.status.items()) if s is SettingStatus.NOT_SUPPORTED]
 
     if frame is None:
-        checks.append(Check("frame", False, "sem imagem da câmera"))
+        checks.append(Check("frame", False, tr("sem imagem da câmera")))
         return checks, warnings
-    checks.append(Check("frame", True, "imagem recebida"))
+    checks.append(Check("frame", True, tr("imagem recebida")))
 
     q = bundle.job.quality
     bright = metrics.brightness(frame.image)
     in_range = q.brightness.min <= bright <= q.brightness.max
-    checks.append(Check("brightness", in_range, f"brilho {bright:.0f} (esperado {q.brightness.min:g} a {q.brightness.max:g})" if not in_range else f"brilho {bright:.0f}"))
+    checks.append(Check("brightness", in_range, tr("brilho {value:.0f} (esperado {low:g} a {high:g})", value=bright, low=q.brightness.min, high=q.brightness.max) if not in_range else tr("brilho {value:.0f}", value=bright)))
 
     ref_png = bundle.extra.get(REFERENCE_IMAGE)
     ref_image = decode_image(ref_png) if ref_png else None
     if ref_image is None:
-        warnings.append("job sem imagem de referência: nitidez, semelhança e posição não conferidas")
+        warnings.append(tr("job sem imagem de referência: nitidez, semelhança e posição não conferidas"))
         return checks, warnings
 
     meta = parse_meta(bundle.extra[REFERENCE_META]) if REFERENCE_META in bundle.extra else None
     ref_sharp = meta.sharpness if meta else metrics.sharpness(ref_image)
     sharp = metrics.sharpness(frame.image)
     ratio = sharp / ref_sharp if ref_sharp > 0 else 1.0
-    checks.append(Check("sharpness", ratio >= q.sharpness_min_ratio, f"nitidez {ratio:.0%} da referência (mínimo {q.sharpness_min_ratio:.0%}): foco?" if ratio < q.sharpness_min_ratio else f"nitidez {ratio:.0%} da referência"))
+    checks.append(Check("sharpness", ratio >= q.sharpness_min_ratio, tr("nitidez {ratio:.0%} da referência (mínimo {minimum:.0%}): foco?", ratio=ratio, minimum=q.sharpness_min_ratio) if ratio < q.sharpness_min_ratio else tr("nitidez {ratio:.0%} da referência", ratio=ratio)))
 
     sim = metrics.similarity(frame.image, ref_image)
-    checks.append(Check("similarity", sim >= q.similarity_min, f"imagem diferente da referência ({sim:.0%}, mínimo {q.similarity_min:.0%}): câmera movida ou cena diferente?" if sim < q.similarity_min else f"semelhança {sim:.0%}"))
+    checks.append(Check("similarity", sim >= q.similarity_min, tr("imagem diferente da referência ({value:.0%}, mínimo {minimum:.0%}): câmera movida ou cena diferente?", value=sim, minimum=q.similarity_min) if sim < q.similarity_min else tr("semelhança {value:.0%}", value=sim)))
 
     if locate is not None and meta is not None and meta.anchor is not None:
         found = locate(frame.image)
         if found is None:
-            checks.append(Check("anchor", False, "objeto de referência não encontrado na imagem"))
+            checks.append(Check("anchor", False, tr("objeto de referência não encontrado na imagem")))
         else:
             shift = max(abs(found[0] - meta.anchor[0]), abs(found[1] - meta.anchor[1]))
-            checks.append(Check("anchor", shift <= q.anchor_tolerance, f"posição deslocada {shift:.1%} da imagem (máximo {q.anchor_tolerance:.1%})" if shift > q.anchor_tolerance else "posição conferida"))
+            checks.append(Check("anchor", shift <= q.anchor_tolerance, tr("posição deslocada {shift:.1%} da imagem (máximo {maximum:.1%})", shift=shift, maximum=q.anchor_tolerance) if shift > q.anchor_tolerance else tr("posição conferida")))
     return checks, warnings
 
 
@@ -118,8 +119,8 @@ def check_decision_logic(bundle: JobBundle, inspect: Inspector, require_referenc
     """Step 5: run the job on the stored reference images and compare with the expected results."""
     if EXPECTED_FILE not in bundle.extra:
         if require_reference_set:
-            return [Check("reference_set", False, "job sem conjunto de referência (tests/expected.yaml)")], []
-        return [], ["job sem conjunto de referência: lógica de decisão não conferida"]
+            return [Check("reference_set", False, tr("job sem conjunto de referência (tests/expected.yaml)"))], []
+        return [], [tr("job sem conjunto de referência: lógica de decisão não conferida")]
 
     expected = parse_expected(bundle.extra[EXPECTED_FILE])
     checks: list[Check] = []
@@ -128,32 +129,32 @@ def check_decision_logic(bundle: JobBundle, inspect: Inspector, require_referenc
         data = bundle.extra.get(case.image)
         image = decode_image(data) if data else None
         if image is None:
-            checks.append(Check(name, False, f"{case.image}: imagem ausente ou ilegível"))
+            checks.append(Check(name, False, tr("{image}: imagem ausente ou ilegível", image=case.image)))
             continue
         try:
             result = inspect(bundle, Frame(image=image, timestamp=0.0))
         except Exception as exc:  # a tool that crashes on a stored image is a failed case, not a crash of the verifier
-            checks.append(Check(name, False, f"{case.image}: erro ao inspecionar ({type(exc).__name__}: {exc})"))
+            checks.append(Check(name, False, tr("{image}: erro ao inspecionar ({kind}: {exc})", image=case.image, kind=type(exc).__name__, exc=exc)))
             continue
         informative = {t.id for t in bundle.job.tools if not t.affects_result}
         problems = _compare(case, result, expected.tolerance, informative)
-        checks.append(Check(name, not problems, f"{case.image}: " + ("; ".join(problems) if problems else f"{result.outcome} como esperado")))
+        checks.append(Check(name, not problems, tr("{image}: {what}", image=case.image, what=join(problems) if problems else tr("{outcome} como esperado", outcome=result.outcome))))
     return checks, []
 
 
 def _compare(case, result: InspectionResult, tolerance: float, informative: frozenset[str] | set[str] = frozenset()) -> list[str]:
-    problems: list[str] = []
+    problems: list[str] = []  # Msgs
     if result.outcome != Outcome(case.outcome):
-        problems.append(f"resultado {result.outcome}, esperado {case.outcome}")
+        problems.append(tr("resultado {got}, esperado {want}", got=result.outcome, want=case.outcome))
     for tool_id, want in case.scores.items():
         got = result.scores.get(tool_id)
         if got is None:
             if tool_id not in informative:  # an informative tool that could not run decides nothing (FR-INS-13)
-                problems.append(f"nota de '{tool_id}' ausente")
+                problems.append(tr("nota de '{tool}' ausente", tool=tool_id))
         elif abs(got - want) > tolerance:
-            problems.append(f"nota de '{tool_id}' {got:.3f}, esperada {want:.3f} ± {tolerance:g}")
+            problems.append(tr("nota de '{tool}' {got:.3f}, esperada {want:.3f} ± {tolerance:g}", tool=tool_id, got=got, want=want, tolerance=tolerance))
     if case.reason_contains and case.reason_contains not in result.reason:
-        problems.append(f"motivo '{result.reason}' não contém '{case.reason_contains}'")
+        problems.append(tr("motivo '{reason}' não contém '{expected}'", reason=result.reason, expected=case.reason_contains))
     return problems
 
 

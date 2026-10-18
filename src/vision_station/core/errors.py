@@ -9,6 +9,8 @@ the next free number of its group, and the table in architecture §10.3 is updat
 from dataclasses import dataclass
 from enum import IntEnum
 
+from vision_station.core.i18n import tr
+
 
 class ErrorCode(IntEnum):
     INVALID_IMAGE = 101
@@ -38,54 +40,54 @@ class ErrorCode(IntEnum):
 @dataclass(frozen=True)
 class ErrorInfo:
     group: str
-    text: str  # pt-BR; the English text comes with the server catalogs (UI-C3, TD-30)
+    text: str  # a Msg: pt-BR, translated by the server catalog (TD-30)
     planned: str = ""  # the refactor or phase that will raise it; empty when the software raises it today
 
 
 CATALOG: dict[ErrorCode, ErrorInfo] = {
-    ErrorCode.INVALID_IMAGE: ErrorInfo("image", "Imagem inválida da câmera"),
-    ErrorCode.TOO_DARK: ErrorInfo("image", "Imagem escura demais, verificar a iluminação"),
-    ErrorCode.TOO_BRIGHT: ErrorInfo("image", "Imagem clara demais, verificar a iluminação"),
-    ErrorCode.OUT_OF_FOCUS: ErrorInfo("image", "Imagem fora de foco, verificar a lente e a câmera"),
-    ErrorCode.COLOR_DRIFT: ErrorInfo("image", "Cor de referência fora do limite, verificar iluminação", planned="R5"),
-    ErrorCode.NOT_FOUND: ErrorInfo("location", "Objeto não encontrado na posição esperada"),
-    ErrorCode.OUT_OF_POSITION: ErrorInfo("location", "Objeto fora da posição ou girado demais", planned="R1"),
-    ErrorCode.NOT_FOUND_OR_BLURRED: ErrorInfo("location", "Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera"),
-    ErrorCode.LOCATOR_CANNOT_RUN: ErrorInfo("location", "Localizador não pode rodar"),
-    ErrorCode.REGION_OUTSIDE: ErrorInfo("region", "Região fora da imagem"),
-    ErrorCode.TOOL_CANNOT_RUN: ErrorInfo("region", "Ferramenta não pode rodar"),
-    ErrorCode.TOOL_FAILED: ErrorInfo("region", "Ferramenta falhou"),
-    ErrorCode.INVALID_SCORE: ErrorInfo("region", "Ferramenta devolveu pontuação inválida"),
-    ErrorCode.CAMERA_LOST: ErrorInfo("camera", "Câmera desconectada durante a inspeção"),
-    ErrorCode.NO_FRESH_FRAME: ErrorInfo("camera", "Imagem não recebida da câmera"),
-    ErrorCode.INTERNAL: ErrorInfo("system", "Falha interna na inspeção, chamar a manutenção"),
-    ErrorCode.NO_JOB: ErrorInfo("system", "Nenhum job ativo e verificado", planned="R3"),
-    ErrorCode.UNKNOWN_JOB_NUMBER: ErrorInfo("system", "Número de job desconhecido", planned="R3"),
-    ErrorCode.VERIFICATION_FAILED: ErrorInfo("system", "Verificação do job falhou", planned="R3"),
-    ErrorCode.CHALLENGE: ErrorInfo("system", "Teste de desafio pendente ou reprovado", planned="R6"),
-    ErrorCode.JOB_SWITCHED: ErrorInfo("system", "Troca de job durante a inspeção"),
-    ErrorCode.MACHINE_HEARTBEAT: ErrorInfo("machine", "Máquina sem sinal de vida", planned="R3"),
+    ErrorCode.INVALID_IMAGE: ErrorInfo("image", tr("Imagem inválida da câmera")),
+    ErrorCode.TOO_DARK: ErrorInfo("image", tr("Imagem escura demais, verificar a iluminação")),
+    ErrorCode.TOO_BRIGHT: ErrorInfo("image", tr("Imagem clara demais, verificar a iluminação")),
+    ErrorCode.OUT_OF_FOCUS: ErrorInfo("image", tr("Imagem fora de foco, verificar a lente e a câmera")),
+    ErrorCode.COLOR_DRIFT: ErrorInfo("image", tr("Cor de referência fora do limite, verificar iluminação"), planned="R5"),
+    ErrorCode.NOT_FOUND: ErrorInfo("location", tr("Objeto não encontrado na posição esperada")),
+    ErrorCode.OUT_OF_POSITION: ErrorInfo("location", tr("Objeto fora da posição ou girado demais"), planned="R1"),
+    ErrorCode.NOT_FOUND_OR_BLURRED: ErrorInfo("location", tr("Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera")),
+    ErrorCode.LOCATOR_CANNOT_RUN: ErrorInfo("location", tr("Localizador não pode rodar")),
+    ErrorCode.REGION_OUTSIDE: ErrorInfo("region", tr("Região fora da imagem")),
+    ErrorCode.TOOL_CANNOT_RUN: ErrorInfo("region", tr("Ferramenta não pode rodar")),
+    ErrorCode.TOOL_FAILED: ErrorInfo("region", tr("Ferramenta falhou")),
+    ErrorCode.INVALID_SCORE: ErrorInfo("region", tr("Ferramenta devolveu pontuação inválida")),
+    ErrorCode.CAMERA_LOST: ErrorInfo("camera", tr("Câmera desconectada durante a inspeção")),
+    ErrorCode.NO_FRESH_FRAME: ErrorInfo("camera", tr("Imagem não recebida da câmera")),
+    ErrorCode.INTERNAL: ErrorInfo("system", tr("Falha interna na inspeção, chamar a manutenção")),
+    ErrorCode.NO_JOB: ErrorInfo("system", tr("Nenhum job ativo e verificado"), planned="R3"),
+    ErrorCode.UNKNOWN_JOB_NUMBER: ErrorInfo("system", tr("Número de job desconhecido"), planned="R3"),
+    ErrorCode.VERIFICATION_FAILED: ErrorInfo("system", tr("Verificação do job falhou"), planned="R3"),
+    ErrorCode.CHALLENGE: ErrorInfo("system", tr("Teste de desafio pendente ou reprovado"), planned="R6"),
+    ErrorCode.JOB_SWITCHED: ErrorInfo("system", tr("Troca de job durante a inspeção")),
+    ErrorCode.MACHINE_HEARTBEAT: ErrorInfo("machine", tr("Máquina sem sinal de vida"), planned="R3"),
 }
 
 
 # Reason codes of a failing tool, `<tool type>.<criterion>` (FR-INS-14): stable like the error codes, so a
 # failure can be counted by cause across jobs. A tool's new criterion adds a code here and in architecture §10.3.
 REASON_CODES: dict[str, str] = {
-    "code.min_count": "Menos códigos aceitos que o mínimo",
-    "code.max_count": "Mais códigos aceitos que o máximo",
-    "color.min_fraction": "Fração da região com a cor abaixo do mínimo",
-    "color.max_fraction": "Fração da região com a cor acima do máximo",
-    "color.min_coverage": "Cobertura ao longo do eixo abaixo do mínimo",
-    "color.max_gap": "Maior trecho sem a cor acima do máximo",
-    "pattern.min_count": "Menos ocorrências do padrão que o mínimo",
-    "pattern.max_count": "Mais ocorrências do padrão que o máximo",
-    "pattern.min_coverage": "Cobertura do padrão ao longo do eixo abaixo do mínimo",
-    "pattern.max_gap": "Maior trecho sem o padrão acima do máximo",
-    "detect.class": "Classe que reprova (ou fora das que aprovam)",
-    "detect.min_confidence": "Confiança do modelo abaixo do mínimo",
-    "detect.fail_class": "Detecção de uma classe que reprova",
-    "detect.require_classes": "Classe obrigatória não detectada",
-    "detect.min_count": "Menos detecções da classe contada que o mínimo",
-    "detect.max_count": "Mais detecções da classe contada que o máximo",
-    "detect.max_score": "Pontuação de anomalia acima do limite",
+    "code.min_count": tr("Menos códigos aceitos que o mínimo"),
+    "code.max_count": tr("Mais códigos aceitos que o máximo"),
+    "color.min_fraction": tr("Fração da região com a cor abaixo do mínimo"),
+    "color.max_fraction": tr("Fração da região com a cor acima do máximo"),
+    "color.min_coverage": tr("Cobertura ao longo do eixo abaixo do mínimo"),
+    "color.max_gap": tr("Maior trecho sem a cor acima do máximo"),
+    "pattern.min_count": tr("Menos ocorrências do padrão que o mínimo"),
+    "pattern.max_count": tr("Mais ocorrências do padrão que o máximo"),
+    "pattern.min_coverage": tr("Cobertura do padrão ao longo do eixo abaixo do mínimo"),
+    "pattern.max_gap": tr("Maior trecho sem o padrão acima do máximo"),
+    "detect.class": tr("Classe que reprova (ou fora das que aprovam)"),
+    "detect.min_confidence": tr("Confiança do modelo abaixo do mínimo"),
+    "detect.fail_class": tr("Detecção de uma classe que reprova"),
+    "detect.require_classes": tr("Classe obrigatória não detectada"),
+    "detect.min_count": tr("Menos detecções da classe contada que o mínimo"),
+    "detect.max_count": tr("Mais detecções da classe contada que o máximo"),
+    "detect.max_score": tr("Pontuação de anomalia acima do limite"),
 }

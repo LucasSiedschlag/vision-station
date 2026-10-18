@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { currentLocale, useLocale } from '@/app/locale'
 import type { components } from './schema'
 
 export type LiveMessage = components['schemas']['LiveMessage']
@@ -67,14 +68,15 @@ export const useLive = create<LiveState>((set) => ({
 }))
 
 /** Opens the live socket and keeps it open, with growing waits between attempts. Returns a function that closes it. */
-export function startLive(url = defaultUrl()): () => void {
+export function startLive(fixedUrl?: string): () => void {
   let socket: WebSocket | null = null
   let closed = false
   let delay = 500
   let lastFrame = 0
+  let reopenNow = false
 
   const open = () => {
-    socket = new WebSocket(url)
+    socket = new WebSocket(fixedUrl ?? defaultUrl())
     socket.binaryType = 'blob'
     socket.onopen = () => {
       delay = 500
@@ -90,12 +92,21 @@ export function startLive(url = defaultUrl()): () => void {
     }
     socket.onclose = () => {
       useLive.getState().setConnected(false)
-      if (!closed) setTimeout(open, (delay = Math.min(delay * 2, 5000)))
+      if (closed) return
+      const wait = reopenNow ? 0 : (delay = Math.min(delay * 2, 5000))
+      reopenNow = false
+      setTimeout(open, wait)
     }
     socket.onerror = () => socket?.close()
   }
 
   open()
+  // the server writes its texts in the language of the socket (`?lang=`, a browser cannot set a header on it): a new one for a new language
+  const unsubscribe = useLocale.subscribe((state, before) => {
+    if (state.locale === before.locale) return
+    reopenNow = true
+    socket?.close()
+  })
   // no frame for 3 s: show "no image" instead of the last picture
   const staleTimer = setInterval(() => {
     if (lastFrame && Date.now() - lastFrame > 3000) {
@@ -106,11 +117,12 @@ export function startLive(url = defaultUrl()): () => void {
 
   return () => {
     closed = true
+    unsubscribe()
     clearInterval(staleTimer)
     socket?.close()
   }
 }
 
 function defaultUrl(): string {
-  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/live`
+  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/live?lang=${currentLocale()}`
 }

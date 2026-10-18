@@ -5,6 +5,7 @@ description = "Vision Station: a configurable vision system for fixed industrial
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "babel>=2.18.0",
     "fastapi>=0.143.0",
     "numpy",
     "onnxruntime>=1.31.0",

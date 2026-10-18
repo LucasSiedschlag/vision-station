@@ -77,7 +77,7 @@ test('a result can be marked as wrong from the screen, with no login', async ({
 test('without a connection the screen says so instead of showing an old verdict', async ({
   page,
 }) => {
-  await page.routeWebSocket('**/api/live', (ws) => ws.close())
+  await page.routeWebSocket('**/api/live*', (ws) => ws.close()) // the address carries ?lang=
   await page.goto('/')
   await expect(verdict(page)).toContainText('Sem conexão')
   await expect(page.getByRole('button', { name: 'Inspecionar agora' })).toBeDisabled()

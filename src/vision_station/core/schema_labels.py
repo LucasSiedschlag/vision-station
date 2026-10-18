@@ -7,7 +7,8 @@
 
 Each entry is a title, or (title, description) or (title, description, labels of the choices). `about` is what
 the tool or locator does, shown above its form (the code's docstrings stay in English). The labels only change
-the schema the screen reads, never validation.
+the schema the screen reads, never validation. They are Portuguese texts translated by the server catalog when the
+schema is served (`core/i18n.py`, TD-30); `USED` lists them for the catalog check.
 """
 
 from collections.abc import Callable
@@ -15,8 +16,12 @@ from typing import Any
 
 Label = str | tuple[str, str] | tuple[str, str, dict[str, str]]
 
+USED: set[str] = set()  # every text given to `labels`, once the tools and locators are imported
+
 
 def labels(about: str = "", **fields: Label) -> Callable[[dict[str, Any]], None]:
+    USED.update(text for text in _texts(about, fields) if text)
+
     def extra(schema: dict[str, Any]) -> None:
         if about:
             schema["description"] = about
@@ -33,6 +38,14 @@ def labels(about: str = "", **fields: Label) -> Callable[[dict[str, Any]], None]
                 prop["x-enum-labels"] = choices
 
     return extra
+
+
+def _texts(about: str, fields: dict[str, Label]) -> list[str]:
+    found = [about]
+    for label in fields.values():
+        for part in (label,) if isinstance(label, str) else label:
+            found.extend(part.values() if isinstance(part, dict) else [part])
+    return found
 
 
 COLOR_RANGE: dict[str, Label] = {

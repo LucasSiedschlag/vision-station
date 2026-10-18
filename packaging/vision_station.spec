@@ -15,6 +15,7 @@ for extra in ("packaging/build_info.json", "THIRD_PARTY_LICENSES.md"):
     if (root / extra).is_file():
         datas.append((str(root / extra), "."))
 datas += collect_data_files("onnxruntime")
+datas += collect_data_files("vision_station", includes=["**/*.po"])  # the English texts of the server (TD-30)
 
 binaries = collect_dynamic_libs("zxingcpp") + collect_dynamic_libs("onnxruntime")
 

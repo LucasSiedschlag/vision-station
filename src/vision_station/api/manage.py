@@ -27,6 +27,7 @@ from pydantic import ValidationError
 from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, LockedOut
 from vision_station.cameras import Frame
+from vision_station.core.i18n import render, render_schema, tr
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs.job import BUILTIN_ROIS
 from vision_station.locators import get_locator, locator_types
@@ -47,8 +48,8 @@ def _now() -> datetime:
 
 def _type_info(name: str, version: int, entry: Any) -> m.TypeInfo:
     schema = entry.params.model_json_schema()
-    # what the editor shows about the type: the Portuguese `about` of its parameters (schema_labels), not the docstring
-    return m.TypeInfo(name=name, version=version, description=schema.get("description", ""), params_schema=schema)
+    # what the editor shows about the type: the `about` of its parameters (schema_labels, translated), not the docstring
+    return m.TypeInfo(name=name, version=version, description=render(schema.get("description", "")), params_schema=render_schema(schema))
 
 
 def _fields(exc: ValidationError, prefix: str) -> dict[str, str]:
@@ -59,12 +60,12 @@ def _decode_image(data: str) -> np.ndarray:
     try:
         raw = base64.b64decode(data, validate=True)
     except (binascii.Error, ValueError):
-        raise ValueError("a imagem não está em base64") from None
+        raise ValueError(tr("a imagem não está em base64")) from None
     if len(raw) > MAX_IMAGE:
-        raise ValueError("imagem grande demais")
+        raise ValueError(tr("imagem grande demais"))
     image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
-        raise ValueError("o arquivo não é uma imagem")
+        raise ValueError(tr("o arquivo não é uma imagem"))
     return image
 
 
@@ -87,7 +88,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             try:
                 return _decode_image(image)
             except ValueError as exc:
-                raise Problem(400, f"Imagem inválida: {exc}", "bad_image") from exc
+                raise Problem(400, tr("Imagem inválida: {why}", why=exc.args[0]), "bad_image") from exc
         frame = deps.acquisition.latest()
         if frame is None:
             raise Problem(409, "Sem imagem da câmera", "no_frame")
@@ -134,7 +135,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
                 if missing:
                     raise FormatError(f"the reference set names images that are not in the job: {missing}")
         except (FormatError, StoreError) as exc:
-            raise Problem(422, f"O job não pode rodar: {exc}", "invalid_draft") from exc
+            raise Problem(422, tr("O job não pode rodar: {why}", why=exc), "invalid_draft") from exc
         return bundle
 
     def placeholder(draft: m.JobDraft, role: str) -> JobBundle:
@@ -144,7 +145,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         try:
             ref = jobs.save(bundle)
         except StoreError as exc:
-            raise Problem(409, f"Não foi possível salvar: {exc}", "save_conflict") from exc
+            raise Problem(409, tr("Não foi possível salvar: {why}", why=exc), "save_conflict") from exc
         return m.SavedVersion(id=ref.job_id, version=ref.version)
 
     # --- types ---------------------------------------------------------------------------------------
@@ -203,7 +204,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         try:
             placeholder(draft, role)
         except Problem as exc:  # type: ignore[misc]
-            return m.DraftCheckOut(ok=False, message=exc.detail, fields=exc.extra.get("fields", {}))
+            return m.DraftCheckOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
         return m.DraftCheckOut(ok=True)
 
     @api.post("/jobs", status_code=201, response_model=m.SavedVersion, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
@@ -222,7 +223,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             raise Problem(404, "Esse job não existe", "job_not_found")
         seen = draft.latest if draft.latest is not None else draft.base.version if draft.base else None
         if draft.base is None or draft.base.id != job_id or seen != latest:
-            raise Problem(409, f"O job mudou: a última versão é a {latest}. Abra de novo antes de salvar.", "stale_draft", latest=latest)
+            raise Problem(409, tr("O job mudou: a última versão é a {latest}. Abra de novo antes de salvar.", latest=latest), "stale_draft", latest=latest)
         saved = save(build(draft, job_id=job_id, version=latest + 1, parent=latest, author=role))
         jobs.audit("job_save", by=role, job_id=job_id, version=saved.version, parent=latest, notes=draft.notes)
         return saved
@@ -358,7 +359,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         try:
             deps.auth.set_password(role, body.password)
         except AuthError as exc:
-            raise Problem(400, f"Senha não aceita: {exc}", "bad_password") from exc
+            raise Problem(400, tr("Senha não aceita: {why}", why=exc), "bad_password") from exc
         jobs.audit("password_set", by=current, role=role)
         return next(m.UserOut(**u) for u in deps.auth.users() if u["role"] == role)
 

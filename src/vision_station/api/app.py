@@ -30,6 +30,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from vision_station.core.i18n import Language, choose, negotiate, render, tr, using
 from vision_station.core.results import contract_dict
 from vision_station import __version__
 from vision_station.build_info import bundle_dir, describe
@@ -118,6 +119,37 @@ def make_event_handler(deps: ApiDeps) -> Callable[[StationEvent], None]:
     return handle
 
 
+def _spoken(value: Any) -> Any:
+    """Every text of an answer in the current language (a plain text the catalog does not know stays as it is)."""
+    if isinstance(value, str):
+        return render(value)
+    if isinstance(value, list):
+        return [_spoken(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _spoken(v) for k, v in value.items()}
+    return value
+
+
+def _check_out(report: Any) -> m.CheckOut:
+    return m.CheckOut(**{**vars(report), "message": render(report.message)})
+
+
+def station_language(deps: ApiDeps) -> Language:
+    return deps.system.config.station.language if deps.system else "pt-BR"
+
+
+class LiveMessage(dict):
+    """A message for the live socket, as it reads in the station language, that can be built again for a client
+    that asked for another (`?lang=`, `Accept-Language`). The hub passes it on as a plain dict (TD-30)."""
+
+    def __init__(self, text: dict[str, Any], build: Callable[[Language], dict[str, Any]], language: Language):
+        super().__init__(text)
+        self._build, self.language = build, language
+
+    def in_language(self, language: Language) -> dict[str, Any]:
+        return self if language == self.language else self._build(language)
+
+
 def _iso(epoch: float | None) -> str | None:
     return None if epoch is None else datetime.fromtimestamp(epoch).astimezone().isoformat(timespec="milliseconds")
 
@@ -129,7 +161,7 @@ def _contract(c: Mapping[str, Any], *, sequence: int | None, error_code: int | N
         sequence=sequence,
         error_code=error_code,
         reason_codes=list(c.get("reason_codes", ())),
-        tools=list(c.get("tools", ())),
+        tools=[{**t, "error": render(t["error"])} if t.get("error") else t for t in c.get("tools", ())],
         fixtures=list(c.get("fixtures", ())),
         trigger=None if trigger is None else {**trigger, "at": _iso(trigger.get("at"))},
         acquired_at=_iso(c.get("acquired_at")),
@@ -143,7 +175,7 @@ def _result(result: Any, at: str | None = None) -> m.ResultOut | None:
         return None
     c = contract_dict(result)
     return m.ResultOut(
-        outcome=str(result.outcome), reason=result.reason, scores=dict(result.scores), duration_ms=round(result.duration_s * 1000), at=at,
+        outcome=str(result.outcome), reason=render(result.reason), scores=dict(result.scores), duration_ms=round(result.duration_s * 1000), at=at,
         job=None if c["job"] is None else m.JobRefOut(**c["job"]),
         **_contract(c, sequence=result.sequence, error_code=result.error_code, simulated=result.simulated),
     )
@@ -178,17 +210,30 @@ def _recorded_at(deps: ApiDeps) -> str | None:
     return record.at if record else None
 
 
-def event_message(deps: ApiDeps, event: StationEvent) -> dict[str, Any]:
+def event_message(deps: ApiDeps, event: StationEvent) -> LiveMessage:
+    """The message of an event for the live socket, with the texts in the station language."""
+    stamp = _recorded_at(deps) or datetime.now().astimezone().isoformat(timespec="milliseconds")  # one moment for every language
+    record_id = deps.recorder.last_record_id if deps.recorder else None
+
+    def build(language: Language) -> dict[str, Any]:
+        with using(language):
+            return _event_dict(deps, event, stamp, record_id)
+
+    language = station_language(deps)
+    return LiveMessage(build(language), build, language)
+
+
+def _event_dict(deps: ApiDeps, event: StationEvent, stamp: str, record_id: int | None) -> dict[str, Any]:
     if event.kind == "result":
-        result = _result(event.result, _recorded_at(deps) or datetime.now().astimezone().isoformat(timespec="milliseconds"))
+        result = _result(event.result, stamp)
         message = m.ResultMessage(
             **result.model_dump(exclude={"job"}),
             job=result.job or m.JobRefOut(id=event.job_id, name=event.job_name, version=event.job_version),
-            record_id=deps.recorder.last_record_id if deps.recorder else None,
+            record_id=record_id,
         )
     else:
         message = m.StateMessage(
-            state=str(event.state), previous=str(event.previous) if event.previous else None, message=event.message, showing_result=event.showing_result
+            state=str(event.state), previous=str(event.previous) if event.previous else None, message=render(event.message), showing_result=event.showing_result
         )
     return message.model_dump(mode="json")
 
@@ -199,24 +244,25 @@ def status_model(deps: ApiDeps) -> m.StateOut:
     age = acq.age_s()
     return m.StateOut(
         state=str(status.state),
-        language=deps.system.config.station.language if deps.system else "pt-BR",
-        message=status.message,
+        language=station_language(deps),
+        message=render(status.message),
         showing_result=status.showing_result,
-        detail=status.detail,
-        warnings=list(status.warnings),
+        detail=render(status.detail),
+        warnings=[render(w) for w in status.warnings],
         job=m.JobRefOut(id=status.job_id, name=status.job_name, version=status.job_version),
         last_result=_result(status.last_result, _recorded_at(deps)),
         last_record_id=deps.recorder.last_record_id if deps.recorder else None,
         camera=m.CameraOut(connected=acq.connected, last_frame_age_s=None if age is None else round(age, 2), last_error=acq.last_error),
         counters=m.Counters(**deps.results.counts(deps.shift_start())),
-        recent=[m.RecentResult(outcome=r.outcome, reason=r.reason, at=r.at) for r in reversed(deps.results.find(limit=10))],
+        recent=[m.RecentResult(outcome=r.outcome, reason=render(r.reason), at=r.at) for r in reversed(deps.results.find(limit=10))],
         recording_failures=deps.recorder.failures if deps.recorder else 0,
         version=__version__,
     )
 
 
-def status_json(deps: ApiDeps) -> dict[str, Any]:
-    return status_model(deps).model_dump(mode="json")
+def status_json(deps: ApiDeps, language: Language | None = None) -> dict[str, Any]:
+    with using(language or station_language(deps)):
+        return status_model(deps).model_dump(mode="json")
 
 
 def _record(r: InspectionRecord) -> m.RecordOut:
@@ -225,6 +271,7 @@ def _record(r: InspectionRecord) -> m.RecordOut:
         sequence=r.sequence, error_code=r.error_code, simulated=r.simulated,
     )
     plain = {k: getattr(r, k) for k in m.RecordOut.model_fields if k not in contract}
+    plain["reason"] = render(plain["reason"])  # what the catalog knows; a text with details stays as it was recorded
     return m.RecordOut(**plain, **contract)
 
 
@@ -275,16 +322,21 @@ def create_app(deps: ApiDeps) -> FastAPI:
 
     # --- errors: always {detail, code, ...} ----------------------------------------------------
 
+    def language_of(headers: Any) -> Language:
+        """The language a request asks for (`Accept-Language`); the station's when it names none of ours (TD-30)."""
+        return negotiate(headers.get("accept-language"), station_language(deps))
+
     @app.exception_handler(StarletteHTTPException)
     async def http_problem(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = getattr(exc, "code", None) or _DEFAULT_CODES.get(exc.status_code, "error")
-        body = {"detail": exc.detail if isinstance(exc.detail, str) else str(exc.detail), "code": code, **getattr(exc, "extra", {})}
+        with using(language_of(request.headers)):
+            body = _spoken({"detail": exc.detail if isinstance(exc.detail, str) else str(exc.detail), "code": code, **getattr(exc, "extra", {})})
         return JSONResponse(body, status_code=exc.status_code, headers=getattr(exc, "headers", None))
 
     @app.exception_handler(RequestValidationError)
     async def validation_problem(request: Request, exc: RequestValidationError) -> JSONResponse:
         fields = {".".join(str(p) for p in e["loc"][1:]) or str(e["loc"][0]): e["msg"] for e in exc.errors()}
-        return JSONResponse({"detail": "Dados inválidos", "code": "validation_error", "fields": fields}, status_code=422)
+        return JSONResponse({"detail": render("Dados inválidos", language_of(request.headers)), "code": "validation_error", "fields": fields}, status_code=422)
 
     # --- same-machine rules ----------------------------------------------------------------------
 
@@ -301,8 +353,13 @@ def create_app(deps: ApiDeps) -> FastAPI:
     async def refuse_other_origins(request: Request, call_next):
         # a web page on another site must not drive the station through the browser
         if not origin_allowed(request.headers.get("origin")):
-            return JSONResponse({"detail": "Origem não permitida", "code": "origin_not_allowed"}, status_code=403)
+            return JSONResponse({"detail": render("Origem não permitida", language_of(request.headers)), "code": "origin_not_allowed"}, status_code=403)
         return await call_next(request)
+
+    @app.middleware("http")
+    async def speak_the_language_asked(request: Request, call_next):
+        with using(language_of(request.headers)):  # what the routes render below is in the language of this request
+            return await call_next(request)
 
     def token_of(authorization: str | None) -> str | None:
         if authorization and authorization.lower().startswith("bearer "):
@@ -316,7 +373,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
         def check(current: str = Depends(role)) -> str:
             if not at_least(current, minimum):
                 if current == "operator":
-                    raise Problem(401, "É preciso entrar como " + ("Mantenedor" if minimum == "maintainer" else "Supervisor"), "login_required")
+                    raise Problem(401, tr("É preciso entrar como Mantenedor") if minimum == "maintainer" else tr("É preciso entrar como Supervisor"), "login_required")
                 raise Problem(403, "Este perfil não tem permissão para isso", "forbidden")
             return current
 
@@ -371,7 +428,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
             job=m.JobRefOut(id=item.job[0], name=item.job[1], version=item.job[2]) if done and item.job else None,
             frame_url=f"{base}/frame.jpg" if done and item.frame_jpeg else None,
             overlay_url=f"{base}/overlay.jpg" if done and item.overlay_jpeg else None,
-            message=f"A inspeção não aconteceu: {deps.controller.status().message}" if status == "expired" else None,
+            message=render(tr("A inspeção não aconteceu: {why}", why=deps.controller.status().message)) if status == "expired" else None,
         )
 
     def requested(id: str) -> Requested:
@@ -422,10 +479,12 @@ def create_app(deps: ApiDeps) -> FastAPI:
             await ws.close(code=1008)
             return
         await ws.accept()
+        # a browser cannot set headers on a WebSocket, so the page says its language in `?lang=`; another program may use Accept-Language
+        language = choose(ws.query_params.get("lang"), language_of(ws.headers))
         loop = asyncio.get_running_loop()
         queue = deps.hub.subscribe()
         try:
-            await ws.send_json({"type": "status", **status_json(deps)})
+            await ws.send_json({"type": "status", **status_json(deps, language)})
             interval = 1.0 / deps.frame_fps
             next_frame = loop.time()
             next_beat = loop.time() + deps.heartbeat_s
@@ -433,14 +492,15 @@ def create_app(deps: ApiDeps) -> FastAPI:
             while True:
                 wait = max(0.0, min(next_frame, next_beat) - loop.time())
                 try:
-                    await ws.send_json(await asyncio.wait_for(queue.get(), wait))
+                    message = await asyncio.wait_for(queue.get(), wait)
+                    await ws.send_json(message.in_language(language) if isinstance(message, LiveMessage) else message)
                     continue
                 except asyncio.TimeoutError:
                     pass
                 now = loop.time()
                 if now >= next_beat:
                     next_beat = now + deps.heartbeat_s
-                    await ws.send_json({"type": "status", **await loop.run_in_executor(None, status_json, deps)})
+                    await ws.send_json({"type": "status", **await loop.run_in_executor(None, status_json, deps, language)})
                 if now >= next_frame:
                     next_frame = now + interval
                     frame = deps.acquisition.latest()
@@ -459,7 +519,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
         try:
             token, seconds = deps.auth.login(body.role, body.password)
         except LockedOut as exc:
-            raise Problem(429, f"Muitas tentativas. Tente de novo em {int(exc.seconds) + 1} s", "locked", headers={"Retry-After": str(int(exc.seconds) + 1)}) from exc
+            raise Problem(429, tr("Muitas tentativas. Tente de novo em {seconds} s", seconds=int(exc.seconds) + 1), "locked", headers={"Retry-After": str(int(exc.seconds) + 1)}) from exc
         except AuthError as exc:
             raise Problem(401, "Perfil ou senha incorretos", "wrong_credentials") from exc
         return m.LoginOut(token=token, role=body.role, expires_in_s=seconds)
@@ -497,9 +557,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
         try:
             activate(deps.jobs, ref, report, reason)
         except VerificationFailed as exc:
-            raise Problem(409, "O job não passou na verificação", "verification_failed", problems=[c.message for c in report.failures()], verified=False) from exc
+            raise Problem(409, "O job não passou na verificação", "verification_failed", problems=[render(c.message) for c in report.failures()], verified=False) from exc
         deps.controller.switch_job(deps.jobs.load(ref))
-        return m.ActivateOut(activated=True, verified=report.ok, warnings=list(report.warnings), override=bool(reason) and not report.ok)
+        return m.ActivateOut(activated=True, verified=report.ok, warnings=[render(w) for w in report.warnings], override=bool(reason) and not report.ok)
 
     @api.get("/jobs/{job_id}/versions/{version}/export", responses={200: {"content": {"application/octet-stream": {}}}, 404: {"model": m.Problem}})
     def export_job(job_id: str, version: int, _: str = Depends(need("supervisor"))) -> Response:
@@ -533,7 +593,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
         try:
             return await asyncio.get_running_loop().run_in_executor(None, work)
         except StoreError as exc:
-            raise Problem(400, f"Arquivo recusado: {exc}", "file_refused") from exc
+            raise Problem(400, tr("Arquivo recusado: {why}", why=exc), "file_refused") from exc
 
     @api.post("/backup", response_model=m.BackupOut, responses={409: {"model": m.Problem}})
     def make_backup(_: str = Depends(need("supervisor"))) -> m.BackupOut:
@@ -651,7 +711,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
 
     @api.post("/system/test-folder", response_model=m.CheckOut)
     def test_folder(body: m.FolderCheckBody, _: str = Depends(need("maintainer"))) -> m.CheckOut:
-        return m.CheckOut(**vars(check_folder(body.path)))
+        return _check_out(check_folder(body.path))
 
     @api.post("/system/test-camera", response_model=m.CheckOut)
     def test_camera(body: m.CameraCheckBody, _: str = Depends(need("maintainer"))) -> m.CheckOut:
@@ -664,9 +724,9 @@ def create_app(deps: ApiDeps) -> FastAPI:
             frame = acq.latest()
             if acq.connected and frame is not None and not acq.stalled():
                 h, w = frame.image.shape[:2]
-                return m.CheckOut(ok=True, message=f"É a câmera em uso pela estação e está mandando imagem de {w}×{h}", width=w, height=h)
-            return m.CheckOut(ok=False, message="É a câmera em uso pela estação e ela não está mandando imagem" + (f": {acq.last_error}" if acq.last_error else ""))
-        return m.CheckOut(**vars(check_camera(CameraSettings.model_validate(body.model_dump()))))
+                return m.CheckOut(ok=True, message=render(tr("É a câmera em uso pela estação e está mandando imagem de {width}×{height}", width=w, height=h)), width=w, height=h)
+            return m.CheckOut(ok=False, message=render(tr("É a câmera em uso pela estação e ela não está mandando imagem") if not acq.last_error else tr("É a câmera em uso pela estação e ela não está mandando imagem: {why}", why=acq.last_error)))
+        return _check_out(check_camera(CameraSettings.model_validate(body.model_dump())))
 
     add_management_routes(api, deps, need, Problem, _result)
 

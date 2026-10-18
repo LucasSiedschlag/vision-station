@@ -810,15 +810,22 @@ Models are added only where the classical tools can't separate good objects from
 
 **Decision.**
 - **Lingui** in the interface, source language **pt-BR**, second language **en**; PO catalogs in `frontend/src/locales/`.
-- **Server texts** in PO catalogs compiled with **Babel**, chosen by `Accept-Language`; codes stay the contract (TD-22).
+- **Server texts** in a PO catalog read with **Babel**, chosen by `Accept-Language` (`?lang=` on the WebSocket, the station language when a request names none); codes stay the contract (TD-22).
 - **Operator screen** follows the **station language** (`system.yaml`); admin users choose theirs.
 - **Job texts** in both languages from job format 2 (`reason_fail: {pt-BR: …, en: …}`); a missing translation falls back to the other language and is flagged in *Validar*; format-1 texts are read as pt-BR (FR-JOB-15).
 - Numbers and dates formatted by locale (`Intl`; React Aria `NumberField`).
 
 **Consequences.**
-- `texts.ts` is migrated into the pt-BR catalog (UI-C2); `schema_labels.py` gains English labels (UI-C3).
+- `texts.ts` is migrated into the pt-BR catalog (UI-C2); the server side is done in UI-C3 (VIA-0061).
 - CI fails on a message without an English translation, on both sides.
-- Records keep codes and values, plus the station-language reason for traceability.
+- Records keep codes and values, plus the reason in the station language of the time (decision of Lucas, 2026-10-18: what is recorded in operation stays in the language it was recorded in). When results are listed, a standard text (one of the catalog's, found in either language) is shown in the language of the viewer; a text with details keeps its recorded form. CSV exports in the viewer's language are not done.
+
+**How the server does it (UI-C3).**
+- The code writes the text in Portuguese, as the interface does: `tr("Região '{name}' fora da imagem", name=name)`. That is a `Msg`, a `str` that already reads in Portuguese and also carries its msgid and parameters. The core, the records and the comparison with a job's reference set (`reason_contains`, FR-JOB-9) work in that one language whatever the station speaks.
+- Only the API renders, per request or per WebSocket, in the language of that person (the controller's one event is built again for each language). The hub carries one message and each socket asks for its language.
+- The English texts are `src/vision_station/core/locales/en/LC_MESSAGES/messages.po`, whose msgids are the Portuguese texts. There is no compile step: the file ships as package data and the PyInstaller spec collects it. `uv run python -m vision_station.core.i18n_extract --update` finds the texts in the code (`tr`, `render`, the message of `Problem`, the labels of the forms) and adds the new ones, empty; a test fails on an empty or leftover entry, on an f-string where a `tr` belongs, and on a translation that loses a `{field}`.
+- The parameter forms of tools and locators are served with titles, descriptions and choice labels translated on a copy of the schema; validation is untouched.
+- **Known limit until job format 2 (R1, VIA-0070):** a job's own texts (`reason_fail`, `ui.waiting`) are read as Portuguese, so on an English station the reason of a FAIL stays in the job's language. Technical tails (a camera's own error, a file name, a pydantic field message) are not translated.
 
 **Revisit when:** a third language is needed (add a catalog; nothing else changes).
 

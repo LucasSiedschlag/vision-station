@@ -895,10 +895,10 @@ The interface is available in **Portuguese (pt-BR)** and **English (en)**. Portu
 | **Texts from the server** (state messages, error-code texts of architecture §10.3, tool and locator labels and descriptions, verification reports) | Catalogs on the server (PO files, gettext/Babel), chosen by the request's `Accept-Language`; codes stay the contract, texts are rendered in the viewer's language |
 | **Texts written in a job** (`reason_fail`, `ui.waiting`, sample notes) | **Both languages in the job** (job format 2, FR-JOB-15): the editor shows a pt-BR and an en field side by side; an empty translation falls back to the other language, marked in *Validar*. Format-1 jobs: the existing text is pt-BR |
 | **Numbers, dates, units** | Formatted by locale (`Intl`, React Aria): `1.234,5` and `16/10/2026` in pt-BR, `1,234.5` and `10/16/2026` in en. Number fields accept the locale's decimal separator |
-| **Records, CSV, audit** | Store codes and values; the reason text of the station language at the time is kept for traceability. CSV exports use the viewer's language and say which |
+| **Records, CSV, audit** | Store codes and values, and the reason in the station language of the time (decision of Lucas, 2026-10-18). Listing results shows a standard text (one of the server catalog) in the language of the viewer; a text with details (a camera's own error, a file name) and a job's own `reason_fail` keep the form in which they were recorded. CSV exports carry the reason as recorded: the viewer's language (and saying which) is **not done yet** |
 | **Guides** (`docs/guias/`) | Portuguese first; English versions when a project needs them |
 
-How it is built (UI-C2, VIA-0060): `app/locale.tsx` is the one source of the language. It loads the catalog of the language on screen (each catalog is a chunk of its own), activates Lingui and React Aria, sets `<html lang>`, and mounts the pages again when the language changes (the live socket and the query cache are kept). The station language is `station.language` in `system.yaml` and `language` in the state message; a page opens in the last station language seen, so the kiosk does not flash Portuguese. A person's choice (user menu, login dialog) is kept in this browser and applies while logged in; logging out returns to the station's.
+How it is built (UI-C2, VIA-0060): `app/locale.tsx` is the one source of the language. It loads the catalog of the language on screen (each catalog is a chunk of its own), activates Lingui and React Aria, sets `<html lang>`, and mounts the pages again when the language changes (the query cache is invalidated, so the texts that came from the server are asked for again in the new language; the live socket is opened again at once with the new `?lang=`). The station language is `station.language` in `system.yaml` and `language` in the state message; a page opens in the last station language seen, so the kiosk does not flash Portuguese. A person's choice (user menu, login dialog) is kept in this browser and applies while logged in; logging out returns to the station's.
 
 ### 11.2 Voice
 
@@ -966,7 +966,7 @@ The levels of 0.1 are kept: unit, component, contract, end to end, accessibility
 
 Unchanged from 0.1, plus:
 - `lingui extract` runs in CI and fails if a message is missing in `en`; `@lingui/vite-plugin` compiles the catalogs at build.
-- The server's PO catalogs are compiled into the Python package at build (Babel) and checked the same way.
+- The server's PO catalog ships in the Python package (read with Babel, no compile step) and is checked the same way by `tests/test_server_texts.py`.
 
 ---
 
@@ -985,7 +985,7 @@ No migration: the 0.1 foundation stays and grows. Each step keeps every test gre
 | UI-C0 | Add React Aria Components; `Slider` (multi-thumb) and `NumberField` replace `SliderField` and `NumberInput`; `ColorArea` / `ColorSlider` / `ColorField` wrappers; all in `/design` with every state | Component and axe tests green |
 | UI-C1 | Add shadcn `Sidebar`, `Resizable`, `Command`, `Accordion`, `Drawer`, `Chart`; `@dnd-kit/core` + `sortable`; shell moves to `Sidebar` with the four areas and the Máquina indicator | Shell e2e and roles green |
 | UI-C2 | i18n: Lingui set up, `texts.ts` moved into `pt-BR` messages, `en` catalog written, `LanguageSwitch`, station language on the operator screen, locale-aware formatting | Both catalogs complete; operator e2e green in both languages |
-| UI-C3 | Server i18n: PO catalogs for state messages, error-code texts, tool and locator labels, verification reports; `Accept-Language`; job format 2 texts in both languages (with R1) | Contract test: every label in both languages |
+| UI-C3 | Server i18n: PO catalog for state messages, error-code texts, tool and locator labels, verification reports, error answers; `Accept-Language` and `?lang=` on the socket; job format 2 texts in both languages (with R1) | Contract test: every text in both languages. **Done (VIA-0061)** except the job texts, which wait for R1 |
 
 ### 15.3 The new interface (alongside the additions)
 

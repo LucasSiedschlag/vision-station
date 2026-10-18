@@ -24,6 +24,7 @@ from typing import Any
 import cv2
 import numpy as np
 
+from vision_station.core.i18n import tr
 from vision_station.models.card import InputSpec, ModelCard, ModelError
 
 
@@ -108,9 +109,9 @@ def _numbers(value: Any, what: str) -> np.ndarray:
     is not below any confidence, and argmax takes it as the top class: that was a pass) (VIA-0054)."""
     array = np.asarray(value, np.float64)
     if array.size == 0:
-        raise ModelError(f"saída do modelo vazia ({what})")
+        raise ModelError(tr("saída do modelo vazia ({what})", what=what))
     if not np.all(np.isfinite(array)):
-        raise ModelError(f"saída do modelo não é um número (NaN ou infinito) em {what}")
+        raise ModelError(tr("saída do modelo não é um número (NaN ou infinito) em {what}", what=what))
     return array
 
 
@@ -124,20 +125,20 @@ def predict(model: bytes, card: ModelCard, image: np.ndarray, min_confidence: fl
     values = list(outputs.values())
 
     if card.task == "classifier":
-        scores = _numbers(values[0], "classes").reshape(-1)
+        scores = _numbers(values[0], tr("classes")).reshape(-1)
         if card.classes and len(scores) != len(card.classes):
             raise ModelError(f"the model gives {len(scores)} classes, its card names {len(card.classes)}")
-        probs = _numbers(_softmax(scores) if card.output.softmax else scores, "probabilidades")
+        probs = _numbers(_softmax(scores) if card.output.softmax else scores, tr("probabilidades"))
         names = card.classes or [str(i) for i in range(len(probs))]
         top = int(np.argmax(probs))
         return Prediction("classifier", label=names[top], confidence=float(probs[top]), probabilities={n: float(p) for n, p in zip(names, probs)})
 
     if card.task == "detector":
-        boxes = _numbers(outputs[card.output.boxes] if card.output.boxes else values[0], "caixas").reshape(-1, 4)
-        logits = _numbers(outputs[card.output.scores] if card.output.scores else values[1], "classes").reshape(len(boxes), -1)
+        boxes = _numbers(outputs[card.output.boxes] if card.output.boxes else values[0], tr("caixas")).reshape(-1, 4)
+        logits = _numbers(outputs[card.output.scores] if card.output.scores else values[1], tr("classes")).reshape(len(boxes), -1)
         if card.classes and logits.shape[1] != len(card.classes):
             # a box of a class past the card's list was dropped in silence: a shifted export could hide the failing class
-            raise ModelError(f"o modelo dá {logits.shape[1]} classes e o cartão nomeia {len(card.classes)}")
+            raise ModelError(tr("o modelo dá {got} classes e o cartão nomeia {named}", got=logits.shape[1], named=len(card.classes)))
         probs = _sigmoid(logits) if card.output.sigmoid else logits
         names = card.classes or [str(i) for i in range(probs.shape[1])]
         sx, sy = (fx1 - fx0) or 1.0, (fy1 - fy0) or 1.0
@@ -151,4 +152,4 @@ def predict(model: bytes, card: ModelCard, image: np.ndarray, min_confidence: fl
         found.sort(key=lambda d: d.confidence, reverse=True)
         return Prediction("detector", detections=found)
 
-    return Prediction("anomaly", score=float(_numbers(values[0], "pontuação de anomalia").max()))
+    return Prediction("anomaly", score=float(_numbers(values[0], tr("pontuação de anomalia")).max()))

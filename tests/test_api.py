@@ -219,7 +219,7 @@ def test_repeated_wrong_passwords_lock_the_role_for_a_while(env):
 def test_passwords_are_stored_hashed_and_must_be_long_enough(env, tmp_path):
     text = (tmp_path / "data" / "system" / "users.json").read_text()
     assert "supervisor-pass" not in text and "maintainer-pass" not in text and '"hash"' in text
-    with pytest.raises(AuthError, match="at least"):
+    with pytest.raises(AuthError, match="pelo menos"):
         env.auth.set_password("supervisor", "short")
     with pytest.raises(AuthError):
         env.auth.set_password("operator", "long-enough-password")

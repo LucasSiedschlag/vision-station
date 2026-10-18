@@ -24,7 +24,7 @@ The camera is opened **only** by Vision Station. A USB camera serves one program
 
 ## 2. Station state
 
-`GET /api/state` → `state` (`Starting`, `Preparing`, `Ready`, `WaitingStill`, `Inspecting`, `ShowingResult`, `CameraLost`, `Fault`, `Paused`), `message` (for a screen, in the `Accept-Language` of the request), `detail`, `job` (the active one), `camera` (`connected`, `last_frame_age_s`, `last_error`), `last_result`, `counters`.
+`GET /api/state` → `state` (`Starting`, `Preparing`, `Ready`, `WaitingStill`, `Inspecting`, `ShowingResult`, `CameraLost`, `Fault`, `Paused`), `message` (for a screen, in the language of the request: see "Language" below), `detail`, `job` (the active one), `camera` (`connected`, `last_frame_age_s`, `last_error`), `last_result`, `counters`.
 
 Use it to show the operator why the vision step is not available ("Câmera desconectada", "Nenhum job ativo…").
 
@@ -74,7 +74,7 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
 
 - The result follows the result contract of document 03 §10.3 (TD-22). The fields of version 0.1 are unchanged; the others were added with R2 and a client may ignore them. `error_code` and `reason_codes` are stable across versions: count and react on them, not on the text. `simulated: true` (a file camera, a test) is never a real part. `scores` also lists informative tools (`affects_result: false`), which never decide: take the verdict from `outcome`, never from the scores. On records written before 0.2, `error_code` and `simulated` are `null` (not known).
 - `expired`: the request did not turn into an inspection within 30 s (the station stopped, the camera was lost, a job change). `message` says the station's state. Treat it as an error.
-- `reason` is the job's text in the language the request asks for with `Accept-Language` (`pt-BR` or `en`; default: the station language), ready for an operator screen. Act on `outcome` and the codes, never on the text.
+- `reason` is ready for an operator screen. For an `ERROR` it is the text of the error code in the language of the request (see "Language" below). For a `FAIL` it is the text the job wrote (`reason_fail`): until job format 2 (R1) a job has one language, Portuguese, whatever the request asks. Act on `outcome` and the codes, never on the text.
 
 ### Pictures
 
@@ -83,7 +83,9 @@ GET /api/inspections/{id}?wait_s=10                 wait_s: 0–30, waits for th
 ## 4. Live view
 
 - `GET /api/snapshot.jpg`: the newest frame, reduced (about 960 px), for a still preview.
-- `WS /api/live`: binary messages are JPEG frames (at most 10 per second); text messages are JSON events (`status` every few seconds, `state` on each change, `result` with `record_id`). The schema is `LiveMessage` in `/api/openapi.json`.
+- `WS /api/live`: binary messages are JPEG frames (at most 10 per second); text messages are JSON events (`status` every few seconds, `state` on each change, `result` with `record_id`). The schema is `LiveMessage` in `/api/openapi.json`. The texts of the messages are in the language of the socket (see "Language" below).
+
+**Language** (TD-30). The texts the server writes (state messages, error-code texts, why a verification failed, the labels of the tool forms) come in `pt-BR` or `en`. An HTTP request asks with the `Accept-Language` header. A WebSocket asks with `?lang=en` in its address, because a browser cannot set a header on a socket; a program that is not a browser can use the header on the handshake instead, and `?lang=` wins when both are present. A request that names neither, or only languages we do not speak, gets the station language (`station.language` in `system.yaml`). Codes (`code`, `error_code`, `reason_codes`) never change with the language: a program acts on them, not on the texts. A result is recorded with its reason in the station language of the time. Listed later, a standard text of the catalog comes back in the language of the request; a text with details (a camera's own error, a file name) keeps the form in which it was recorded.
 
 ## 5. A page of another program
 

@@ -19,6 +19,7 @@ from pathlib import Path
 from vision_station.api import ApiDeps, AuthService, create_app, make_event_handler
 from vision_station.build_info import describe
 from vision_station.cameras import Camera, create_camera
+from vision_station.core.i18n import tr
 from vision_station.pipeline import draw_overlay, inspect_job
 from vision_station.records import ResultRecorder, ResultStore
 from vision_station.station import Acquisition, StationController
@@ -54,7 +55,7 @@ class Runtime:
             bundle = self.jobs.load(ref)
         except Exception as exc:  # a damaged store must not stop the program: the screen says what happened
             log.exception("cannot load the active job %s v%s", ref.job_id, ref.version)
-            self.controller.fault(f"O job ativo não pôde ser carregado: {exc}")
+            self.controller.fault(tr("O job ativo não pôde ser carregado: {exc}", exc=exc))
             return
         self.controller.start(bundle)
 
@@ -109,7 +110,7 @@ def build_runtime(root: Path | str, config: SystemConfig | None = None, camera: 
         results=results,
         auth=auth,
         inspect=inspect_job,
-        recorder=ResultRecorder(results, overlay=draw_overlay),
+        recorder=ResultRecorder(results, overlay=draw_overlay, language=lambda: system.config.station.language),
         backup_dir=system.backup_dir(),
         shift_start=lambda: shift_start(system.config, datetime.now().astimezone()),
         allowed_hosts=LOCAL_HOSTS + tuple(config.network.allowed_hosts),
