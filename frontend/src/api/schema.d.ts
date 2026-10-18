@@ -317,6 +317,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/jobs/verify': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Verify Draft
+     * @description Run a draft on every sample of its reference set (Validar). It is the run activation does, so a draft that
+     *     passes here is not refused there for its samples; nothing is saved or recorded.
+     */
+    post: operations['verify_draft']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/jobs/{job_id}': {
     parameters: {
       query?: never
@@ -1084,6 +1105,32 @@ export interface components {
       }
       /** Station Paused */
       station_paused: boolean
+    }
+    /**
+     * CaseRunOut
+     * @description One sample run through a draft: what the job said against what was expected (Validar, frontend.md §4.3).
+     */
+    CaseRunOut: {
+      /** Duration Ms */
+      duration_ms: number | null
+      /**
+       * Expected
+       * @enum {string}
+       */
+      expected: 'PASS' | 'FAIL' | 'ERROR'
+      /** Image */
+      image: string
+      /** Message */
+      message: string
+      /** Ok */
+      ok: boolean
+      /** Outcome */
+      outcome: ('PASS' | 'FAIL' | 'ERROR') | null
+      /**
+       * Reason
+       * @default
+       */
+      reason: string
     }
     /** CheckOut */
     CheckOut: {
@@ -2434,6 +2481,30 @@ export interface components {
       /** Error Type */
       type: string
     }
+    /**
+     * VerifyOut
+     * @description The draft on every sample of its reference set: the same run that activation does (design rule 4).
+     */
+    VerifyOut: {
+      /**
+       * Cases
+       * @default []
+       */
+      cases: components['schemas']['CaseRunOut'][]
+      /**
+       * Fields
+       * @default {}
+       */
+      fields: {
+        [key: string]: string
+      }
+      /** Max Ms */
+      max_ms: number | null
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+    }
     /** VersionInfo */
     VersionInfo: {
       /** Active */
@@ -3504,6 +3575,59 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['DraftCheckOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  verify_draft: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VerifyOut']
         }
       }
       /** @description needs a login */

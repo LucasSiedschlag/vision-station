@@ -5,6 +5,7 @@ import type { components } from '../schema'
 export type TypeInfo = components['schemas']['TypeInfo']
 export type DraftTestOut = components['schemas']['DraftTestOut']
 export type CameraState = components['schemas']['CameraStateOut']
+export type VerifyOut = components['schemas']['VerifyOut']
 export type JobDraftBody = components['schemas']['JobDraft']
 
 export function useTypes() {
@@ -38,6 +39,7 @@ export function useCameraState(enabled = true) {
 
 export const editorApi = {
   validate: (body: JobDraftBody) => call(api.POST('/api/jobs/validate', { body })),
+  verify: (body: JobDraftBody) => call(api.POST('/api/jobs/verify', { body })),
   test: (draft: JobDraftBody, image?: string | null) =>
     call(api.POST('/api/jobs/test', { body: { draft, image: image ?? null } })),
   create: (body: JobDraftBody) => call(api.POST('/api/jobs', { body })),

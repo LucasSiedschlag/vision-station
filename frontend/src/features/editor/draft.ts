@@ -29,6 +29,9 @@ export interface Draft {
   removeFiles: string[]
   expected: Expected | null
   baseExpected: string // the base's expected set as JSON, to know if it changed
+  /** The base version's job and camera profile as they were opened, to say in words what changed. Drafts kept by an older build have none. */
+  baseJob?: JobJson
+  baseProfile?: JobJson
   notes: string
 }
 

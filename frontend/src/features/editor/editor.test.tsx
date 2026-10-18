@@ -325,9 +325,114 @@ describe('the job editor', () => {
       ),
     )
     await openEditor()
-    expect(await screen.findByText('2 ajustes ocultos foram alterados')).toBeInTheDocument()
+    // in the top bar, and in the form of the tool
+    expect((await screen.findAllByText('2 ajustes ocultos foram alterados')).length).toBe(2)
     await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
     expect(screen.queryByText(/ajustes? ocultos? foram? alterados?/)).not.toBeInTheDocument()
+  })
+
+  it('Validar runs the draft on every sample, says which are off, and the rail follows', async () => {
+    let sent: any = null
+    server.use(
+      http.post('*/api/jobs/verify', async ({ request }) => {
+        sent = await request.json()
+        return HttpResponse.json({
+          ok: false,
+          message: null,
+          fields: {},
+          max_ms: 42,
+          cases: [
+            {
+              image: 'tests/images/a.png',
+              expected: 'PASS',
+              outcome: 'PASS',
+              ok: true,
+              message: 'tests/images/a.png: APROVADO como esperado',
+              reason: '',
+              duration_ms: 30,
+            },
+            {
+              image: 'tests/images/b.png',
+              expected: 'FAIL',
+              outcome: 'PASS',
+              ok: false,
+              message: 'tests/images/b.png: resultado PASS, esperado FAIL',
+              reason: '',
+              duration_ms: 42,
+            },
+          ],
+        })
+      }),
+    )
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Validar/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Validar tudo' }))
+    expect(
+      (await screen.findAllByText('1 de 2 amostras não saíram como esperado')).length,
+    ).toBeGreaterThan(0)
+    expect(sent.job.tools[0].id).toBe('tampa')
+    expect(screen.getByText('Mais lenta: 42 ms')).toBeInTheDocument()
+    expect(screen.getByText(/resultado PASS, esperado FAIL/)).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Boa' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Ruim' })).toBeInTheDocument()
+    // the rail says it, in words under the step
+    expect(
+      within(screen.getByRole('navigation', { name: 'Passos do job' })).getByText(
+        '1 de 2 amostras não saíram como esperado',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('the trigger is chosen in the top bar or in its step, and both are the same value', async () => {
+    await openEditor()
+    const bar = screen.getByRole('combobox', { name: 'Disparo' })
+    await userEvent.click(bar)
+    await userEvent.click(screen.getByRole('option', { name: 'Contínuo' }))
+    expect(useDraft.getState().draft?.job.trigger.mode).toBe('continuous')
+    await userEvent.click(
+      within(screen.getByRole('navigation', { name: 'Passos do job' })).getByRole('button', {
+        name: /^Disparo e qualidade/,
+      }),
+    )
+    expect(screen.getByRole('combobox', { name: 'Modo de disparo' })).toHaveTextContent('Contínuo')
+    // continuous waits at least this long between inspections (FR-TRG-7)
+    const interval = screen.getByLabelText('Intervalo mínimo entre inspeções')
+    expect(interval).toHaveAttribute('placeholder', 'padrão: 500')
+    await userEvent.type(interval, '1000')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.job.trigger.interval_ms).toBe(1000)
+  })
+
+  it('the save dialog lists what changed in words, and the last step offers the way on', async () => {
+    await openEditor()
+    const fraction = await screen.findByLabelText('Fração mínima da área')
+    await userEvent.clear(fraction)
+    await userEvent.type(fraction, '60')
+    await userEvent.tab()
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar…' }))
+    const dialog = screen.getByRole('dialog', { name: 'Salvar como versão 3' })
+    expect(within(dialog).getByText('tampa: Fração mínima da área, 40% → 60%')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    // "Próximo passo" leads forward, one step at a time
+    await userEvent.click(
+      screen.getByRole('button', { name: /Próximo passo: Disparo e qualidade/ }),
+    )
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Disparo e qualidade' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Próximo passo: Resultado e saídas/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('Resultado e saídas turns a tool into one that only informs', async () => {
+    await openEditor()
+    await userEvent.click(screen.getByRole('button', { name: /Resultado e saídas/ }))
+    await userEvent.click(screen.getByRole('switch', { name: /Decide o resultado: tampa/ }))
+    expect(useDraft.getState().draft?.job.tools[0].affects_result).toBe(false)
+    await userEvent.click(screen.getByRole('switch', { name: /Decide o resultado: tampa/ }))
+    expect(useDraft.getState().draft?.job.tools[0]).not.toHaveProperty('affects_result')
   })
 
   it('the level is chosen in the top bar, kept per role, and shows the deeper settings', async () => {
@@ -353,24 +458,27 @@ describe('the job editor', () => {
     expect(screen.getByRole('radio', { name: 'Referência' })).toBeDisabled()
   })
 
-  it('opens the latest version as a draft, on the regions step, with the steps listed', async () => {
+  it('opens the latest version as a draft, on the tools step, with the eight steps listed', async () => {
     await openEditor()
     expect(screen.getByText('rascunho a partir da v2')).toBeInTheDocument()
     const steps = within(screen.getByRole('navigation', { name: 'Passos do job' }))
-    expect(
-      steps
-        .getAllByRole('button')
-        .map((b) => b.textContent?.replace(/,.*$/, '').replace(/^\d/, '')),
-    ).toEqual([
-      'Câmera',
-      'Gatilho',
-      'Qualidade',
-      'Âncora e regiões',
+    const labels = [
+      'Imagem',
+      'Amostras',
+      'Âncora',
       'Ferramentas',
-      'Referência',
-      'Revisar',
-    ])
-    expect(screen.getByRole('heading', { level: 2, name: 'Âncora e regiões' })).toBeInTheDocument()
+      'Disparo e qualidade',
+      'Resultado e saídas',
+      'Validar',
+      'Salvar',
+    ]
+    const buttons = steps.getAllByRole('button')
+    expect(buttons).toHaveLength(8)
+    labels.forEach((label, i) =>
+      expect(buttons[i]!.textContent?.replace(/^\d/, '').startsWith(label)).toBe(true),
+    )
+    // an existing job opens where most edits happen
+    expect(screen.getByRole('heading', { level: 2, name: 'Ferramentas' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'cap' })).toBeInTheDocument()
   })
 
@@ -520,7 +628,9 @@ describe('the job editor', () => {
       within(screen.getByRole('dialog')).getByRole('button', { name: 'Salvar…' }),
     )
     expect(await screen.findByText('O job tem campos inválidos')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Qualidade, com erro/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Disparo e qualidade.*precisa de atenção/ }),
+    ).toBeInTheDocument()
   })
 
   it('a draft kept in the browser comes back, and can be discarded', async () => {
@@ -566,11 +676,28 @@ describe('the job editor', () => {
       return { router: undefined as never }
     })
     void router
-    expect(screen.getByRole('heading', { level: 2, name: 'Câmera' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Imagem' })).toBeInTheDocument()
+    // a new job learns from its reference image first: the tools can be read, not edited
+    await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
+    expect(screen.getByText(/Este passo está bloqueado/)).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Adicionar ferramenta' })).toBeDisabled()
+    server.use(
+      http.post('*/api/reference/capture', () =>
+        HttpResponse.json({
+          files: { 'reference/reference.png': 'AAAA' },
+          width: 1920,
+          height: 1080,
+          brightness: 120,
+          sharpness: 300,
+        }),
+      ),
+    )
+    await userEvent.click(screen.getByRole('button', { name: /Amostras/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Capturar a imagem de referência' }))
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
     await userEvent.click(screen.getByRole('combobox', { name: 'Adicionar ferramenta' }))
     await userEvent.click(screen.getByRole('option', { name: /Código de barras/ }))
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Adicionar' }).at(-1)!)
     await userEvent.click(screen.getByRole('button', { name: 'Salvar…' }))
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: 'Salvar…' }),
@@ -578,6 +705,7 @@ describe('the job editor', () => {
     await waitFor(() => expect(created).not.toBeNull())
     expect(created.base).toBeNull()
     expect(created.profile.exposure.value_us).toBe(8000)
+    expect(created.add_files['reference/reference.png']).toBe('AAAA')
     expect(created.job.tools).toEqual([
       { id: 'code1', type: 'code', version: 1, roi: 'frame', params: {}, reason_fail: 'Falhou' },
     ])

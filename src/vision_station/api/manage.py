@@ -36,7 +36,7 @@ from vision_station.store import FormatError, JobBundle, JobRef, StoreError
 from vision_station.store.archive import check_path, sha256
 from vision_station.store.bundle import JOB_FILE, bundle_from_files
 from vision_station.tools import get_tool, tool_types
-from vision_station.verification import make_reference_files
+from vision_station.verification import make_reference_files, run_reference_set
 from vision_station.verification.reference import EXPECTED_FILE, REFERENCE_META, parse_expected
 
 MAX_IMAGE = 32 * 1024 * 1024
@@ -213,6 +213,24 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         except Problem as exc:  # type: ignore[misc]
             return m.DraftCheckOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
         return m.DraftCheckOut(ok=True)
+
+    @api.post("/jobs/verify", response_model=m.VerifyOut)
+    def verify_draft(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.VerifyOut:
+        """Run a draft on every sample of its reference set (Validar). It is the run activation does, so a draft that
+        passes here is not refused there for its samples; nothing is saved or recorded."""
+        try:
+            bundle = placeholder(draft, role)
+        except Problem as exc:  # type: ignore[misc]
+            return m.VerifyOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
+        runs = run_reference_set(bundle, deps.inspect)
+        if not runs:
+            return m.VerifyOut(ok=False, message=tr("Não há amostras para validar: capture amostras Boas e Ruins"))
+        cases = [
+            m.CaseRunOut(image=r.image, expected=r.expected, outcome=r.outcome, ok=r.ok, message=render(r.message), reason=render(r.reason), duration_ms=r.duration_ms)  # type: ignore[arg-type]
+            for r in runs
+        ]
+        times = [r.duration_ms for r in runs if r.duration_ms is not None]
+        return m.VerifyOut(ok=all(r.ok for r in runs), cases=cases, max_ms=max(times) if times else None)
 
     @api.post("/jobs", status_code=201, response_model=m.SavedVersion, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
     def create_job(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.SavedVersion:

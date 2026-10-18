@@ -297,17 +297,23 @@ describe('EmptyState, ErrorState and Stepper', () => {
         onSelect={onSelect}
         steps={[
           { id: 'a', label: 'Câmera', status: 'done' },
-          { id: 'b', label: 'Regiões', status: 'current' },
-          { id: 'c', label: 'Ferramentas', status: 'error' },
+          { id: 'b', label: 'Regiões', status: 'todo', current: true },
+          { id: 'c', label: 'Ferramentas', status: 'attention', reason: 'Falta um gabarito' },
+          { id: 'd', label: 'Validar', status: 'blocked', reason: 'Adicione uma ferramenta' },
         ]}
       />,
     )
     expect(screen.getByRole('button', { name: /Câmera, concluído/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Regiões, passo atual/ })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /Regiões, passo atual, pendente/ })).toHaveAttribute(
       'aria-current',
       'step',
     )
-    expect(screen.getByRole('button', { name: /Ferramentas, com erro/ })).toBeInTheDocument()
+    // the reason is text on the page, not a hover
+    expect(
+      screen.getByRole('button', { name: /Ferramentas.*Falta um gabarito.*precisa de atenção/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Adicione uma ferramenta')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Validar.*bloqueado/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
     expect(onSelect).toHaveBeenCalledWith('c')
   })

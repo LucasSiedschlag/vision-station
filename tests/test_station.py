@@ -95,11 +95,13 @@ def scene_with_object(x=40):
     return img
 
 
-def make_bundle(mode="image_presence", presence=True, waiting=None) -> JobBundle:
+def make_bundle(mode="image_presence", presence=True, waiting=None, interval_ms=None) -> JobBundle:
     data = yaml.safe_load((FIXTURES / "job.yaml").read_text(encoding="utf-8"))
     data["geometry"] = {"rois": {"label": {"relative_to": "frame", "rect": [0.2, 0.2, 0.8, 0.5]}}}
     data["tools"] = [{"id": "lote", "type": "code", "version": 1, "roi": "label", "reason_fail": "Código não lido"}]
     data["trigger"] = {"mode": mode, "still_ms": 400, "min_area": 0.05}
+    if interval_ms is not None:
+        data["trigger"]["interval_ms"] = interval_ms
     if presence:
         data["trigger"]["presence_roi"] = [0.0, 0.0, 1.0, 1.0]
     if waiting:
@@ -113,7 +115,7 @@ def make_bundle(mode="image_presence", presence=True, waiting=None) -> JobBundle
 class Rig:
     """Everything wired with a fake clock, advancing time in 0.1 s ticks."""
 
-    def __init__(self, mode="image_presence", presence=True, outcome=Outcome.PASS, settle_s=0.0, **controller_args):
+    def __init__(self, mode="image_presence", presence=True, outcome=Outcome.PASS, settle_s=0.0, interval_ms=None, **controller_args):
         self.clock = Clock()
         self.camera = FakeCamera(self.clock)
         self.acq = Acquisition(self.camera, {"device_name": "fake"}, clock=self.clock, retry_delays_s=(1.0, 2.0), settle_s=settle_s)
@@ -121,7 +123,7 @@ class Rig:
         self.outcome = outcome
         self.events = []
         self.controller = StationController(self.acq, self._inspect, clock=self.clock, on_event=self.events.append, **controller_args)
-        self.bundle = make_bundle(mode, presence)
+        self.bundle = make_bundle(mode, presence, interval_ms=interval_ms)
 
     def _inspect(self, bundle, frame):
         self.inspected.append(frame)
@@ -566,12 +568,29 @@ def test_the_next_inspection_ends_the_held_verdict():
 
 
 def test_continuous_mode_inspects_frame_after_frame():
-    rig = Rig(mode="continuous", presence=False)
+    rig = Rig(mode="continuous", presence=False, interval_ms=0)  # 0: as fast as the PC allows
     rig.controller.start(rig.bundle)
     rig.tick(25)
     assert len(rig.inspected) >= 5
     stamps = [f.timestamp for f in rig.inspected]
     assert stamps == sorted(stamps) and len(set(stamps)) == len(stamps)
+
+
+def test_continuous_mode_waits_the_minimum_interval_between_inspections():
+    """FR-TRG-7: 500 ms by default, set per job; never an inspection of a frame older than the previous one."""
+    slow = Rig(mode="continuous", presence=False)
+    slow.controller.start(slow.bundle)
+    slow.tick(60)  # 6 s
+    fast = Rig(mode="continuous", presence=False, interval_ms=0)
+    fast.controller.start(fast.bundle)
+    fast.tick(60)
+    assert 10 <= len(slow.inspected) <= 13 and len(fast.inspected) > len(slow.inspected)  # 6 s, one every 0.5 s at most
+    gaps = [b.timestamp - a.timestamp for a, b in zip(slow.inspected, slow.inspected[1:])]
+    assert gaps and min(gaps) >= 0.5 - 1e-9
+    wide = Rig(mode="continuous", presence=False, interval_ms=3000)
+    wide.controller.start(wide.bundle)
+    wide.tick(60)
+    assert len(wide.inspected) <= 3
 
 
 def test_switching_jobs_prepares_again_and_uses_the_job_text():

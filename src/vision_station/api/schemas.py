@@ -493,6 +493,28 @@ class DraftTestOut(BaseModel):
     overlay: str  # base64 JPEG of the frame with the regions drawn
 
 
+class CaseRunOut(BaseModel):
+    """One sample run through a draft: what the job said against what was expected (Validar, frontend.md §4.3)."""
+
+    image: str  # path inside the job, tests/images/<name>.png
+    expected: Outcome
+    outcome: Outcome | None  # None: it could not be run
+    ok: bool
+    message: str  # "<image>: <what>", in the language of the request
+    reason: str = ""
+    duration_ms: int | None = None
+
+
+class VerifyOut(BaseModel):
+    """The draft on every sample of its reference set: the same run that activation does (design rule 4)."""
+
+    ok: bool  # every sample as expected (and there is at least one)
+    message: str | None = None  # the draft was refused, or there is nothing to run
+    fields: dict[str, str] = {}
+    cases: list[CaseRunOut] = []
+    max_ms: int | None = None  # the slowest sample
+
+
 class DiffOut(BaseModel):
     id: str
     version: int

@@ -219,6 +219,17 @@ The 0.1 editor captured the reference at step 6, after the tools that need it. 0
 - **Changes ripple visibly.** If step 1 changes the exposure after tools were tuned, steps 4 and 7 turn *precisa de atenção* ("A imagem mudou depois que as ferramentas foram ajustadas; rode Validar"). Nothing is silently invalidated.
 - **Testar is always there** (top bar). It runs the whole draft on the current image or on all samples.
 - **Editing an existing job** opens at step 4 (Ferramentas). That is where most edits happen, and the rail stays one click away.
+- **As built (VIA-0064).**
+  - **The rail.** Eight steps (`features/editor/sequence.ts`). Each has a state drawn as an icon and a word, and its reason as text under the step, never only on hover: *a fazer*, *feito*, *precisa de atenção*, *bloqueado*. A blocked step opens read-only (its inspector is a disabled `fieldset`). The state comes from the draft and from what the server refused, except for the steps whose defaults are valid (Imagem, Disparo e qualidade, Resultado e saídas), which are done once opened.
+  - **Blocked.** Âncora, Ferramentas: no reference image yet *and* no tool (a job that already has tools is editable without one, so an old job can be fixed offline). Resultado e saídas and Validar: no tool.
+  - **Attention.** The server refused something in the step (the path of the field decides which, the most specific prefix wins). Validar: the last run had samples off, or the job changed after it. Ferramentas: the camera settings, the reference or the samples changed after the last Validar.
+  - **Salvar** is never blocked: the top bar's *Salvar…* always works. If the job was not validated, the step says "Ainda não validado".
+  - **Validar** runs `POST /api/jobs/verify`: the draft on every sample of its reference set, the same run (`run_reference_set`) that activation does, so a green Validar is not refused at activation for its samples. Nothing is saved or recorded. It returns, per sample, what was expected, what the job said, the reason and the time. The camera and view part of the verification (settings applied, the live frame against the reference) needs the camera and is done when the job is activated. The batch test with per-tool values (`/api/editor/batch`), the A/B replay and the time budget on this PC come with UI-4 and phase C.
+  - **Amostras** is the reference image and the samples; *Boa* is expected `PASS`, *Ruim* is `FAIL`, *Com erro* is `ERROR`.
+  - **Disparo e qualidade** holds the trigger mode, its timing and the quality gates. The trigger control in the top bar sets the same value (`setTriggerMode`), so the two always agree. *Contínuo* has **Intervalo mínimo** (`trigger.interval_ms`, FR-TRG-7, default 500 ms, 0 to 10 000): the station waits that long between two inspections, and still never inspects a frame taken while the scene moves. The live "parado há 0,6 s" readout of the control comes with the editor session (UI-4).
+  - **Resultado e saídas** has one switch per tool (*Decide o resultado*, `affects_result`) and the operator's waiting text. The outputs to the machine come with phase B.
+  - **Mudanças:** the save dialog and *Salvar* list what changed in words (`summary.ts`: camera, reference, samples, anchor, regions, each changed tool parameter by its title, trigger, texts), against the version the draft started from. A draft kept by an older build, or a new job, has no version to compare with.
+  - An existing job opens at *Ferramentas*; a new one at *Imagem*. *Próximo passo* at the bottom of each step leads forward.
 - **The same order** appears on the job detail page as a read-only summary ("Imagem · Amostras 12 boas / 4 ruins · Âncora forma ±15° · 5 ferramentas · Disparo pela máquina · Validado em 16/10").
 
 ### 4.4 Breadboard of the editor flow
@@ -1001,7 +1012,7 @@ No migration: the 0.1 foundation stays and grows. Each step keeps every test gre
 | Step | Content | Depends on (architecture §18) |
 |---|---|---|
 | UI-1 | Workbench layout (§10.1), image workspace v2 (zoom, layers, frozen/live), filmstrip, result bar | UI-C1 |
-| UI-2 | The sequence: step rail with states, steps reordered (§4.3), samples step, *Validar* | UI-1 |
+| UI-2 | The sequence: step rail with states, steps reordered (§4.3), samples step, *Validar* | UI-1. **Done (VIA-0064)** on the current layout; the image workspace v2 (UI-1) and the filmstrip are not part of it |
 | UI-3 | Schema metadata (`x-group`, `x-level`, `x-widget`, `criteria`) on the server; SchemaForm v2; levels (§17) | — (server: small). **Done (VIA-0062)**: the widget components themselves come with the steps that need them (UI-4, UI-5) |
 | UI-4 | Editor session (`/api/editor/live`) and batch test; `ToolToleranceGauge`; *Ajustar pelas amostras* | R2 (result contract) for per-tool values |
 | UI-5 | Colour controls (`HsvRangePicker`, eyedropper, mask preview), camera controls (histogram, focus meter, exposure) | UI-4 |

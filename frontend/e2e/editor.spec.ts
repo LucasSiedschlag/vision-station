@@ -22,7 +22,8 @@ test('the editor: live image, draw a region, test the draft and save it as the n
 
   // add a region and draw it by dragging over the image
   await page.getByLabel('Nova região').fill('etiqueta')
-  await page.getByRole('button', { name: 'Adicionar', exact: true }).click()
+  // the regions and the tools share the step now: the first button adds the region
+  await page.getByRole('button', { name: 'Adicionar', exact: true }).first().click()
   const box = (await canvas.boundingBox())!
   await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.3)
   await page.mouse.down()

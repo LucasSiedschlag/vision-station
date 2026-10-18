@@ -477,6 +477,9 @@ msgstr "Could not write to the folder: {why}"
 msgid "Não foi possível salvar: {why}"
 msgstr "Could not save: {why}"
 
+msgid "Não há amostras para validar: capture amostras Boas e Ruins"
+msgstr "There are no samples to validate: capture Good and Bad samples"
+
 msgid "Não há imagens coletadas para exportar"
 msgstr "There are no collected images to export"
 

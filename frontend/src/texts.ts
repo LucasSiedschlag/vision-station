@@ -435,26 +435,192 @@ export const text = {
   },
   editor: {
     steps: {
-      get camera() {
-        return t`Câmera`
+      get image() {
+        return t`Imagem`
       },
-      get trigger() {
-        return t`Gatilho`
+      get samples() {
+        return t`Amostras`
       },
-      get quality() {
-        return t`Qualidade`
-      },
-      get regions() {
-        return t`Âncora e regiões`
+      get anchor() {
+        return t`Âncora`
       },
       get tools() {
         return t`Ferramentas`
       },
-      get reference() {
-        return t`Referência`
+      get trigger() {
+        return t`Disparo e qualidade`
       },
-      get review() {
-        return t`Revisar`
+      get outputs() {
+        return t`Resultado e saídas`
+      },
+      get validate() {
+        return t`Validar`
+      },
+      get save() {
+        return t`Salvar`
+      },
+    },
+    /** Why a step is blocked or needs attention (docs/frontend.md §4.3). */
+    sequence: {
+      get needReference() {
+        return t`Capture a imagem de referência primeiro`
+      },
+      get needReferenceHere() {
+        return t`Capture a imagem de referência`
+      },
+      get needTool() {
+        return t`Adicione ao menos uma ferramenta`
+      },
+      get noSamples() {
+        return t`Ainda sem amostras Boas e Ruins`
+      },
+      get serverProblem() {
+        return t`O servidor recusou algo neste passo`
+      },
+      get imageChanged() {
+        return t`A imagem mudou depois da última validação; rode Validar`
+      },
+      get changedSinceValidation() {
+        return t`O job mudou depois da validação; rode Validar de novo`
+      },
+      samplesFailed: (failed: number, total: number) =>
+        t`${failed} de ${total} amostras não saíram como esperado`,
+      get notValidated() {
+        return t`Ainda não validado`
+      },
+      get next() {
+        return t`Próximo passo`
+      },
+      get blockedBanner() {
+        return t`Este passo está bloqueado: dá para ler, não para editar.`
+      },
+    },
+    sampleKind: {
+      get PASS() {
+        return t`Boa`
+      },
+      get FAIL() {
+        return t`Ruim`
+      },
+      get ERROR() {
+        return t`Com erro`
+      },
+    },
+    get triggerBar() {
+      return t`Disparo`
+    },
+    get interval() {
+      return t`Intervalo mínimo entre inspeções`
+    },
+    get intervalHint() {
+      return t`0 inspeciona o mais rápido que o computador deixar. Uma imagem tirada com a cena em movimento nunca é inspecionada.`
+    },
+    // Resultado e saídas
+    get outputsIntro() {
+      return t`Quais ferramentas decidem o resultado e o que a tela do operador diz enquanto espera.`
+    },
+    get decides() {
+      return t`Decide o resultado`
+    },
+    get decidesHint() {
+      return t`Desligada, a ferramenta é medida e gravada, mas nunca reprova a peça.`
+    },
+    get machineOutputs() {
+      return t`As saídas para a máquina vêm com a interface da máquina (fase B).`
+    },
+    // Validar
+    get validateIntro() {
+      return t`Roda o job em todas as amostras e confere com o esperado. É a mesma conferência que a ativação faz.`
+    },
+    get validateAll() {
+      return t`Validar tudo`
+    },
+    get validateEmpty() {
+      return t`Sem amostras. Capture amostras Boas e Ruins no passo Amostras.`
+    },
+    get validateOk() {
+      return t`Todas as amostras saíram como esperado`
+    },
+    validateSome: (failed: number, total: number) =>
+      t`${failed} de ${total} amostras não saíram como esperado`,
+    get colSample() {
+      return t`Amostra`
+    },
+    get colExpected() {
+      return t`Esperado`
+    },
+    get colGot() {
+      return t`Resultado`
+    },
+    slowest: (ms: number) => t`Mais lenta: ${ms} ms`,
+    get notRun() {
+      return t`não rodou`
+    },
+    // Salvar
+    get saveIntro() {
+      return t`Confira o nome e o que mudou, e salve como uma nova versão. Ativar é feito na página do job.`
+    },
+    get changes() {
+      return t`Mudanças desta versão`
+    },
+    get noChanges() {
+      return t`Nada mudou em relação à versão de origem.`
+    },
+    get checkFields() {
+      return t`Conferir campos`
+    },
+    change: {
+      get nothing() {
+        return t`nenhum`
+      },
+      get on() {
+        return t`ligado`
+      },
+      get off() {
+        return t`desligado`
+      },
+      newJob: (name: string, tools: number) => {
+        const count = plural(tools, { one: '# ferramenta', other: '# ferramentas' })
+        return t`Job novo ${name}: ${count}`
+      },
+      name: (from: string, to: string) => t`Nome: ${from} → ${to}`,
+      get description() {
+        return t`A descrição mudou`
+      },
+      camera: (setting: string, from: string, to: string) => t`Câmera, ${setting}: ${from} → ${to}`,
+      get reference() {
+        return t`Nova imagem de referência`
+      },
+      samplesAdded: (good: number, bad: number) => t`Amostras novas: ${good} Boas e ${bad} Ruins`,
+      samplesRemoved: (n: number) =>
+        plural(n, { one: '# amostra removida', other: '# amostras removidas' }),
+      anchorAdded: (type: string) => t`Âncora nova (${type})`,
+      get anchorRemoved() {
+        return t`Âncora removida`
+      },
+      anchorChanged: (type: string) => t`Âncora alterada (${type})`,
+      regionAdded: (name: string) => t`Região nova: ${name}`,
+      regionChanged: (name: string) => t`Região alterada: ${name}`,
+      regionRemoved: (name: string) => t`Região removida: ${name}`,
+      toolAdded: (id: string, type: string) => t`Ferramenta nova: ${id} (${type})`,
+      toolRemoved: (id: string) => t`Ferramenta removida: ${id}`,
+      param: (id: string, title: string, from: string, to: string) =>
+        t`${id}: ${title}, ${from} → ${to}`,
+      toolRegion: (id: string, from: string, to: string) => t`${id}: região ${from} → ${to}`,
+      toolInformative: (id: string) => t`${id} passou a só informar, sem reprovar`,
+      toolDecides: (id: string) => t`${id} passou a decidir o resultado`,
+      toolReason: (id: string) => t`${id}: o texto de reprovação mudou`,
+      get trigger() {
+        return t`O disparo mudou`
+      },
+      get quality() {
+        return t`A qualidade da imagem mudou`
+      },
+      get texts() {
+        return t`Os textos do operador mudaram`
+      },
+      get decision() {
+        return t`A regra de decisão mudou`
       },
     },
     get stepsLabel() {
@@ -641,7 +807,7 @@ export const text = {
     },
     // trigger
     get triggerMode() {
-      return t`Modo do gatilho`
+      return t`Modo de disparo`
     },
     triggerModes: {
       get image_presence() {
@@ -882,36 +1048,36 @@ export const text = {
     },
     referenceSaved: (w: number, h: number) => t`Imagem de referência capturada (${w} × ${h}).`,
     get referenceSet() {
-      return t`Conjunto de referência`
+      return t`Amostras`
     },
     get referenceSetIntro() {
-      return t`Imagens com o resultado esperado. Ao ativar, o job precisa acertar todas.`
+      return t`Fotos de peças boas e de defeitos conhecidos, cada uma com o resultado esperado. Ao validar e ao ativar, o job precisa acertar todas.`
     },
     get noCases() {
-      return t`Nenhum caso ainda.`
+      return t`Nenhuma amostra ainda.`
     },
     get caseImage() {
       return t`Imagem`
     },
     get caseExpected() {
-      return t`Resultado esperado`
+      return t`Tipo`
     },
-    expectedFor: (image: string) => t`Resultado esperado de ${image}`,
+    expectedFor: (image: string) => t`Tipo da amostra ${image}`,
     get remove() {
       return t`Remover`
     },
     removeCase: (image: string) => t`Remover ${image}`,
     get caseName() {
-      return t`Nome do caso`
+      return t`Nome da amostra`
     },
     get badCaseName() {
       return t`Use letras, números, - e _, sem repetir.`
     },
     get addCase() {
-      return t`Capturar caso`
+      return t`Capturar amostra`
     },
     caseAdded: (name: string, now: string, expected: string) =>
-      t`Caso ${name}: o rascunho diz ${now}; esperado ${expected}.`,
+      t`Amostra ${name}: o rascunho diz ${now}; esperado ${expected}.`,
     // review
     get jobName() {
       return t`Nome do job`
@@ -1633,8 +1799,11 @@ export const text = {
     get stepTodo() {
       return t`pendente`
     },
-    get stepError() {
-      return t`com erro`
+    get stepAttention() {
+      return t`precisa de atenção`
+    },
+    get stepBlocked() {
+      return t`bloqueado`
     },
     get movable() {
       return t`item que pode ser movido`

@@ -1,4 +1,4 @@
-import { ArrowLeft, FlaskConical, Redo2, RefreshCw, Save, Undo2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FlaskConical, Redo2, RefreshCw, Save, Undo2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -11,9 +11,11 @@ import {
   useJobVersion,
   useTypes,
   type DraftTestOut,
+  type VerifyOut,
 } from '@/api/queries/editor'
 import { useJob } from '@/api/queries/jobs'
 import { useLevel } from '@/app/levels'
+import { Select } from '@/components/ui/select'
 import { LevelSwitch } from '@/app/shell/LevelSwitch'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -46,25 +48,23 @@ import {
   QualityStep,
   ReferenceStep,
   RegionsStep,
-  ReviewStep,
   ToolsStep,
   TriggerStep,
+  setTriggerMode,
   type StepProps,
 } from './steps'
+import { OutputsStep, SaveStep, ValidateStep } from './steps-end'
+import {
+  STEPS,
+  fullSignature,
+  imageSignature,
+  stepStates,
+  type StepId,
+  type Validation,
+} from './sequence'
+import { summarizeChanges } from './summary'
 
 const t = text.editor
-const STEPS = ['camera', 'trigger', 'quality', 'regions', 'tools', 'reference', 'review'] as const
-type StepId = (typeof STEPS)[number]
-/** which server field paths belong to which step, to mark a step that has errors */
-const STEP_FIELDS: Record<StepId, string[]> = {
-  camera: ['profile'],
-  trigger: ['job.trigger', 'job.ui'],
-  quality: ['job.quality'],
-  regions: ['job.geometry'],
-  tools: ['job.tools', 'job.decision'],
-  reference: ['add_files'],
-  review: ['job.job', 'job.format'],
-}
 
 /** The job editor (docs/frontend.md §7.3): a draft in this browser until it is saved as a new version. */
 export function EditorPage() {
@@ -105,6 +105,8 @@ export function EditorPage() {
       removeFiles: [],
       expected: (v.expected as Draft['expected']) ?? null,
       baseExpected: JSON.stringify(v.expected ?? null),
+      baseJob: structuredClone(v.job),
+      baseProfile: structuredClone(v.profile),
       notes: '',
     })
   }, [isNew, id, version.data, latest, camera.isPending, camera.data, load])
@@ -162,7 +164,18 @@ function Editor({
   redo: () => void
 }) {
   const navigate = useNavigate()
-  const [step, setStep] = useState<StepId>(isNew ? 'camera' : 'regions')
+  // editing an existing job opens where most edits happen: the tools (docs/frontend.md §4.3)
+  const [step, setStepNow] = useState<StepId>(isNew ? 'image' : 'tools')
+  const [visited, setVisited] = useState<ReadonlySet<StepId>>(
+    () => new Set([isNew ? 'image' : 'tools']),
+  )
+  const setStep = (next: StepId) => {
+    setStepNow(next)
+    setVisited((now) => new Set(now).add(next))
+  }
+  const [validation, setValidation] = useState<Validation | null>(null)
+  const [report, setReport] = useState<VerifyOut | null>(null)
+  const [verifying, setVerifying] = useState(false)
   const types = useTypes()
   const [level] = useLevel('editor')
   // every setting the level hides that was changed, in all the tools and the locator
@@ -274,7 +287,8 @@ function Editor({
       : ((test?.anchor as Rect | undefined) ?? null)
   const shapes = useMemo<Shape[]>(() => {
     const out: Shape[] = []
-    const editRegions = step === 'regions'
+    const editAnchor = step === 'anchor'
+    const editRegions = step === 'tools'
     if (
       step === 'trigger' &&
       draft.job.trigger?.mode === 'image_presence' &&
@@ -293,10 +307,10 @@ function Editor({
         label: t.anchorLabel,
         rect: locator.params.rect,
         kind: 'locator',
-        editable: editRegions,
+        editable: editAnchor,
       })
     else if (anchor) out.push({ id: 'anchor', label: t.anchorLabel, rect: anchor, kind: 'anchor' })
-    if (step !== 'camera' && step !== 'trigger')
+    if (step !== 'image' && step !== 'trigger')
       for (const [name, roi] of Object.entries(
         (geometry.rois ?? {}) as Record<string, { relative_to: string; rect: Rect }>,
       )) {
@@ -311,7 +325,7 @@ function Editor({
       }
     if (crop)
       out.push({ id: 'crop', label: t.cropLabel, rect: crop, kind: 'presence', editable: true })
-    if (test && (step === 'tools' || step === 'review'))
+    if (test && (step === 'tools' || step === 'validate' || step === 'save'))
       for (const r of test.regions)
         out.push({
           id: `result:${r.tool}`,
@@ -366,6 +380,30 @@ function Editor({
       setTesting(false)
     }
   }
+  // Validar: the same run activation does, on every sample; what it says goes to the rail (design rule 4)
+  const verify = async () => {
+    setVerifying(true)
+    try {
+      const out = await editorApi.verify(toRequest(draft))
+      setReport(out)
+      setFields(out.fields)
+      setValidation(
+        out.cases.length === 0
+          ? null
+          : {
+              ok: out.ok,
+              failed: out.cases.filter((c) => !c.ok).length,
+              total: out.cases.length,
+              imageSig: imageSignature(draft),
+              fullSig: fullSignature(draft),
+            },
+      )
+    } catch (e) {
+      toast.error(describeError(e))
+    } finally {
+      setVerifying(false)
+    }
+  }
   const save = async () => {
     setSaving(true)
     try {
@@ -401,14 +439,21 @@ function Editor({
     crop,
     setCrop,
     test,
+    report,
+    verifying,
+    verify,
+    openSave: () => setSaveOpen(true),
   }
-  const errorIn = (s: StepId) =>
-    Object.keys(fields).some((k) => STEP_FIELDS[s].some((p) => k === p || k.startsWith(`${p}.`)))
+  const info = stepStates(draft, fields, visited, validation)
   const steps = STEPS.map((s) => ({
     id: s,
     label: t.steps[s],
-    status: s === step ? ('current' as const) : errorIn(s) ? ('error' as const) : ('todo' as const),
+    status: info[s].state,
+    current: s === step,
+    reason: info[s].reason,
   }))
+  const blocked = info[step].state === 'blocked'
+  const next = STEPS[STEPS.indexOf(step) + 1]
 
   return (
     <main className="flex flex-col gap-4 p-4">
@@ -424,6 +469,20 @@ function Editor({
         <Badge tone="neutral">{draft.base ? t.draftOf(draft.base.version) : t.newJob}</Badge>
         {dirty ? <Badge tone="warn">{t.unsaved}</Badge> : null}
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span id="trigger-bar" className="text-sm text-fg-muted">
+              {t.triggerBar}
+            </span>
+            <Select
+              aria-labelledby="trigger-bar"
+              value={draft.job.trigger?.mode ?? 'image_presence'}
+              onValueChange={setTriggerMode}
+              options={Object.entries(t.triggerModes).map(([value, [label]]) => ({
+                value,
+                label,
+              }))}
+            />
+          </div>
           <LevelSwitch family="editor" hidden={hidden} />
           <Button variant="ghost" aria-label={t.undo} disabled={!canUndo} onClick={undo}>
             <Undo2 aria-hidden className="size-4" />
@@ -498,7 +557,7 @@ function Editor({
             </Button>
             {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
           </div>
-          {hiddenAnchored && step !== 'camera' && step !== 'trigger' ? (
+          {hiddenAnchored && step !== 'image' && step !== 'trigger' ? (
             <p className="text-sm text-warn-text">{t.noAnchor}</p>
           ) : null}
           <RegionCanvas
@@ -548,18 +607,42 @@ function Editor({
           <h2 id="inspector-title" className="text-base font-semibold">
             {t.steps[step]}
           </h2>
-          {step === 'camera' ? <CameraStep {...props} /> : null}
-          {step === 'trigger' ? <TriggerStep {...props} /> : null}
-          {step === 'quality' ? <QualityStep {...props} /> : null}
-          {step === 'regions' ? <RegionsStep {...props} /> : null}
-          {step === 'tools' ? (
-            <>
-              <ToolsStep {...props} />
-              <PatternCrop {...props} />
-            </>
+          {blocked ? (
+            <p role="status" className="text-sm text-fg-muted">
+              {t.sequence.blockedBanner} {info[step].reason}
+            </p>
           ) : null}
-          {step === 'reference' ? <ReferenceStep {...props} /> : null}
-          {step === 'review' ? <ReviewStep {...props} /> : null}
+          <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4 border-0 p-0">
+            {step === 'image' ? <CameraStep {...props} /> : null}
+            {step === 'samples' ? <ReferenceStep {...props} /> : null}
+            {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
+            {step === 'tools' ? (
+              <>
+                <RegionsStep {...props} part="regions" />
+                <ToolsStep {...props} />
+                <PatternCrop {...props} />
+              </>
+            ) : null}
+            {step === 'trigger' ? (
+              <>
+                <TriggerStep {...props} />
+                <QualityStep {...props} />
+              </>
+            ) : null}
+            {step === 'outputs' ? <OutputsStep {...props} /> : null}
+            {step === 'validate' ? <ValidateStep {...props} /> : null}
+            {step === 'save' ? <SaveStep {...props} /> : null}
+          </fieldset>
+          {next ? (
+            <Button
+              variant="secondary"
+              className="self-start"
+              onClick={() => (setStep(next), setDrawing(null), setCrop(null))}
+            >
+              {t.sequence.next}: {t.steps[next]}
+              <ArrowRight aria-hidden className="size-4" />
+            </Button>
+          ) : null}
         </section>
       </div>
 
@@ -570,6 +653,7 @@ function Editor({
           }
           description={t.saveBody}
         >
+          <ChangeList draft={draft} />
           <Field label={t.notes} hint={t.notesHint}>
             {(p) => (
               <Textarea
@@ -606,5 +690,25 @@ function Editor({
         onConfirm={() => blocker.proceed?.()}
       />
     </main>
+  )
+}
+
+/** What the draft changes against its version, in words, above the note that is written for the version. */
+function ChangeList({ draft }: { draft: Draft }) {
+  const types = useTypes()
+  const changes = summarizeChanges(draft, types.data)
+  return (
+    <section aria-label={t.changes} className="flex flex-col gap-1">
+      <h3 className="text-sm font-semibold">{t.changes}</h3>
+      {changes.length === 0 ? (
+        <p className="text-sm text-fg-muted">{t.noChanges}</p>
+      ) : (
+        <ul className="max-h-48 list-disc overflow-y-auto pl-5 text-sm">
+          {changes.map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }

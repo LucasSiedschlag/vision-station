@@ -153,8 +153,8 @@ function Section({
 const steps: Step[] = [
   { id: 'camera', label: 'Câmera', status: 'done' },
   { id: 'trigger', label: 'Gatilho', status: 'done' },
-  { id: 'regions', label: 'Âncora e regiões', status: 'current' },
-  { id: 'tools', label: 'Ferramentas', status: 'error' },
+  { id: 'regions', label: 'Âncora e regiões', status: 'todo', current: true },
+  { id: 'tools', label: 'Ferramentas', status: 'attention', reason: 'Falta um gabarito' },
   { id: 'reference', label: 'Referência', status: 'todo' },
 ]
 

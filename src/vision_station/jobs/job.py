@@ -47,18 +47,24 @@ class JobInfo(_Strict):
         return self
 
 
+DEFAULT_INTERVAL_MS = 500
+
+
 class Trigger(_Strict):
     """When an inspection starts (TD-19).
 
     image_presence: an object is present and still in `presence_roi`.
     manual / external: started by the operator or by another system.
-    continuous: no trigger, every frame is inspected (for example reading codes).
+    continuous: no trigger, every frame is inspected (for example reading codes), but not more often than
+    `interval_ms` (FR-TRG-7, TD-31).
     """
 
     mode: Literal["image_presence", "manual", "external", "continuous"] = "image_presence"
     presence_roi: tuple[Fraction, Fraction, Fraction, Fraction] | None = None  # fractions of the frame
     still_ms: Annotated[int, Field(gt=0)] | None = None
     rearm: Literal["object_absent"] = "object_absent"
+    # continuous: the least time between two inspections; 0 = as fast as the PC allows. 500 ms leaves CPU on tier M
+    interval_ms: Annotated[int, Field(ge=0, le=10_000)] = DEFAULT_INTERVAL_MS
     # how the image is compared with the empty scene (presence) and with the previous frame (motion)
     diff_threshold: Annotated[int, Field(ge=1, le=255)] = 25  # gray levels that count as a change
     min_area: Annotated[float, Field(gt=0, le=1)] = 0.05  # fraction of the region that must differ to count as present
@@ -171,4 +177,8 @@ def parse_job(text: str) -> Job:
 
 def dump_job(job: Job) -> str:
     """Write a job as YAML, in the field order of the model."""
-    return yaml.safe_dump(job.model_dump(mode="json"), sort_keys=False, allow_unicode=True)
+    data = job.model_dump(mode="json")
+    if data["trigger"]["interval_ms"] == DEFAULT_INTERVAL_MS:
+        # written only when changed, so a job that does not use it still opens in a version without the field
+        del data["trigger"]["interval_ms"]
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)

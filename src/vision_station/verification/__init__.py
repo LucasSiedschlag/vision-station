@@ -15,7 +15,7 @@ from vision_station.verification.reference import (
     make_reference_files,
     parse_expected,
 )
-from vision_station.verification.verify import Check, VerificationReport, verify_job
+from vision_station.verification.verify import Check, VerificationReport, run_reference_set, verify_job
 
 __all__ = [
     "Check",
@@ -30,6 +30,7 @@ __all__ = [
     "VerificationReport",
     "activate",
     "make_reference_files",
+    "run_reference_set",
     "parse_expected",
     "verify_job",
     "verify_live",

@@ -162,6 +162,7 @@ class StationController:
         self._trigger_taken = False  # a trigger was accepted and its inspection has not started yet (VIA-0051)
         self._reference = ""  # of the inspection running now
         self._t0 = 0.0  # when the current inspection was triggered
+        self._began_at = float("-inf")  # when the last inspection began, for the interval of the continuous mode
         self._shown_at = float("-inf")
         self._showing = False  # what the screens were last told about showing the verdict
         self._last_frame_ts = -1.0
@@ -366,7 +367,8 @@ class StationController:
             self._begin_inspection()
             return
         if mode == "continuous":
-            if self._new_frame() is not None:
+            interval_s = self._bundle.job.trigger.interval_ms / 1000  # type: ignore[union-attr]
+            if self._clock() - self._began_at >= interval_s and self._new_frame() is not None:
                 self._begin_inspection()
             return
         if mode != "image_presence" or self._detector is None:
@@ -397,7 +399,7 @@ class StationController:
         self._trigger_requested = False
         with self._trigger_lock:
             self._trigger_taken = False
-        self._t0 = self._clock()
+        self._t0 = self._began_at = self._clock()
         self._go(State.INSPECTING)
 
     def _inspecting(self) -> None:

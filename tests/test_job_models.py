@@ -98,3 +98,14 @@ def test_screen_text_is_optional_and_comes_from_the_job():
     assert Job.model_validate(data).ui.waiting == "Aguardando peça"
     del data["ui"]
     assert Job.model_validate(data).ui.waiting is None
+
+
+def test_the_continuous_interval_is_500_ms_unless_set_and_is_written_only_when_changed():
+    base = load_job_data()
+    job = Job.model_validate(base)
+    assert job.trigger.interval_ms == 500 and "interval_ms" not in dump_job(job)  # still opens in a version without it
+    base["trigger"] = {**base["trigger"], "interval_ms": 0}
+    assert "interval_ms: 0" in dump_job(Job.model_validate(base))
+    for bad in (-1, 10_001):
+        with pytest.raises(ValidationError):
+            Job.model_validate({**base, "trigger": {**base["trigger"], "interval_ms": bad}})

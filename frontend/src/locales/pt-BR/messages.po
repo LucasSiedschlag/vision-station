@@ -19,6 +19,9 @@ msgstr "Caminho do dispositivo"
 msgid "Versão salva"
 msgstr "Versão salva"
 
+msgid "Capturar amostra"
+msgstr "Capturar amostra"
+
 msgid "Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups."
 msgstr "Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups."
 
@@ -52,6 +55,9 @@ msgstr "Região"
 msgid "Quando a tela do operador desenha as regiões das ferramentas sobre a imagem."
 msgstr "Quando a tela do operador desenha as regiões das ferramentas sobre a imagem."
 
+msgid "Disparo"
+msgstr "Disparo"
+
 msgid "Definida"
 msgstr "Definida"
 
@@ -76,11 +82,17 @@ msgstr "item que pode ser movido"
 msgid "Sem âncora: rode Testar para localizar o objeto e ver as regiões relativas a ele."
 msgstr "Sem âncora: rode Testar para localizar o objeto e ver as regiões relativas a ele."
 
+msgid "Ferramenta nova: {id} ({type})"
+msgstr "Ferramenta nova: {id} ({type})"
+
 msgid "Nome da tela"
 msgstr "Nome da tela"
 
 msgid "Só a última versão de cada job"
 msgstr "Só a última versão de cada job"
+
+msgid "Nova imagem de referência"
+msgstr "Nova imagem de referência"
 
 msgid "Versões"
 msgstr "Versões"
@@ -108,6 +120,9 @@ msgstr "Importe um arquivo .vjob ou .vbak, ou crie um job no editor."
 
 msgid "Sugestões"
 msgstr "Sugestões"
+
+msgid "Este passo está bloqueado: dá para ler, não para editar."
+msgstr "Este passo está bloqueado: dá para ler, não para editar."
 
 msgid "Não foi possível inspecionar."
 msgstr "Não foi possível inspecionar."
@@ -187,6 +202,12 @@ msgstr "Pasta: {folder}"
 msgid "O operador pode ligar e desligar as marcações"
 msgstr "O operador pode ligar e desligar as marcações"
 
+msgid "Âncora removida"
+msgstr "Âncora removida"
+
+msgid "Salvar"
+msgstr "Salvar"
+
 msgctxt "leave the editor"
 msgid "Sair"
 msgstr "Sair"
@@ -236,9 +257,6 @@ msgstr "Estava NÃO OK"
 msgid "{name} solto na {place}."
 msgstr "{name} solto na {place}."
 
-msgid "Gatilho"
-msgstr "Gatilho"
-
 msgid "Ao vivo"
 msgstr "Ao vivo"
 
@@ -266,8 +284,14 @@ msgstr "Tudo"
 msgid "posição {position} de {total}"
 msgstr "posição {position} de {total}"
 
+msgid "Validar"
+msgstr "Validar"
+
 msgid "Não foi possível falar com o programa da estação."
 msgstr "Não foi possível falar com o programa da estação."
+
+msgid "Ainda não validado"
+msgstr "Ainda não validado"
 
 msgid "Marcar como incorreto"
 msgstr "Marcar como incorreto"
@@ -329,6 +353,9 @@ msgstr "Usar o brilho atual ±20%"
 msgid "Falhou"
 msgstr "Falhou"
 
+msgid "precisa de atenção"
+msgstr "precisa de atenção"
+
 msgid "Ações de {name}"
 msgstr "Ações de {name}"
 
@@ -353,20 +380,35 @@ msgstr "Os resultados estão sendo gravados."
 msgid "Nenhuma pasta de backup configurada."
 msgstr "Nenhuma pasta de backup configurada."
 
+msgid "Quais ferramentas decidem o resultado e o que a tela do operador diz enquanto espera."
+msgstr "Quais ferramentas decidem o resultado e o que a tela do operador diz enquanto espera."
+
 msgid "Salvar configurações"
 msgstr "Salvar configurações"
+
+msgid "desligado"
+msgstr "desligado"
 
 msgid "imagem toda"
 msgstr "imagem toda"
 
+msgid "A descrição mudou"
+msgstr "A descrição mudou"
+
 msgid "Mude os filtros ou o período."
 msgstr "Mude os filtros ou o período."
+
+msgid "Amostras"
+msgstr "Amostras"
 
 msgid "Ferramenta"
 msgstr "Ferramenta"
 
 msgid "Esta tela está ligada ao programa da estação."
 msgstr "Esta tela está ligada ao programa da estação."
+
+msgid "Âncora nova ({type})"
+msgstr "Âncora nova ({type})"
 
 msgid "Desenhar a área de presença"
 msgstr "Desenhar a área de presença"
@@ -377,17 +419,11 @@ msgstr "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto 
 msgid "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
 msgstr "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
 
-msgid "Resultado esperado"
-msgstr "Resultado esperado"
-
 msgid "Ligando esta tela ao programa da estação."
 msgstr "Ligando esta tela ao programa da estação."
 
 msgid "{name}: relativa a"
 msgstr "{name}: relativa a"
-
-msgid "Nome do caso"
-msgstr "Nome do caso"
 
 msgid "s"
 msgstr "s"
@@ -404,6 +440,9 @@ msgstr "Pasta de imagens (testes)"
 msgid "Este perfil não pode abrir esta tela."
 msgstr "Este perfil não pode abrir esta tela."
 
+msgid "Amostras novas: {good} Boas e {bad} Ruins"
+msgstr "Amostras novas: {good} Boas e {bad} Ruins"
+
 msgid "{n, plural, one {# alterado} other {# alterados}}"
 msgstr "{n, plural, one {# alterado} other {# alterados}}"
 
@@ -413,6 +452,12 @@ msgstr "Importando…"
 msgid "Nenhum (regiões fixas na imagem)"
 msgstr "Nenhum (regiões fixas na imagem)"
 
+msgid "A qualidade da imagem mudou"
+msgstr "A qualidade da imagem mudou"
+
+msgid "{id}: região {from} → {to}"
+msgstr "{id}: região {from} → {to}"
+
 msgid "Expandir menu"
 msgstr "Expandir menu"
 
@@ -421,9 +466,6 @@ msgstr "sem sinal"
 
 msgid "com falhas"
 msgstr "com falhas"
-
-msgid "Conjunto de referência"
-msgstr "Conjunto de referência"
 
 msgid "Manual"
 msgstr "Manual"
@@ -445,6 +487,15 @@ msgstr "Para a ferramenta de padrão: desenhe um recorte do logo ou marca na ima
 
 msgid "Voltar para Jobs"
 msgstr "Voltar para Jobs"
+
+msgid "Conferir campos"
+msgstr "Conferir campos"
+
+msgid "Câmera, {setting}: {from} → {to}"
+msgstr "Câmera, {setting}: {from} → {to}"
+
+msgid "Nome: {from} → {to}"
+msgstr "Nome: {from} → {to}"
 
 msgid "Testar câmera"
 msgstr "Testar câmera"
@@ -563,6 +614,9 @@ msgstr "Auditoria"
 msgid "Período"
 msgstr "Período"
 
+msgid "Amostra"
+msgstr "Amostra"
+
 msgid "Mantenedor"
 msgstr "Mantenedor"
 
@@ -584,9 +638,6 @@ msgstr "Ativar mesmo assim"
 msgid "Esse endereço não existe."
 msgstr "Esse endereço não existe."
 
-msgid "Caso {name}: o rascunho diz {now}; esperado {expected}."
-msgstr "Caso {name}: o rascunho diz {now}; esperado {expected}."
-
 msgid "O último backup automático falhou: {e}"
 msgstr "O último backup automático falhou: {e}"
 
@@ -602,11 +653,17 @@ msgstr "Sair do editor?"
 msgid "Arquivo importado"
 msgstr "Arquivo importado"
 
+msgid "Região alterada: {name}"
+msgstr "Região alterada: {name}"
+
 msgid "Nome do job novo"
 msgstr "Nome do job novo"
 
 msgid "{hint} (não usado)"
 msgstr "{hint} (não usado)"
+
+msgid "Tipo"
+msgstr "Tipo"
 
 msgid "conectada"
 msgstr "conectada"
@@ -623,8 +680,8 @@ msgstr "passo atual"
 msgid "Tempos"
 msgstr "Tempos"
 
-msgid "Âncora e regiões"
-msgstr "Âncora e regiões"
+msgid "Sem amostras. Capture amostras Boas e Ruins no passo Amostras."
+msgstr "Sem amostras. Capture amostras Boas e Ruins no passo Amostras."
 
 msgid "Nada mudou."
 msgstr "Nada mudou."
@@ -662,6 +719,9 @@ msgstr "Regiões"
 msgid "Em português, para o operador. Pode usar valores da ferramenta, ex.: {example}."
 msgstr "Em português, para o operador. Pode usar valores da ferramenta, ex.: {example}."
 
+msgid "Adicione ao menos uma ferramenta"
+msgstr "Adicione ao menos uma ferramenta"
+
 msgid "Recolher menu"
 msgstr "Recolher menu"
 
@@ -679,6 +739,9 @@ msgstr "já existia"
 
 msgid "Supervisor"
 msgstr "Supervisor"
+
+msgid "{failed} de {total} amostras não saíram como esperado"
+msgstr "{failed} de {total} amostras não saíram como esperado"
 
 msgid "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
 msgstr "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
@@ -737,6 +800,9 @@ msgstr "Carregando a imagem…"
 msgid "Vazio: guardar tudo."
 msgstr "Vazio: guardar tudo."
 
+msgid "A imagem mudou depois da última validação; rode Validar"
+msgstr "A imagem mudou depois da última validação; rode Validar"
+
 msgid "O que incluir"
 msgstr "O que incluir"
 
@@ -745,6 +811,9 @@ msgstr "Não foi possível ler as informações do programa."
 
 msgid "Nomes aceitos na rede"
 msgstr "Nomes aceitos na rede"
+
+msgid "Modo de disparo"
+msgstr "Modo de disparo"
 
 msgid "Testar pasta"
 msgstr "Testar pasta"
@@ -767,11 +836,11 @@ msgstr "Largura"
 msgid "padrão: {value}"
 msgstr "padrão: {value}"
 
-msgid "com erro"
-msgstr "com erro"
-
 msgid "Mesmo quando a estação já está pronta para a próxima peça."
 msgstr "Mesmo quando a estação já está pronta para a próxima peça."
+
+msgid "Próximo passo"
+msgstr "Próximo passo"
 
 msgid "{name} na {place}."
 msgstr "{name} na {place}."
@@ -806,17 +875,26 @@ msgstr "Nível dos ajustes"
 msgid "Chamar a manutenção."
 msgstr "Chamar a manutenção."
 
+msgid "Com erro"
+msgstr "Com erro"
+
 msgid "Corrigido: o certo era {o} (por {by})."
 msgstr "Corrigido: o certo era {o} (por {by})."
 
 msgid "Resultado marcado como incorreto. A imagem vai para o treinamento."
 msgstr "Resultado marcado como incorreto. A imagem vai para o treinamento."
 
+msgid "Ainda sem amostras Boas e Ruins"
+msgstr "Ainda sem amostras Boas e Ruins"
+
 msgid "Ações"
 msgstr "Ações"
 
 msgid "Altura"
 msgstr "Altura"
+
+msgid "Região removida: {name}"
+msgstr "Região removida: {name}"
 
 msgid "Última troca"
 msgstr "Última troca"
@@ -830,8 +908,11 @@ msgstr "ao objeto (âncora)"
 msgid "Sem conexão com o programa da estação. O que aparece nesta tela pode estar desatualizado."
 msgstr "Sem conexão com o programa da estação. O que aparece nesta tela pode estar desatualizado."
 
-msgid "Nenhum caso ainda."
-msgstr "Nenhum caso ainda."
+msgid "Todas as amostras saíram como esperado"
+msgstr "Todas as amostras saíram como esperado"
+
+msgid "Decide o resultado"
+msgstr "Decide o resultado"
 
 msgid "Não há cor suficiente na região para propor uma faixa."
 msgstr "Não há cor suficiente na região para propor uma faixa."
@@ -896,6 +977,9 @@ msgstr "Som na reprovação"
 msgid "âncora"
 msgstr "âncora"
 
+msgid "Nome da amostra"
+msgstr "Nome da amostra"
+
 msgid "Usar como padrão de {id}"
 msgstr "Usar como padrão de {id}"
 
@@ -904,6 +988,12 @@ msgstr "Use letras, números, - e _, sem repetir."
 
 msgid "Temperatura"
 msgstr "Temperatura"
+
+msgid "Ruim"
+msgstr "Ruim"
+
+msgid "nenhum"
+msgstr "nenhum"
 
 msgid "Salvar como versão {v}"
 msgstr "Salvar como versão {v}"
@@ -914,11 +1004,20 @@ msgstr "Restauração de backup"
 msgid "recorte"
 msgstr "recorte"
 
+msgid "O disparo mudou"
+msgstr "O disparo mudou"
+
 msgid "Sair por inatividade após"
 msgstr "Sair por inatividade após"
 
 msgid "Claro"
 msgstr "Claro"
+
+msgid "Confira o nome e o que mudou, e salve como uma nova versão. Ativar é feito na página do job."
+msgstr "Confira o nome e o que mudou, e salve como uma nova versão. Ativar é feito na página do job."
+
+msgid "{id}: o texto de reprovação mudou"
+msgstr "{id}: o texto de reprovação mudou"
 
 msgid "Idioma da estação"
 msgstr "Idioma da estação"
@@ -950,8 +1049,14 @@ msgstr "Sua sessão terminou"
 msgid "gravação"
 msgstr "gravação"
 
+msgid "O servidor recusou algo neste passo"
+msgstr "O servidor recusou algo neste passo"
+
 msgid "Na verificação ao ativar: câmera movida ou cena diferente."
 msgstr "Na verificação ao ativar: câmera movida ou cena diferente."
+
+msgid "Roda o job em todas as amostras e confere com o esperado. É a mesma conferência que a ativação faz."
+msgstr "Roda o job em todas as amostras e confere com o esperado. É a mesma conferência que a ativação faz."
 
 msgid "Job ativado"
 msgstr "Job ativado"
@@ -968,9 +1073,6 @@ msgstr "Backup falhou"
 msgid "Baixar {name}"
 msgstr "Baixar {name}"
 
-msgid "Resultado esperado de {image}"
-msgstr "Resultado esperado de {image}"
-
 msgid "Desenhando… (arraste na imagem)"
 msgstr "Desenhando… (arraste na imagem)"
 
@@ -986,6 +1088,9 @@ msgstr "Pasta das imagens"
 msgid "presença"
 msgstr "presença"
 
+msgid "{tools, plural, one {# ferramenta} other {# ferramentas}}"
+msgstr "{tools, plural, one {# ferramenta} other {# ferramentas}}"
+
 msgid "Verificar e ativar"
 msgstr "Verificar e ativar"
 
@@ -995,11 +1100,17 @@ msgstr "Escuro"
 msgid "Testar"
 msgstr "Testar"
 
+msgid "{id} passou a decidir o resultado"
+msgstr "{id} passou a decidir o resultado"
+
 msgid "Atualizar imagem"
 msgstr "Atualizar imagem"
 
 msgid "Nome do dispositivo"
 msgstr "Nome do dispositivo"
+
+msgid "Âncora alterada ({type})"
+msgstr "Âncora alterada ({type})"
 
 msgid "Critérios"
 msgstr "Critérios"
@@ -1018,6 +1129,9 @@ msgstr "Comparar com"
 
 msgid "Arraste sobre a imagem para desenhar"
 msgstr "Arraste sobre a imagem para desenhar"
+
+msgid "Amostra {name}: o rascunho diz {now}; esperado {expected}."
+msgstr "Amostra {name}: o rascunho diz {now}; esperado {expected}."
 
 msgid "Importar arquivo"
 msgstr "Importar arquivo"
@@ -1061,6 +1175,9 @@ msgstr "ativo: v{v}"
 msgid "sem conexão"
 msgstr "sem conexão"
 
+msgid "Desligada, a ferramenta é medida e gravada, mas nunca reprova a peça."
+msgstr "Desligada, a ferramenta é medida e gravada, mas nunca reprova a peça."
+
 msgid "Padrão (logo, marca)"
 msgstr "Padrão (logo, marca)"
 
@@ -1072,6 +1189,9 @@ msgstr "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} o
 
 msgid "Todos"
 msgstr "Todos"
+
+msgid "0 inspeciona o mais rápido que o computador deixar. Uma imagem tirada com a cena em movimento nunca é inspecionada."
+msgstr "0 inspeciona o mais rápido que o computador deixar. Uma imagem tirada com a cena em movimento nunca é inspecionada."
 
 msgid "Especialista"
 msgstr "Especialista"
@@ -1091,11 +1211,14 @@ msgstr "Exportar CSV"
 msgid "Este resultado estava errado?"
 msgstr "Este resultado estava errado?"
 
+msgid "Âncora"
+msgstr "Âncora"
+
 msgid "Desenhar a posição do objeto"
 msgstr "Desenhar a posição do objeto"
 
-msgid "Revisar"
-msgstr "Revisar"
+msgid "Tipo da amostra {image}"
+msgstr "Tipo da amostra {image}"
 
 msgid "Endereço"
 msgstr "Endereço"
@@ -1108,6 +1231,9 @@ msgstr "Página não encontrada"
 
 msgid "Conta"
 msgstr "Conta"
+
+msgid "Resultado e saídas"
+msgstr "Resultado e saídas"
 
 msgid "Ir para…"
 msgstr "Ir para…"
@@ -1123,6 +1249,9 @@ msgstr "Só em reprovação"
 
 msgid "{n, plural, one {+ # outra} other {+ # outras}}"
 msgstr "{n, plural, one {+ # outra} other {+ # outras}}"
+
+msgid "bloqueado"
+msgstr "bloqueado"
 
 msgid "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
 msgstr "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
@@ -1142,6 +1271,9 @@ msgstr "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha).
 msgid "Nunca"
 msgstr "Nunca"
 
+msgid "ligado"
+msgstr "ligado"
+
 msgid "Localizador"
 msgstr "Localizador"
 
@@ -1150,6 +1282,9 @@ msgstr "Última alteração"
 
 msgid "Versão {v} de {name} ativada."
 msgstr "Versão {v} de {name} ativada."
+
+msgid "Mais lenta: {ms} ms"
+msgstr "Mais lenta: {ms} ms"
 
 msgid "{name} (valor exato)"
 msgstr "{name} (valor exato)"
@@ -1235,14 +1370,26 @@ msgstr "Exportar"
 msgid "Área mínima com objeto"
 msgstr "Área mínima com objeto"
 
+msgid "O job mudou depois da validação; rode Validar de novo"
+msgstr "O job mudou depois da validação; rode Validar de novo"
+
+msgid "Esperado"
+msgstr "Esperado"
+
 msgid "O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo."
 msgstr "O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo."
+
+msgid "Capture a imagem de referência"
+msgstr "Capture a imagem de referência"
 
 msgid "Dataset"
 msgstr "Dataset"
 
 msgid "Balanço de branco"
 msgstr "Balanço de branco"
+
+msgid "A regra de decisão mudou"
+msgstr "A regra de decisão mudou"
 
 msgid "Detecção por modelo"
 msgstr "Detecção por modelo"
@@ -1252,6 +1399,9 @@ msgstr "backup"
 
 msgid "Senha"
 msgstr "Senha"
+
+msgid "{id} passou a só informar, sem reprovar"
+msgstr "{id} passou a só informar, sem reprovar"
 
 msgid "JSON inválido"
 msgstr "JSON inválido"
@@ -1300,9 +1450,6 @@ msgstr "Quantos guardar"
 
 msgid "estação"
 msgstr "estação"
-
-msgid "Modo do gatilho"
-msgstr "Modo do gatilho"
 
 msgid "Gabarito"
 msgstr "Gabarito"
@@ -1379,14 +1526,20 @@ msgstr "Backup automático a cada"
 msgid "Filtros"
 msgstr "Filtros"
 
+msgid "Os textos do operador mudaram"
+msgstr "Os textos do operador mudaram"
+
 msgid "Conectando…"
 msgstr "Conectando…"
 
-msgid "Capturar caso"
-msgstr "Capturar caso"
-
 msgid "Faixa de matiz proposta: {a} a {b}. Teste e ajuste."
 msgstr "Faixa de matiz proposta: {a} a {b}. Teste e ajuste."
+
+msgid "Região nova: {name}"
+msgstr "Região nova: {name}"
+
+msgid "{id}: {title}, {from} → {to}"
+msgstr "{id}: {title}, {from} → {to}"
 
 msgid "Nome inválido ou já usado."
 msgstr "Nome inválido ou já usado."
@@ -1424,6 +1577,9 @@ msgstr "Aparece nas pontuações e no registro."
 msgid "Comparar com…"
 msgstr "Comparar com…"
 
+msgid "{n, plural, one {# amostra removida} other {# amostras removidas}}"
+msgstr "{n, plural, one {# amostra removida} other {# amostras removidas}}"
+
 msgid "Nome do job"
 msgstr "Nome do job"
 
@@ -1451,8 +1607,8 @@ msgstr "Sem ligação com o sistema, não se sabe se os resultados estão sendo 
 msgid "Texto de espera"
 msgstr "Texto de espera"
 
-msgid "Imagens com o resultado esperado. Ao ativar, o job precisa acertar todas."
-msgstr "Imagens com o resultado esperado. Ao ativar, o job precisa acertar todas."
+msgid "Intervalo mínimo entre inspeções"
+msgstr "Intervalo mínimo entre inspeções"
 
 msgid "a partir da v{v}"
 msgstr "a partir da v{v}"
@@ -1462,6 +1618,9 @@ msgstr "imagem ao vivo (reduzida)"
 
 msgid "Referência"
 msgstr "Referência"
+
+msgid "Mudanças desta versão"
+msgstr "Mudanças desta versão"
 
 msgid "Idioma"
 msgstr "Idioma"
@@ -1474,6 +1633,9 @@ msgstr "Salvar…"
 
 msgid "recusado"
 msgstr "recusado"
+
+msgid "Job novo {name}: {count}"
+msgstr "Job novo {name}: {count}"
 
 msgid "Não definida"
 msgstr "Não definida"
@@ -1505,6 +1667,9 @@ msgstr "Algo deu errado"
 msgid "Marcações"
 msgstr "Marcações"
 
+msgid "Ferramenta removida: {id}"
+msgstr "Ferramenta removida: {id}"
+
 msgid "Exportar .vjob"
 msgstr "Exportar .vjob"
 
@@ -1514,11 +1679,20 @@ msgstr "passou"
 msgid "v{v} · {status}"
 msgstr "v{v} · {status}"
 
+msgid "Disparo e qualidade"
+msgstr "Disparo e qualidade"
+
 msgid "O que mudou na estação, quando e por quem. Não se apaga."
 msgstr "O que mudou na estação, quando e por quem. Não se apaga."
 
+msgid "não rodou"
+msgstr "não rodou"
+
 msgid "Não foi possível ler os resultados."
 msgstr "Não foi possível ler os resultados."
+
+msgid "Boa"
+msgstr "Boa"
 
 msgid "O que medir"
 msgstr "O que medir"
@@ -1532,8 +1706,14 @@ msgstr "Aplicar na câmera"
 msgid "Ativar"
 msgstr "Ativar"
 
+msgid "Fotos de peças boas e de defeitos conhecidos, cada uma com o resultado esperado. Ao validar e ao ativar, o job precisa acertar todas."
+msgstr "Fotos de peças boas e de defeitos conhecidos, cada uma com o resultado esperado. Ao validar e ao ativar, o job precisa acertar todas."
+
 msgid "Erros"
 msgstr "Erros"
+
+msgid "As saídas para a máquina vêm com a interface da máquina (fase B)."
+msgstr "As saídas para a máquina vêm com a interface da máquina (fase B)."
 
 msgid "Inícios de turno"
 msgstr "Inícios de turno"
@@ -1577,17 +1757,20 @@ msgstr "Arquivo"
 msgid "7 dias"
 msgstr "7 dias"
 
+msgid "Capture a imagem de referência primeiro"
+msgstr "Capture a imagem de referência primeiro"
+
 msgid "Só o Mantenedor. O motivo fica registrado na auditoria."
 msgstr "Só o Mantenedor. O motivo fica registrado na auditoria."
 
 msgid "O rascunho tem problemas."
 msgstr "O rascunho tem problemas."
 
-msgid "Qualidade"
-msgstr "Qualidade"
-
 msgid "Refazer"
 msgstr "Refazer"
+
+msgid "Validar tudo"
+msgstr "Validar tudo"
 
 msgid "Nova região"
 msgstr "Nova região"
@@ -1619,6 +1802,9 @@ msgstr "Vale só para você, neste navegador. A tela do operador usa o idioma da
 msgid "Exportar o dataset de {name}"
 msgstr "Exportar o dataset de {name}"
 
+msgid "Nada mudou em relação à versão de origem."
+msgstr "Nada mudou em relação à versão de origem."
+
 msgid "Fração da nitidez da imagem de referência (0,5 = metade)."
 msgstr "Fração da nitidez da imagem de referência (0,5 = metade)."
 
@@ -1630,6 +1816,9 @@ msgstr "Nenhuma ferramenta ainda. Um job precisa de pelo menos uma."
 
 msgid "último quadro há {age} s"
 msgstr "último quadro há {age} s"
+
+msgid "Nenhuma amostra ainda."
+msgstr "Nenhuma amostra ainda."
 
 msgid "Só os marcados como incorretos"
 msgstr "Só os marcados como incorretos"

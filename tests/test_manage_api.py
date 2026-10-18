@@ -53,6 +53,34 @@ def test_types_with_their_parameter_schemas(env, mnt):
     assert body["builtin_rois"] == ["anchor", "frame"]
 
 
+def test_verify_runs_the_draft_on_every_sample_like_activation_does(env, mnt):
+    body = env.client.post("/api/jobs/verify", headers=mnt, json=draft()).json()
+    assert body["ok"] is True and body["message"] is None
+    assert [c["image"] for c in body["cases"]] == ["tests/images/ok1.png", "tests/images/ok2.png", "tests/images/blank.png"]
+    assert [(c["expected"], c["outcome"], c["ok"]) for c in body["cases"]] == [("PASS", "PASS", True), ("PASS", "PASS", True), ("FAIL", "FAIL", True)]
+    assert body["cases"][2]["reason"] == "Código não lido" and body["max_ms"] >= 0
+    # a sample that the job judges differently is a failed case, with the words that say why
+    bad = draft()
+    bad["job"]["tools"][0]["params"] = {"expect": "OUTRO"}
+    failed = env.client.post("/api/jobs/verify", headers=mnt, json=bad).json()
+    assert failed["ok"] is False
+    assert not failed["cases"][0]["ok"] and "esperado PASS" in failed["cases"][0]["message"]
+    english = env.client.post("/api/jobs/verify", headers={**mnt, "Accept-Language": "en"}, json=bad).json()
+    assert "expected PASS" in english["cases"][0]["message"]
+
+
+def test_verify_says_so_when_there_is_nothing_to_run_or_the_draft_is_refused(env, mnt):
+    none = draft()
+    none["add_files"] = {p: d for p, d in none["add_files"].items() if not p.startswith("tests/")}
+    body = env.client.post("/api/jobs/verify", headers=mnt, json=none).json()
+    assert body["ok"] is False and body["cases"] == [] and "amostras" in body["message"]
+    refused = draft()
+    refused["job"]["tools"][0]["roi"] = "nowhere"
+    out = env.client.post("/api/jobs/verify", headers=mnt, json=refused).json()
+    assert out["ok"] is False and out["cases"] == []
+    assert env.client.post("/api/jobs/verify", json=draft()).status_code == 401
+
+
 # --- jobs ----------------------------------------------------------------------------------------------
 
 

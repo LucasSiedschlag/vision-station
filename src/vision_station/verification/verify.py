@@ -115,31 +115,50 @@ def check_camera_and_view(
     return checks, warnings
 
 
+@dataclass(frozen=True)
+class CaseRun:
+    """One image of the reference set run through the job (what Validar shows and activation checks)."""
+
+    image: str
+    expected: str  # PASS, FAIL or ERROR
+    outcome: str | None  # what the job said; None: it could not be run
+    ok: bool
+    message: str  # a Msg: "<image>: <what>"
+    reason: str = ""  # a Msg
+    duration_ms: int | None = None
+
+
+def run_reference_set(bundle: JobBundle, inspect: Inspector) -> list[CaseRun]:
+    """Run the job on every image of its reference set (tests/expected.yaml) and compare with what is expected."""
+    if EXPECTED_FILE not in bundle.extra:
+        return []
+    expected = parse_expected(bundle.extra[EXPECTED_FILE])
+    informative = {t.id for t in bundle.job.tools if not t.affects_result}
+    runs: list[CaseRun] = []
+    for case in expected.cases:
+        data = bundle.extra.get(case.image)
+        image = decode_image(data) if data else None
+        if image is None:
+            runs.append(CaseRun(case.image, case.outcome, None, False, tr("{image}: imagem ausente ou ilegível", image=case.image)))
+            continue
+        try:
+            result = inspect(bundle, Frame(image=image, timestamp=0.0))
+        except Exception as exc:  # a tool that crashes on a stored image is a failed case, not a crash of the verifier
+            runs.append(CaseRun(case.image, case.outcome, None, False, tr("{image}: erro ao inspecionar ({kind}: {exc})", image=case.image, kind=type(exc).__name__, exc=exc)))
+            continue
+        problems = _compare(case, result, expected.tolerance, informative)
+        message = tr("{image}: {what}", image=case.image, what=join(problems) if problems else tr("{outcome} como esperado", outcome=result.outcome))
+        runs.append(CaseRun(case.image, case.outcome, str(result.outcome), not problems, message, result.reason, round(result.duration_s * 1000)))
+    return runs
+
+
 def check_decision_logic(bundle: JobBundle, inspect: Inspector, require_reference_set: bool = False) -> tuple[list[Check], list[str]]:
     """Step 5: run the job on the stored reference images and compare with the expected results."""
     if EXPECTED_FILE not in bundle.extra:
         if require_reference_set:
             return [Check("reference_set", False, tr("job sem conjunto de referência (tests/expected.yaml)"))], []
         return [], [tr("job sem conjunto de referência: lógica de decisão não conferida")]
-
-    expected = parse_expected(bundle.extra[EXPECTED_FILE])
-    checks: list[Check] = []
-    for case in expected.cases:
-        name = f"case:{case.image}"
-        data = bundle.extra.get(case.image)
-        image = decode_image(data) if data else None
-        if image is None:
-            checks.append(Check(name, False, tr("{image}: imagem ausente ou ilegível", image=case.image)))
-            continue
-        try:
-            result = inspect(bundle, Frame(image=image, timestamp=0.0))
-        except Exception as exc:  # a tool that crashes on a stored image is a failed case, not a crash of the verifier
-            checks.append(Check(name, False, tr("{image}: erro ao inspecionar ({kind}: {exc})", image=case.image, kind=type(exc).__name__, exc=exc)))
-            continue
-        informative = {t.id for t in bundle.job.tools if not t.affects_result}
-        problems = _compare(case, result, expected.tolerance, informative)
-        checks.append(Check(name, not problems, tr("{image}: {what}", image=case.image, what=join(problems) if problems else tr("{outcome} como esperado", outcome=result.outcome))))
-    return checks, []
+    return [Check(f"case:{run.image}", run.ok, run.message) for run in run_reference_set(bundle, inspect)], []
 
 
 def _compare(case, result: InspectionResult, tolerance: float, informative: frozenset[str] | set[str] = frozenset()) -> list[str]:

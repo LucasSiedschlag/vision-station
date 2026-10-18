@@ -407,6 +407,59 @@
         "title": "CameraStateOut",
         "type": "object"
       },
+      "CaseRunOut": {
+        "description": "One sample run through a draft: what the job said against what was expected (Validar, frontend.md §4.3).",
+        "properties": {
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "expected": {
+            "enum": ["PASS", "FAIL", "ERROR"],
+            "title": "Expected",
+            "type": "string"
+          },
+          "image": {
+            "title": "Image",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": ["PASS", "FAIL", "ERROR"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": ["image", "expected", "outcome", "ok", "message", "reason", "duration_ms"],
+        "title": "CaseRunOut",
+        "type": "object"
+      },
       "CheckOut": {
         "properties": {
           "free_gb": {
@@ -3344,6 +3397,56 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VerifyOut": {
+        "description": "The draft on every sample of its reference set: the same run that activation does (design rule 4).",
+        "properties": {
+          "cases": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CaseRunOut"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Fields",
+            "type": "object"
+          },
+          "max_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Ms"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": ["ok", "message", "fields", "cases", "max_ms"],
+        "title": "VerifyOut",
+        "type": "object"
+      },
       "VersionInfo": {
         "properties": {
           "active": {
@@ -4939,6 +5042,83 @@
           }
         },
         "summary": "Validate Draft"
+      }
+    },
+    "/api/jobs/verify": {
+      "post": {
+        "description": "Run a draft on every sample of its reference set (Validar). It is the run activation does, so a draft that\npasses here is not refused there for its samples; nothing is saved or recorded.",
+        "operationId": "verify_draft",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Draft"
       }
     },
     "/api/jobs/{job_id}": {

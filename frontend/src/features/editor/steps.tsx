@@ -2,12 +2,18 @@ import { ArrowDown, ArrowUp, Camera, Crop, Pipette, Plus, Trash2 } from 'lucide-
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { describeError } from '@/api/mutations'
-import { editorApi, useTypes, type CameraState, type DraftTestOut } from '@/api/queries/editor'
+import {
+  editorApi,
+  useTypes,
+  type CameraState,
+  type DraftTestOut,
+  type VerifyOut,
+} from '@/api/queries/editor'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { FileDrop } from '@/components/ui/file-drop'
-import { Input, Textarea } from '@/components/ui/input'
+import { Input } from '@/components/ui/input'
 import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -34,6 +40,12 @@ export interface StepProps {
   crop: Rect | null
   setCrop: (r: Rect | null) => void
   test: DraftTestOut | null
+  /** Validar: the last run on the samples, and how to run it again (docs/frontend.md §4.3). */
+  report: VerifyOut | null
+  verifying: boolean
+  verify: () => Promise<void>
+  /** Opens the dialog that saves the draft as the next version. */
+  openSave: () => void
 }
 
 const edit = (change: (d: Draft) => void, history = true) =>
@@ -214,7 +226,19 @@ export function CameraStep({ draft }: StepProps) {
 
 // --- 2. trigger --------------------------------------------------------------------------------------
 
-export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
+/** The trigger mode, from the step or from the top bar: one place, so both always agree (docs/frontend.md §7.3). */
+export function setTriggerMode(mode: string) {
+  edit((d) => {
+    const tr = (d.job.trigger ??= {})
+    tr.mode = mode
+    if (mode === 'image_presence') {
+      tr.presence_roi ??= [0.1, 0.1, 0.9, 0.9]
+      tr.still_ms ??= 500
+    }
+  })
+}
+
+export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
   const trigger = draft.job.trigger ?? {}
   const set = (change: (tr: JobJson) => void) => edit((d) => change((d.job.trigger ??= {})))
   return (
@@ -227,15 +251,7 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
           <Select
             {...props}
             value={trigger.mode ?? 'image_presence'}
-            onValueChange={(mode) =>
-              set((tr) => {
-                tr.mode = mode
-                if (mode === 'image_presence') {
-                  tr.presence_roi ??= [0.1, 0.1, 0.9, 0.9]
-                  tr.still_ms ??= 500
-                }
-              })
-            }
+            onValueChange={setTriggerMode}
             options={Object.entries(t.triggerModes).map(([value, [label]]) => ({ value, label }))}
           />
         )}
@@ -290,17 +306,24 @@ export function TriggerStep({ draft, setDrawing, drawing }: StepProps) {
           </Field>
         </>
       ) : null}
-      <Field label={t.waiting} hint={t.waitingHint}>
-        {(props) => (
-          <Input
-            {...props}
-            value={draft.job.ui?.waiting ?? ''}
-            onChange={(e) =>
-              edit((d) => ((d.job.ui ??= {}).waiting = e.target.value || null), false)
-            }
-          />
-        )}
-      </Field>
+      {trigger.mode === 'continuous' ? (
+        <Field label={t.interval} hint={t.intervalHint} error={fields['job.trigger.interval_ms']}>
+          {(props) => (
+            <NumberField
+              {...props}
+              value={num(trigger.interval_ms)}
+              placeholder={text.ui.defaultValue(formatNumber(500))}
+              onChange={(v) =>
+                set((tr) => (v === null ? delete tr.interval_ms : (tr.interval_ms = v)))
+              }
+              unit="ms"
+              min={0}
+              max={10000}
+              decimals={0}
+            />
+          )}
+        </Field>
+      ) : null}
     </div>
   )
 }
@@ -411,7 +434,8 @@ export function RegionsStep({
   drawing,
   crop,
   setCrop,
-}: StepProps) {
+  part,
+}: StepProps & { part: 'anchor' | 'regions' }) {
   const types = useTypes()
   const [level] = useLevel('editor')
   const geometry = draft.job.geometry ?? { rois: {} }
@@ -450,146 +474,161 @@ export function RegionsStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <Field label={t.locator} hint={t.locatorHint}>
-        {(props) => (
-          <Select
-            {...props}
-            value={locator ? `${locator.type}@${locator.version}` : 'none'}
-            onValueChange={(v) =>
-              setGeometry((g) => {
-                if (v === 'none') {
-                  delete g.locator
-                  for (const r of Object.values(g.rois ?? {}) as JobJson[]) r.relative_to = 'frame'
-                  return
-                }
-                const [type, version] = v.split('@')
-                g.locator = {
-                  type,
-                  version: Number(version),
-                  params:
-                    type === 'fixed'
-                      ? { rect: [0.25, 0.25, 0.75, 0.75] }
-                      : type === 'blob'
-                        ? { mode: 'dark' }
-                        : {},
-                }
-              })
-            }
-            options={[
-              { value: 'none', label: t.noLocator },
-              ...(types.data?.locators ?? []).map((l) => ({
-                value: `${l.name}@${l.version}`,
-                label: t.locatorNames[l.name as keyof typeof t.locatorNames] ?? l.name,
-              })),
-            ]}
-          />
-        )}
-      </Field>
-      {locator?.type === 'fixed' ? (
-        <Button
-          variant={drawing === 'locator' ? 'primary' : 'secondary'}
-          onClick={() => setDrawing(drawing === 'locator' ? null : 'locator')}
-        >
-          {drawing === 'locator' ? t.drawingNow : t.drawLocator}
-        </Button>
-      ) : null}
-      {locator?.type === 'template' ? (
-        <div className="flex flex-col gap-2 rounded-control border border-line p-3">
-          <p className="text-sm">
-            {image?.source === 'reference' ? t.cropHint : t.cropNeedsReference}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={image?.source !== 'reference'}
-              variant={drawing === 'crop' ? 'primary' : 'secondary'}
-              onClick={() => setDrawing(drawing === 'crop' ? null : 'crop')}
-            >
-              <Crop aria-hidden className="size-4" />
-              {t.drawCrop}
-            </Button>
-            <Button
-              disabled={!crop || image?.source !== 'reference'}
-              onClick={() => void applyCropAsTemplate()}
-            >
-              {t.useCrop}
-            </Button>
-          </div>
-        </div>
-      ) : null}
-      {locator && schema && locator.type !== 'fixed' ? (
-        <SchemaForm
-          schema={schema}
-          level={level}
-          value={locator.params ?? {}}
-          errors={prefixed(fields, 'job.geometry.locator.params')}
-          onChange={(params) => setGeometry((g) => (g.locator.params = params), false)}
-        />
-      ) : null}
-
-      <h3 className="text-sm font-semibold">{t.regions}</h3>
-      {names.length === 0 ? <p className="text-sm text-fg-muted">{t.noRegions}</p> : null}
-      <ul className="flex flex-col gap-2">
-        {names.map((name) => {
-          const id = `roi:${name}`
-          return (
-            <li
-              key={name}
-              className={`flex flex-wrap items-center gap-2 rounded-control border p-2 ${selected === id ? 'border-accent' : 'border-line'}`}
-            >
-              <button type="button" className="font-mono text-sm" onClick={() => setSelected(id)}>
-                {name}
-              </button>
+      {part === 'anchor' ? (
+        <>
+          <Field label={t.locator} hint={t.locatorHint}>
+            {(props) => (
               <Select
-                aria-label={t.relativeTo(name)}
-                value={rois[name]!.relative_to}
-                onValueChange={(v) => setGeometry((g) => (g.rois[name].relative_to = v))}
+                {...props}
+                value={locator ? `${locator.type}@${locator.version}` : 'none'}
+                onValueChange={(v) =>
+                  setGeometry((g) => {
+                    if (v === 'none') {
+                      delete g.locator
+                      for (const r of Object.values(g.rois ?? {}) as JobJson[])
+                        r.relative_to = 'frame'
+                      return
+                    }
+                    const [type, version] = v.split('@')
+                    g.locator = {
+                      type,
+                      version: Number(version),
+                      params:
+                        type === 'fixed'
+                          ? { rect: [0.25, 0.25, 0.75, 0.75] }
+                          : type === 'blob'
+                            ? { mode: 'dark' }
+                            : {},
+                    }
+                  })
+                }
                 options={[
-                  { value: 'frame', label: t.relFrame },
-                  { value: 'anchor', label: t.relAnchor, disabled: !locator },
+                  { value: 'none', label: t.noLocator },
+                  ...(types.data?.locators ?? []).map((l) => ({
+                    value: `${l.name}@${l.version}`,
+                    label: t.locatorNames[l.name as keyof typeof t.locatorNames] ?? l.name,
+                  })),
                 ]}
               />
-              <Button
-                variant={drawing === id ? 'primary' : 'ghost'}
-                onClick={() => setDrawing(drawing === id ? null : id)}
-              >
-                {drawing === id ? t.drawingNow : t.redraw}
-              </Button>
-              <Button
-                variant="ghost"
-                aria-label={t.removeRegion(name)}
-                onClick={() => setGeometry((g) => delete g.rois[name])}
-              >
-                <Trash2 aria-hidden className="size-4" />
-              </Button>
-            </li>
-          )
-        })}
-      </ul>
-      <div className="flex items-end gap-2">
-        <Field label={t.newRegion} error={nameError || undefined} hint={t.newRegionHint}>
-          {(props) => (
-            <Input {...props} value={newName} onChange={(e) => setNewName(e.target.value.trim())} />
-          )}
-        </Field>
-        <Button
-          disabled={!newName || !!nameError}
-          onClick={() => {
-            setGeometry(
-              (g) =>
-                ((g.rois ??= {})[newName] = {
-                  relative_to: locator ? 'anchor' : 'frame',
-                  rect: [0.3, 0.3, 0.7, 0.7],
-                }),
-            )
-            setSelected(`roi:${newName}`)
-            setDrawing(`roi:${newName}`)
-            setNewName('')
-          }}
-        >
-          <Plus aria-hidden className="size-4" />
-          {t.addRegion}
-        </Button>
-      </div>
+            )}
+          </Field>
+          {locator?.type === 'fixed' ? (
+            <Button
+              variant={drawing === 'locator' ? 'primary' : 'secondary'}
+              onClick={() => setDrawing(drawing === 'locator' ? null : 'locator')}
+            >
+              {drawing === 'locator' ? t.drawingNow : t.drawLocator}
+            </Button>
+          ) : null}
+          {locator?.type === 'template' ? (
+            <div className="flex flex-col gap-2 rounded-control border border-line p-3">
+              <p className="text-sm">
+                {image?.source === 'reference' ? t.cropHint : t.cropNeedsReference}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  disabled={image?.source !== 'reference'}
+                  variant={drawing === 'crop' ? 'primary' : 'secondary'}
+                  onClick={() => setDrawing(drawing === 'crop' ? null : 'crop')}
+                >
+                  <Crop aria-hidden className="size-4" />
+                  {t.drawCrop}
+                </Button>
+                <Button
+                  disabled={!crop || image?.source !== 'reference'}
+                  onClick={() => void applyCropAsTemplate()}
+                >
+                  {t.useCrop}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+          {locator && schema && locator.type !== 'fixed' ? (
+            <SchemaForm
+              schema={schema}
+              level={level}
+              value={locator.params ?? {}}
+              errors={prefixed(fields, 'job.geometry.locator.params')}
+              onChange={(params) => setGeometry((g) => (g.locator.params = params), false)}
+            />
+          ) : null}
+        </>
+      ) : (
+        <>
+          <h3 className="text-sm font-semibold">{t.regions}</h3>
+          {names.length === 0 ? <p className="text-sm text-fg-muted">{t.noRegions}</p> : null}
+          <ul className="flex flex-col gap-2">
+            {names.map((name) => {
+              const id = `roi:${name}`
+              return (
+                <li
+                  key={name}
+                  className={`flex flex-wrap items-center gap-2 rounded-control border p-2 ${selected === id ? 'border-accent' : 'border-line'}`}
+                >
+                  <button
+                    type="button"
+                    className="font-mono text-sm"
+                    onClick={() => setSelected(id)}
+                  >
+                    {name}
+                  </button>
+                  <Select
+                    aria-label={t.relativeTo(name)}
+                    value={rois[name]!.relative_to}
+                    onValueChange={(v) => setGeometry((g) => (g.rois[name].relative_to = v))}
+                    options={[
+                      { value: 'frame', label: t.relFrame },
+                      { value: 'anchor', label: t.relAnchor, disabled: !locator },
+                    ]}
+                  />
+                  <Button
+                    variant={drawing === id ? 'primary' : 'ghost'}
+                    onClick={() => setDrawing(drawing === id ? null : id)}
+                  >
+                    {drawing === id ? t.drawingNow : t.redraw}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    aria-label={t.removeRegion(name)}
+                    onClick={() => setGeometry((g) => delete g.rois[name])}
+                  >
+                    <Trash2 aria-hidden className="size-4" />
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+          <div className="flex items-end gap-2">
+            <Field label={t.newRegion} error={nameError || undefined} hint={t.newRegionHint}>
+              {(props) => (
+                <Input
+                  {...props}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value.trim())}
+                />
+              )}
+            </Field>
+            <Button
+              disabled={!newName || !!nameError}
+              onClick={() => {
+                setGeometry(
+                  (g) =>
+                    ((g.rois ??= {})[newName] = {
+                      relative_to: locator ? 'anchor' : 'frame',
+                      rect: [0.3, 0.3, 0.7, 0.7],
+                    }),
+                )
+                setSelected(`roi:${newName}`)
+                setDrawing(`roi:${newName}`)
+                setNewName('')
+              }}
+            >
+              <Plus aria-hidden className="size-4" />
+              {t.addRegion}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -971,7 +1010,7 @@ export function ReferenceStep({ draft }: StepProps) {
                     }
                     options={(['PASS', 'FAIL', 'ERROR'] as const).map((o) => ({
                       value: o,
-                      label: t.outcome[o],
+                      label: t.sampleKind[o],
                     }))}
                   />
                 </TD>
@@ -1010,7 +1049,7 @@ export function ReferenceStep({ draft }: StepProps) {
               onValueChange={(v) => setOutcome(v as 'PASS')}
               options={(['PASS', 'FAIL', 'ERROR'] as const).map((o) => ({
                 value: o,
-                label: t.outcome[o],
+                label: t.sampleKind[o],
               }))}
             />
           )}
@@ -1024,68 +1063,6 @@ export function ReferenceStep({ draft }: StepProps) {
           {t.addCase}
         </Button>
       </div>
-    </div>
-  )
-}
-
-// --- 7. review --------------------------------------------------------------------------------------
-
-export function ReviewStep({ draft, fields }: StepProps & { onSave?: () => void }) {
-  const [check, setCheck] = useState<{
-    ok: boolean
-    message?: string | null
-    fields: Record<string, string>
-  } | null>(null)
-  const run = async () => {
-    try {
-      const r = await editorApi.validate(toRequest(draft))
-      setCheck({ ok: r.ok, message: r.message, fields: r.fields })
-    } catch (e) {
-      toast.error(describeError(e))
-    }
-  }
-  const all = { ...fields, ...(check?.fields ?? {}) }
-  return (
-    <div className="flex flex-col gap-4">
-      <Field label={t.jobName}>
-        {(props) => (
-          <Input
-            {...props}
-            value={draft.job.job?.name ?? ''}
-            onChange={(e) => edit((d) => (d.job.job.name = e.target.value), false)}
-          />
-        )}
-      </Field>
-      <Field label={t.description}>
-        {(props) => (
-          <Textarea
-            {...props}
-            rows={2}
-            value={draft.job.job?.description ?? ''}
-            onChange={(e) => edit((d) => (d.job.job.description = e.target.value), false)}
-          />
-        )}
-      </Field>
-      <Button onClick={() => void run()}>{t.validate}</Button>
-      {check ? (
-        <div role="status" className="flex flex-col gap-1 text-sm">
-          {check.ok ? (
-            <StatusIndicator tone="ok" label={t.valid} />
-          ) : (
-            <StatusIndicator tone="fail" label={check.message ?? t.invalid} />
-          )}
-        </div>
-      ) : null}
-      {Object.keys(all).length > 0 ? (
-        <ul aria-label={t.fieldErrors} className="flex flex-col gap-1 text-sm text-fail-text">
-          {Object.entries(all).map(([k, v]) => (
-            <li key={k}>
-              <span className="font-mono">{k}</span>: {v}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <p className="text-sm text-fg-muted">{t.files(draftFiles(draft).length)}</p>
     </div>
   )
 }

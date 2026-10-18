@@ -75,7 +75,7 @@ trigger:
   min_area: 0.05                             # fraction of the area that must differ to count as present
   motion_area: 0.01                          # fraction that must change between frames to count as moving
   delay_ms: 0                                # external: wait 0–1000 ms after the trigger before the frame (FR-TRG-6)
-  interval_ms: 500                           # continuous: minimum time between inspections; 0 = as fast as possible (FR-TRG-7)
+  interval_ms: 500                           # continuous: minimum time between inspections; 0 = as fast as possible (FR-TRG-7). Written only when not 500, so a job that does not use it opens in older versions too
 quality:
   brightness: {min: 15, max: 245}             # outside: ERROR
   sharpness_min_ratio: 0.5                   # vs. the reference image; below: ERROR
