@@ -1,16 +1,31 @@
 import { useState } from 'react'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { Badge } from '@/components/ui/badge'
 import { Field } from '@/components/ui/field'
 import { Input, Textarea } from '@/components/ui/input'
 import { NumberField } from '@/components/ui/number-field'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { formatNumber } from '@/lib/number'
+import { formatNumber, formatPercent } from '@/lib/number'
 import { text as texts } from '@/texts'
+import type { Level } from '@/app/levels'
+import { widgets } from './widgets'
 
 /**
  * A form drawn from a tool's or locator's JSON Schema (docs/frontend.md §7.3), so a new tool type needs no
  * screen code (FR-PLT-2). It covers what our Pydantic models produce; anything else becomes a JSON text field,
- * never silently dropped. Titles, descriptions and the labels of choices come from the schema (in Portuguese).
+ * never silently dropped. Titles, descriptions and the labels of choices come from the schema, in the language of the
+ * request.
+ *
+ * Version 2 (docs/frontend.md §17, §19.2) reads the tags the server puts on each parameter: `x-group` (what to measure,
+ * or the criteria), `x-level` (Essencial, Avançado, Especialista), `x-unit` (a fraction is written as a percentage, px
+ * and ΔE follow the number) and `x-widget` (a graphical control from `widgets`, the plain control while it has none).
+ * A parameter without a level counts as Especialista, so a forgotten tag hides a field rather than cluttering the form.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- JSON Schema and parameter values are open by nature */
@@ -168,6 +183,20 @@ function Property({
   const hint = s.description as string | undefined
   const error = errors[path]
   const unset = !present || value === null || value === undefined
+  const unit = schema['x-unit'] as string | undefined
+  const Widget = typeof schema['x-widget'] === 'string' ? widgets[schema['x-widget']] : undefined
+  if (Widget)
+    return (
+      <Widget
+        name={name}
+        schema={schema}
+        value={unset ? undefined : value}
+        onChange={onChange}
+        label={label}
+        hint={hint}
+        error={error}
+      />
+    )
   const optional = nullable || (!required && s.type !== 'boolean')
 
   // an optional value: a switch to use it, then the control
@@ -200,6 +229,7 @@ function Property({
             label={label}
             hint={hint}
             error={error}
+            unit={unit}
           />
         ) : null}
       </fieldset>
@@ -217,6 +247,7 @@ function Property({
       label={label}
       hint={hint}
       error={error}
+      unit={unit}
       placeholderDefault={!required ? s.default : undefined}
     />
   )
@@ -233,6 +264,7 @@ function Control({
   label,
   hint,
   error,
+  unit,
   placeholderDefault,
 }: {
   name: string
@@ -245,13 +277,17 @@ function Control({
   label: string
   hint?: string
   error?: string
+  unit?: string
   placeholderDefault?: unknown
 }) {
+  const percent = unit === 'fraction'
   const placeholder =
     placeholderDefault !== undefined && placeholderDefault !== null
       ? texts.ui.defaultValue(
           typeof placeholderDefault === 'number'
-            ? formatNumber(placeholderDefault)
+            ? percent
+              ? formatPercent(placeholderDefault)
+              : formatNumber(placeholderDefault)
             : String(placeholderDefault),
         )
       : undefined
@@ -302,6 +338,8 @@ function Control({
             max={max}
             step={s.type === 'integer' ? 1 : 0.01}
             decimals={s.type === 'integer' ? 0 : 4}
+            percent={percent}
+            unit={unit === 'px' || unit === 'ΔE' ? unit : undefined}
             placeholder={placeholder}
           />
         )}
@@ -373,6 +411,7 @@ function Control({
           onChange={(v) => onChange(v)}
           errors={errors}
           path={path}
+          nested
         />
       </fieldset>
     )
@@ -382,7 +421,42 @@ function Control({
   )
 }
 
-/** The form for one object schema. `errors` are keyed by dotted path from the server (e.g. "params.min_fraction"). */
+/** A parameter's settings level; one without a tag is Especialista (docs/frontend.md §17). */
+export function levelOf(prop: Schema): Level {
+  const level = prop['x-level']
+  return level === 1 || level === 2 || level === 3 ? level : 3
+}
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+
+/** Of these parameters, the ones that differ from their defaults: a value present without a default counts as changed. */
+function changedAmong(schema: Schema, value: Values, names: string[]): string[] {
+  const properties = (schema.properties ?? {}) as Record<string, Schema>
+  return names.filter((name) => {
+    if (!(name in value) || value[name] === undefined) return false
+    const { inner } = unwrapNullable(properties[name]!, schema)
+    return !same(value[name], inner.default ?? null)
+  })
+}
+
+/** The parameters a level hides that differ from their defaults. */
+export function hiddenChanged(schema: Schema, value: Values, level: Level): string[] {
+  const properties = (schema.properties ?? {}) as Record<string, Schema>
+  return changedAmong(
+    schema,
+    value,
+    Object.keys(properties).filter((name) => levelOf(properties[name]!) > level),
+  )
+}
+
+/**
+ * The form for one object schema. `errors` are keyed by dotted path from the server (e.g. "params.min_fraction").
+ *
+ * At the top it is drawn in sections (docs/frontend.md §19.2): what to measure, the criteria, then the Avançado and
+ * Especialista parameters in collapsed sections, each only once `level` reaches it. What a level hides is never
+ * invisible: a badge counts the hidden parameters that were changed and shows just those. A nested object (a color
+ * range inside a locator) is drawn whole, whatever the level.
+ */
 export function SchemaForm({
   schema,
   root,
@@ -390,6 +464,8 @@ export function SchemaForm({
   onChange,
   errors = {},
   path = '',
+  level = 3,
+  nested = false,
 }: {
   schema: Schema
   root?: Schema
@@ -397,31 +473,91 @@ export function SchemaForm({
   onChange: (next: Values) => void
   errors?: Record<string, string>
   path?: string
+  /** The settings level to show (1 Essencial, 2 Avançado, 3 Especialista); every parameter by default. */
+  level?: Level
+  nested?: boolean
 }) {
   const base = root ?? schema
   const properties: Record<string, Schema> = schema.properties ?? {}
   const required: string[] = schema.required ?? []
+  const [revealed, setRevealed] = useState(false)
+
+  const field = (name: string) => (
+    <Property
+      key={name}
+      name={name}
+      schema={properties[name]!}
+      root={base}
+      value={value[name]}
+      present={name in value}
+      required={required.includes(name)}
+      errors={errors}
+      path={path ? `${path}.${name}` : name}
+      onChange={(v, remove) => {
+        const next = { ...value }
+        if (remove || v === undefined) delete next[name]
+        else next[name] = v
+        onChange(next)
+      }}
+    />
+  )
+  if (nested) return <div className="flex flex-col gap-3">{Object.keys(properties).map(field)}</div>
+
+  const names = Object.keys(properties)
+  const at = (wanted: Level, group?: string) =>
+    names.filter(
+      (n) =>
+        levelOf(properties[n]!) === wanted &&
+        (group === undefined ||
+          (properties[n]!['x-group'] === 'criteria') === (group === 'criteria')),
+    )
+  const sections: { title: string; names: string[] }[] = [
+    { title: texts.ui.groupMeasure, names: at(1, 'measure') },
+    { title: texts.ui.groupCriteria, names: at(1, 'criteria') },
+  ].filter((section) => section.names.length > 0)
+  const deeper = ([2, 3] as const).filter((l) => l <= level && at(l).length > 0)
+  const changed = hiddenChanged(schema, value, level)
+  // a closed section says how many of its settings were changed
+  const changedHint = (l: 2 | 3) => {
+    const n = changedAmong(schema, value, at(l)).length
+    return n > 0 ? <Badge tone="warn">{texts.ui.sectionChanged(n)}</Badge> : undefined
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      {Object.entries(properties).map(([name, prop]) => (
-        <Property
-          key={name}
-          name={name}
-          schema={prop}
-          root={base}
-          value={value[name]}
-          present={name in value}
-          required={required.includes(name)}
-          errors={errors}
-          path={path ? `${path}.${name}` : name}
-          onChange={(v, remove) => {
-            const next = { ...value }
-            if (remove || v === undefined) delete next[name]
-            else next[name] = v
-            onChange(next)
-          }}
-        />
+      {sections.map((section) => (
+        <section key={section.title} className="flex flex-col gap-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+            {section.title}
+          </h4>
+          {section.names.map(field)}
+        </section>
       ))}
+      {deeper.length > 0 ? (
+        <Accordion type="multiple">
+          {deeper.map((l) => (
+            <AccordionItem key={l} value={String(l)}>
+              <AccordionTrigger hint={changedHint(l)}>{texts.ui.levels[l]}</AccordionTrigger>
+              <AccordionContent>{at(l).map(field)}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      ) : null}
+      {changed.length > 0 ? (
+        <div className="flex flex-col gap-3 rounded-control border border-warn-text/40 p-3">
+          <button
+            type="button"
+            aria-expanded={revealed}
+            title={texts.ui.hiddenChangedHint}
+            onClick={() => setRevealed((r) => !r)}
+            className="flex min-h-control items-center gap-2 text-left text-sm"
+          >
+            <Badge tone="warn">{texts.ui.hiddenChanged(changed.length)}</Badge>
+            {revealed ? <span className="text-fg-muted">{texts.ui.hiddenChangedHide}</span> : null}
+          </button>
+          {revealed ? changed.map(field) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

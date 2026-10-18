@@ -15,13 +15,24 @@ import zxingcpp
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from vision_station.core.jobfiles import JobFiles
-from vision_station.core.schema_labels import labels
-from vision_station.tools.base import ToolResult, ToolType, count_at_most, judged, minimum, register
+from vision_station.core.i18n import tr
+from vision_station.core.schema_labels import labels, meta
+from vision_station.tools.base import CriterionSpec, ToolResult, ToolType, count_at_most, judged, minimum, register
 
 
 class CodeParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região.",
+        meta={
+            "formats": meta(1, "measure", widget="code-formats"),
+            "expect": meta(1, "measure"),
+            "pattern": meta(1, "measure", widget="regex"),
+            "min_count": meta(1, "criteria", unit="count", tunable=True),
+            "max_count": meta(1, "criteria", unit="count", tunable=True),
+            "try_rotate": meta(3, "measure"),
+            "try_downscale": meta(3, "measure"),
+            "try_invert": meta(2, "measure"),
+        },
         formats=("Formatos", "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos"),
         expect=("Texto esperado", "Um código só conta se tiver exatamente este texto"),
         pattern=("Padrão do texto", "Expressão regular; ex.: L\\d{6}"),
@@ -112,4 +123,7 @@ def run(region: np.ndarray, params: CodeParams, files: JobFiles) -> ToolResult:
     return judged(criteria, values=values, details={"codes": codes}, units={"found": "count", "matching": "count"})
 
 
-CODE = register(ToolType(name="code", version=1, params=CodeParams, run=run))
+CODE = register(ToolType(
+    name="code", version=1, params=CodeParams, run=run,
+    criteria=(CriterionSpec("matching", tr("Códigos aceitos"), "count", "min_count", "max_count"),),
+))

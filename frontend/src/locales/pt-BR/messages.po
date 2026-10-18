@@ -212,6 +212,9 @@ msgstr "Ex.: http://localhost:8800, separadas por vírgula."
 msgid "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
 msgstr "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
 
+msgid "Esconder os ajustes alterados"
+msgstr "Esconder os ajustes alterados"
+
 msgid "Estava NÃO OK"
 msgstr "Estava NÃO OK"
 
@@ -317,6 +320,9 @@ msgstr "Ações de {name}"
 msgid "Baixar"
 msgstr "Baixar"
 
+msgid "Essencial"
+msgstr "Essencial"
+
 msgid "Um sinal de outro equipamento dispara a inspeção"
 msgstr "Um sinal de outro equipamento dispara a inspeção"
 
@@ -382,6 +388,9 @@ msgstr "Pasta de imagens (testes)"
 
 msgid "Este perfil não pode abrir esta tela."
 msgstr "Este perfil não pode abrir esta tela."
+
+msgid "{n, plural, one {# alterado} other {# alterados}}"
+msgstr "{n, plural, one {# alterado} other {# alterados}}"
 
 msgid "Importando…"
 msgstr "Importando…"
@@ -668,6 +677,9 @@ msgstr "Ferramentas"
 msgid "Senha atual"
 msgstr "Senha atual"
 
+msgid "{n, plural, one {# ajuste oculto foi alterado} other {# ajustes ocultos foram alterados}}"
+msgstr "{n, plural, one {# ajuste oculto foi alterado} other {# ajustes ocultos foram alterados}}"
+
 msgid "Sinal externo"
 msgstr "Sinal externo"
 
@@ -769,6 +781,9 @@ msgstr "Separados por vírgula"
 
 msgid "A imagem vai para o treinamento com o resultado certo."
 msgstr "A imagem vai para o treinamento com o resultado certo."
+
+msgid "Nível dos ajustes"
+msgstr "Nível dos ajustes"
 
 msgid "Chamar a manutenção."
 msgstr "Chamar a manutenção."
@@ -968,6 +983,9 @@ msgstr "Atualizar imagem"
 msgid "Nome do dispositivo"
 msgstr "Nome do dispositivo"
 
+msgid "Critérios"
+msgstr "Critérios"
+
 msgid "conectado"
 msgstr "conectado"
 
@@ -1033,6 +1051,9 @@ msgstr "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} o
 
 msgid "Todos"
 msgstr "Todos"
+
+msgid "Especialista"
+msgstr "Especialista"
 
 msgid "Adicionar"
 msgstr "Adicionar"
@@ -1265,6 +1286,9 @@ msgstr "HH:MM separados por vírgula; os contadores recomeçam em cada um."
 msgid "Definir a senha do {role}"
 msgstr "Definir a senha do {role}"
 
+msgid "Mostrar só os ajustes alterados que o nível atual esconde"
+msgstr "Mostrar só os ajustes alterados que o nível atual esconde"
+
 msgid "Jobs"
 msgstr "Jobs"
 
@@ -1285,6 +1309,9 @@ msgstr "Aguardando objeto"
 
 msgid "Fração da área de presença (0 a 1)."
 msgstr "Fração da área de presença (0 a 1)."
+
+msgid "Avançado"
+msgstr "Avançado"
 
 msgid "Baixar imagem"
 msgstr "Baixar imagem"
@@ -1447,6 +1474,9 @@ msgstr "O que mudou na estação, quando e por quem. Não se apaga."
 
 msgid "Não foi possível ler os resultados."
 msgstr "Não foi possível ler os resultados."
+
+msgid "O que medir"
+msgstr "O que medir"
 
 msgid "Guardar a imagem de 1 aprovado a cada"
 msgstr "Guardar a imagem de 1 aprovado a cada"

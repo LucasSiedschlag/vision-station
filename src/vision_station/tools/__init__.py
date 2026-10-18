@@ -9,6 +9,7 @@ from vision_station.tools import color as _color  # noqa: F401
 from vision_station.tools import detect as _detect  # noqa: F401
 from vision_station.tools import pattern as _pattern  # noqa: F401
 from vision_station.tools.base import (
+    CriterionSpec,
     ToolError,
     ToolResult,
     ToolType,
@@ -33,6 +34,7 @@ def check_job_tools(job: Job, files: Mapping[str, bytes] | None = None) -> None:
 
 
 __all__ = [
+    "CriterionSpec",
     "ToolError",
     "ToolResult",
     "ToolType",

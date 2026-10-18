@@ -13,8 +13,10 @@ export interface NumberFieldProps {
   value: number | null
   /** Called when the value is committed: on leaving the field, on Enter and on each arrow step. */
   onChange: (value: number | null) => void
-  /** Shown after the number (µs, ms, mm, %): units are always visible. */
+  /** Shown after the number (µs, ms, mm): units are always visible. */
   unit?: string
+  /** The value is a fraction (0 to 1) written as a percentage: `30%` stands for 0.3. The step is then a fraction too. */
+  percent?: boolean
   min?: number
   max?: number
   step?: number
@@ -38,6 +40,7 @@ export function NumberField({
   value,
   onChange,
   unit,
+  percent,
   min,
   max,
   step = 1,
@@ -58,7 +61,15 @@ export function NumberField({
       minValue={min}
       maxValue={max}
       step={step}
-      formatOptions={{ maximumFractionDigits: decimals, useGrouping: false }}
+      formatOptions={
+        percent
+          ? {
+              style: 'percent',
+              maximumFractionDigits: Math.max(decimals - 2, 0),
+              useGrouping: false,
+            }
+          : { maximumFractionDigits: decimals, useGrouping: false }
+      }
       commitBehavior="validate"
       // decided here, so the browser's own range and step messages never show
       isInvalid={outOfRange || ariaInvalid === true || ariaInvalid === 'true'}

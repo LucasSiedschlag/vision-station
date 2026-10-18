@@ -18,18 +18,30 @@ from typing import Annotated, Self
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from vision_station.core.i18n import text_of
+from vision_station.core.i18n import text_of, tr
 from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.models import ModelError, parse_card, predict
-from vision_station.core.schema_labels import labels
+from vision_station.core.schema_labels import labels, meta
 from vision_station.algorithms.measures import at_most
 from vision_station.core.results import Criterion, Unit
-from vision_station.tools.base import ToolError, ToolResult, ToolType, count_at_most, judged, minimum, register, rule
+from vision_station.tools.base import CriterionSpec, ToolError, ToolResult, ToolType, count_at_most, judged, minimum, register, rule
 
 
 class DetectParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "Roda um modelo treinado na região.",
+        meta={
+            "model": meta(1, "measure"),
+            "card": meta(2, "measure"),
+            "min_confidence": meta(1, "criteria", unit="fraction", tunable=True),
+            "fail_classes": meta(1, "criteria"),
+            "pass_classes": meta(1, "criteria"),
+            "require_classes": meta(1, "criteria"),
+            "count_class": meta(1, "criteria"),
+            "min_count": meta(1, "criteria", unit="count", tunable=True),
+            "max_count": meta(1, "criteria", unit="count", tunable=True),
+            "threshold": meta(1, "criteria", unit="score", tunable=True),
+        },
         model=("Modelo", "Arquivo .onnx dentro do job (treinado fora da estação)"),
         card=("Cartão do modelo", "Vazio: o mesmo nome com .card.yaml"),
         min_confidence=("Confiança mínima", "0 a 1"),
@@ -123,4 +135,11 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
     return judged(criteria, values=values, details=details, units=units)
 
 
-DETECT = register(ToolType(name="detect", version=1, params=DetectParams, run=run, needs=lambda p: [p.model, p.card_path]))
+DETECT = register(ToolType(
+    name="detect", version=1, params=DetectParams, run=run, needs=lambda p: [p.model, p.card_path],
+    criteria=(
+        CriterionSpec("confidence", tr("Confiança do modelo"), "fraction", "min_confidence", None, (0.0, 1.0)),
+        CriterionSpec("count", tr("Ocorrências da classe contada"), "count", "min_count", "max_count"),
+        CriterionSpec("score", tr("Anomalia"), "score", None, "threshold"),
+    ),
+))

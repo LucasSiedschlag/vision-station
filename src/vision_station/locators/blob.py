@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.algorithms.color import ColorRange, color_mask
 from vision_station.core.jobfiles import JobFiles
-from vision_station.core.schema_labels import labels
+from vision_station.core.schema_labels import labels, meta
 from vision_station.locators.base import Anchor, LocatorType, register
 
 Fraction = Annotated[float, Field(ge=0, le=1)]
@@ -23,6 +23,16 @@ Fraction = Annotated[float, Field(ge=0, le=1)]
 class BlobParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo.",
+        meta={
+            "mode": meta(1, "measure"),
+            "color": meta(1, "measure"),
+            "threshold": meta(1, "measure", widget="gray-threshold"),
+            "search": meta(2, "measure", widget="region"),
+            "min_area": meta(1, "criteria", unit="fraction"),
+            "max_area": meta(1, "criteria", unit="fraction"),
+            "clean_px": meta(2, "measure", unit="px"),
+            "work_width": meta(3, "measure", unit="px"),
+        },
         mode=("O objeto é", "", {"color": "de uma cor", "dark": "mais escuro que o fundo", "light": "mais claro que o fundo"}),
         color=("Cor do objeto", ""),
         threshold=("Limiar de cinza", "0 a 255. Vazio: automático"),

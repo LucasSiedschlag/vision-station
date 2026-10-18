@@ -374,13 +374,27 @@ class CollectionOut(BaseModel):
 # --- management: tools, jobs, camera, reference, users, audit, dataset (VIA-0026) ----------------------
 
 
+class CriterionSpecOut(BaseModel):
+    """One measure of a tool that has limits: what a tolerance gauge draws (frontend.md §9.3)."""
+
+    value: str  # the key of the result's values
+    label: str
+    unit: Literal["fraction", "count", "score"]
+    range: tuple[float, float | None]  # None: no natural top, the gauge takes it from the data
+    limits: dict[Literal["min", "max"], str]  # the tool's parameters holding the limits
+    direction: Literal["at_least", "at_most", "between"]
+    level: Literal[1, 2, 3]
+
+
 class TypeInfo(BaseModel):
-    """A tool or locator type the editor can offer, with the JSON Schema of its parameters."""
+    """A tool or locator type the editor can offer, with the JSON Schema of its parameters. The schema carries
+    `x-level`, `x-group`, `x-widget`, `x-unit` and `x-tunable` on each parameter. `criteria` is empty for a locator."""
 
     name: str
     version: int
     description: str
     params_schema: dict[str, Any]
+    criteria: list[CriterionSpecOut] = []
 
 
 class TypesOut(BaseModel):

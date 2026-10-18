@@ -1152,6 +1152,37 @@ export interface components {
        */
       value: number | null
     }
+    /**
+     * CriterionSpecOut
+     * @description One measure of a tool that has limits: what a tolerance gauge draws (frontend.md §9.3).
+     */
+    CriterionSpecOut: {
+      /**
+       * Direction
+       * @enum {string}
+       */
+      direction: 'at_least' | 'at_most' | 'between'
+      /** Label */
+      label: string
+      /**
+       * Level
+       * @enum {integer}
+       */
+      level: 1 | 2 | 3
+      /** Limits */
+      limits: {
+        [key: string]: string
+      }
+      /** Range */
+      range: [number, number | null]
+      /**
+       * Unit
+       * @enum {string}
+       */
+      unit: 'fraction' | 'count' | 'score'
+      /** Value */
+      value: string
+    }
     /** DatasetExportBody */
     DatasetExportBody: {
       /** Job Id */
@@ -2279,9 +2310,15 @@ export interface components {
     }
     /**
      * TypeInfo
-     * @description A tool or locator type the editor can offer, with the JSON Schema of its parameters.
+     * @description A tool or locator type the editor can offer, with the JSON Schema of its parameters. The schema carries
+     *     `x-level`, `x-group`, `x-widget`, `x-unit` and `x-tunable` on each parameter. `criteria` is empty for a locator.
      */
     TypeInfo: {
+      /**
+       * Criteria
+       * @default []
+       */
+      criteria: components['schemas']['CriterionSpecOut'][]
       /** Description */
       description: string
       /** Name */

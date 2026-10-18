@@ -5,8 +5,16 @@ import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
 import { useLive } from '@/api/live'
 import { describeError } from '@/api/mutations'
-import { editorApi, useCameraState, useJobVersion, type DraftTestOut } from '@/api/queries/editor'
+import {
+  editorApi,
+  useCameraState,
+  useJobVersion,
+  useTypes,
+  type DraftTestOut,
+} from '@/api/queries/editor'
 import { useJob } from '@/api/queries/jobs'
+import { useLevel } from '@/app/levels'
+import { LevelSwitch } from '@/app/shell/LevelSwitch'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,10 +34,12 @@ import {
   toRequest,
   useDraft,
   type Draft,
+  type JobJson,
 } from './draft'
 import { anchorToFrame, frameToAnchor, type Rect } from './geometry'
 import { base64ToBlob, fetchBlob, imageFromBlob, type EditorImage } from './image'
 import { RegionCanvas, type Shape } from './RegionCanvas'
+import { hiddenChanged } from './SchemaForm'
 import {
   CameraStep,
   PatternCrop,
@@ -67,7 +77,6 @@ export function EditorPage() {
   const version = useJobVersion(isNew ? null : id, isNew ? null : from)
   const camera = useCameraState(isNew)
   const { draft, dirty, recovered, forgetRecovered, load, undo, redo, past, future } = useDraft()
-
   // start from the saved version (or a new job), or from the draft this browser kept for it
   useEffect(() => {
     if (isNew) {
@@ -154,6 +163,25 @@ function Editor({
 }) {
   const navigate = useNavigate()
   const [step, setStep] = useState<StepId>(isNew ? 'camera' : 'regions')
+  const types = useTypes()
+  const [level] = useLevel('editor')
+  // every setting the level hides that was changed, in all the tools and the locator
+  const hidden = (draft.job.tools ?? []).reduce(
+    (sum: number, tool: JobJson) =>
+      sum +
+      hiddenChanged(
+        types.data?.tools.find((t) => t.name === tool.type)?.params_schema ?? {},
+        tool.params ?? {},
+        level,
+      ).length,
+    hiddenChanged(
+      types.data?.locators.find((l) => l.name === draft.job.geometry?.locator?.type)
+        ?.params_schema ?? {},
+      draft.job.geometry?.locator?.params ?? {},
+      level,
+    ).length,
+  )
+
   const [selected, setSelected] = useState<string | null>(null)
   const [drawing, setDrawing] = useState<string | null>(null)
   const [crop, setCrop] = useState<Rect | null>(null)
@@ -395,7 +423,8 @@ function Editor({
         <h1 className="text-lg font-semibold">{draft.job.job?.name}</h1>
         <Badge tone="neutral">{draft.base ? t.draftOf(draft.base.version) : t.newJob}</Badge>
         {dirty ? <Badge tone="warn">{t.unsaved}</Badge> : null}
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <LevelSwitch family="editor" hidden={hidden} />
           <Button variant="ghost" aria-label={t.undo} disabled={!canUndo} onClick={undo}>
             <Undo2 aria-hidden className="size-4" />
           </Button>

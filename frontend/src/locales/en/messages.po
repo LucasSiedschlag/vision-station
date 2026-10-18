@@ -212,6 +212,9 @@ msgstr "E.g. http://localhost:8800, separated by commas."
 msgid "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
 msgstr "Images to train models. They stay on this PC; training is done away from the station."
 
+msgid "Esconder os ajustes alterados"
+msgstr "Hide the changed settings"
+
 msgid "Estava NÃO OK"
 msgstr "It was NOT OK"
 
@@ -317,6 +320,9 @@ msgstr "Actions for {name}"
 msgid "Baixar"
 msgstr "Download"
 
+msgid "Essencial"
+msgstr "Essential"
+
 msgid "Um sinal de outro equipamento dispara a inspeção"
 msgstr "A signal from other equipment starts the inspection"
 
@@ -382,6 +388,9 @@ msgstr "Image folder (tests)"
 
 msgid "Este perfil não pode abrir esta tela."
 msgstr "This profile cannot open this screen."
+
+msgid "{n, plural, one {# alterado} other {# alterados}}"
+msgstr "{n, plural, one {# changed} other {# changed}}"
 
 msgid "Importando…"
 msgstr "Importing…"
@@ -668,6 +677,9 @@ msgstr "Tools"
 msgid "Senha atual"
 msgstr "Current password"
 
+msgid "{n, plural, one {# ajuste oculto foi alterado} other {# ajustes ocultos foram alterados}}"
+msgstr "{n, plural, one {# hidden setting was changed} other {# hidden settings were changed}}"
+
 msgid "Sinal externo"
 msgstr "External signal"
 
@@ -769,6 +781,9 @@ msgstr "Separated by commas"
 
 msgid "A imagem vai para o treinamento com o resultado certo."
 msgstr "The image goes to training with the right result."
+
+msgid "Nível dos ajustes"
+msgstr "Settings level"
 
 msgid "Chamar a manutenção."
 msgstr "Call maintenance."
@@ -968,6 +983,9 @@ msgstr "Refresh image"
 msgid "Nome do dispositivo"
 msgstr "Device name"
 
+msgid "Critérios"
+msgstr "Criteria"
+
 msgid "conectado"
 msgstr "connected"
 
@@ -1033,6 +1051,9 @@ msgstr "{n, plural, =0 {No sessions ended.} one {# session ended.} other {# sess
 
 msgid "Todos"
 msgstr "All"
+
+msgid "Especialista"
+msgstr "Expert"
 
 msgid "Adicionar"
 msgstr "Add"
@@ -1265,6 +1286,9 @@ msgstr "HH:MM separated by commas; the counters restart at each one."
 msgid "Definir a senha do {role}"
 msgstr "Set the {role} password"
 
+msgid "Mostrar só os ajustes alterados que o nível atual esconde"
+msgstr "Show only the changed settings that the current level hides"
+
 msgid "Jobs"
 msgstr "Jobs"
 
@@ -1285,6 +1309,9 @@ msgstr "Waiting for a part"
 
 msgid "Fração da área de presença (0 a 1)."
 msgstr "Fraction of the presence area (0 to 1)."
+
+msgid "Avançado"
+msgstr "Advanced"
 
 msgid "Baixar imagem"
 msgstr "Download image"
@@ -1447,6 +1474,9 @@ msgstr "What changed at the station, when and by whom. It cannot be deleted."
 
 msgid "Não foi possível ler os resultados."
 msgstr "Could not read the results."
+
+msgid "O que medir"
+msgstr "What to measure"
 
 msgid "Guardar a imagem de 1 aprovado a cada"
 msgstr "Keep the image of 1 pass in every"

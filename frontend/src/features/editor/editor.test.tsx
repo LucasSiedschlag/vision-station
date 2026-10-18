@@ -4,11 +4,13 @@ import { http, HttpResponse } from 'msw'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useSession } from '@/api/session'
+import { useLevels } from '@/app/levels'
 import { activate, chooseLocale } from '@/app/locale'
 import { mockApi, renderApp, server } from '@/test/render'
 import schemas from '@/test/tool-schemas.json'
 import { useDraft } from './draft'
-import { SchemaForm, type Schema } from './SchemaForm'
+import { SchemaForm, hiddenChanged, type Schema } from './SchemaForm'
+import { widgets } from './widgets'
 
 mockApi()
 
@@ -33,6 +35,7 @@ const valueOf = () => JSON.parse(screen.getByTestId('value').textContent ?? '{}'
 describe('the form drawn from a JSON Schema', () => {
   it('shows the Portuguese titles, the choices with their labels and the server errors on their field', async () => {
     render(<Form schema={schemas.color} initial={{ min_fraction: 0.5 }} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Avançado' }))
     expect(screen.getByRole('combobox', { name: 'Medir ao longo de' })).toHaveTextContent(
       'área toda',
     )
@@ -60,6 +63,7 @@ describe('the form drawn from a JSON Schema', () => {
     const { unmount } = render(<Form schema={schemas.code} />)
     await userEvent.type(screen.getByLabelText('Formatos'), 'QRCode, DataMatrix')
     expect(valueOf().formats).toEqual(['QRCode', 'DataMatrix'])
+    await userEvent.click(screen.getByRole('button', { name: 'Avançado' }))
     await userEvent.click(screen.getByRole('switch', { name: 'Tentar invertido' }))
     expect(valueOf().try_invert).toBe(false) // on by default
     unmount()
@@ -74,7 +78,11 @@ describe('the form drawn from a JSON Schema', () => {
         schema={{
           type: 'object',
           properties: {
-            odd: { oneOf: [{ type: 'string' }, { type: 'integer' }], title: 'Estranho' },
+            odd: {
+              oneOf: [{ type: 'string' }, { type: 'integer' }],
+              title: 'Estranho',
+              'x-level': 1,
+            },
           },
         }}
       />,
@@ -84,6 +92,108 @@ describe('the form drawn from a JSON Schema', () => {
     await userEvent.type(field, '[[1, 2]') // [[ types one [
     await userEvent.tab()
     expect(valueOf()).toEqual({ odd: [1, 2] })
+  })
+})
+
+describe('the settings levels (docs/frontend.md §17)', () => {
+  const color = schemas.color as Schema
+  const Leveled = ({
+    level,
+    initial = {},
+  }: {
+    level: 1 | 2 | 3
+    initial?: Record<string, unknown>
+  }) => {
+    const [value, setValue] = useState(initial)
+    return (
+      <>
+        <SchemaForm schema={color} level={level} value={value} onChange={setValue} />
+        <output data-testid="value">{JSON.stringify(value)}</output>
+      </>
+    )
+  }
+
+  it('Essencial shows the main measure and the tolerances in their sections, Avançado adds a collapsed one', async () => {
+    const { unmount } = render(<Leveled level={1} />)
+    expect(screen.getByRole('heading', { name: 'O que medir' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Critérios' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Fração mínima da área')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Mínimo por coluna (ou linha)')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Avançado' })).not.toBeInTheDocument()
+    unmount()
+    render(<Leveled level={2} />)
+    const advanced = screen.getByRole('button', { name: 'Avançado' })
+    expect(advanced).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(advanced)
+    expect(screen.getByLabelText('Mínimo por coluna (ou linha)')).toBeInTheDocument()
+  })
+
+  it('a fraction is a percentage on screen and a fraction in the job', async () => {
+    render(<Leveled level={1} />)
+    const field = screen.getByLabelText('Fração mínima da área')
+    await userEvent.type(field, '35')
+    await userEvent.tab()
+    expect(valueOf()).toEqual({ min_fraction: 0.35 })
+    expect(field).toHaveValue('35%')
+  })
+
+  it('what a level hides is never invisible: a changed hidden setting shows a badge that opens it', async () => {
+    render(<Leveled level={1} initial={{ min_fraction: 0.5, line_min: 0.3, max_gap: 0.2 }} />)
+    // line_min is at its default; max_gap is not
+    const badge = screen.getByRole('button', { name: /1 ajuste oculto foi alterado/ })
+    expect(screen.queryByLabelText('Maior trecho faltando')).not.toBeInTheDocument()
+    await userEvent.click(badge)
+    expect(screen.getByLabelText('Maior trecho faltando')).toHaveValue('20%')
+    expect(screen.queryByLabelText('Mínimo por coluna (ou linha)')).not.toBeInTheDocument()
+    await userEvent.click(badge)
+    expect(screen.queryByLabelText('Maior trecho faltando')).not.toBeInTheDocument()
+  })
+
+  it('a closed section says how many of its settings were changed', async () => {
+    render(<Leveled level={2} initial={{ min_fraction: 0.5, max_gap: 0.2, line_min: 0.3 }} />)
+    const advanced = screen.getByRole('button', { name: /Avançado/ })
+    expect(advanced).toHaveTextContent('1 alterado')
+    expect(advanced).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('counts a hidden value that is present without a default as changed, and never at a level that shows it', () => {
+    expect(hiddenChanged(color, { max_gap: 0.2, line_min: 0.3, s_min: 10 }, 1)).toEqual(['max_gap'])
+    expect(hiddenChanged(color, { max_gap: 0.2 }, 2)).toEqual([])
+    expect(
+      hiddenChanged(schemas.pattern as Schema, { max_side: 512, template: 'a.png' }, 2),
+    ).toEqual(['max_side'])
+  })
+
+  it('a parameter without a level counts as Especialista', async () => {
+    const schema = { type: 'object', properties: { odd: { type: 'string', title: 'Esquecido' } } }
+    const { unmount } = render(<Form schema={schema} />)
+    expect(screen.queryByLabelText('Esquecido')).not.toBeInTheDocument()
+    unmount()
+    render(<SchemaForm schema={schema} level={3} value={{}} onChange={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Especialista' }))
+    expect(screen.getByLabelText('Esquecido')).toBeInTheDocument()
+  })
+
+  it('draws a registered widget in place of the plain control, and the plain control while there is none', () => {
+    const schema = {
+      type: 'object',
+      properties: { rect: { type: 'string', title: 'Zona', 'x-level': 1, 'x-widget': 'region' } },
+    }
+    const { unmount } = render(<Form schema={schema} />)
+    expect(screen.getByLabelText('Zona')).toBeInTheDocument()
+    unmount()
+    widgets.region = ({ label }) => <p>widget {label}</p>
+    try {
+      render(<Form schema={schema} />)
+      expect(screen.getByText('widget Zona')).toBeInTheDocument()
+    } finally {
+      delete widgets.region
+    }
+  })
+
+  it('px and ΔE follow the number', () => {
+    render(<Leveled level={3} initial={{ mode: 'reference', rgb: [10, 20, 30] }} />)
+    expect(screen.getByText('ΔE')).toBeInTheDocument()
   })
 })
 
@@ -150,6 +260,7 @@ const types = {
 
 beforeEach(() => {
   localStorage.clear()
+  useLevels.setState({ saved: {} })
   useDraft.getState().clear()
   useSession.getState().signIn('tok', 'maintainer', 3600)
   server.use(
@@ -199,6 +310,38 @@ async function openEditor(path = `/jobs/${JOB}/edit`) {
 }
 
 describe('the job editor', () => {
+  it('the top bar counts the changed settings the level hides', async () => {
+    server.use(
+      http.get(`*/api/jobs/${JOB}/versions/2`, () =>
+        HttpResponse.json({
+          ...version,
+          job: {
+            ...version.job,
+            tools: [
+              { ...version.job.tools[0], params: { hue: [100, 130], max_gap: 0.2, axis: 'x' } },
+            ],
+          },
+        }),
+      ),
+    )
+    await openEditor()
+    expect(await screen.findByText('2 ajustes ocultos foram alterados')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    expect(screen.queryByText(/ajustes? ocultos? foram? alterados?/)).not.toBeInTheDocument()
+  })
+
+  it('the level is chosen in the top bar, kept per role, and shows the deeper settings', async () => {
+    await openEditor()
+    await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
+    expect(screen.queryByRole('button', { name: 'Avançado' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    expect(screen.getByRole('button', { name: 'Avançado' })).toBeInTheDocument()
+    expect(screen.queryByText(/ocultos? foi|ocultos? fo/)).not.toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('vision-station-levels')!)).toEqual({
+      maintainer: { editor: 2 },
+    })
+  })
+
   it('a job without a reference image shows the live picture, and says so', async () => {
     server.use(
       http.get(`*/api/jobs/${JOB}/versions/2`, () =>
@@ -243,7 +386,7 @@ describe('the job editor', () => {
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
     const fraction = screen.getByLabelText('Fração mínima da área')
     await userEvent.clear(fraction)
-    await userEvent.type(fraction, '0,6')
+    await userEvent.type(fraction, '60')
     await userEvent.tab()
     expect(screen.getByText('não salvo')).toBeInTheDocument()
     expect(
@@ -303,7 +446,7 @@ describe('the job editor', () => {
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
     const fraction = screen.getByLabelText('Fração mínima da área')
     await userEvent.clear(fraction)
-    await userEvent.type(fraction, '0,6')
+    await userEvent.type(fraction, '60')
     await userEvent.tab()
     expect(screen.getByText('não salvo')).toBeInTheDocument()
     await act(async () => {

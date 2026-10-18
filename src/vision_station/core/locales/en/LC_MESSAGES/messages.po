@@ -105,6 +105,9 @@ msgstr "There is no result yet"
 msgid "Ajustes de câmera inválidos"
 msgstr "Invalid camera settings"
 
+msgid "Anomalia"
+msgstr "Anomaly"
+
 msgid "Arquivo .onnx dentro do job (treinado fora da estação)"
 msgstr ".onnx file inside the job (trained outside the station)"
 
@@ -148,6 +151,9 @@ msgstr "Classes that fail"
 msgid "Cobertura ao longo do eixo abaixo do mínimo"
 msgstr "Coverage along the axis below the minimum"
 
+msgid "Cobertura da faixa"
+msgstr "Strip coverage"
+
 msgid "Cobertura do padrão ao longo do eixo abaixo do mínimo"
 msgstr "Pattern coverage along the axis below the minimum"
 
@@ -156,6 +162,9 @@ msgstr "Minimum coverage"
 
 msgid "Comando desconhecido"
 msgstr "Unknown command"
+
+msgid "Confiança do modelo"
+msgstr "Model confidence"
 
 msgid "Confiança do modelo abaixo do mínimo"
 msgstr "Model confidence below the minimum"
@@ -187,6 +196,9 @@ msgstr "Camera responded: {width}×{height} image"
 
 msgid "Código claro sobre fundo escuro"
 msgstr "Light code on a dark background"
+
+msgid "Códigos aceitos"
+msgstr "Codes accepted"
 
 msgid "Códigos aceitos para aprovar"
 msgstr "Codes accepted to pass"
@@ -279,6 +291,9 @@ msgstr "Tool cannot run"
 
 msgid "Formatos"
 msgstr "Formats"
+
+msgid "Fração com a cor"
+msgstr "Fraction with the colour"
 
 msgid "Fração da região com a cor abaixo do mínimo"
 msgstr "Fraction of the region with the colour below the minimum"
@@ -509,6 +524,12 @@ msgstr "Object not found in the expected position"
 
 msgid "Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera"
 msgstr "Object not found or image out of focus, check the station and the camera"
+
+msgid "Ocorrências da classe contada"
+msgstr "Occurrences of the counted class"
+
+msgid "Ocorrências do padrão"
+msgstr "Occurrences of the pattern"
 
 msgid "Origem não permitida"
 msgstr "Origin not allowed"

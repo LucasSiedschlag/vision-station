@@ -584,6 +584,68 @@
         "title": "CriterionOut",
         "type": "object"
       },
+      "CriterionSpecOut": {
+        "description": "One measure of a tool that has limits: what a tolerance gauge draws (frontend.md §9.3).",
+        "properties": {
+          "direction": {
+            "enum": ["at_least", "at_most", "between"],
+            "title": "Direction",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "level": {
+            "enum": [1, 2, 3],
+            "title": "Level",
+            "type": "integer"
+          },
+          "limits": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "enum": ["min", "max"]
+            },
+            "title": "Limits",
+            "type": "object"
+          },
+          "range": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            ],
+            "title": "Range",
+            "type": "array"
+          },
+          "unit": {
+            "enum": ["fraction", "count", "score"],
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": ["value", "label", "unit", "range", "limits", "direction", "level"],
+        "title": "CriterionSpecOut",
+        "type": "object"
+      },
       "DatasetExportBody": {
         "properties": {
           "job_id": {
@@ -3081,8 +3143,16 @@
         "type": "object"
       },
       "TypeInfo": {
-        "description": "A tool or locator type the editor can offer, with the JSON Schema of its parameters.",
+        "description": "A tool or locator type the editor can offer, with the JSON Schema of its parameters. The schema carries\n`x-level`, `x-group`, `x-widget`, `x-unit` and `x-tunable` on each parameter. `criteria` is empty for a locator.",
         "properties": {
+          "criteria": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CriterionSpecOut"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
           "description": {
             "title": "Description",
             "type": "string"
@@ -3101,7 +3171,7 @@
             "type": "integer"
           }
         },
-        "required": ["name", "version", "description", "params_schema"],
+        "required": ["name", "version", "description", "params_schema", "criteria"],
         "title": "TypeInfo",
         "type": "object"
       },

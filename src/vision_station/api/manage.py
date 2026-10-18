@@ -49,7 +49,14 @@ def _now() -> datetime:
 def _type_info(name: str, version: int, entry: Any) -> m.TypeInfo:
     schema = entry.params.model_json_schema()
     # what the editor shows about the type: the `about` of its parameters (schema_labels, translated), not the docstring
-    return m.TypeInfo(name=name, version=version, description=render(schema.get("description", "")), params_schema=render_schema(schema))
+    criteria = [
+        m.CriterionSpecOut(
+            value=c.value, label=render(c.label), unit=c.unit, range=c.range, direction=c.direction, level=c.level,
+            limits={k: p for k, p in (("min", c.min_param), ("max", c.max_param)) if p},
+        )
+        for c in getattr(entry, "criteria", ())
+    ]
+    return m.TypeInfo(name=name, version=version, description=render(schema.get("description", "")), params_schema=render_schema(schema), criteria=criteria)
 
 
 def _fields(exc: ValidationError, prefix: str) -> dict[str, str]:

@@ -13,7 +13,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.core.jobfiles import JobFiles
-from vision_station.core.schema_labels import labels
+from vision_station.core.schema_labels import labels, meta
 from vision_station.locators.base import Anchor, LocatorError, LocatorType, register
 
 Fraction = Annotated[float, Field(ge=0, le=1)]
@@ -22,6 +22,12 @@ Fraction = Annotated[float, Field(ge=0, le=1)]
 class TemplateParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "Acha na imagem uma foto ensinada do objeto (ou de uma marca nele).",
+        meta={
+            "template": meta(1, "measure", widget="template"),
+            "search": meta(2, "measure", widget="region"),
+            "min_score": meta(1, "criteria", unit="score"),
+            "work_width": meta(3, "measure", unit="px"),
+        },
         template=("Gabarito", "Imagem do objeto dentro do job, recortada da imagem de referência"),
         search=("Área de busca (x0, y0, x1, y1)", "Frações da imagem; o objeto é procurado só aqui"),
         min_score=("Semelhança mínima", "0 a 1; abaixo disso o objeto não foi encontrado"),

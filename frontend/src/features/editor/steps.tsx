@@ -17,6 +17,7 @@ import { text } from '@/texts'
 import { useDraft, toRequest, draftFiles, type Draft, type JobJson } from './draft'
 import { suggestHue, type Rect } from './geometry'
 import { blobToBase64, cropPng, pixelsOf, sample, type EditorImage } from './image'
+import { useLevel } from '@/app/levels'
 import { SchemaForm } from './SchemaForm'
 
 const t = text.editor
@@ -412,6 +413,7 @@ export function RegionsStep({
   setCrop,
 }: StepProps) {
   const types = useTypes()
+  const [level] = useLevel('editor')
   const geometry = draft.job.geometry ?? { rois: {} }
   const locator = geometry.locator ?? null
   const rois: Record<string, { relative_to: string; rect: Rect }> = geometry.rois ?? {}
@@ -517,6 +519,7 @@ export function RegionsStep({
       {locator && schema && locator.type !== 'fixed' ? (
         <SchemaForm
           schema={schema}
+          level={level}
           value={locator.params ?? {}}
           errors={prefixed(fields, 'job.geometry.locator.params')}
           onChange={(params) => setGeometry((g) => (g.locator.params = params), false)}
@@ -603,6 +606,7 @@ function prefixed(fields: Record<string, string>, prefix: string): Record<string
 
 export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps) {
   const types = useTypes()
+  const [level] = useLevel('editor')
   const tools: JobJson[] = draft.job.tools ?? []
   const [open, setOpen] = useState<number | null>(tools.length ? 0 : null)
   const [adding, setAdding] = useState('')
@@ -765,6 +769,7 @@ export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps
                   {type ? (
                     <SchemaForm
                       schema={type.params_schema}
+                      level={level}
                       value={tool.params ?? {}}
                       errors={prefixed(fields, `job.tools.${i}.params`)}
                       onChange={(params) => setTools((list) => (list[i]!.params = params), false)}

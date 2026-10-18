@@ -1,4 +1,81 @@
 {
+  "code": {
+    "additionalProperties": false,
+    "description": "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região.",
+    "properties": {
+      "formats": {
+        "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }],
+        "default": null,
+        "description": "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos",
+        "title": "Formatos",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "code-formats"
+      },
+      "expect": {
+        "anyOf": [{ "type": "string" }, { "type": "null" }],
+        "default": null,
+        "description": "Um código só conta se tiver exatamente este texto",
+        "title": "Texto esperado",
+        "x-group": "measure",
+        "x-level": 1
+      },
+      "pattern": {
+        "anyOf": [{ "type": "string" }, { "type": "null" }],
+        "default": null,
+        "description": "Expressão regular; ex.: L\\d{6}",
+        "title": "Padrão do texto",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "regex"
+      },
+      "min_count": {
+        "default": 1,
+        "description": "Códigos aceitos para aprovar",
+        "minimum": 1,
+        "title": "Mínimo de códigos",
+        "type": "integer",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "count"
+      },
+      "max_count": {
+        "anyOf": [{ "minimum": 1, "type": "integer" }, { "type": "null" }],
+        "default": null,
+        "description": "Mais que isso reprova (ex.: etiqueta colada duas vezes)",
+        "title": "Máximo de códigos",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "count"
+      },
+      "try_rotate": {
+        "default": true,
+        "title": "Tentar girado",
+        "type": "boolean",
+        "x-group": "measure",
+        "x-level": 3
+      },
+      "try_downscale": {
+        "default": true,
+        "title": "Tentar reduzido",
+        "type": "boolean",
+        "x-group": "measure",
+        "x-level": 3
+      },
+      "try_invert": {
+        "default": true,
+        "description": "Código claro sobre fundo escuro",
+        "title": "Tentar invertido",
+        "type": "boolean",
+        "x-group": "measure",
+        "x-level": 2
+      }
+    },
+    "title": "CodeParams",
+    "type": "object"
+  },
   "color": {
     "additionalProperties": false,
     "description": "Mede quanto de uma região tem uma cor.",
@@ -9,10 +86,9 @@
         "enum": ["range", "reference"],
         "title": "Modo",
         "type": "string",
-        "x-enum-labels": {
-          "range": "faixa (HSV)",
-          "reference": "cor de referência"
-        }
+        "x-enum-labels": { "range": "faixa (HSV)", "reference": "cor de referência" },
+        "x-group": "measure",
+        "x-level": 1
       },
       "hue": {
         "anyOf": [
@@ -20,26 +96,19 @@
             "maxItems": 2,
             "minItems": 2,
             "prefixItems": [
-              {
-                "maximum": 179,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "maximum": 179,
-                "minimum": 0,
-                "type": "integer"
-              }
+              { "maximum": 179, "minimum": 0, "type": "integer" },
+              { "maximum": 179, "minimum": 0, "type": "integer" }
             ],
             "type": "array"
           },
-          {
-            "type": "null"
-          }
+          { "type": "null" }
         ],
         "default": null,
         "description": "0 a 179 (graus ÷ 2). Se 'de' for maior que 'até', a faixa passa pelo vermelho, ex. 170 a 10",
-        "title": "Matiz (de, até)"
+        "title": "Matiz (de, até)",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "hsv-range"
       },
       "s_min": {
         "default": 0,
@@ -47,7 +116,9 @@
         "maximum": 255,
         "minimum": 0,
         "title": "Saturação mínima",
-        "type": "integer"
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 1
       },
       "s_max": {
         "default": 255,
@@ -55,7 +126,9 @@
         "maximum": 255,
         "minimum": 0,
         "title": "Saturação máxima",
-        "type": "integer"
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 2
       },
       "v_min": {
         "default": 0,
@@ -63,7 +136,9 @@
         "maximum": 255,
         "minimum": 0,
         "title": "Brilho mínimo",
-        "type": "integer"
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 1
       },
       "v_max": {
         "default": 255,
@@ -71,7 +146,9 @@
         "maximum": 255,
         "minimum": 0,
         "title": "Brilho máximo",
-        "type": "integer"
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 2
       },
       "rgb": {
         "anyOf": [
@@ -79,31 +156,20 @@
             "maxItems": 3,
             "minItems": 3,
             "prefixItems": [
-              {
-                "maximum": 255,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "maximum": 255,
-                "minimum": 0,
-                "type": "integer"
-              },
-              {
-                "maximum": 255,
-                "minimum": 0,
-                "type": "integer"
-              }
+              { "maximum": 255, "minimum": 0, "type": "integer" },
+              { "maximum": 255, "minimum": 0, "type": "integer" },
+              { "maximum": 255, "minimum": 0, "type": "integer" }
             ],
             "type": "array"
           },
-          {
-            "type": "null"
-          }
+          { "type": "null" }
         ],
         "default": null,
         "description": "0 a 255 cada",
-        "title": "Cor de referência (R, G, B)"
+        "title": "Cor de referência (R, G, B)",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "reference-color"
       },
       "max_distance": {
         "default": 20.0,
@@ -111,37 +177,30 @@
         "exclusiveMinimum": 0,
         "maximum": 200,
         "title": "Distância máxima (ΔE)",
-        "type": "number"
+        "type": "number",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-unit": "ΔE"
       },
       "min_fraction": {
-        "anyOf": [
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "maximum": 1, "minimum": 0, "type": "number" }, { "type": "null" }],
         "default": null,
         "description": "0 a 1: a cor precisa ocupar pelo menos isso da região",
-        "title": "Fração mínima da área"
+        "title": "Fração mínima da área",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "fraction"
       },
       "max_fraction": {
-        "anyOf": [
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "maximum": 1, "minimum": 0, "type": "number" }, { "type": "null" }],
         "default": null,
         "description": "0 a 1: para conferir que uma cor não está lá",
-        "title": "Fração máxima da área"
+        "title": "Fração máxima da área",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "fraction"
       },
       "axis": {
         "default": "none",
@@ -149,11 +208,9 @@
         "enum": ["none", "x", "y"],
         "title": "Medir ao longo de",
         "type": "string",
-        "x-enum-labels": {
-          "none": "área toda",
-          "x": "horizontal (x)",
-          "y": "vertical (y)"
-        }
+        "x-enum-labels": { "none": "área toda", "x": "horizontal (x)", "y": "vertical (y)" },
+        "x-group": "measure",
+        "x-level": 2
       },
       "line_min": {
         "default": 0.3,
@@ -161,127 +218,224 @@
         "exclusiveMinimum": 0,
         "maximum": 1,
         "title": "Mínimo por coluna (ou linha)",
-        "type": "number"
+        "type": "number",
+        "x-group": "measure",
+        "x-level": 2,
+        "x-unit": "fraction"
       },
       "min_coverage": {
-        "anyOf": [
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "maximum": 1, "minimum": 0, "type": "number" }, { "type": "null" }],
         "default": null,
         "description": "0 a 1: parte do comprimento que precisa estar coberta",
-        "title": "Cobertura mínima"
+        "title": "Cobertura mínima",
+        "x-group": "criteria",
+        "x-level": 2,
+        "x-tunable": true,
+        "x-unit": "fraction"
       },
       "max_gap": {
-        "anyOf": [
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "maximum": 1, "minimum": 0, "type": "number" }, { "type": "null" }],
         "default": null,
         "description": "0 a 1 do comprimento, pontas incluídas",
-        "title": "Maior trecho faltando"
+        "title": "Maior trecho faltando",
+        "x-group": "criteria",
+        "x-level": 2,
+        "x-tunable": true,
+        "x-unit": "fraction"
       }
     },
     "title": "ColorParams",
     "type": "object"
   },
-  "code": {
+  "detect": {
     "additionalProperties": false,
-    "description": "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região.",
+    "description": "Roda um modelo treinado na região.",
     "properties": {
-      "formats": {
-        "anyOf": [
-          {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "default": null,
-        "description": "Ex.: QRCode, DataMatrix, Code128, EAN13. Vazio: todos os que forem lidos",
-        "title": "Formatos"
+      "model": {
+        "description": "Arquivo .onnx dentro do job (treinado fora da estação)",
+        "minLength": 1,
+        "title": "Modelo",
+        "type": "string",
+        "x-group": "measure",
+        "x-level": 1
       },
-      "expect": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
+      "card": {
+        "anyOf": [{ "type": "string" }, { "type": "null" }],
         "default": null,
-        "description": "Um código só conta se tiver exatamente este texto",
-        "title": "Texto esperado"
+        "description": "Vazio: o mesmo nome com .card.yaml",
+        "title": "Cartão do modelo",
+        "x-group": "measure",
+        "x-level": 2
       },
-      "pattern": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
+      "min_confidence": {
+        "default": 0.5,
+        "description": "0 a 1",
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Confiança mínima",
+        "type": "number",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "fraction"
+      },
+      "fail_classes": {
+        "default": [],
+        "description": "Ex.: risco, amassado",
+        "items": { "type": "string" },
+        "title": "Classes que reprovam",
+        "type": "array",
+        "x-group": "criteria",
+        "x-level": 1
+      },
+      "pass_classes": {
+        "default": [],
+        "description": "Vazio: qualquer classe que não reprove",
+        "items": { "type": "string" },
+        "title": "Classes que aprovam (classificador)",
+        "type": "array",
+        "x-group": "criteria",
+        "x-level": 1
+      },
+      "require_classes": {
+        "default": [],
+        "description": "Precisa haver pelo menos uma de cada",
+        "items": { "type": "string" },
+        "title": "Classes obrigatórias (detector)",
+        "type": "array",
+        "x-group": "criteria",
+        "x-level": 1
+      },
+      "count_class": {
+        "anyOf": [{ "type": "string" }, { "type": "null" }],
         "default": null,
-        "description": "Expressão regular; ex.: L\\d{6}",
-        "title": "Padrão do texto"
+        "title": "Classe contada (detector)",
+        "x-group": "criteria",
+        "x-level": 1
+      },
+      "min_count": {
+        "anyOf": [{ "minimum": 0, "type": "integer" }, { "type": "null" }],
+        "default": null,
+        "title": "Mínimo da classe contada",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "count"
+      },
+      "max_count": {
+        "anyOf": [{ "minimum": 0, "type": "integer" }, { "type": "null" }],
+        "default": null,
+        "title": "Máximo da classe contada",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "count"
+      },
+      "threshold": {
+        "anyOf": [{ "type": "number" }, { "type": "null" }],
+        "default": null,
+        "description": "Vazio: o do cartão do modelo",
+        "title": "Limite de anomalia",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "score"
+      }
+    },
+    "required": ["model"],
+    "title": "DetectParams",
+    "type": "object"
+  },
+  "pattern": {
+    "additionalProperties": false,
+    "description": "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece.",
+    "properties": {
+      "template": {
+        "description": "Imagem dentro do job, recortada da imagem de referência",
+        "minLength": 1,
+        "title": "Gabarito",
+        "type": "string",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "template"
+      },
+      "min_score": {
+        "default": 0.7,
+        "description": "0 a 1; 0,7 é um bom começo",
+        "exclusiveMinimum": 0,
+        "maximum": 1,
+        "title": "Semelhança mínima",
+        "type": "number",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "score"
       },
       "min_count": {
         "default": 1,
-        "description": "Códigos aceitos para aprovar",
-        "minimum": 1,
-        "title": "Mínimo de códigos",
-        "type": "integer"
+        "description": "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está",
+        "minimum": 0,
+        "title": "Mínimo de ocorrências",
+        "type": "integer",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "count"
       },
       "max_count": {
-        "anyOf": [
-          {
-            "minimum": 1,
-            "type": "integer"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "minimum": 0, "type": "integer" }, { "type": "null" }],
         "default": null,
-        "description": "Mais que isso reprova (ex.: etiqueta colada duas vezes)",
-        "title": "Máximo de códigos"
+        "description": "Vazio: sem limite",
+        "title": "Máximo de ocorrências",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-tunable": true,
+        "x-unit": "count"
       },
-      "try_rotate": {
-        "default": true,
-        "title": "Tentar girado",
-        "type": "boolean"
+      "axis": {
+        "default": "none",
+        "description": "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)",
+        "enum": ["none", "x", "y"],
+        "title": "Medir ao longo de",
+        "type": "string",
+        "x-enum-labels": { "none": "área toda", "x": "horizontal (x)", "y": "vertical (y)" },
+        "x-group": "measure",
+        "x-level": 2
       },
-      "try_downscale": {
-        "default": true,
-        "title": "Tentar reduzido",
-        "type": "boolean"
+      "min_coverage": {
+        "anyOf": [{ "maximum": 1, "minimum": 0, "type": "number" }, { "type": "null" }],
+        "default": null,
+        "description": "0 a 1: parte do comprimento que precisa estar coberta",
+        "title": "Cobertura mínima",
+        "x-group": "criteria",
+        "x-level": 2,
+        "x-tunable": true,
+        "x-unit": "fraction"
       },
-      "try_invert": {
-        "default": true,
-        "description": "Código claro sobre fundo escuro",
-        "title": "Tentar invertido",
-        "type": "boolean"
+      "max_gap": {
+        "anyOf": [{ "maximum": 1, "minimum": 0, "type": "number" }, { "type": "null" }],
+        "default": null,
+        "description": "0 a 1 do comprimento, pontas incluídas",
+        "title": "Maior trecho faltando",
+        "x-group": "criteria",
+        "x-level": 2,
+        "x-tunable": true,
+        "x-unit": "fraction"
+      },
+      "max_side": {
+        "default": 1024,
+        "description": "Regiões maiores são reduzidas para comparar mais rápido",
+        "maximum": 4096,
+        "minimum": 64,
+        "title": "Maior lado para comparar (px)",
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 3,
+        "x-unit": "px"
       }
     },
-    "title": "CodeParams",
+    "required": ["template"],
+    "title": "PatternParams",
     "type": "object"
   },
   "blob": {
@@ -296,10 +450,9 @@
             "enum": ["range", "reference"],
             "title": "Modo",
             "type": "string",
-            "x-enum-labels": {
-              "range": "faixa (HSV)",
-              "reference": "cor de referência"
-            }
+            "x-enum-labels": { "range": "faixa (HSV)", "reference": "cor de referência" },
+            "x-group": "measure",
+            "x-level": 1
           },
           "hue": {
             "anyOf": [
@@ -307,26 +460,19 @@
                 "maxItems": 2,
                 "minItems": 2,
                 "prefixItems": [
-                  {
-                    "maximum": 179,
-                    "minimum": 0,
-                    "type": "integer"
-                  },
-                  {
-                    "maximum": 179,
-                    "minimum": 0,
-                    "type": "integer"
-                  }
+                  { "maximum": 179, "minimum": 0, "type": "integer" },
+                  { "maximum": 179, "minimum": 0, "type": "integer" }
                 ],
                 "type": "array"
               },
-              {
-                "type": "null"
-              }
+              { "type": "null" }
             ],
             "default": null,
             "description": "0 a 179 (graus ÷ 2). Se 'de' for maior que 'até', a faixa passa pelo vermelho, ex. 170 a 10",
-            "title": "Matiz (de, até)"
+            "title": "Matiz (de, até)",
+            "x-group": "measure",
+            "x-level": 1,
+            "x-widget": "hsv-range"
           },
           "s_min": {
             "default": 0,
@@ -334,7 +480,9 @@
             "maximum": 255,
             "minimum": 0,
             "title": "Saturação mínima",
-            "type": "integer"
+            "type": "integer",
+            "x-group": "measure",
+            "x-level": 1
           },
           "s_max": {
             "default": 255,
@@ -342,7 +490,9 @@
             "maximum": 255,
             "minimum": 0,
             "title": "Saturação máxima",
-            "type": "integer"
+            "type": "integer",
+            "x-group": "measure",
+            "x-level": 2
           },
           "v_min": {
             "default": 0,
@@ -350,7 +500,9 @@
             "maximum": 255,
             "minimum": 0,
             "title": "Brilho mínimo",
-            "type": "integer"
+            "type": "integer",
+            "x-group": "measure",
+            "x-level": 1
           },
           "v_max": {
             "default": 255,
@@ -358,7 +510,9 @@
             "maximum": 255,
             "minimum": 0,
             "title": "Brilho máximo",
-            "type": "integer"
+            "type": "integer",
+            "x-group": "measure",
+            "x-level": 2
           },
           "rgb": {
             "anyOf": [
@@ -366,31 +520,20 @@
                 "maxItems": 3,
                 "minItems": 3,
                 "prefixItems": [
-                  {
-                    "maximum": 255,
-                    "minimum": 0,
-                    "type": "integer"
-                  },
-                  {
-                    "maximum": 255,
-                    "minimum": 0,
-                    "type": "integer"
-                  },
-                  {
-                    "maximum": 255,
-                    "minimum": 0,
-                    "type": "integer"
-                  }
+                  { "maximum": 255, "minimum": 0, "type": "integer" },
+                  { "maximum": 255, "minimum": 0, "type": "integer" },
+                  { "maximum": 255, "minimum": 0, "type": "integer" }
                 ],
                 "type": "array"
               },
-              {
-                "type": "null"
-              }
+              { "type": "null" }
             ],
             "default": null,
             "description": "0 a 255 cada",
-            "title": "Cor de referência (R, G, B)"
+            "title": "Cor de referência (R, G, B)",
+            "x-group": "measure",
+            "x-level": 1,
+            "x-widget": "reference-color"
           },
           "max_distance": {
             "default": 20.0,
@@ -398,7 +541,10 @@
             "exclusiveMinimum": 0,
             "maximum": 200,
             "title": "Distância máxima (ΔE)",
-            "type": "number"
+            "type": "number",
+            "x-group": "measure",
+            "x-level": 1,
+            "x-unit": "ΔE"
           }
         },
         "title": "ColorRange",
@@ -416,34 +562,25 @@
           "color": "de uma cor",
           "dark": "mais escuro que o fundo",
           "light": "mais claro que o fundo"
-        }
+        },
+        "x-group": "measure",
+        "x-level": 1
       },
       "color": {
-        "anyOf": [
-          {
-            "$ref": "#/$defs/ColorRange"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "$ref": "#/$defs/ColorRange" }, { "type": "null" }],
         "default": null,
-        "title": "Cor do objeto"
+        "title": "Cor do objeto",
+        "x-group": "measure",
+        "x-level": 1
       },
       "threshold": {
-        "anyOf": [
-          {
-            "maximum": 255,
-            "minimum": 0,
-            "type": "integer"
-          },
-          {
-            "type": "null"
-          }
-        ],
+        "anyOf": [{ "maximum": 255, "minimum": 0, "type": "integer" }, { "type": "null" }],
         "default": null,
         "description": "0 a 255. Vazio: automático",
-        "title": "Limiar de cinza"
+        "title": "Limiar de cinza",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "gray-threshold"
       },
       "search": {
         "default": [0.0, 0.0, 1.0, 1.0],
@@ -451,29 +588,16 @@
         "maxItems": 4,
         "minItems": 4,
         "prefixItems": [
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          },
-          {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "number"
-          }
+          { "maximum": 1, "minimum": 0, "type": "number" },
+          { "maximum": 1, "minimum": 0, "type": "number" },
+          { "maximum": 1, "minimum": 0, "type": "number" },
+          { "maximum": 1, "minimum": 0, "type": "number" }
         ],
         "title": "Área de busca (x0, y0, x1, y1)",
-        "type": "array"
+        "type": "array",
+        "x-group": "measure",
+        "x-level": 2,
+        "x-widget": "region"
       },
       "min_area": {
         "default": 0.02,
@@ -481,7 +605,10 @@
         "exclusiveMinimum": 0,
         "maximum": 1,
         "title": "Área mínima",
-        "type": "number"
+        "type": "number",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-unit": "fraction"
       },
       "max_area": {
         "default": 1.0,
@@ -489,7 +616,10 @@
         "exclusiveMinimum": 0,
         "maximum": 1,
         "title": "Área máxima",
-        "type": "number"
+        "type": "number",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-unit": "fraction"
       },
       "clean_px": {
         "default": 3,
@@ -497,14 +627,20 @@
         "maximum": 50,
         "minimum": 0,
         "title": "Limpeza (px)",
-        "type": "integer"
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 2,
+        "x-unit": "px"
       },
       "work_width": {
         "default": 640,
         "maximum": 4096,
         "minimum": 64,
         "title": "Largura de trabalho (px)",
-        "type": "integer"
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 3,
+        "x-unit": "px"
       }
     },
     "required": ["mode"],
@@ -520,25 +656,77 @@
         "maxItems": 4,
         "minItems": 4,
         "prefixItems": [
-          {
-            "type": "number"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "number"
-          }
+          { "type": "number" },
+          { "type": "number" },
+          { "type": "number" },
+          { "type": "number" }
         ],
         "title": "Posição do objeto (x0, y0, x1, y1)",
-        "type": "array"
+        "type": "array",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "region"
       }
     },
     "required": ["rect"],
     "title": "FixedParams",
+    "type": "object"
+  },
+  "template": {
+    "additionalProperties": false,
+    "description": "Acha na imagem uma foto ensinada do objeto (ou de uma marca nele).",
+    "properties": {
+      "template": {
+        "description": "Imagem do objeto dentro do job, recortada da imagem de referência",
+        "minLength": 1,
+        "title": "Gabarito",
+        "type": "string",
+        "x-group": "measure",
+        "x-level": 1,
+        "x-widget": "template"
+      },
+      "search": {
+        "default": [0.0, 0.0, 1.0, 1.0],
+        "description": "Frações da imagem; o objeto é procurado só aqui",
+        "maxItems": 4,
+        "minItems": 4,
+        "prefixItems": [
+          { "maximum": 1, "minimum": 0, "type": "number" },
+          { "maximum": 1, "minimum": 0, "type": "number" },
+          { "maximum": 1, "minimum": 0, "type": "number" },
+          { "maximum": 1, "minimum": 0, "type": "number" }
+        ],
+        "title": "Área de busca (x0, y0, x1, y1)",
+        "type": "array",
+        "x-group": "measure",
+        "x-level": 2,
+        "x-widget": "region"
+      },
+      "min_score": {
+        "default": 0.6,
+        "description": "0 a 1; abaixo disso o objeto não foi encontrado",
+        "exclusiveMinimum": 0,
+        "maximum": 1,
+        "title": "Semelhança mínima",
+        "type": "number",
+        "x-group": "criteria",
+        "x-level": 1,
+        "x-unit": "score"
+      },
+      "work_width": {
+        "default": 640,
+        "description": "A imagem é comparada nesta largura, para ser rápido",
+        "maximum": 4096,
+        "minimum": 64,
+        "title": "Largura de trabalho (px)",
+        "type": "integer",
+        "x-group": "measure",
+        "x-level": 3,
+        "x-unit": "px"
+      }
+    },
+    "required": ["template"],
+    "title": "TemplateParams",
     "type": "object"
   }
 }

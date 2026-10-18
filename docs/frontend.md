@@ -749,8 +749,10 @@ As listed in 0.1 §9.2–9.3 (all implemented in VIA-0025/0026).
 | `x-group` | Inspector section | `measure`, `criteria`, `result` |
 | `x-level` | 1 Essencial, 2 Avançado, 3 Especialista | `min_fraction: 1`, `line_min: 2`, `work_width: 3` |
 | `x-widget` | Graphical control from the registry (§19.2) | `hsv-range`, `template`, `caliper`, `angle-range`, `code-formats`, `regex`, `region` |
-| `x-unit` | Unit shown and used by the gauge | `%`, `px`, `mm`, `°`, `ms` |
+| `x-unit` | What the number is, and how it is shown | `fraction`, `count`, `score`, `px`, `ΔE` |
 | `x-tunable` | May be changed in fine-tune (§7.12) | `true` for limits only |
+
+**As built (VIA-0062).** The tags are written next to the labels, in `core/schema_labels.py` (`meta(level, group, widget=, unit=, tunable=)`, given to `labels(meta={...})`), so a parameter has one place. `x-group` is `measure` (how the part is measured) or `criteria` (the limits it is judged by). `x-unit` uses the result contract's units (`fraction`, `count`, `score`, TD-22), plus `px` and `ΔE`: a `fraction` is a number from 0 to 1 that the screen writes as a percentage (`30%` is stored as 0.3; typing `35` gives 0.35), `px` and `ΔE` are a suffix, `count` and `score` are plain numbers. Stored values never change with the display. `x-tunable` is on the limits of a *tool* only: a locator's thresholds decide where the object is, not whether it is good. `hue` carries `x-widget: hsv-range` for the whole range (its saturation and value limits belong to the same picker). A test (`tests/test_schema_meta.py`) fails when a parameter of any tool or locator, including a nested color range, has no level or group.
 
 Plus, per tool type, a **`criteria`** list that tells the gauge what to draw:
 - the measured value's name;
@@ -758,12 +760,14 @@ Plus, per tool type, a **`criteria`** list that tells the gauge what to draw:
 - the parameter(s) that hold its limit(s);
 - the direction (`at_least`, `at_most`, `between`).
 
-Example:
+Example (as `GET /api/tools` returns it, in each tool's `criteria`; a locator's is empty):
 
 ```json
-{"value": "fraction", "label": "Fração com a cor", "unit": "%", "range": [0, 1],
- "limits": {"min": "min_fraction", "max": "max_fraction"}, "level": 1}
+{"value": "fraction", "label": "Fração com a cor", "unit": "fraction", "range": [0, 1],
+ "limits": {"min": "min_fraction", "max": "max_fraction"}, "direction": "between", "level": 1}
 ```
+
+`value` is a key of the result's values (`tests/test_schema_meta.py` checks it against what the tool reports). `range` is `[0, null]` for a count, which has no natural top: the gauge takes it from the data. A yes/no rule (a class that fails, a class that is missing) has no gauge and is not listed.
 
 ### 9.4 New endpoints
 
@@ -993,7 +997,7 @@ No migration: the 0.1 foundation stays and grows. Each step keeps every test gre
 |---|---|---|
 | UI-1 | Workbench layout (§10.1), image workspace v2 (zoom, layers, frozen/live), filmstrip, result bar | UI-C1 |
 | UI-2 | The sequence: step rail with states, steps reordered (§4.3), samples step, *Validar* | UI-1 |
-| UI-3 | Schema metadata (`x-group`, `x-level`, `x-widget`, `criteria`) on the server; SchemaForm v2; levels (§17) | — (server: small) |
+| UI-3 | Schema metadata (`x-group`, `x-level`, `x-widget`, `criteria`) on the server; SchemaForm v2; levels (§17) | — (server: small). **Done (VIA-0062)**: the widget components themselves come with the steps that need them (UI-4, UI-5) |
 | UI-4 | Editor session (`/api/editor/live`) and batch test; `ToolToleranceGauge`; *Ajustar pelas amostras* | R2 (result contract) for per-tool values |
 | UI-5 | Colour controls (`HsvRangePicker`, eyedropper, mask preview), camera controls (histogram, focus meter, exposure) | UI-4 |
 | UI-6 | Anchor step with pose, angle range and per-sample results | R1 (pose-based fixtures) |
@@ -1047,6 +1051,7 @@ Three levels, chosen in the top bar (`LevelSwitch`, FR-UI-10):
   - the badge opens just those fields, even at the current level.
 
   Testing with a hidden parameter changed is allowed; the result bar shows the same badge.
+- **As built (VIA-0062).** `SchemaForm` takes the level (`level`, 1–3; every parameter when it is not given). At the top it draws two sections, *O que medir* and *Critérios*, with the Essencial parameters; the Avançado and Especialista ones follow in collapsed sections, each only once the level reaches it. The badge counts the hidden parameters whose value differs from the schema default (a value present where the schema has no default counts), and opens just those. A nested object (the color range inside the blob locator) is drawn whole. The level is chosen in the editor's top bar (`LevelSwitch`), kept in this browser per role and per family (`editor`, `settings`), and starts at Essencial. The badge on the result bar and the fine-tune screen's fixed Essencial come with the screens that have them (UI-2, UI-7).
 - **Levels never change values.** Switching level changes no value, never resets anything, and never adds a version.
 - **The same levels** apply to the camera step, the anchor step, the quality gates and the settings sub-pages.
 

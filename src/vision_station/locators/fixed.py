@@ -9,13 +9,14 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.core.jobfiles import JobFiles
-from vision_station.core.schema_labels import labels
+from vision_station.core.schema_labels import labels, meta
 from vision_station.locators.base import Anchor, LocatorType, register
 
 
 class FixedParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "O objeto fica sempre no mesmo lugar: a âncora é um retângulo escrito no job.",
+        meta={"rect": meta(1, "measure", widget="region")},
         rect=("Posição do objeto (x0, y0, x1, y1)", "Frações da imagem; desenhe na imagem")))
 
     rect: tuple[float, float, float, float] = Field(description="x0, y0, x1, y1 as fractions of the frame")

@@ -24,10 +24,11 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.core.jobfiles import JobFiles
-from vision_station.core.schema_labels import labels
+from vision_station.core.i18n import tr
+from vision_station.core.schema_labels import labels, meta
 from vision_station.algorithms.measures import strip_profile
 from vision_station.core.results import Unit
-from vision_station.tools.base import ToolError, ToolResult, ToolType, count_at_most, judged, maximum, minimum, register
+from vision_station.tools.base import CriterionSpec, ToolError, ToolResult, ToolType, count_at_most, judged, maximum, minimum, register
 
 Share = Annotated[float, Field(ge=0, le=1)]
 MAX_MATCHES = 500
@@ -36,6 +37,16 @@ MAX_MATCHES = 500
 class PatternParams(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece.",
+        meta={
+            "template": meta(1, "measure", widget="template"),
+            "min_score": meta(1, "criteria", unit="score", tunable=True),
+            "min_count": meta(1, "criteria", unit="count", tunable=True),
+            "max_count": meta(1, "criteria", unit="count", tunable=True),
+            "axis": meta(2, "measure"),
+            "min_coverage": meta(2, "criteria", unit="fraction", tunable=True),
+            "max_gap": meta(2, "criteria", unit="fraction", tunable=True),
+            "max_side": meta(3, "measure", unit="px"),
+        },
         template=("Gabarito", "Imagem dentro do job, recortada da imagem de referência"),
         min_score=("Semelhança mínima", "0 a 1; 0,7 é um bom começo"),
         min_count=("Mínimo de ocorrências", "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está"),
@@ -133,4 +144,11 @@ def run(region: np.ndarray, params: PatternParams, files: JobFiles) -> ToolResul
     return judged(criteria, values=values, details=details, units=units)
 
 
-PATTERN = register(ToolType(name="pattern", version=1, params=PatternParams, run=run, needs=lambda p: [p.template]))
+PATTERN = register(ToolType(
+    name="pattern", version=1, params=PatternParams, run=run, needs=lambda p: [p.template],
+    criteria=(
+        CriterionSpec("count", tr("Ocorrências do padrão"), "count", "min_count", "max_count"),
+        CriterionSpec("coverage", tr("Cobertura da faixa"), "fraction", "min_coverage", None, (0.0, 1.0), level=2),
+        CriterionSpec("gap", tr("Maior trecho faltando"), "fraction", None, "max_gap", (0.0, 1.0), level=2),
+    ),
+))

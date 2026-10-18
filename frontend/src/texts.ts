@@ -1658,6 +1658,39 @@ export const text = {
     commaSeparatedHint: (hint: string) => t`${hint} · separados por vírgula`,
     notUsedHint: (hint: string) => t`${hint} (não usado)`,
     defaultValue: (value: string) => t`padrão: ${value}`,
+    // the parameter forms and the settings levels (docs/frontend.md §17, §19.2)
+    get groupMeasure() {
+      return t`O que medir`
+    },
+    get groupCriteria() {
+      return t`Critérios`
+    },
+    get levelLabel() {
+      return t`Nível dos ajustes`
+    },
+    levels: {
+      get 1() {
+        return t`Essencial`
+      },
+      get 2() {
+        return t`Avançado`
+      },
+      get 3() {
+        return t`Especialista`
+      },
+    },
+    hiddenChanged: (n: number) =>
+      plural(n, {
+        one: '# ajuste oculto foi alterado',
+        other: '# ajustes ocultos foram alterados',
+      }),
+    sectionChanged: (n: number) => plural(n, { one: '# alterado', other: '# alterados' }),
+    get hiddenChangedHide() {
+      return t`Esconder os ajustes alterados`
+    },
+    get hiddenChangedHint() {
+      return t`Mostrar só os ajustes alterados que o nível atual esconde`
+    },
     imageSize: (width: number, height: number, source: string) =>
       t`${width} × ${height} px · ${source}`,
   },

@@ -16,6 +16,7 @@ import numpy as np
 from pydantic import BaseModel, ValidationError
 
 from vision_station.algorithms.measures import at_least, at_most
+from vision_station.core.i18n import Msg
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.results import Criterion, Unit
 
@@ -73,12 +74,32 @@ def rule(code: str, score: float) -> Criterion:
 
 
 @dataclass(frozen=True)
+class CriterionSpec:
+    """What a tolerance gauge draws for one measure of a tool (frontend.md §9.3, §19.3): the measured value, its
+    range, and the parameters that hold its limits. `value` is a key of the result's `values`; the limits name
+    parameters of the tool, so the screen can change them and the direction follows from which ones exist."""
+
+    value: str
+    label: Msg
+    unit: Unit
+    min_param: str | None = None  # the value must be at least this parameter
+    max_param: str | None = None  # ...and at most this one
+    range: tuple[float, float | None] = (0.0, None)  # None: no natural top (a count); the gauge takes it from the data
+    level: int = 1  # the settings level that shows this gauge (frontend.md §17)
+
+    @property
+    def direction(self) -> str:
+        return "between" if self.min_param and self.max_param else "at_least" if self.min_param else "at_most"
+
+
+@dataclass(frozen=True)
 class ToolType:
     name: str
     version: int
     params: type[BaseModel]
     run: Callable[[np.ndarray, Any, JobFiles], ToolResult]  # (region image, validated params, job files)
     needs: Callable[[Any], list[str]] = lambda params: []  # job files the validated params refer to
+    criteria: tuple[CriterionSpec, ...] = ()  # the measures with limits; yes/no rules (classes) have no gauge
 
 
 _REGISTRY: dict[tuple[str, int], ToolType] = {}

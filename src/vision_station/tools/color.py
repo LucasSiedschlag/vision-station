@@ -20,11 +20,12 @@ import numpy as np
 from pydantic import ConfigDict, Field, model_validator
 
 from vision_station.algorithms.color import ColorRange, color_mask
-from vision_station.core.schema_labels import COLOR_RANGE, labels
+from vision_station.core.i18n import tr
+from vision_station.core.schema_labels import COLOR_META, COLOR_RANGE, labels, meta
 from vision_station.core.jobfiles import JobFiles
 from vision_station.algorithms.measures import strip_profile
 from vision_station.core.results import Criterion, Unit
-from vision_station.tools.base import ToolResult, ToolType, judged, maximum, minimum, register
+from vision_station.tools.base import CriterionSpec, ToolResult, ToolType, judged, maximum, minimum, register
 
 Share = Annotated[float, Field(ge=0, le=1)]
 
@@ -33,6 +34,15 @@ class ColorParams(ColorRange):
     model_config = ConfigDict(extra="forbid", json_schema_extra=labels(
         "Mede quanto de uma região tem uma cor.",
         **COLOR_RANGE,
+        meta={
+            **COLOR_META,
+            "min_fraction": meta(1, "criteria", unit="fraction", tunable=True),
+            "max_fraction": meta(1, "criteria", unit="fraction", tunable=True),
+            "axis": meta(2, "measure"),
+            "line_min": meta(2, "measure", unit="fraction"),
+            "min_coverage": meta(2, "criteria", unit="fraction", tunable=True),
+            "max_gap": meta(2, "criteria", unit="fraction", tunable=True),
+        },
         min_fraction=("Fração mínima da área", "0 a 1: a cor precisa ocupar pelo menos isso da região"),
         max_fraction=("Fração máxima da área", "0 a 1: para conferir que uma cor não está lá"),
     axis=("Medir ao longo de", "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)", {"none": "área toda", "x": "horizontal (x)", "y": "vertical (y)"}),
@@ -96,4 +106,11 @@ def run(region: np.ndarray, params: ColorParams, files: JobFiles) -> ToolResult:
     return judged(criteria, values=values, details=details, units=units)
 
 
-COLOR = register(ToolType(name="color", version=1, params=ColorParams, run=run))
+COLOR = register(ToolType(
+    name="color", version=1, params=ColorParams, run=run,
+    criteria=(
+        CriterionSpec("fraction", tr("Fração com a cor"), "fraction", "min_fraction", "max_fraction", (0.0, 1.0)),
+        CriterionSpec("coverage", tr("Cobertura da faixa"), "fraction", "min_coverage", None, (0.0, 1.0), level=2),
+        CriterionSpec("gap", tr("Maior trecho faltando"), "fraction", None, "max_gap", (0.0, 1.0), level=2),
+    ),
+))
