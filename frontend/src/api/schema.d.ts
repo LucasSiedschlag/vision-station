@@ -459,6 +459,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/jobs/{job_id}/tune': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Tune Job
+     * @description Save a fine-tune as version n+1 and verify it (FR-JOB-14, document 05 §7.12). The draft is whatever the screen
+     *     built, and the server decides what may differ from the version it starts from: tolerance limits and new samples,
+     *     nothing else. A note is required. The version is not activated: that is the person's next step.
+     */
+    post: operations['tune_job']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/jobs/{job_id}/versions': {
     parameters: {
       query?: never
@@ -2748,6 +2770,22 @@ export interface components {
       source: 'image' | 'manual' | 'api' | 'machine'
     }
     /**
+     * TuneOut
+     * @description A fine-tune saved as the next version, and what verifying it said. It is not active: the person activates it.
+     */
+    TuneOut: {
+      /** Changes */
+      changes: string[]
+      /** Id */
+      id: string
+      /** Problems */
+      problems: string[]
+      /** Verified */
+      verified: boolean
+      /** Version */
+      version: number
+    }
+    /**
      * TypeInfo
      * @description A tool or locator type the editor can offer, with the JSON Schema of its parameters. The schema carries
      *     `x-level`, `x-group`, `x-widget`, `x-unit` and `x-tunable` on each parameter. `criteria` is empty for a locator.
@@ -2844,6 +2882,11 @@ export interface components {
       notes: string
       /** Parent Version */
       parent_version: number | null
+      /**
+       * Tuned
+       * @default false
+       */
+      tuned: boolean
       /** Version */
       version: number
     }
@@ -4329,6 +4372,79 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  tune_job: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TuneOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
         }
       }
     }

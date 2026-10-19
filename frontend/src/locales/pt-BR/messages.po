@@ -25,6 +25,12 @@ msgstr "Capturar amostra"
 msgid "Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups."
 msgstr "Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups."
 
+msgid "Versão {version} salva e verificada: pode ser ativada."
+msgstr "Versão {version} salva e verificada: pode ser ativada."
+
+msgid "ajuste fino"
+msgstr "ajuste fino"
+
 msgid "No backup, a versão ativa era a v{v}: ative-a aqui depois de conferir."
 msgstr "No backup, a versão ativa era a v{v}: ative-a aqui depois de conferir."
 
@@ -220,6 +226,9 @@ msgstr "imagem de referência"
 msgid "Resultado das {time}"
 msgstr "Resultado das {time}"
 
+msgid "reprova"
+msgstr "reprova"
+
 msgid "Perfil"
 msgstr "Perfil"
 
@@ -296,6 +305,9 @@ msgstr "Estava NÃO OK"
 msgid "{name} solto na {place}."
 msgstr "{name} solto na {place}."
 
+msgid "Sem imagem da câmera: dá para ajustar pelas amostras que o job já tem."
+msgstr "Sem imagem da câmera: dá para ajustar pelas amostras que o job já tem."
+
 msgid "Ao vivo"
 msgstr "Ao vivo"
 
@@ -319,6 +331,9 @@ msgstr "Total"
 
 msgid "Reprovadas"
 msgstr "Reprovadas"
+
+msgid "Salvar o ajuste como versão {version}"
+msgstr "Salvar o ajuste como versão {version}"
 
 msgid "a pior boa ({value}) está {distance} abaixo do limite"
 msgstr "a pior boa ({value}) está {distance} abaixo do limite"
@@ -355,6 +370,9 @@ msgstr "Pontuações"
 
 msgid "Foco"
 msgstr "Foco"
+
+msgid "Ajuste fino — {name} v{version}"
+msgstr "Ajuste fino — {name} v{version}"
 
 msgid "Dataset exportado"
 msgstr "Dataset exportado"
@@ -406,6 +424,9 @@ msgstr "Falhou"
 
 msgid "precisa de atenção"
 msgstr "precisa de atenção"
+
+msgid "Capturar como Ruim"
+msgstr "Capturar como Ruim"
 
 msgid "Ações de {name}"
 msgstr "Ações de {name}"
@@ -494,6 +515,9 @@ msgstr "Ligando esta tela ao programa da estação."
 msgid "{name}: relativa a"
 msgstr "{name}: relativa a"
 
+msgid "Salvar como v{version}…"
+msgstr "Salvar como v{version}…"
+
 msgid "s"
 msgstr "s"
 
@@ -547,6 +571,9 @@ msgstr "a ruim mais alta, {distance} abaixo"
 
 msgid "sem sinal"
 msgstr "sem sinal"
+
+msgid "Amostra {name} capturada ({outcome} agora)."
+msgstr "Amostra {name} capturada ({outcome} agora)."
 
 msgid "atual"
 msgstr "atual"
@@ -635,6 +662,9 @@ msgstr "Resultados"
 msgid "Saturação máxima"
 msgstr "Saturação máxima"
 
+msgid "Ativar a versão {version}"
+msgstr "Ativar a versão {version}"
+
 msgid "Ocultar detalhes"
 msgstr "Ocultar detalhes"
 
@@ -688,6 +718,9 @@ msgstr "Idioma depois de entrar"
 
 msgid "Mostrar o resultado por pelo menos"
 msgstr "Mostrar o resultado por pelo menos"
+
+msgid "Amostras novas: {good} boas e {bad} ruins (entram na versão ao salvar)."
+msgstr "Amostras novas: {good} boas e {bad} ruins (entram na versão ao salvar)."
 
 msgid "Job ativado sem passar na verificação"
 msgstr "Job ativado sem passar na verificação"
@@ -761,8 +794,14 @@ msgstr "Nenhum resultado neste período"
 msgid "Ativar mesmo assim"
 msgstr "Ativar mesmo assim"
 
+msgid "passa"
+msgstr "passa"
+
 msgid "Esse endereço não existe."
 msgstr "Esse endereço não existe."
+
+msgid "O que você ajustou e por quê"
+msgstr "O que você ajustou e por quê"
 
 msgid "O último backup automático falhou: {e}"
 msgstr "O último backup automático falhou: {e}"
@@ -787,9 +826,6 @@ msgstr "Nome do job novo"
 
 msgid "{hint} (não usado)"
 msgstr "{hint} (não usado)"
-
-msgid "Entre como Mantenedor para medir ao vivo"
-msgstr "Entre como Mantenedor para medir ao vivo"
 
 msgid "Tipo"
 msgstr "Tipo"
@@ -832,6 +868,9 @@ msgstr "Imagem"
 
 msgid "Modo de coleta"
 msgstr "Modo de coleta"
+
+msgid "Capturar como Boa"
+msgstr "Capturar como Boa"
 
 msgid "Nitidez"
 msgstr "Nitidez"
@@ -913,6 +952,9 @@ msgstr "Matiz"
 
 msgid "O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil."
 msgstr "O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil."
+
+msgid "Obrigatório: fica no registro de auditoria. Ex.: lote novo de tampas, luz do turno da noite."
+msgstr "Obrigatório: fica no registro de auditoria. Ex.: lote novo de tampas, luz do turno da noite."
 
 msgid "Todas as versões"
 msgstr "Todas as versões"
@@ -1076,6 +1118,9 @@ msgstr "Nenhum evento"
 msgid "Arraste sobre a cor na imagem"
 msgstr "Arraste sobre a cor na imagem"
 
+msgid "Este job não tem ferramenta com tolerância para ajustar."
+msgstr "Este job não tem ferramenta com tolerância para ajustar."
+
 msgid "ao objeto (âncora)"
 msgstr "ao objeto (âncora)"
 
@@ -1150,6 +1195,9 @@ msgstr "Job"
 
 msgid "Som na reprovação"
 msgstr "Som na reprovação"
+
+msgid "Versão {version} ativada."
+msgstr "Versão {version} ativada."
 
 msgid "âncora"
 msgstr "âncora"
@@ -1234,6 +1282,9 @@ msgstr "Sua sessão terminou"
 
 msgid "gravação"
 msgstr "gravação"
+
+msgid "Cria a versão {version}, marcada como ajuste fino, e a verifica nas amostras. Ela só passa a valer quando você ativar."
+msgstr "Cria a versão {version}, marcada como ajuste fino, e a verifica nas amostras. Ela só passa a valer quando você ativar."
 
 msgid "O servidor recusou algo neste passo"
 msgstr "O servidor recusou algo neste passo"
@@ -1423,6 +1474,9 @@ msgstr "{limit}; valor atual {current}; {goodIn} de {goodN} boas dentro"
 
 msgid "Âncora"
 msgstr "Âncora"
+
+msgid "Aqui só mudam os limites de tolerância e as amostras. Regiões, câmera e ferramentas são do Mantenedor."
+msgstr "Aqui só mudam os limites de tolerância e as amostras. Regiões, câmera e ferramentas são do Mantenedor."
 
 msgid "Saturação"
 msgstr "Saturação"
@@ -1913,6 +1967,9 @@ msgstr "Erro"
 msgid "Código de barras ou 2D"
 msgstr "Código de barras ou 2D"
 
+msgid "Entre como Supervisor ou Mantenedor para medir ao vivo"
+msgstr "Entre como Supervisor ou Mantenedor para medir ao vivo"
+
 msgid "Formato dos arquivos de job"
 msgstr "Formato dos arquivos de job"
 
@@ -1942,6 +1999,9 @@ msgstr "Exportar .vjob"
 
 msgid "passou"
 msgstr "passou"
+
+msgid "Descartar ajustes"
+msgstr "Descartar ajustes"
 
 msgid "v{v} · {status}"
 msgstr "v{v} · {status}"
@@ -2017,6 +2077,9 @@ msgstr "{outcome} às {time}"
 
 msgid "Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz."
 msgstr "Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz."
+
+msgid "Ajuste fino"
+msgstr "Ajuste fino"
 
 msgid "Adicionado ao job: {paths}"
 msgstr "Adicionado ao job: {paths}"
@@ -2119,6 +2182,9 @@ msgstr "Compilação"
 
 msgid "Motivo"
 msgstr "Motivo"
+
+msgid "Versão {version} salva, mas não passou na verificação. Só o Mantenedor pode liberar uma versão assim."
+msgstr "Versão {version} salva, mas não passou na verificação. Só o Mantenedor pode liberar uma versão assim."
 
 msgid "imagens"
 msgstr "imagens"

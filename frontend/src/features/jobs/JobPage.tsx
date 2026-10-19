@@ -1,4 +1,12 @@
-import { ArrowLeft, Copy, Download, GitCompare, Pencil, Power } from 'lucide-react'
+import {
+  ArrowLeft,
+  Copy,
+  Download,
+  GitCompare,
+  Pencil,
+  Power,
+  SlidersHorizontal,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { describeError } from '@/api/mutations'
@@ -62,6 +70,7 @@ export function JobPage() {
                           {text.jobs.version(v.version)}
                         </span>
                         {v.active ? <Badge tone="ok">{text.jobs.active}</Badge> : null}
+                        {v.tuned ? <Badge tone="neutral">{text.editor.tune.tuned}</Badge> : null}
                       </p>
                       <p className="text-sm text-fg-muted">
                         {formatDateTime(v.created_at)} · {authorName(v.author)}
@@ -87,6 +96,12 @@ export function JobPage() {
                         <Download aria-hidden className="size-4" />
                         {text.jobs.export}
                       </Button>
+                      {v.version === job.data.versions[0]?.version ? (
+                        <Button variant="ghost" onClick={() => void navigate(`/jobs/${id}/tune`)}>
+                          <SlidersHorizontal aria-hidden className="size-4" />
+                          {text.editor.tune.open}
+                        </Button>
+                      ) : null}
                       {job.data.versions.length > 1 ? (
                         <Button
                           variant="ghost"

@@ -904,6 +904,61 @@ export const text = {
         return t`Medindo as amostras de novo…`
       },
     },
+    /** The fine-tune of tolerances (docs/frontend.md §7.12). */
+    tune: {
+      title: (name: string, version: number) => t`Ajuste fino — ${name} v${version}`,
+      get intro() {
+        return t`Aqui só mudam os limites de tolerância e as amostras. Regiões, câmera e ferramentas são do Mantenedor.`
+      },
+      get noTools() {
+        return t`Este job não tem ferramenta com tolerância para ajustar.`
+      },
+      get toolPasses() {
+        return t`passa`
+      },
+      get toolFails() {
+        return t`reprova`
+      },
+      get captureGood() {
+        return t`Capturar como Boa`
+      },
+      get captureBad() {
+        return t`Capturar como Ruim`
+      },
+      get noCamera() {
+        return t`Sem imagem da câmera: dá para ajustar pelas amostras que o job já tem.`
+      },
+      added: (good: number, bad: number) =>
+        t`Amostras novas: ${good} boas e ${bad} ruins (entram na versão ao salvar).`,
+      captured: (name: string, outcome: string) => t`Amostra ${name} capturada (${outcome} agora).`,
+      saveAs: (version: number) => t`Salvar como v${version}…`,
+      get discardAll() {
+        return t`Descartar ajustes`
+      },
+      saveTitle: (version: number) => t`Salvar o ajuste como versão ${version}`,
+      saveBody: (version: number) =>
+        t`Cria a versão ${version}, marcada como ajuste fino, e a verifica nas amostras. Ela só passa a valer quando você ativar.`,
+      get note() {
+        return t`O que você ajustou e por quê`
+      },
+      get noteHint() {
+        return t`Obrigatório: fica no registro de auditoria. Ex.: lote novo de tampas, luz do turno da noite.`
+      },
+      verified: (version: number) => t`Versão ${version} salva e verificada: pode ser ativada.`,
+      notVerified: (version: number) =>
+        t`Versão ${version} salva, mas não passou na verificação. Só o Mantenedor pode liberar uma versão assim.`,
+      activate: (version: number) => t`Ativar a versão ${version}`,
+      activated: (version: number) => t`Versão ${version} ativada.`,
+      get close() {
+        return t`Fechar`
+      },
+      get tuned() {
+        return t`ajuste fino`
+      },
+      get open() {
+        return t`Ajuste fino`
+      },
+    },
     /** The camera controls: histogram, focus meter, exposure (docs/frontend.md §19.5). */
     camera: {
       get histogramLabel() {
@@ -1023,7 +1078,7 @@ export const text = {
         return t`Outro editor está usando a câmera`
       },
       get refused() {
-        return t`Entre como Mantenedor para medir ao vivo`
+        return t`Entre como Supervisor ou Mantenedor para medir ao vivo`
       },
       get ended() {
         return t`Medição ao vivo encerrada`

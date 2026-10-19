@@ -103,3 +103,34 @@ test('the colour picker: drag over the image to sample a colour, see the proposa
   // leaving the editor ends its session, and the station goes back to production
   await page.goto('/')
 })
+
+test('the fine-tune: a supervisor opens it from the job, sees only the gauges, and the save asks for a note', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await signInAs(page, request, 'supervisor')
+  await page.goto('/jobs')
+  await page.getByRole('row').filter({ hasText: JOB }).getByRole('link', { name: JOB }).click()
+  await page.getByRole('button', { name: 'Ajuste fino' }).first().click()
+  await expect(page.getByRole('heading', { level: 1, name: /^Ajuste fino — / })).toBeVisible()
+  await expect(page.getByRole('slider', { name: /Limite mínimo/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Ferramentas|Imagem e disparo/ })).toHaveCount(0)
+  await expect(page.getByText(/^Ao vivo ● /)).toBeVisible()
+  expect(await accessibilityProblems(page)).toEqual([])
+
+  // a limit moves, and the save needs a note
+  const save = page.getByRole('button', { name: /^Salvar como v\d+…$/ })
+  await expect(save).toBeDisabled()
+  await page.getByRole('slider', { name: /Limite mínimo/ }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(save).toBeEnabled()
+  await save.click()
+  const dialog = page.getByRole('dialog', { name: /^Salvar o ajuste como versão / })
+  await expect(dialog.getByRole('button', { name: 'Salvar…' })).toBeDisabled()
+  expect(await accessibilityProblems(page)).toEqual([])
+  await page.keyboard.press('Escape')
+  // leaving ends the session and the station goes back to production
+  await page.goto('/')
+})

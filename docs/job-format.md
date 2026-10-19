@@ -65,6 +65,7 @@ job:
   created_at: 2026-10-15T14:32:00-03:00
   description: ''
   notes: luz nova                            # what changed in this version
+  tuned: true                                # only in a fine-tune of tolerances by the Supervisor (FR-JOB-14); left out otherwise
 camera_profile: camera/profile.yaml
 trigger:
   mode: image_presence                       # image_presence | manual | external | continuous

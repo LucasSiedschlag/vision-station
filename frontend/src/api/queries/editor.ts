@@ -8,6 +8,7 @@ export type CameraState = components['schemas']['CameraStateOut']
 export type VerifyOut = components['schemas']['VerifyOut']
 export type BatchOut = components['schemas']['BatchOut']
 export type LimitProposal = components['schemas']['LimitProposalOut']
+export type TuneOut = components['schemas']['TuneOut']
 export type JobDraftBody = components['schemas']['JobDraft']
 
 export function useTypes() {
@@ -52,6 +53,8 @@ export const editorApi = {
   create: (body: JobDraftBody) => call(api.POST('/api/jobs', { body })),
   saveVersion: (id: string, body: JobDraftBody) =>
     call(api.POST('/api/jobs/{job_id}/versions', { params: { path: { job_id: id } }, body })),
+  tune: (id: string, body: JobDraftBody) =>
+    call(api.POST('/api/jobs/{job_id}/tune', { params: { path: { job_id: id } }, body })),
   autoExposure: (profile: Record<string, unknown>) =>
     call(api.POST('/api/camera/auto-exposure', { body: profile })),
   applyCamera: (profile: Record<string, unknown>) =>

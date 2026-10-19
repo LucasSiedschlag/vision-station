@@ -30,6 +30,9 @@ const JobPage = lazy(() => import('@/features/jobs/JobPage').then((m) => ({ defa
 const EditorPage = lazy(() =>
   import('@/features/editor/EditorPage').then((m) => ({ default: m.EditorPage })),
 )
+const TunePage = lazy(() =>
+  import('@/features/editor/TunePage').then((m) => ({ default: m.TunePage })),
+)
 const ResultsPage = lazy(() =>
   import('@/features/results/ResultsPage').then((m) => ({ default: m.ResultsPage })),
 )
@@ -181,6 +184,7 @@ export const screens: Screen[] = [
 const inner: { path: string; min: Role; element: ReactNode }[] = [
   { path: '/jobs/:id', min: 'supervisor', element: <JobPage /> },
   { path: '/jobs/:id/edit', min: 'maintainer', element: <EditorPage /> },
+  { path: '/jobs/:id/tune', min: 'supervisor', element: <TunePage /> },
 ]
 
 export const routes: RouteObject[] = [

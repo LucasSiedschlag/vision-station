@@ -42,7 +42,7 @@ def create(env, mnt, **kw):
 
 def test_types_with_their_parameter_schemas(env, mnt):
     assert env.client.get("/api/tools").status_code == 401
-    assert env.client.get("/api/tools", headers=login(env)).status_code == 403
+    assert env.client.get("/api/tools", headers=login(env)).status_code == 200  # the fine-tune draws its gauges from the criteria (FR-JOB-14)
     body = env.client.get("/api/tools", headers=mnt).json()
     tools = {t["name"]: t for t in body["tools"]}
     assert {"code", "color", "pattern"} <= set(tools)

@@ -3789,6 +3789,40 @@
         "title": "TriggerOut",
         "type": "object"
       },
+      "TuneOut": {
+        "description": "A fine-tune saved as the next version, and what verifying it said. It is not active: the person activates it.",
+        "properties": {
+          "changes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "version", "verified", "problems", "changes"],
+        "title": "TuneOut",
+        "type": "object"
+      },
       "TypeInfo": {
         "description": "A tool or locator type the editor can offer, with the JSON Schema of its parameters. The schema carries\n`x-level`, `x-group`, `x-widget`, `x-unit` and `x-tunable` on each parameter. `criteria` is empty for a locator.",
         "properties": {
@@ -4006,12 +4040,25 @@
             ],
             "title": "Parent Version"
           },
+          "tuned": {
+            "default": false,
+            "title": "Tuned",
+            "type": "boolean"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
           }
         },
-        "required": ["version", "created_at", "author", "notes", "parent_version", "active"],
+        "required": [
+          "version",
+          "created_at",
+          "author",
+          "notes",
+          "parent_version",
+          "active",
+          "tuned"
+        ],
         "title": "VersionInfo",
         "type": "object"
       },
@@ -6150,6 +6197,112 @@
           }
         },
         "summary": "Duplicate Job"
+      }
+    },
+    "/api/jobs/{job_id}/tune": {
+      "post": {
+        "description": "Save a fine-tune as version n+1 and verify it (FR-JOB-14, document 05 §7.12). The draft is whatever the screen\nbuilt, and the server decides what may differ from the version it starts from: tolerance limits and new samples,\nnothing else. A note is required. The version is not activated: that is the person's next step.",
+        "operationId": "tune_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TuneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Tune Job"
       }
     },
     "/api/jobs/{job_id}/versions": {

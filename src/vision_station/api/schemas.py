@@ -414,6 +414,7 @@ class VersionInfo(BaseModel):
     notes: str
     parent_version: int | None = None
     active: bool
+    tuned: bool = False  # saved by a fine-tune of tolerances (FR-JOB-14)
 
 
 class JobDetailOut(BaseModel):
@@ -462,6 +463,16 @@ class DraftCheckOut(BaseModel):
 class SavedVersion(BaseModel):
     id: str
     version: int
+
+
+class TuneOut(BaseModel):
+    """A fine-tune saved as the next version, and what verifying it said. It is not active: the person activates it."""
+
+    id: str
+    version: int
+    verified: bool
+    problems: list[str]
+    changes: list[str]  # "tool: parameter, old → new", in the language of the request
 
 
 class DuplicateBody(BaseModel):

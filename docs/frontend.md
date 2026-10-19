@@ -694,6 +694,13 @@ A full-page stepper (the 0.1 `Stepper`), each step with a clear *done* condition
   The server enforces the same: a fine-tune save is refused if anything other than the allowed tolerance parameters changed.
 - **Save:** a note is required. Saving creates version n+1, marked *ajuste fino*, then runs verification. The supervisor may activate it if verification passes; an override stays maintainer-only. The audit log records every changed value.
 
+**As built (VIA-0067).**
+- **Route and access.** `/jobs/:id/tune`, Supervisor and up, opened from the *Ajuste fino* button on the newest version of a job (a fine-tune always starts from the newest, so an older version has no button). To make that possible the reading endpoints the editor uses (`GET /api/tools`, `GET …/versions/{v}`, `…/files/{path}`, `POST /api/editor/batch`, `/editor/suggest/limits`, `/reference/cases`) and the live session accept a Supervisor; saving through the editor's own route stays Maintainer-only. A Supervisor can read the job's files because they can already export the `.vjob`.
+- **What it shows.** The tools that decide, each with the gauges of its Essencial criteria and the live verdict (*passa* / *reprova*); the live image with the result of each region; *Capturar como Boa* and *Capturar como Ruim* (the picture the camera has now, with the verdict the job gives it, recorded as PASS or FAIL in the reference set); the batch dots and *Ajustar pelas amostras*, as in the editor. It reuses the editor's draft, gauges, batch and live session; no region, camera, locator or tool control is drawn.
+- **Save.** *Salvar como v{n+1}…* opens the list of changes in words and a **required** note. `POST /api/jobs/{id}/tune` takes the same draft the editor saves and **compares it with the newest version**: it accepts a change only in the parameters its tool type marks `x-tunable` and new samples (images under `tests/images/` that did not exist and cases that are PASS or FAIL in `tests/expected.yaml`). Anything else, in the job, the camera profile or the files, is refused with `422 not_tunable` and the paths (`jobs/tuning.py`); so is a note left empty, and a draft that does not start from the newest version (409). The version is saved with `tuned: true` in `job.yaml` (written only then, so a normal job file is unchanged and older programs read it), verified on the reference set, and **not activated**: the answer says whether it passed and why not. A version that passed gets *Ativar a versão {n+1}* in the same dialog (the activation endpoint verifies it again); one that did not can be released only by the Maintainer.
+- **Audit.** One `job_tune` event with the note, each changed limit as tool, parameter, old and new value, and the result of the verification.
+- **Not built:** the margin warning that opens it (FR-LOG-7) and the *Ajuste fino* mark in the audit screen's filter (document 05 §7.8, VIA-0069).
+
 ### 7.13 Statistics (`/stats`, supervisor+) — new
 
 **Purpose:** see drift before it becomes rejects (FR-LOG-7).
@@ -793,12 +800,12 @@ Example (as `GET /api/tools` returns it, in each tool's `criteria`; a locator's 
 
 | Endpoint | Purpose | Role |
 |---|---|---|
-| `POST /api/editor/batch` | Run a draft on its samples; per sample and tool: passed, score, measured values (feeds gauge dots, separation, Validar) | maintainer, supervisor (fine-tune) |
+| `POST /api/editor/batch` | Run a draft on its samples; per sample and tool: passed, score, measured values (feeds gauge dots, separation, Validar) | maintainer, supervisor (fine-tune; **built**) |
 | `POST /api/editor/suggest/colour` | The pixels dragged over on the image (PNG crops, with *incluir* and *excluir*) → proposed HSV range (circular percentiles 2–98 %, tightened to leave the excluded pixels out), and how much of the sampled colour it keeps. **Built (VIA-0066)**; the range is never applied by the server | maintainer |
 | `POST /api/editor/suggest/limits` | Per criterion: the values on *Boa* and *Ruim* samples → proposed limit in the middle of the widest gap, with the resulting margin, or "as amostras se sobrepõem" | maintainer, supervisor |
 | `POST /api/editor/locate` | Teach and run a locator on the reference and all samples → pose and score per sample | maintainer |
 | `GET /api/editor/debug/{layer}.png` | Debug image of the last live or sample result: colour mask, binarized blob image, edge map, anomaly map, for one tool | maintainer |
-| `POST /api/jobs/{id}/versions/{v}/tune` | Fine-tune save: refuses any change outside `x-tunable` parameters | supervisor+ |
+| `POST /api/jobs/{id}/tune` | Fine-tune save (**built**, VIA-0067): from the newest version only; refuses any change outside the `x-tunable` parameters and new samples; a note is required; saves version n+1 marked `tuned`, verifies it, does not activate it | supervisor+ |
 | `GET /api/machine/map`, `POST /api/machine/force`, `POST /api/machine/simulate-trigger` | Machine monitor (§7.14) | maintainer |
 | `POST /api/bench`, `GET /api/bench/last` | Benchmark (FR-ADM-5) | maintainer |
 | `GET /api/results/{id}/thumb` | Thumbnail for the operator's last results | everyone |

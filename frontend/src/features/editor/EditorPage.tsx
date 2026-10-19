@@ -907,7 +907,7 @@ function Editor({
 }
 
 /** What the draft changes against its version, in words, above the note that is written for the version. */
-function ChangeList({ draft }: { draft: Draft }) {
+export function ChangeList({ draft }: { draft: Draft }) {
   const types = useTypes()
   const changes = summarizeChanges(draft, types.data)
   return (

@@ -105,7 +105,7 @@ def test_a_refused_draft_and_a_missing_login_are_answered(env, mnt):  # noqa: F8
     out = env.client.post("/api/editor/batch", headers=mnt, json=bad).json()
     assert out["ok"] is False and out["samples"] == [] and out["message"]
     assert env.client.post("/api/editor/batch", json=draft()).status_code == 401
-    assert env.client.post("/api/editor/batch", headers=login(env), json=draft()).status_code == 403
+    assert env.client.post("/api/editor/batch", headers=login(env), json=draft()).status_code == 200  # the supervisor measures too: the fine-tune (FR-JOB-14)
     assert env.client.post("/api/editor/suggest/limits", json={"draft": draft()}).status_code == 401
 
 

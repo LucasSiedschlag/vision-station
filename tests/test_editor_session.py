@@ -74,14 +74,13 @@ def live(env, mnt):  # noqa: F811
         yield env, ws, mnt, ready
 
 
-def test_a_page_that_is_not_a_maintainer_is_turned_away_with_a_message(env, mnt):  # noqa: F811
+def test_a_page_that_is_not_logged_in_is_turned_away_and_a_supervisor_is_let_in(env, mnt):  # noqa: F811
     with env.client.websocket_connect("/api/editor/live") as ws:
         ws.send_text(json.dumps({"type": "hello", "token": "not-a-token"}))
         refused = json.loads(ws.receive_text())
         assert refused["type"] == "error" and refused["code"] == "login_required"
     with env.client.websocket_connect("/api/editor/live") as ws:
-        refused = hello(ws, login(env))  # a supervisor may not hold the camera
-        assert refused["code"] == "login_required"
+        assert hello(ws, login(env), env)["type"] == "ready"  # a supervisor may hold the camera: the fine-tune measures live
 
 
 def test_the_station_is_paused_while_the_session_lasts_and_resumes_after_it(env, mnt):  # noqa: F811

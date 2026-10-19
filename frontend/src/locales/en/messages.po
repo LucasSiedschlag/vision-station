@@ -25,6 +25,12 @@ msgstr "Capture sample"
 msgid "Configuração desta instalação (system.yaml). Não vai nos jobs; vai nos backups."
 msgstr "Settings of this installation (system.yaml). Not part of jobs; included in backups."
 
+msgid "Versão {version} salva e verificada: pode ser ativada."
+msgstr "Version {version} saved and verified: it can be activated."
+
+msgid "ajuste fino"
+msgstr "fine-tune"
+
 msgid "No backup, a versão ativa era a v{v}: ative-a aqui depois de conferir."
 msgstr "In the backup, the active version was v{v}: activate it here after checking."
 
@@ -220,6 +226,9 @@ msgstr "reference image"
 msgid "Resultado das {time}"
 msgstr "Result of {time}"
 
+msgid "reprova"
+msgstr "fails"
+
 msgid "Perfil"
 msgstr "Profile"
 
@@ -296,6 +305,9 @@ msgstr "It was NOT OK"
 msgid "{name} solto na {place}."
 msgstr "{name} dropped at {place}."
 
+msgid "Sem imagem da câmera: dá para ajustar pelas amostras que o job já tem."
+msgstr "No camera image: you can still tune with the samples the job already has."
+
 msgid "Ao vivo"
 msgstr "Live"
 
@@ -319,6 +331,9 @@ msgstr "Total"
 
 msgid "Reprovadas"
 msgstr "Failed"
+
+msgid "Salvar o ajuste como versão {version}"
+msgstr "Save the adjustment as version {version}"
 
 msgid "a pior boa ({value}) está {distance} abaixo do limite"
 msgstr "the worst good one ({value}) is {distance} below the limit"
@@ -355,6 +370,9 @@ msgstr "Scores"
 
 msgid "Foco"
 msgstr "Focus"
+
+msgid "Ajuste fino — {name} v{version}"
+msgstr "Fine-tune — {name} v{version}"
 
 msgid "Dataset exportado"
 msgstr "Dataset exported"
@@ -406,6 +424,9 @@ msgstr "Failed"
 
 msgid "precisa de atenção"
 msgstr "needs attention"
+
+msgid "Capturar como Ruim"
+msgstr "Capture as Bad"
 
 msgid "Ações de {name}"
 msgstr "Actions for {name}"
@@ -494,6 +515,9 @@ msgstr "Connecting this screen to the station program."
 msgid "{name}: relativa a"
 msgstr "{name}: relative to"
 
+msgid "Salvar como v{version}…"
+msgstr "Save as v{version}…"
+
 msgid "s"
 msgstr "s"
 
@@ -547,6 +571,9 @@ msgstr "the highest bad one, {distance} below"
 
 msgid "sem sinal"
 msgstr "no signal"
+
+msgid "Amostra {name} capturada ({outcome} agora)."
+msgstr "Sample {name} captured ({outcome} now)."
 
 msgid "atual"
 msgstr "current"
@@ -635,6 +662,9 @@ msgstr "Results"
 msgid "Saturação máxima"
 msgstr "Maximum saturation"
 
+msgid "Ativar a versão {version}"
+msgstr "Activate version {version}"
+
 msgid "Ocultar detalhes"
 msgstr "Hide details"
 
@@ -688,6 +718,9 @@ msgstr "Language after logging in"
 
 msgid "Mostrar o resultado por pelo menos"
 msgstr "Show the result for at least"
+
+msgid "Amostras novas: {good} boas e {bad} ruins (entram na versão ao salvar)."
+msgstr "New samples: {good} good and {bad} bad (they go into the version when you save)."
 
 msgid "Job ativado sem passar na verificação"
 msgstr "Job activated without passing verification"
@@ -761,8 +794,14 @@ msgstr "No results in this period"
 msgid "Ativar mesmo assim"
 msgstr "Activate anyway"
 
+msgid "passa"
+msgstr "passes"
+
 msgid "Esse endereço não existe."
 msgstr "This address does not exist."
+
+msgid "O que você ajustou e por quê"
+msgstr "What you adjusted and why"
 
 msgid "O último backup automático falhou: {e}"
 msgstr "The last automatic backup failed: {e}"
@@ -787,9 +826,6 @@ msgstr "Name of the new job"
 
 msgid "{hint} (não usado)"
 msgstr "{hint} (not used)"
-
-msgid "Entre como Mantenedor para medir ao vivo"
-msgstr "Log in as Maintainer to measure live"
 
 msgid "Tipo"
 msgstr "Type"
@@ -832,6 +868,9 @@ msgstr "Image"
 
 msgid "Modo de coleta"
 msgstr "Collection mode"
+
+msgid "Capturar como Boa"
+msgstr "Capture as Good"
 
 msgid "Nitidez"
 msgstr "Sharpness"
@@ -913,6 +952,9 @@ msgstr "Hue"
 
 msgid "O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil."
 msgstr "The operator has no password. Supervisor and Maintainer log in with the profile's password."
+
+msgid "Obrigatório: fica no registro de auditoria. Ex.: lote novo de tampas, luz do turno da noite."
+msgstr "Required: it goes in the audit log. E.g. a new lot of caps, the night shift's light."
 
 msgid "Todas as versões"
 msgstr "All versions"
@@ -1076,6 +1118,9 @@ msgstr "No events"
 msgid "Arraste sobre a cor na imagem"
 msgstr "Drag over the colour on the image"
 
+msgid "Este job não tem ferramenta com tolerância para ajustar."
+msgstr "This job has no tool with a tolerance to adjust."
+
 msgid "ao objeto (âncora)"
 msgstr "to the part (anchor)"
 
@@ -1150,6 +1195,9 @@ msgstr "Job"
 
 msgid "Som na reprovação"
 msgstr "Sound on fail"
+
+msgid "Versão {version} ativada."
+msgstr "Version {version} activated."
 
 msgid "âncora"
 msgstr "anchor"
@@ -1234,6 +1282,9 @@ msgstr "Your session ended"
 
 msgid "gravação"
 msgstr "recording"
+
+msgid "Cria a versão {version}, marcada como ajuste fino, e a verifica nas amostras. Ela só passa a valer quando você ativar."
+msgstr "Creates version {version}, marked as a fine-tune, and verifies it on the samples. It only takes effect when you activate it."
 
 msgid "O servidor recusou algo neste passo"
 msgstr "The server refused something in this step"
@@ -1423,6 +1474,9 @@ msgstr "{limit}; current value {current}; {goodIn} of {goodN} good ones inside"
 
 msgid "Âncora"
 msgstr "Anchor"
+
+msgid "Aqui só mudam os limites de tolerância e as amostras. Regiões, câmera e ferramentas são do Mantenedor."
+msgstr "Only tolerance limits and samples change here. Regions, camera and tools belong to the Maintainer."
 
 msgid "Saturação"
 msgstr "Saturation"
@@ -1913,6 +1967,9 @@ msgstr "Error"
 msgid "Código de barras ou 2D"
 msgstr "Barcode or 2D code"
 
+msgid "Entre como Supervisor ou Mantenedor para medir ao vivo"
+msgstr "Sign in as Supervisor or Maintainer to measure live"
+
 msgid "Formato dos arquivos de job"
 msgstr "Job file format"
 
@@ -1942,6 +1999,9 @@ msgstr "Export .vjob"
 
 msgid "passou"
 msgstr "passed"
+
+msgid "Descartar ajustes"
+msgstr "Discard adjustments"
 
 msgid "v{v} · {status}"
 msgstr "v{v} · {status}"
@@ -2017,6 +2077,9 @@ msgstr "{outcome} at {time}"
 
 msgid "Testado na imagem mais nova da câmera, em tamanho cheio, como a estação faz."
 msgstr "Tested on the camera's newest image, at full size, as the station does."
+
+msgid "Ajuste fino"
+msgstr "Fine-tune"
 
 msgid "Adicionado ao job: {paths}"
 msgstr "Added to the job: {paths}"
@@ -2119,6 +2182,9 @@ msgstr "Build"
 
 msgid "Motivo"
 msgstr "Reason"
+
+msgid "Versão {version} salva, mas não passou na verificação. Só o Mantenedor pode liberar uma versão assim."
+msgstr "Version {version} saved, but it did not pass verification. Only the Maintainer can release such a version."
 
 msgid "imagens"
 msgstr "images"

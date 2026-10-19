@@ -100,6 +100,9 @@
 @utility grid-editor {
   grid-template-columns: var(--width-steps) minmax(0, 1fr) var(--width-inspector);
 }
+@utility grid-tune {
+  grid-template-columns: minmax(0, 1fr) var(--width-inspector);
+}
 @utility grid-operator {
   grid-template-columns: minmax(0, 1fr) var(--width-side);
 }

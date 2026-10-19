@@ -95,9 +95,9 @@ async def run(ws: Any, env: SessionEnv) -> None:
             first = json.loads(await asyncio.wait_for(ws.receive_text(), 10))
         except Exception:
             first = {}
-        if first.get("type") != "hello" or deps.auth.role_of(first.get("token")) != "maintainer":
+        if first.get("type") != "hello" or deps.auth.role_of(first.get("token")) not in ("maintainer", "supervisor"):
             with using(language):
-                await ws.send_text(_message(type="error", code="login_required", message=render("É preciso entrar como Mantenedor")))
+                await ws.send_text(_message(type="error", code="login_required", message=render("É preciso entrar como Supervisor")))
             await ws.close(code=1008)
             return
         if env.state.get("busy"):

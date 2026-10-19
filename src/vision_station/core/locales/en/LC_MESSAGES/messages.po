@@ -69,6 +69,9 @@ msgstr "The camera did not open: {why}"
 msgid "A câmera não está conectada"
 msgstr "The camera is not connected"
 
+msgid "A câmera não pode mudar no ajuste fino"
+msgstr "The camera cannot change in a fine-tune"
+
 #, python-brace-format
 msgid "A câmera parou de responder: {why}"
 msgstr "The camera stopped responding: {why}"
@@ -211,6 +214,9 @@ msgstr "Invalid data"
 
 msgid "Detecção de uma classe que reprova"
 msgstr "Detection of a class that fails"
+
+msgid "Diga o que foi ajustado e por quê"
+msgstr "Say what was adjusted and why"
 
 msgid "Distância máxima (ΔE)"
 msgstr "Maximum distance (ΔE)"
@@ -472,6 +478,12 @@ msgstr "No image was kept for this result"
 msgid "Nenhuma pasta de backup foi configurada"
 msgstr "No backup folder has been set up"
 
+msgid "No ajuste fino só mudam os limites de tolerância e as amostras"
+msgstr "A fine-tune changes only tolerance limits and samples"
+
+msgid "No ajuste fino só se acrescentam amostras"
+msgstr "A fine-tune only adds samples"
+
 #, python-brace-format
 msgid "Não foi possível gravar na pasta: {why}"
 msgstr "Could not write to the folder: {why}"
@@ -534,6 +546,9 @@ msgstr "Object not found in the expected position"
 
 msgid "Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera"
 msgstr "Object not found or image out of focus, check the station and the camera"
+
+msgid "Obrigatório no ajuste fino"
+msgstr "Required in a fine-tune"
 
 msgid "Ocorrências da classe contada"
 msgstr "Occurrences of the counted class"
@@ -626,6 +641,9 @@ msgstr "Password not accepted: {why}"
 msgid "Só o Mantenedor pode liberar um job que não passou na verificação"
 msgstr "Only the Maintainer can release a job that did not pass verification"
 
+msgid "Só os limites de tolerância podem mudar no ajuste fino"
+msgstr "Only tolerance limits can change in a fine-tune"
+
 msgid "Tentar girado"
 msgstr "Try rotated"
 
@@ -644,8 +662,17 @@ msgstr "Expected text"
 msgid "Troca de job durante a inspeção"
 msgstr "Job switched during the inspection"
 
+msgid "Um arquivo do job não pode mudar no ajuste fino"
+msgstr "A file of the job cannot change in a fine-tune"
+
 msgid "Um código só conta se tiver exatamente este texto"
 msgstr "A code only counts if it has exactly this text"
+
+msgid "Uma amostra do job não pode mudar nem sair no ajuste fino"
+msgstr "A sample of the job cannot change or leave in a fine-tune"
+
+msgid "Uma amostra nova é Boa ou Ruim"
+msgstr "A new sample is Good or Bad"
 
 msgid "Vazio: o do cartão do modelo"
 msgstr "Empty: the one on the model card"

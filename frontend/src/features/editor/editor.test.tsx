@@ -1055,3 +1055,117 @@ describe('the job editor', () => {
     ])
   })
 })
+
+describe('the fine-tune of tolerances (docs/frontend.md §7.12)', () => {
+  const openTune = async () => {
+    useSession.getState().signIn('tok', 'supervisor', 3600)
+    const app = renderApp(`/jobs/${JOB}/tune`)
+    await screen.findByRole('heading', { level: 1, name: 'Ajuste fino — Tampa azul v2' })
+    return app
+  }
+
+  it('shows the gauges of the tools that decide and nothing of regions, camera or tools', async () => {
+    await openTune()
+    expect(await screen.findByRole('textbox', { name: 'Limite mínimo' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Ferramentas|Imagem e disparo/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Região' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Nova região')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Salvar como v3…' })).toBeDisabled() // nothing changed yet
+    expect(screen.getByRole('button', { name: 'Capturar como Boa' })).toBeInTheDocument()
+  })
+
+  it('a moved limit is saved with a required note, as the next version, then activated when verified', async () => {
+    let sent: any = null
+    let activated = 0
+    server.use(
+      http.post(`*/api/jobs/${JOB}/tune`, async ({ request }) => {
+        sent = await request.json()
+        return HttpResponse.json(
+          { id: JOB, version: 3, verified: true, problems: [], changes: [] },
+          { status: 201 },
+        )
+      }),
+      http.post(`*/api/jobs/${JOB}/versions/3/activate`, () => {
+        activated++
+        return HttpResponse.json({ activated: true, verified: true, warnings: [], override: false })
+      }),
+    )
+    await openTune()
+    const box = await screen.findByRole('textbox', { name: 'Limite mínimo' })
+    await userEvent.clear(box)
+    await userEvent.type(box, '55')
+    await userEvent.tab()
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar como v3…' }))
+    const dialog = screen.getByRole('dialog', { name: 'Salvar o ajuste como versão 3' })
+    expect(within(dialog).getByRole('button', { name: 'Salvar…' })).toBeDisabled() // a note is required
+    await userEvent.type(within(dialog).getByLabelText('O que você ajustou e por quê'), 'lote novo')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar…' }))
+    expect(sent.notes).toBe('lote novo')
+    expect(sent.base).toEqual({ id: JOB, version: 2 })
+    expect(sent.job.tools[0].params.min_fraction).toBe(0.55)
+    expect(sent.job.geometry).toEqual(version.job.geometry) // nothing else moved
+    const done = await screen.findByRole('dialog', { name: 'Salvar o ajuste como versão 3' })
+    expect(
+      within(done).getByText('Versão 3 salva e verificada: pode ser ativada.'),
+    ).toBeInTheDocument()
+    await userEvent.click(within(done).getByRole('button', { name: 'Ativar a versão 3' }))
+    await waitFor(() => expect(activated).toBe(1))
+  })
+
+  it('a version that did not pass verification says why and cannot be activated here', async () => {
+    server.use(
+      http.post(`*/api/jobs/${JOB}/tune`, () =>
+        HttpResponse.json(
+          {
+            id: JOB,
+            version: 3,
+            verified: false,
+            problems: ['ok1.png: esperado PASS'],
+            changes: [],
+          },
+          { status: 201 },
+        ),
+      ),
+    )
+    await openTune()
+    const box = await screen.findByRole('textbox', { name: 'Limite mínimo' })
+    await userEvent.clear(box)
+    await userEvent.type(box, '90')
+    await userEvent.tab()
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar como v3…' }))
+    const dialog = screen.getByRole('dialog', { name: 'Salvar o ajuste como versão 3' })
+    await userEvent.type(within(dialog).getByLabelText('O que você ajustou e por quê'), 'teste')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar…' }))
+    expect(await screen.findByText('ok1.png: esperado PASS')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ativar a versão 3' })).not.toBeInTheDocument()
+  })
+
+  it('a refusal of the server is shown with the fields it names', async () => {
+    server.use(
+      http.post(`*/api/jobs/${JOB}/tune`, () =>
+        HttpResponse.json(
+          {
+            detail: 'No ajuste fino só mudam os limites de tolerância e as amostras',
+            code: 'not_tunable',
+            fields: {
+              'tools.0.params.hue': 'Só os limites de tolerância podem mudar no ajuste fino',
+            },
+          },
+          { status: 422 },
+        ),
+      ),
+    )
+    await openTune()
+    const box = await screen.findByRole('textbox', { name: 'Limite mínimo' })
+    await userEvent.clear(box)
+    await userEvent.type(box, '60')
+    await userEvent.tab()
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar como v3…' }))
+    const dialog = screen.getByRole('dialog', { name: 'Salvar o ajuste como versão 3' })
+    await userEvent.type(within(dialog).getByLabelText('O que você ajustou e por quê'), 'x')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar…' }))
+    expect(await screen.findByText(/Só os limites de tolerância podem mudar/)).toBeInTheDocument()
+  })
+})

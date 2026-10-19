@@ -30,6 +30,7 @@ from vision_station.cameras import Frame
 from vision_station.algorithms.color_range import propose_range
 from vision_station.core.i18n import render, render_schema, text_of, tr
 from vision_station.jobs import CameraProfile, Job
+from vision_station.jobs import tuning
 from vision_station.jobs.job import BUILTIN_ROIS
 from vision_station.locators import get_locator, locator_types
 from vision_station.records import ResultsError
@@ -39,7 +40,7 @@ from vision_station.store import FormatError, JobBundle, JobRef, StoreError
 from vision_station.store.archive import check_path, sha256
 from vision_station.store.bundle import JOB_FILE, bundle_from_files
 from vision_station.tools import get_tool, tool_types
-from vision_station.verification import make_reference_files, run_cases, run_reference_set
+from vision_station.verification import make_reference_files, run_cases, run_reference_set, verify_stored_job
 from vision_station.verification.reference import EXPECTED_FILE, REFERENCE_IMAGE, REFERENCE_META, decode_image, parse_expected
 
 MAX_IMAGE = 32 * 1024 * 1024
@@ -107,11 +108,11 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
 
     # --- drafts --------------------------------------------------------------------------------------
 
-    def build(draft: m.JobDraft, *, job_id: str, version: int, parent: int | None, author: str, extra: dict[str, bytes] | None = None) -> JobBundle:
+    def build(draft: m.JobDraft, *, job_id: str, version: int, parent: int | None, author: str, extra: dict[str, bytes] | None = None, tuned: bool = False) -> JobBundle:
         """The draft as a bundle with this identity, checked like an import. Raises Problem 422 with fields."""
         data = dict(draft.job)
         info = dict(data.get("job") or {})
-        info.update(id=job_id, version=version, parent_version=parent, author=author, created_at=_now().isoformat(timespec="seconds"), notes=draft.notes)
+        info.update(id=job_id, version=version, parent_version=parent, author=author, created_at=_now().isoformat(timespec="seconds"), notes=draft.notes, tuned=tuned)
         data["job"] = info
         data.setdefault("format", 1)
         data.setdefault("camera_profile", "camera/profile.yaml")
@@ -163,7 +164,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
     # --- types ---------------------------------------------------------------------------------------
 
     @api.get("/tools", response_model=m.TypesOut)
-    def list_types(_: str = Depends(need("maintainer"))) -> m.TypesOut:
+    def list_types(_: str = Depends(need("supervisor"))) -> m.TypesOut:
         """Tool and locator types with the JSON Schema of their parameters, for the editor's forms."""
         return m.TypesOut(
             tools=[_type_info(n, v, get_tool(n, v)) for n, v in tool_types()],
@@ -182,13 +183,13 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         infos = []
         for v in reversed(versions):
             info = jobs.load(JobRef(job_id, v)).job.job
-            infos.append(m.VersionInfo(version=v, created_at=info.created_at.isoformat(), author=info.author, notes=info.notes, parent_version=info.parent_version,
+            infos.append(m.VersionInfo(version=v, created_at=info.created_at.isoformat(), author=info.author, notes=info.notes, parent_version=info.parent_version, tuned=info.tuned,
                                        active=bool(active and active.job_id == job_id and active.version == v)))
         latest = jobs.load(JobRef(job_id, versions[-1])).job.job
         return m.JobDetailOut(id=job_id, name=latest.name, description=latest.description, versions=infos)
 
     @api.get("/jobs/{job_id}/versions/{version}", response_model=m.JobVersionOut, responses={404: {"model": m.Problem}})
-    def job_version(job_id: str, version: int, _: str = Depends(need("maintainer"))) -> m.JobVersionOut:
+    def job_version(job_id: str, version: int, _: str = Depends(need("supervisor"))) -> m.JobVersionOut:
         bundle = jobs.load(ref_of(job_id, version))
         extra = bundle.extra
         return m.JobVersionOut(
@@ -202,7 +203,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         )
 
     @api.get("/jobs/{job_id}/versions/{version}/files/{path:path}", responses={200: {"content": {"application/octet-stream": {}}}, 404: {"model": m.Problem}})
-    def job_file(job_id: str, version: int, path: str, _: str = Depends(need("maintainer"))) -> Response:
+    def job_file(job_id: str, version: int, path: str, _: str = Depends(need("supervisor"))) -> Response:
         """One file of a saved version (a reference image, a template), for the editor to show."""
         data = jobs.load(ref_of(job_id, version)).extra.get(path)
         if data is None:
@@ -256,7 +257,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         return bundle, rows
 
     @api.post("/editor/batch", response_model=m.BatchOut)
-    def editor_batch(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.BatchOut:
+    def editor_batch(draft: m.JobDraft, role: str = Depends(need("supervisor"))) -> m.BatchOut:
         """The draft on all its samples at once (frontend.md §9.4). It feeds the dots of the tolerance gauges and the
         separation line: nothing is saved or recorded, and the results are simulated."""
         try:
@@ -289,7 +290,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         )
 
     @api.post("/editor/suggest/limits", response_model=m.LimitsOut)
-    def suggest_limits(body: m.SuggestLimitsBody, role: str = Depends(need("maintainer"))) -> m.LimitsOut:
+    def suggest_limits(body: m.SuggestLimitsBody, role: str = Depends(need("supervisor"))) -> m.LimitsOut:
         """The limits the *Boa* and *Ruim* samples suggest for each criterion of each tool (FR-UI-14). Nothing is
         changed: the editor shows each proposal and applies it only when the person says so."""
         try:
@@ -339,6 +340,33 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         saved = save(build(draft, job_id=job_id, version=latest + 1, parent=latest, author=role))
         jobs.audit("job_save", by=role, job_id=job_id, version=saved.version, parent=latest, notes=draft.notes)
         return saved
+
+    @api.post("/jobs/{job_id}/tune", status_code=201, response_model=m.TuneOut, responses={404: {"model": m.Problem}, 409: {"model": m.Problem}, 422: {"model": m.Problem}})
+    def tune_job(job_id: str, draft: m.JobDraft, role: str = Depends(need("supervisor"))) -> m.TuneOut:
+        """Save a fine-tune as version n+1 and verify it (FR-JOB-14, document 05 §7.12). The draft is whatever the screen
+        built, and the server decides what may differ from the version it starts from: tolerance limits and new samples,
+        nothing else. A note is required. The version is not activated: that is the person's next step."""
+        latest = jobs.latest(job_id)
+        if latest is None:
+            raise Problem(404, "Esse job não existe", "job_not_found")
+        seen = draft.latest if draft.latest is not None else draft.base.version if draft.base else None
+        if draft.base is None or draft.base.id != job_id or seen != latest or draft.base.version != latest:
+            raise Problem(409, tr("O job mudou: a última versão é a {latest}. Abra de novo antes de salvar.", latest=latest), "stale_draft", latest=latest)
+        if not draft.notes.strip():
+            raise Problem(422, "Diga o que foi ajustado e por quê", "note_required", fields={"notes": tr("Obrigatório no ajuste fino")})
+        base = jobs.load(JobRef(job_id, latest))
+        bundle = build(draft, job_id=job_id, version=latest + 1, parent=latest, author=role, tuned=True)
+        try:
+            changes = tuning.tolerance_changes(base.job, bundle.job, base.profile, bundle.profile)
+            tuning.check_files({p: d for p, d in base.extra.items()}, bundle.extra)
+            tuning.check_expected(base.extra.get(EXPECTED_FILE), bundle.extra.get(EXPECTED_FILE))
+        except tuning.NotTunable as exc:
+            raise Problem(422, "No ajuste fino só mudam os limites de tolerância e as amostras", "not_tunable", fields=exc.fields) from exc
+        saved = save(bundle)
+        report = verify_stored_job(jobs, ref_of(saved.id, saved.version), deps.inspect)
+        lines = [f"{c.tool}: {c.param}, {c.old} → {c.new}" for c in changes]
+        jobs.audit("job_tune", by=role, job_id=job_id, version=saved.version, parent=latest, notes=draft.notes, changes=[{"tool": c.tool, "param": c.param, "old": c.old, "new": c.new} for c in changes], verified=report.ok)
+        return m.TuneOut(id=saved.id, version=saved.version, verified=report.ok, problems=[render(c.message) for c in report.failures()], changes=lines)
 
     @api.post("/jobs/{job_id}/duplicate", status_code=201, response_model=m.SavedVersion, responses={404: {"model": m.Problem}})
     def duplicate_job(job_id: str, body: m.DuplicateBody, role: str = Depends(need("maintainer"))) -> m.SavedVersion:
@@ -453,7 +481,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         return m.ReferenceOut(files={p: _b64(d) for p, d in files.items()}, brightness=meta["brightness"], sharpness=meta["sharpness"], width=image.shape[1], height=image.shape[0])
 
     @api.post("/reference/cases", response_model=m.ReferenceCaseOut, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
-    def capture_case(body: m.ReferenceCaseBody, role: str = Depends(need("maintainer"))) -> m.ReferenceCaseOut:
+    def capture_case(body: m.ReferenceCaseBody, role: str = Depends(need("supervisor"))) -> m.ReferenceCaseOut:
         """A reference-set image, with what the draft says about it now (the editor records the expected result)."""
         image = frame_or(body.image)
         result = replace(deps.inspect(placeholder(body.draft, role), Frame(image=image, timestamp=time.monotonic())), simulated=True)

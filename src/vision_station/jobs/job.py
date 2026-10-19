@@ -39,6 +39,7 @@ class JobInfo(_Strict):
     created_at: datetime
     description: str = ""
     notes: str = ""  # what changed in this version (asked on save)
+    tuned: bool = False  # a fine-tune of tolerances by the supervisor (FR-JOB-14); written only when true
 
     @model_validator(mode="after")
     def _parent_is_older(self) -> Self:
@@ -181,4 +182,6 @@ def dump_job(job: Job) -> str:
     if data["trigger"]["interval_ms"] == DEFAULT_INTERVAL_MS:
         # written only when changed, so a job that does not use it still opens in a version without the field
         del data["trigger"]["interval_ms"]
+    if not data["job"]["tuned"]:
+        del data["job"]["tuned"]
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
