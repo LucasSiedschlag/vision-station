@@ -384,6 +384,19 @@ describe('the job editor', () => {
     ).toBeInTheDocument()
   })
 
+  it('the trigger is set with the image, in the first step, and the quality gates are a step of their own (TD-32)', async () => {
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Imagem e disparo/ }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Imagem e disparo' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'Disparo' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Modo de disparo' })).toBeInTheDocument()
+    await userEvent.click(rail.getByRole('button', { name: /^Qualidade/ }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Qualidade' })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Modo de disparo' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Brilho mínimo')).toBeInTheDocument()
+  })
+
   it('the trigger is chosen in the top bar or in its step, and both are the same value', async () => {
     await openEditor()
     const bar = screen.getByRole('combobox', { name: 'Disparo' })
@@ -392,7 +405,7 @@ describe('the job editor', () => {
     expect(useDraft.getState().draft?.job.trigger.mode).toBe('continuous')
     await userEvent.click(
       within(screen.getByRole('navigation', { name: 'Passos do job' })).getByRole('button', {
-        name: /^Disparo e qualidade/,
+        name: /^Imagem e disparo/,
       }),
     )
     expect(screen.getByRole('combobox', { name: 'Modo de disparo' })).toHaveTextContent('Contínuo')
@@ -415,12 +428,8 @@ describe('the job editor', () => {
     expect(within(dialog).getByText('tampa: Fração mínima da área, 40% → 60%')).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
     // "Próximo passo" leads forward, one step at a time
-    await userEvent.click(
-      screen.getByRole('button', { name: /Próximo passo: Disparo e qualidade/ }),
-    )
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Disparo e qualidade' }),
-    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Próximo passo: Qualidade/ }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Qualidade' })).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /Próximo passo: Resultado e saídas/ }),
     ).toBeInTheDocument()
@@ -463,11 +472,11 @@ describe('the job editor', () => {
     expect(screen.getByText('rascunho a partir da v2')).toBeInTheDocument()
     const steps = within(screen.getByRole('navigation', { name: 'Passos do job' }))
     const labels = [
-      'Imagem',
+      'Imagem e disparo',
       'Amostras',
       'Âncora',
       'Ferramentas',
-      'Disparo e qualidade',
+      'Qualidade',
       'Resultado e saídas',
       'Validar',
       'Salvar',
@@ -629,7 +638,7 @@ describe('the job editor', () => {
     )
     expect(await screen.findByText('O job tem campos inválidos')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Disparo e qualidade.*precisa de atenção/ }),
+      screen.getByRole('button', { name: /Qualidade.*precisa de atenção/ }),
     ).toBeInTheDocument()
   })
 
@@ -676,7 +685,7 @@ describe('the job editor', () => {
       return { router: undefined as never }
     })
     void router
-    expect(screen.getByRole('heading', { level: 2, name: 'Imagem' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Imagem e disparo' })).toBeInTheDocument()
     // a new job learns from its reference image first: the tools can be read, not edited
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
     expect(screen.getByText(/Este passo está bloqueado/)).toBeInTheDocument()

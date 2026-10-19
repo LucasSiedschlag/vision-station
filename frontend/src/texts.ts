@@ -436,7 +436,7 @@ export const text = {
   editor: {
     steps: {
       get image() {
-        return t`Imagem`
+        return t`Imagem e disparo`
       },
       get samples() {
         return t`Amostras`
@@ -447,8 +447,8 @@ export const text = {
       get tools() {
         return t`Ferramentas`
       },
-      get trigger() {
-        return t`Disparo e qualidade`
+      get quality() {
+        return t`Qualidade`
       },
       get outputs() {
         return t`Resultado e saídas`
@@ -507,6 +507,9 @@ export const text = {
       },
     },
     get triggerBar() {
+      return t`Disparo`
+    },
+    get triggerTitle() {
       return t`Disparo`
     },
     get interval() {

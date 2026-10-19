@@ -12,7 +12,7 @@ export const STEPS = [
   'samples',
   'anchor',
   'tools',
-  'trigger',
+  'quality',
   'outputs',
   'validate',
   'save',
@@ -28,11 +28,11 @@ export interface StepInfo {
 
 /** Which server field paths belong to which step, to mark a step that has errors. */
 export const STEP_FIELDS: Record<StepId, string[]> = {
-  image: ['profile'],
+  image: ['profile', 'job.trigger'],
   samples: ['add_files'],
   anchor: ['job.geometry.locator'],
   tools: ['job.tools', 'job.geometry'],
-  trigger: ['job.trigger', 'job.quality'],
+  quality: ['job.quality'],
   outputs: ['job.ui', 'job.decision'],
   validate: [],
   save: ['job.job', 'job.format'],
@@ -150,7 +150,7 @@ export function stepStates(
           ? { state: 'todo', reason: needsTool }
           : { state: 'done', reason: '' },
   )
-  info.trigger = by('trigger', visitedOrTodo('trigger'))
+  info.quality = by('quality', visitedOrTodo('quality'))
   info.outputs = by(
     'outputs',
     needsTool ? { state: 'blocked', reason: needsTool } : visitedOrTodo('outputs'),

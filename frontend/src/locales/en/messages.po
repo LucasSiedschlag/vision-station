@@ -100,6 +100,9 @@ msgstr "Versions"
 msgid "Valor"
 msgstr "Value"
 
+msgid "Imagem e disparo"
+msgstr "Image and trigger"
+
 msgid "Inspecionar agora"
 msgstr "Inspect now"
 
@@ -1679,9 +1682,6 @@ msgstr "passed"
 msgid "v{v} · {status}"
 msgstr "v{v} · {status}"
 
-msgid "Disparo e qualidade"
-msgstr "Trigger and quality"
-
 msgid "O que mudou na estação, quando e por quem. Não se apaga."
 msgstr "What changed at the station, when and by whom. It cannot be deleted."
 
@@ -1765,6 +1765,9 @@ msgstr "Maintainer only. The reason is kept in the audit log."
 
 msgid "O rascunho tem problemas."
 msgstr "The draft has problems."
+
+msgid "Qualidade"
+msgstr "Quality"
 
 msgid "Refazer"
 msgstr "Redo"

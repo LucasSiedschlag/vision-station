@@ -63,10 +63,10 @@ describe('the state of each step', () => {
     const info = stepStates(
       withReference(draft({}, { tools: [tool] })),
       {},
-      new Set(['image', 'trigger', 'outputs']),
+      new Set(['image', 'quality', 'outputs']),
       null,
     )
-    expect([info.image.state, info.trigger.state, info.outputs.state]).toEqual([
+    expect([info.image.state, info.quality.state, info.outputs.state]).toEqual([
       'done',
       'done',
       'done',
@@ -85,7 +85,7 @@ describe('the state of each step', () => {
       none,
       null,
     )
-    expect(info.trigger.state).toBe('attention')
+    expect(info.quality.state).toBe('attention')
     expect(info.anchor.state).toBe('attention')
     expect(info.tools.state).toBe('attention')
     expect(info.image.state).toBe('attention')
@@ -93,6 +93,9 @@ describe('the state of each step', () => {
     expect(stepOfField('job.geometry.locator.type')).toBe('anchor')
     expect(stepOfField('job.geometry.rois.cap.rect')).toBe('tools')
     expect(stepOfField('add_files')).toBe('samples')
+    // the trigger is set with the image (TD-32), the quality gates are their own step
+    expect(stepOfField('job.trigger.interval_ms')).toBe('image')
+    expect(stepOfField('job.quality.sharpness_min_ratio')).toBe('quality')
     expect(stepOfField('somewhere.else')).toBeNull()
   })
 })

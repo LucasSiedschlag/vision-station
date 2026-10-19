@@ -100,6 +100,9 @@ msgstr "Versões"
 msgid "Valor"
 msgstr "Valor"
 
+msgid "Imagem e disparo"
+msgstr "Imagem e disparo"
+
 msgid "Inspecionar agora"
 msgstr "Inspecionar agora"
 
@@ -1679,9 +1682,6 @@ msgstr "passou"
 msgid "v{v} · {status}"
 msgstr "v{v} · {status}"
 
-msgid "Disparo e qualidade"
-msgstr "Disparo e qualidade"
-
 msgid "O que mudou na estação, quando e por quem. Não se apaga."
 msgstr "O que mudou na estação, quando e por quem. Não se apaga."
 
@@ -1765,6 +1765,9 @@ msgstr "Só o Mantenedor. O motivo fica registrado na auditoria."
 
 msgid "O rascunho tem problemas."
 msgstr "O rascunho tem problemas."
+
+msgid "Qualidade"
+msgstr "Qualidade"
 
 msgid "Refazer"
 msgstr "Refazer"

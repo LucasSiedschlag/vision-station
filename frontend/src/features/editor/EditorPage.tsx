@@ -290,7 +290,7 @@ function Editor({
     const editAnchor = step === 'anchor'
     const editRegions = step === 'tools'
     if (
-      step === 'trigger' &&
+      step === 'image' &&
       draft.job.trigger?.mode === 'image_presence' &&
       draft.job.trigger.presence_roi
     )
@@ -310,7 +310,7 @@ function Editor({
         editable: editAnchor,
       })
     else if (anchor) out.push({ id: 'anchor', label: t.anchorLabel, rect: anchor, kind: 'anchor' })
-    if (step !== 'image' && step !== 'trigger')
+    if (step !== 'image')
       for (const [name, roi] of Object.entries(
         (geometry.rois ?? {}) as Record<string, { relative_to: string; rect: Rect }>,
       )) {
@@ -557,7 +557,7 @@ function Editor({
             </Button>
             {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
           </div>
-          {hiddenAnchored && step !== 'image' && step !== 'trigger' ? (
+          {hiddenAnchored && step !== 'image' ? (
             <p className="text-sm text-warn-text">{t.noAnchor}</p>
           ) : null}
           <RegionCanvas
@@ -613,7 +613,13 @@ function Editor({
             </p>
           ) : null}
           <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4 border-0 p-0">
-            {step === 'image' ? <CameraStep {...props} /> : null}
+            {step === 'image' ? (
+              <>
+                <CameraStep {...props} />
+                <h3 className="text-sm font-semibold">{t.triggerTitle}</h3>
+                <TriggerStep {...props} />
+              </>
+            ) : null}
             {step === 'samples' ? <ReferenceStep {...props} /> : null}
             {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
             {step === 'tools' ? (
@@ -623,12 +629,7 @@ function Editor({
                 <PatternCrop {...props} />
               </>
             ) : null}
-            {step === 'trigger' ? (
-              <>
-                <TriggerStep {...props} />
-                <QualityStep {...props} />
-              </>
-            ) : null}
+            {step === 'quality' ? <QualityStep {...props} /> : null}
             {step === 'outputs' ? <OutputsStep {...props} /> : null}
             {step === 'validate' ? <ValidateStep {...props} /> : null}
             {step === 'save' ? <SaveStep {...props} /> : null}
