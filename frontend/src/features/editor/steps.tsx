@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Camera, Crop, Pipette, Plus, Sun, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Camera, Crop, Plus, Sun, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { describeError } from '@/api/mutations'
@@ -21,12 +21,17 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { useDraft, toRequest, draftFiles, type Draft, type JobJson } from './draft'
-import { suggestHue, type Rect } from './geometry'
-import { blobToBase64, cropPng, pixelsOf, sample, type EditorImage } from './image'
+import { type Rect } from './geometry'
+import { blobToBase64, cropPng, type EditorImage } from './image'
 import { useLevel } from '@/app/levels'
+import { AidsRegion } from './image-aids'
 import { SchemaForm } from './SchemaForm'
 import { ToolGauges } from './gauges'
 import type { Batch } from './batch'
+import type { CameraMetrics } from './session'
+import { FocusMeter } from '@/components/vision/FocusMeter'
+import { Histogram } from '@/components/vision/Histogram'
+import { Slider } from '@/components/ui/slider'
 
 const t = text.editor
 
@@ -53,6 +58,29 @@ export interface StepProps {
   /** The sample whose picture is on the image, by its path in the job; null: the reference or the live image. */
   shownSample: string | null
   showSample: (path: string | null) => void
+  /** The sharpness, histogram and clipping of the newest live frame; null while the session has none. */
+  metrics: CameraMetrics | null
+}
+
+/** The exposure slider is logarithmic: 100 µs to 1 s over 1000 positions, so each stop of light moves it the same way. */
+const EXPOSURE_MIN_US = 100
+const EXPOSURE_STEPS = 1000
+const EXPOSURE_DECADES = 4
+const positionToExposure = (position: number) =>
+  Math.round(EXPOSURE_MIN_US * 10 ** ((position / EXPOSURE_STEPS) * EXPOSURE_DECADES))
+const exposureToPosition = (us: number) =>
+  Math.round(
+    Math.min(
+      EXPOSURE_STEPS,
+      Math.max(0, (Math.log10(us / EXPOSURE_MIN_US) / EXPOSURE_DECADES) * EXPOSURE_STEPS),
+    ),
+  )
+
+/** The region of a tool on the frame, when it is drawn on the frame (not on the anchor, whose place is only known once it is found). */
+function frameRect(roi: string, draft: Draft): Rect | null {
+  if (roi === 'frame') return [0, 0, 1, 1]
+  const found = draft.job.geometry?.rois?.[roi]
+  return found?.relative_to === 'frame' ? found.rect : null
 }
 
 const edit = (change: (d: Draft) => void, history = true) =>
@@ -105,7 +133,7 @@ function ModeValue({
   )
 }
 
-export function CameraStep({ draft, drawing, setDrawing }: StepProps) {
+export function CameraStep({ draft, drawing, setDrawing, metrics }: StepProps) {
   const p = draft.profile
   const [level] = useLevel('editor')
   const [measuring, setMeasuring] = useState(false)
@@ -164,6 +192,18 @@ export function CameraStep({ draft, drawing, setDrawing }: StepProps) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-fg-muted">{t.cameraIntro}</p>
+      {metrics ? (
+        <div className="flex flex-col gap-3 rounded-control border border-line p-3">
+          <Histogram
+            counts={metrics.histogram}
+            clippedLow={metrics.clipped_low}
+            clippedHigh={metrics.clipped_high}
+          />
+          <FocusMeter value={metrics.sharpness} />
+        </div>
+      ) : (
+        <p className="text-sm text-fg-muted">{t.camera.noLive}</p>
+      )}
       <div className="flex gap-2">
         <Field label={t.width}>
           {(props) => (
@@ -207,6 +247,24 @@ export function CameraStep({ draft, drawing, setDrawing }: StepProps) {
         }
         onValue={(v) => set((q) => (q.exposure = exposureWith(q, { mode: 'manual', value_us: v })))}
       />
+      {p.exposure?.mode === 'manual' ? (
+        <Slider
+          label={t.camera.exposureSlider}
+          value={[exposureToPosition(num(p.exposure?.value_us) ?? EXPOSURE_MIN_US)]}
+          min={0}
+          max={EXPOSURE_STEPS}
+          format={(position) => `${formatNumber(positionToExposure(position), 0)} µs`}
+          onChange={([position]) =>
+            set(
+              (q) =>
+                (q.exposure = exposureWith(q, {
+                  mode: 'manual',
+                  value_us: positionToExposure(position!),
+                })),
+            )
+          }
+        />
+      ) : null}
       <div className="flex flex-col gap-2 rounded-control border border-line p-3">
         <Button variant="secondary" loading={measuring} onClick={() => void measure()}>
           <Sun aria-hidden className="size-4" />
@@ -762,7 +820,6 @@ function prefixed(fields: Record<string, string>, prefix: string): Record<string
 
 export function ToolsStep({
   draft,
-  image,
   fields,
   test,
   setSelected,
@@ -783,37 +840,6 @@ export function ToolsStep({
   const setTools = (change: (list: JobJson[]) => void, history = true) =>
     edit((d) => change((d.job.tools ??= [])), history)
   const swap = (i: number, j: number) => setTools((list) => list.splice(j, 0, ...list.splice(i, 1)))
-
-  const proposeColour = async (i: number) => {
-    const roi = tools[i]!.roi
-    const rect: Rect | undefined =
-      roi === 'frame'
-        ? [0, 0, 1, 1]
-        : draft.job.geometry?.rois?.[roi]?.relative_to === 'frame'
-          ? draft.job.geometry.rois[roi].rect
-          : undefined
-    if (!image || !rect) {
-      toast.error(t.colourNeedsFrameRegion)
-      return
-    }
-    const pixels = await pixelsOf(image)
-    const s = pixels ? suggestHue(sample(pixels, rect)) : null
-    if (!s) {
-      toast.error(t.colourNone)
-      return
-    }
-    setTools(
-      (list) =>
-        (list[i]!.params = {
-          ...list[i]!.params,
-          mode: 'range',
-          hue: s.hue,
-          s_min: s.s_min,
-          v_min: s.v_min,
-        }),
-    )
-    toast.success(t.colourProposed(s.hue[0], s.hue[1]))
-  }
 
   const addModelFiles = async (i: number, files: File[]) => {
     const read = await Promise.all(
@@ -925,36 +951,32 @@ export function ToolsStep({
                       onFiles={(files) => void addModelFiles(i, files)}
                     />
                   ) : null}
-                  {tool.type === 'color' ? (
-                    <Button variant="ghost" onClick={() => void proposeColour(i)}>
-                      <Pipette aria-hidden className="size-4" />
-                      {t.proposeColour}
-                    </Button>
-                  ) : null}
                   {type ? (
-                    <SchemaForm
-                      schema={type.params_schema}
-                      level={level}
-                      hide={type.criteria
-                        .filter((c) => c.level <= level)
-                        .flatMap((c) => Object.values(c.limits))}
-                      criteriaExtra={
-                        <ToolGauges
-                          draft={draft}
-                          index={i}
-                          type={type}
-                          batch={batch.out}
-                          stale={batch.stale || batch.loading}
-                          measured={test?.result.tools?.find((x) => x.id === tool.id) ?? null}
-                          selectedSample={shownSample}
-                          onShowSample={showSample}
-                          level={level}
-                        />
-                      }
-                      value={tool.params ?? {}}
-                      errors={prefixed(fields, `job.tools.${i}.params`)}
-                      onChange={(params) => setTools((list) => (list[i]!.params = params), false)}
-                    />
+                    <AidsRegion rect={frameRect(tool.roi, draft)}>
+                      <SchemaForm
+                        schema={type.params_schema}
+                        level={level}
+                        hide={type.criteria
+                          .filter((c) => c.level <= level)
+                          .flatMap((c) => Object.values(c.limits))}
+                        criteriaExtra={
+                          <ToolGauges
+                            draft={draft}
+                            index={i}
+                            type={type}
+                            batch={batch.out}
+                            stale={batch.stale || batch.loading}
+                            measured={test?.result.tools?.find((x) => x.id === tool.id) ?? null}
+                            selectedSample={shownSample}
+                            onShowSample={showSample}
+                            level={level}
+                          />
+                        }
+                        value={tool.params ?? {}}
+                        errors={prefixed(fields, `job.tools.${i}.params`)}
+                        onChange={(params) => setTools((list) => (list[i]!.params = params), false)}
+                      />
+                    </AidsRegion>
                   ) : (
                     <p className="text-sm text-warn-text">{t.unknownType}</p>
                   )}

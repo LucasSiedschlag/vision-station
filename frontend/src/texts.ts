@@ -904,6 +904,116 @@ export const text = {
         return t`Medindo as amostras de novo…`
       },
     },
+    /** The camera controls: histogram, focus meter, exposure (docs/frontend.md §19.5). */
+    camera: {
+      get histogramLabel() {
+        return t`Histograma de brilho da imagem ao vivo`
+      },
+      clippedLow: (share: string) => t`${share} % da imagem preta`,
+      clippedHigh: (share: string) => t`${share} % da imagem saturada`,
+      get sharpness() {
+        return t`Nitidez`
+      },
+      get noValue() {
+        return t`sem imagem`
+      },
+      best: (peak: string) => t`melhor: ${peak}`,
+      get atPeak() {
+        return t`No ponto mais nítido`
+      },
+      get turnFocus() {
+        return t`Gire o foco até a barra ficar verde`
+      },
+      get resetPeak() {
+        return t`Reiniciar o melhor`
+      },
+      get exposureSlider() {
+        return t`Exposição (escala logarítmica)`
+      },
+      get noLive() {
+        return t`Sem imagem ao vivo: a câmera não está entregando quadros.`
+      },
+    },
+    /** The colour picker (docs/frontend.md §19.4). */
+    colour: {
+      get title() {
+        return t`Cor`
+      },
+      get sampleLabel() {
+        return t`Amostra`
+      },
+      get include() {
+        return t`Incluir cor`
+      },
+      get exclude() {
+        return t`Excluir cor`
+      },
+      clear: (included: number, excluded: number) =>
+        t`Limpar amostras (${included} incluídas, ${excluded} excluídas)`,
+      get dragInclude() {
+        return t`Arraste sobre a cor na imagem`
+      },
+      get dragExclude() {
+        return t`Arraste sobre o que deve ficar de fora`
+      },
+      get markColourFirst() {
+        return t`Marque primeiro a cor com Incluir cor.`
+      },
+      get noProposal() {
+        return t`Não foi possível propor uma faixa com essas amostras.`
+      },
+      proposed: (summary: string) => t`Faixa proposta: ${summary}.`,
+      keeps: (share: string) => t`Mantém ${share} % da cor amostrada.`,
+      leaves: (share: string) => t`Deixa ${share} % do que você excluiu dentro da faixa.`,
+      get apply() {
+        return t`Aplicar`
+      },
+      get discard() {
+        return t`Descartar`
+      },
+      get anyHue() {
+        return t`Qualquer matiz`
+      },
+      get anyHueHint() {
+        return t`Para preto, branco e cinzas, que não têm matiz: contam só a saturação e o brilho.`
+      },
+      get hue() {
+        return t`Matiz`
+      },
+      get hueFrom() {
+        return t`Matiz inicial`
+      },
+      get hueTo() {
+        return t`Matiz final`
+      },
+      get saturation() {
+        return t`Saturação`
+      },
+      get saturationMin() {
+        return t`Saturação mínima`
+      },
+      get saturationMax() {
+        return t`Saturação máxima`
+      },
+      get brightness() {
+        return t`Brilho`
+      },
+      get brightnessMin() {
+        return t`Brilho mínimo`
+      },
+      get brightnessMax() {
+        return t`Brilho máximo`
+      },
+      get margin() {
+        return t`Folga`
+      },
+      get marginHint() {
+        return t`Alarga ou estreita a faixa toda de uma vez, a partir da última que você ajustou.`
+      },
+      get mask() {
+        return t`Máscara na imagem`
+      },
+    },
     liveOn: (rate: string) => t`Ao vivo ● ${rate}/s`,
     liveState: {
       get connecting() {
@@ -1193,9 +1303,6 @@ export const text = {
     get wholeAnchor() {
       return t`o objeto (âncora)`
     },
-    get proposeColour() {
-      return t`Propor a cor a partir da região`
-    },
     get modelDrop() {
       return t`Solte aqui o modelo (.onnx) e o cartão (.card.yaml)`
     },
@@ -1203,14 +1310,6 @@ export const text = {
       return t`O modelo é treinado fora da estação (docs/models.md) e vai dentro do job.`
     },
     modelAdded: (paths: string) => t`Adicionado ao job: ${paths}`,
-    get colourNeedsFrameRegion() {
-      return t`Escolha uma região relativa à imagem para amostrar a cor.`
-    },
-    get colourNone() {
-      return t`Não há cor suficiente na região para propor uma faixa.`
-    },
-    colourProposed: (a: number, b: number) =>
-      t`Faixa de matiz proposta: ${a} a ${b}. Teste e ajuste.`,
     get unknownType() {
       return t`Tipo de ferramenta que este programa não conhece.`
     },

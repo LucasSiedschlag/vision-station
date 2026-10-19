@@ -45,6 +45,8 @@ export const editorApi = {
   batch: (body: JobDraftBody) => call(api.POST('/api/editor/batch', { body })),
   suggestLimits: (draft: JobDraftBody, tool: string) =>
     call(api.POST('/api/editor/suggest/limits', { body: { draft, tool } })),
+  suggestColour: (include: string[], exclude: string[]) =>
+    call(api.POST('/api/editor/suggest/colour', { body: { include, exclude } })),
   test: (draft: JobDraftBody, image?: string | null) =>
     call(api.POST('/api/jobs/test', { body: { draft, image: image ?? null } })),
   create: (body: JobDraftBody) => call(api.POST('/api/jobs', { body })),

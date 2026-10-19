@@ -10,7 +10,8 @@ import {
   type Handle,
   type Rect,
 } from './geometry'
-import { pixelAt, pixelsOf, type EditorImage } from './image'
+import { pixelAt, type EditorImage } from './image'
+import { tokenRgb } from '@/components/vision/hsv-paint'
 import { text } from '@/texts'
 
 /** What is drawn over the image. Only `editable` shapes can be selected, moved and resized. */
@@ -29,6 +30,12 @@ const colours: Record<Shape['kind'], string> = {
   anchor: 'stroke-warn-text',
   pass: 'stroke-ok-text',
   fail: 'stroke-fail-text',
+}
+
+/** The pixel under the pointer in OpenCV's scale: the way for a reader that knows no level. */
+const defaultReadout = (x: number, y: number, [r, g, b]: [number, number, number]) => {
+  const [h, s, v] = rgbToHsv(r, g, b)
+  return `x ${x}, y ${y} · RGB ${r}, ${g}, ${b} · HSV ${h}, ${s}, ${v}`
 }
 
 type Drag =
@@ -50,6 +57,10 @@ export function RegionCanvas({
   onDelete,
   drawing,
   emptyText,
+  pixels,
+  readout: readoutOf,
+  mask,
+  onGestureEnd,
 }: {
   image: EditorImage | null
   shapes: Shape[]
@@ -59,21 +70,19 @@ export function RegionCanvas({
   onDelete?: (id: string) => void
   drawing: string | null
   emptyText: string
+  /** The pixels of `image`, for the readout under the pointer and the mask. */
+  pixels?: ImageData | null
+  /** How the colour under the pointer is written, so it follows the settings level (docs/frontend.md §17). */
+  readout?: (x: number, y: number, rgb: [number, number, number], size: [number, number]) => string
+  /** Pixels (1) to hatch over the image, on the grid of `width` × `height`. */
+  mask?: { cells: Uint8Array; width: number; height: number } | null
+  /** A drag that drew a shape has ended. */
+  onGestureEnd?: (id: string) => void
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
-  const [loaded, setLoaded] = useState<{ url: string; data: ImageData | null } | null>(null)
-  const pixels = loaded && image && loaded.url === image.url ? loaded.data : null
   const [readout, setReadout] = useState<string>('')
   const [size, setSize] = useState({ width: 800, height: 450 })
-
-  useEffect(() => {
-    let alive = true
-    if (image) void pixelsOf(image).then((data) => alive && setLoaded({ url: image.url, data }))
-    return () => {
-      alive = false
-    }
-  }, [image])
 
   useEffect(() => {
     const el = box.current
@@ -98,7 +107,8 @@ export function RegionCanvas({
     const target = (e.target as Element).closest('[data-shape],[data-handle]')
     const id = target?.getAttribute('data-shape') ?? target?.getAttribute('data-for') ?? null
     const handle = target?.getAttribute('data-handle') as Handle | null
-    const shape = shapes.find((s) => s.id === id && s.editable)
+    // a drag that samples colours draws over whatever region is under it: it never moves one
+    const shape = drawing === 'sample' ? undefined : shapes.find((s) => s.id === id && s.editable)
     ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
     if (shape && handle) {
       setDrag({ kind: 'resize', id: shape.id, handle, start: shape.rect })
@@ -117,9 +127,13 @@ export function RegionCanvas({
     const { x, y } = point(e)
     if (pixels && x >= 0 && x <= 1 && y >= 0 && y <= 1) {
       const [r, g, b] = pixelAt(pixels, x, y)
-      const [h, s, v] = rgbToHsv(r, g, b)
       setReadout(
-        `x ${Math.round(x * pixels.width)}, y ${Math.round(y * pixels.height)} · RGB ${r}, ${g}, ${b} · HSV ${h}, ${s}, ${v}`,
+        readoutOf?.(
+          Math.round(x * pixels.width),
+          Math.round(y * pixels.height),
+          [r, g, b],
+          [pixels.width, pixels.height],
+        ) ?? defaultReadout(Math.round(x * pixels.width), Math.round(y * pixels.height), [r, g, b]),
       )
     }
     if (!drag) return
@@ -130,7 +144,10 @@ export function RegionCanvas({
     else onChange(drag.id, resize(drag.start, drag.handle, x, y), first)
   }
 
-  const onUp = () => setDrag(null)
+  const onUp = () => {
+    if (drag?.kind === 'draw') onGestureEnd?.(drag.id)
+    setDrag(null)
+  }
 
   const onKey = (e: KeyboardEvent, shape: Shape) => {
     if (!image) return
@@ -171,6 +188,7 @@ export function RegionCanvas({
         style={{ aspectRatio: `${image.width} / ${image.height}` }}
       >
         <img src={image.url} alt="" className="absolute inset-0 size-full" draggable={false} />
+        {mask ? <MaskLayer mask={mask} /> : null}
         <svg
           role="group"
           aria-label={text.ui.regionsLabel}
@@ -267,5 +285,29 @@ export function RegionCanvas({
           )}
       </p>
     </div>
+  )
+}
+
+/** The pixels a colour range takes in, hatched in the overlay colour over the image (docs/frontend.md §19.4). */
+function MaskLayer({ mask }: { mask: { cells: Uint8Array; width: number; height: number } }) {
+  const canvas = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const el = canvas.current
+    const ctx = el?.getContext('2d')
+    if (!el || !ctx) return
+    el.width = mask.width
+    el.height = mask.height
+    const [r, g, b] = tokenRgb('--ov-mask', el)
+    const out = ctx.createImageData(mask.width, mask.height)
+    for (let y = 0, i = 0; y < mask.height; y++)
+      for (let x = 0; x < mask.width; x++, i++) {
+        if (!mask.cells[i]) continue
+        // a diagonal hatch with a faint fill between the lines: the image stays readable under it
+        out.data.set([r, g, b, (x + y) % 6 < 3 ? 200 : 70], i * 4)
+      }
+    ctx.putImageData(out, 0, 0)
+  }, [mask])
+  return (
+    <canvas ref={canvas} aria-hidden className="pointer-events-none absolute inset-0 size-full" />
   )
 }

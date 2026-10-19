@@ -72,45 +72,26 @@ export function describe([x0, y0, x1, y1]: Rect, width: number, height: number):
   return `x ${px(x0, width)}, y ${px(y0, height)}, ${px(x1 - x0, width)} × ${px(y1 - y0, height)} px`
 }
 
-/** OpenCV's HSV (H 0–179, S and V 0–255), the scale the color tool uses. */
-export function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const d = max - min
-  let h = 0
-  if (d !== 0) {
-    if (max === r) h = ((g - b) / d) % 6
-    else if (max === g) h = (b - r) / d + 2
-    else h = (r - g) / d + 4
-  }
-  const deg = (h * 60 + 360) % 360
-  return [Math.round(deg / 2) % 180, max === 0 ? 0 : Math.round((d / max) * 255), max]
+const SHIFT = 12
+const half = 1 << (SHIFT - 1)
+const rint = (x: number) => {
+  const f = Math.floor(x)
+  const d = x - f
+  return d < 0.5 ? f : d > 0.5 ? f + 1 : f % 2 === 0 ? f : f + 1 // to nearest, ties to even: cv::saturate_cast
 }
+const sdiv = [0, ...Array.from({ length: 255 }, (_, i) => rint((255 << SHIFT) / (i + 1)))]
+const hdiv = [0, ...Array.from({ length: 255 }, (_, i) => rint((180 << SHIFT) / (6 * (i + 1))))]
 
 /**
- * A hue range for the color tool from sampled pixels: the hues of the saturated ones, around their circular
- * middle, wide enough for 90 % of them (at least ±8). Gray pixels are ignored; null if there are too few.
+ * OpenCV's HSV (H 0–179, S and V 0–255), the scale the color tool uses, in the same integer arithmetic as
+ * `cv2.cvtColor` for 8-bit images, so a mask drawn here is the mask the tool computes (scripts/make_hsv_fixture.py).
  */
-export function suggestHue(
-  pixels: [number, number, number][],
-): { hue: [number, number]; s_min: number; v_min: number } | null {
-  const hsv = pixels.map(([r, g, b]) => rgbToHsv(r, g, b)).filter(([, s, v]) => s >= 60 && v >= 40)
-  if (hsv.length < Math.max(10, pixels.length * 0.1)) return null
-  const angles = hsv.map(([h]) => (h / 180) * 2 * Math.PI)
-  const mean = Math.atan2(
-    angles.reduce((a, t) => a + Math.sin(t), 0),
-    angles.reduce((a, t) => a + Math.cos(t), 0),
-  )
-  const centre = Math.round(((((mean / (2 * Math.PI)) * 180) % 180) + 180) % 180)
-  const dist = hsv
-    .map(([h]) => Math.min(Math.abs(h - centre), 180 - Math.abs(h - centre)))
-    .sort((a, b) => a - b)
-  const half = Math.max(8, dist[Math.floor(dist.length * 0.9)] ?? 8)
-  const sorted = (i: number) => hsv.map((p) => p[i]!).sort((a, b) => a - b)
-  const pct = (list: number[], q: number) => list[Math.floor(list.length * q)] ?? 0
-  return {
-    hue: [(centre - half + 180) % 180, (centre + half) % 180],
-    s_min: Math.max(0, Math.round(pct(sorted(1), 0.05) * 0.8)),
-    v_min: Math.max(0, Math.round(pct(sorted(2), 0.05) * 0.8)),
-  }
+export function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+  const v = Math.max(r, g, b)
+  const diff = v - Math.min(r, g, b)
+  if (diff === 0) return [0, 0, v]
+  const s = (diff * sdiv[v]! + half) >> SHIFT
+  let h = v === r ? g - b : v === g ? b - r + 2 * diff : r - g + 4 * diff
+  h = (h * hdiv[diff]! + half) >> SHIFT
+  return [h < 0 ? h + 180 : h, s, v]
 }

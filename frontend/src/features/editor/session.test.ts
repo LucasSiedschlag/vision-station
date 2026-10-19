@@ -46,6 +46,27 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 describe('the editor session', () => {
+  it('keeps the metrics of the newest frame for the camera controls, with no draft and no result', () => {
+    const { session, socket } = start()
+    socket.open()
+    socket.say({ type: 'ready', fps: 4, paused_by_session: true })
+    expect(session.state.metrics).toBeNull()
+    socket.say({
+      type: 'metrics',
+      frame_id: 3,
+      sharpness: 412.5,
+      histogram: new Array(256).fill(1),
+      clipped_low: 0.1,
+      clipped_high: 2.4,
+    })
+    expect(session.state.metrics).toMatchObject({
+      frame_id: 3,
+      sharpness: 412.5,
+      clipped_high: 2.4,
+    })
+    expect(session.state.last).toBeNull() // they do not wait for a measurement of the draft
+  })
+
   it('says who it is first, and sends the files with the draft once it is told it is ready', () => {
     const { session, socket } = start()
     session.setDraft(draft(), 0)

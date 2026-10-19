@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, FlaskConical, Redo2, RefreshCw, Save, Undo2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
@@ -38,8 +38,18 @@ import {
   type Draft,
   type JobJson,
 } from './draft'
-import { anchorToFrame, frameToAnchor, type Rect } from './geometry'
-import { base64ToBlob, fetchBlob, imageFromBlob, type EditorImage } from './image'
+import { anchorToFrame, frameToAnchor, fromCorners, type Rect } from './geometry'
+import {
+  base64ToBlob,
+  cropPng,
+  fetchBlob,
+  imageFromBlob,
+  pixelsOf,
+  type EditorImage,
+} from './image'
+import { ImageAidsProvider, type ImageAids } from './image-aids'
+import { maskGrid, type HsvRange } from '@/components/vision/hsv-model'
+import { describeHsv } from '@/components/vision/hsv-model'
 import { RegionCanvas, type Shape } from './RegionCanvas'
 import { hiddenChanged } from './SchemaForm'
 import {
@@ -225,6 +235,48 @@ function Editor({
   }
   const [image, setImage] = useState<EditorImage | null>(null)
   const [imageError, setImageError] = useState('')
+  const [decoded, setDecoded] = useState<{ url: string; data: ImageData | null } | null>(null)
+  const pixels = decoded && image && decoded.url === image.url ? decoded.data : null
+  useEffect(() => {
+    let alive = true
+    if (image) void pixelsOf(image).then((data) => alive && setDecoded({ url: image.url, data }))
+    return () => {
+      alive = false
+    }
+  }, [image])
+  // colour aids (docs/frontend.md §19.4): a drag on the image that samples colours, and a mask drawn over it
+  const [sampling, setSampling] = useState<'include' | 'exclude' | null>(null)
+  const pending = useRef<((png: string | null) => void) | null>(null)
+  const [sampleRect, setSampleRect] = useState<Rect | null>(null)
+  const latestSample = useRef<Rect | null>(null)
+  const finishSample = useCallback((png: string | null) => {
+    const done = pending.current
+    pending.current = null
+    latestSample.current = null
+    setSampling(null)
+    setSampleRect(null)
+    setDrawing(null)
+    done?.(png)
+  }, [])
+  const startSample = useCallback(
+    (mode: 'include' | 'exclude') =>
+      new Promise<string | null>((resolve) => {
+        pending.current?.(null)
+        pending.current = resolve
+        latestSample.current = null
+        setSampleRect(null)
+        setSampling(mode)
+        setDrawing('sample')
+      }),
+    [],
+  )
+  // leaving the drag mode any other way (another step, another tool) ends it: the wait is dropped at the next one
+  const activeSampling = drawing === 'sample' ? sampling : null
+  const [maskRange, setMaskRange] = useState<HsvRange | null>(null)
+  const mask = useMemo(
+    () => (pixels && maskRange ? maskGrid(pixels, maskRange) : null),
+    [pixels, maskRange],
+  )
   const paused = useLive((s) => s.status?.state === 'Paused')
 
   const hasReference = draftFiles(draft).includes('reference/reference.png')
@@ -391,6 +443,8 @@ function Editor({
           editable: editRegions,
         })
       }
+    if (sampleRect)
+      out.push({ id: 'sample', label: t.colour.sampleLabel, rect: sampleRect, kind: 'presence' })
     if (crop)
       out.push({ id: 'crop', label: t.cropLabel, rect: crop, kind: 'presence', editable: true })
     if (test && (step === 'tools' || step === 'validate' || step === 'save'))
@@ -407,7 +461,7 @@ function Editor({
           kind: r.passed ? 'pass' : 'fail',
         })
     return out
-  }, [draft, step, anchor, locator, geometry.rois, crop, test])
+  }, [draft, step, anchor, locator, geometry.rois, crop, test, sampleRect])
   const hiddenAnchored =
     Object.values((geometry.rois ?? {}) as Record<string, { relative_to: string }>).some(
       (r) => r.relative_to === 'anchor',
@@ -416,6 +470,11 @@ function Editor({
   const onShapeChange = (shapeId: string, rect: Rect, first: boolean) => {
     if (shapeId === 'crop') {
       setCrop(rect)
+      return
+    }
+    if (shapeId === 'sample') {
+      latestSample.current = rect
+      setSampleRect(rect)
       return
     }
     const edit = useDraft.getState().edit
@@ -430,6 +489,33 @@ function Editor({
       }
     }, first)
   }
+  /** The end of a drag that sampled colours: the dragged part (at least a few pixels wide) as the PNG the picker asked for. */
+  const onGestureEnd = (id: string) => {
+    if (id !== 'sample') return
+    const rect = latestSample.current
+    if (!rect || !image) return finishSample(null)
+    const [x0, y0, x1, y1] = rect
+    const grow = (a: number, b: number, size: number) => {
+      const need = 7 / size
+      return b - a >= need
+        ? [a, b]
+        : [Math.max(0, (a + b) / 2 - need / 2), Math.min(1, (a + b) / 2 + need / 2)]
+    }
+    const [ax, bx] = grow(x0, x1, image.width)
+    const [ay, by] = grow(y0, y1, image.height)
+    cropPng(image, fromCorners(ax!, ay!, bx!, by!)).then(finishSample, () => finishSample(null))
+  }
+  const aids: ImageAids = useMemo(
+    () => ({
+      pixels,
+      region: null,
+      sampling: activeSampling,
+      sample: startSample,
+      cancelSample: () => finishSample(null),
+      showMask: setMaskRange,
+    }),
+    [pixels, activeSampling, startSample, finishSample],
+  )
   const onShapeDelete = (shapeId: string) => {
     if (shapeId.startsWith('roi:'))
       useDraft.getState().edit((d) => delete d.job.geometry.rois[shapeId.slice(4)])
@@ -515,6 +601,7 @@ function Editor({
     batch,
     shownSample,
     showSample,
+    metrics: live.metrics,
   }
   const info = stepStates(draft, problems, visited, validation)
   const steps = STEPS.map((s) => ({
@@ -528,278 +615,294 @@ function Editor({
   const next = STEPS[STEPS.indexOf(step) + 1]
 
   return (
-    <main className="flex flex-col gap-4 p-4">
-      <header className="flex flex-wrap items-center gap-3">
-        <Link
-          to={draft.base ? `/jobs/${draft.base.id}` : '/jobs'}
-          className="inline-flex items-center gap-1 text-sm text-accent-text hover:underline"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {text.jobs.back}
-        </Link>
-        <h1 className="text-lg font-semibold">{draft.job.job?.name}</h1>
-        <Badge tone="neutral">{draft.base ? t.draftOf(draft.base.version) : t.newJob}</Badge>
-        {dirty ? <Badge tone="warn">{t.unsaved}</Badge> : null}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
-            <span id="trigger-bar" className="text-sm text-fg-muted">
-              {t.triggerBar}
-            </span>
-            <Select
-              aria-labelledby="trigger-bar"
-              value={draft.job.trigger?.mode ?? 'image_presence'}
-              onValueChange={setTriggerMode}
-              options={Object.entries(t.triggerModes).map(([value, [label]]) => ({
-                value,
-                label,
-              }))}
-            />
-          </div>
-          <LevelSwitch family="editor" hidden={hidden} />
-          <Button variant="ghost" aria-label={t.undo} disabled={!canUndo} onClick={undo}>
-            <Undo2 aria-hidden className="size-4" />
-          </Button>
-          <Button variant="ghost" aria-label={t.redo} disabled={!canRedo} onClick={redo}>
-            <Redo2 aria-hidden className="size-4" />
-          </Button>
-          <Button variant="ghost" onClick={() => setDiscardOpen(true)}>
-            {t.discard}
-          </Button>
-          <Button loading={testing} onClick={() => void runTest()}>
-            <FlaskConical aria-hidden className="size-4" />
-            {t.test}
-          </Button>
-          <Button variant="primary" onClick={() => setSaveOpen(true)}>
-            <Save aria-hidden className="size-4" />
-            {t.save}
-          </Button>
-        </div>
-      </header>
-
-      {recovered ? (
-        <div
-          role="status"
-          className="flex flex-wrap items-center gap-3 rounded-control border border-warn-text/40 bg-warn-surface px-3 py-2 text-sm text-warn-text"
-        >
-          {t.recovered}
-          <Button variant="ghost" onClick={() => (onForget(), setDiscardOpen(true))}>
-            {t.discardRecovered}
-          </Button>
-        </div>
-      ) : null}
-      {paused ? (
-        <div
-          role="status"
-          className="flex flex-wrap items-center gap-3 rounded-control border border-busy-text/40 bg-busy-surface px-3 py-2 text-sm text-busy-text"
-        >
-          {live.pausedBySession ? t.stationPausedBySession : t.stationPaused}
-          {live.pausedBySession ? null : (
-            // a pause of the session ends with it; this one (Aplicar, Auto uma vez) is ended here
-            <Button
-              variant="ghost"
-              onClick={() =>
-                void editorApi.resumeStation().catch((e: unknown) => toast.error(describeError(e)))
-              }
-            >
-              {t.resume}
-            </Button>
-          )}
-        </div>
-      ) : null}
-
-      <div className="grid-editor grid gap-4">
-        <nav aria-label={t.stepsLabel}>
-          <Stepper
-            steps={steps}
-            onSelect={(s) => (setStep(s as StepId), setDrawing(null), setCrop(null))}
-          />
-        </nav>
-
-        <section aria-label={t.imageLabel} className="flex min-w-0 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <SegmentedControl
-              label={t.imageSource}
-              value={useReference ? 'reference' : 'live'}
-              onValueChange={(v) => {
-                setShownSample(null)
-                setSource(v as 'reference' | 'live')
-              }}
-              options={[
-                { value: 'reference', label: t.sourceReference, disabled: !hasReference },
-                { value: 'live', label: t.sourceLive },
-              ]}
-            />
-            <Button variant="ghost" onClick={() => setReload((n) => n + 1)}>
-              <RefreshCw aria-hidden className="size-4" />
-              {t.refreshImage}
-            </Button>
-            {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
-            {shownSample ? (
-              <div role="status" className="flex items-center gap-2">
-                <Badge tone="neutral">
-                  {t.sampleShown(shownSample.replace('tests/images/', ''))}
-                </Badge>
-                <Button variant="ghost" onClick={() => setShownSample(null)}>
-                  {t.sampleBack}
-                </Button>
-              </div>
-            ) : null}
-          </div>
-          <div role="status" className="flex flex-wrap items-center gap-2">
-            {live.status === 'live' ? (
-              <Badge tone={sessionFeeds ? 'ok' : 'neutral'}>
-                {t.liveOn(formatNumber(live.fps, 1))}
-              </Badge>
-            ) : (
-              <Badge tone={live.status === 'connecting' ? 'busy' : 'warn'}>
-                {t.liveState[live.status]}
-              </Badge>
-            )}
-            {live.camera === false ? (
-              <span className="text-sm text-warn-text">{t.liveCameraLost}</span>
-            ) : null}
-          </div>
-          {live.draftError ? (
-            <p role="alert" className="text-sm text-fail-text">
-              {t.liveDraftRefused(live.draftError.message)}
-            </p>
-          ) : null}
-          {hiddenAnchored && step !== 'image' ? (
-            <p className="text-sm text-warn-text">{t.noAnchor}</p>
-          ) : null}
-          <RegionCanvas
-            image={image}
-            shapes={shapes}
-            selected={selected}
-            onSelect={setSelected}
-            onChange={onShapeChange}
-            onDelete={onShapeDelete}
-            drawing={drawing}
-            emptyText={imageError || t.loadingImage}
-          />
-          {test ? (
-            <Card>
-              <CardContent className="flex flex-col gap-2">
-                <p role="status" className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    tone={
-                      test.result.outcome === 'PASS'
-                        ? 'ok'
-                        : test.result.outcome === 'FAIL'
-                          ? 'fail'
-                          : 'warn'
-                    }
-                  >
-                    {t.outcome[test.result.outcome]}
-                  </Badge>
-                  <span className="text-sm">{test.result.reason}</span>
-                  <span className="ml-auto font-mono text-xs text-fg-muted tabular-nums">
-                    {test.result.duration_ms} ms
-                  </span>
-                </p>
-                {Object.keys(test.result.scores).length ? (
-                  <p className="font-mono text-xs tabular-nums">
-                    {Object.entries(test.result.scores)
-                      .map(([k, v]) => `${k}: ${formatNumber(v, 2)}`)
-                      .join(' · ')}
-                  </p>
-                ) : null}
-                <p className="text-xs text-fg-muted">
-                  {sessionFeeds && live.last ? t.liveNote : t.testNote}
-                </p>
-              </CardContent>
-            </Card>
-          ) : null}
-        </section>
-
-        <section aria-labelledby="inspector-title" className="flex min-w-0 flex-col gap-4">
-          <h2 id="inspector-title" className="text-base font-semibold">
-            {t.steps[step]}
-          </h2>
-          {blocked ? (
-            <p role="status" className="text-sm text-fg-muted">
-              {t.sequence.blockedBanner} {info[step].reason}
-            </p>
-          ) : null}
-          <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4 border-0 p-0">
-            {step === 'image' ? (
-              <>
-                <CameraStep {...props} />
-                <h3 className="text-sm font-semibold">{t.triggerTitle}</h3>
-                <TriggerStep {...props} />
-              </>
-            ) : null}
-            {step === 'samples' ? <ReferenceStep {...props} /> : null}
-            {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
-            {step === 'tools' ? (
-              <>
-                <RegionsStep {...props} part="regions" />
-                <ToolsStep {...props} />
-                <PatternCrop {...props} />
-              </>
-            ) : null}
-            {step === 'quality' ? <QualityStep {...props} /> : null}
-            {step === 'outputs' ? <OutputsStep {...props} /> : null}
-            {step === 'validate' ? <ValidateStep {...props} /> : null}
-            {step === 'save' ? <SaveStep {...props} /> : null}
-          </fieldset>
-          {next ? (
-            <Button
-              variant="secondary"
-              className="self-start"
-              onClick={() => (setStep(next), setDrawing(null), setCrop(null))}
-            >
-              {t.sequence.next}: {t.steps[next]}
-              <ArrowRight aria-hidden className="size-4" />
-            </Button>
-          ) : null}
-        </section>
-      </div>
-
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent
-          title={
-            draft.base ? t.saveTitle((draft.latest ?? draft.base.version) + 1) : t.saveNewTitle
-          }
-          description={t.saveBody}
-        >
-          <ChangeList draft={draft} />
-          <Field label={t.notes} hint={t.notesHint}>
-            {(p) => (
-              <Textarea
-                {...p}
-                rows={3}
-                value={draft.notes}
-                onChange={(e) => useDraft.getState().edit((d) => (d.notes = e.target.value), false)}
+    <ImageAidsProvider value={aids}>
+      <main className="flex flex-col gap-4 p-4">
+        <header className="flex flex-wrap items-center gap-3">
+          <Link
+            to={draft.base ? `/jobs/${draft.base.id}` : '/jobs'}
+            className="inline-flex items-center gap-1 text-sm text-accent-text hover:underline"
+          >
+            <ArrowLeft aria-hidden className="size-4" />
+            {text.jobs.back}
+          </Link>
+          <h1 className="text-lg font-semibold">{draft.job.job?.name}</h1>
+          <Badge tone="neutral">{draft.base ? t.draftOf(draft.base.version) : t.newJob}</Badge>
+          {dirty ? <Badge tone="warn">{t.unsaved}</Badge> : null}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span id="trigger-bar" className="text-sm text-fg-muted">
+                {t.triggerBar}
+              </span>
+              <Select
+                aria-labelledby="trigger-bar"
+                value={draft.job.trigger?.mode ?? 'image_presence'}
+                onValueChange={setTriggerMode}
+                options={Object.entries(t.triggerModes).map(([value, [label]]) => ({
+                  value,
+                  label,
+                }))}
               />
-            )}
-          </Field>
-          <DialogFooter>
-            <Button onClick={() => setSaveOpen(false)}>{text.ui.cancel}</Button>
-            <Button variant="primary" loading={saving} onClick={() => void save()}>
+            </div>
+            <LevelSwitch family="editor" hidden={hidden} />
+            <Button variant="ghost" aria-label={t.undo} disabled={!canUndo} onClick={undo}>
+              <Undo2 aria-hidden className="size-4" />
+            </Button>
+            <Button variant="ghost" aria-label={t.redo} disabled={!canRedo} onClick={redo}>
+              <Redo2 aria-hidden className="size-4" />
+            </Button>
+            <Button variant="ghost" onClick={() => setDiscardOpen(true)}>
+              {t.discard}
+            </Button>
+            <Button loading={testing} onClick={() => void runTest()}>
+              <FlaskConical aria-hidden className="size-4" />
+              {t.test}
+            </Button>
+            <Button variant="primary" onClick={() => setSaveOpen(true)}>
+              <Save aria-hidden className="size-4" />
               {t.save}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <ConfirmDialog
-        open={discardOpen}
-        onOpenChange={setDiscardOpen}
-        title={t.discardTitle}
-        description={t.discardBody}
-        confirmLabel={t.discard}
-        tone="danger"
-        onConfirm={discard}
-      />
-      <ConfirmDialog
-        open={blocker.state === 'blocked'}
-        onOpenChange={(o) => !o && blocker.reset?.()}
-        title={t.leaveTitle}
-        description={t.leaveBody}
-        confirmLabel={t.leave}
-        onConfirm={() => blocker.proceed?.()}
-      />
-    </main>
+          </div>
+        </header>
+
+        {recovered ? (
+          <div
+            role="status"
+            className="flex flex-wrap items-center gap-3 rounded-control border border-warn-text/40 bg-warn-surface px-3 py-2 text-sm text-warn-text"
+          >
+            {t.recovered}
+            <Button variant="ghost" onClick={() => (onForget(), setDiscardOpen(true))}>
+              {t.discardRecovered}
+            </Button>
+          </div>
+        ) : null}
+        {paused ? (
+          <div
+            role="status"
+            className="flex flex-wrap items-center gap-3 rounded-control border border-busy-text/40 bg-busy-surface px-3 py-2 text-sm text-busy-text"
+          >
+            {live.pausedBySession ? t.stationPausedBySession : t.stationPaused}
+            {live.pausedBySession ? null : (
+              // a pause of the session ends with it; this one (Aplicar, Auto uma vez) is ended here
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  void editorApi
+                    .resumeStation()
+                    .catch((e: unknown) => toast.error(describeError(e)))
+                }
+              >
+                {t.resume}
+              </Button>
+            )}
+          </div>
+        ) : null}
+
+        <div className="grid-editor grid gap-4">
+          <nav aria-label={t.stepsLabel}>
+            <Stepper
+              steps={steps}
+              onSelect={(s) => (setStep(s as StepId), setDrawing(null), setCrop(null))}
+            />
+          </nav>
+
+          <section
+            aria-label={t.imageLabel}
+            // the image stays in view while the inspector scrolls: sampling a colour needs both at once
+            className="sticky top-4 flex min-w-0 flex-col gap-3 self-start"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <SegmentedControl
+                label={t.imageSource}
+                value={useReference ? 'reference' : 'live'}
+                onValueChange={(v) => {
+                  setShownSample(null)
+                  setSource(v as 'reference' | 'live')
+                }}
+                options={[
+                  { value: 'reference', label: t.sourceReference, disabled: !hasReference },
+                  { value: 'live', label: t.sourceLive },
+                ]}
+              />
+              <Button variant="ghost" onClick={() => setReload((n) => n + 1)}>
+                <RefreshCw aria-hidden className="size-4" />
+                {t.refreshImage}
+              </Button>
+              {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
+              {shownSample ? (
+                <div role="status" className="flex items-center gap-2">
+                  <Badge tone="neutral">
+                    {t.sampleShown(shownSample.replace('tests/images/', ''))}
+                  </Badge>
+                  <Button variant="ghost" onClick={() => setShownSample(null)}>
+                    {t.sampleBack}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+            <div role="status" className="flex flex-wrap items-center gap-2">
+              {live.status === 'live' ? (
+                <Badge tone={sessionFeeds ? 'ok' : 'neutral'}>
+                  {t.liveOn(formatNumber(live.fps, 1))}
+                </Badge>
+              ) : (
+                <Badge tone={live.status === 'connecting' ? 'busy' : 'warn'}>
+                  {t.liveState[live.status]}
+                </Badge>
+              )}
+              {live.camera === false ? (
+                <span className="text-sm text-warn-text">{t.liveCameraLost}</span>
+              ) : null}
+            </div>
+            {live.draftError ? (
+              <p role="alert" className="text-sm text-fail-text">
+                {t.liveDraftRefused(live.draftError.message)}
+              </p>
+            ) : null}
+            {hiddenAnchored && step !== 'image' ? (
+              <p className="text-sm text-warn-text">{t.noAnchor}</p>
+            ) : null}
+            <RegionCanvas
+              image={image}
+              shapes={shapes}
+              selected={selected}
+              onSelect={setSelected}
+              onChange={onShapeChange}
+              onDelete={onShapeDelete}
+              drawing={drawing}
+              emptyText={imageError || t.loadingImage}
+              pixels={pixels}
+              mask={mask}
+              readout={(x, y, rgb) =>
+                `x ${x}, y ${y} · RGB ${rgb.join(', ')} · ${describeHsv(rgb, level >= 3)}`
+              }
+              onGestureEnd={onGestureEnd}
+            />
+            {test ? (
+              <Card>
+                <CardContent className="flex flex-col gap-2">
+                  <p role="status" className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      tone={
+                        test.result.outcome === 'PASS'
+                          ? 'ok'
+                          : test.result.outcome === 'FAIL'
+                            ? 'fail'
+                            : 'warn'
+                      }
+                    >
+                      {t.outcome[test.result.outcome]}
+                    </Badge>
+                    <span className="text-sm">{test.result.reason}</span>
+                    <span className="ml-auto font-mono text-xs text-fg-muted tabular-nums">
+                      {test.result.duration_ms} ms
+                    </span>
+                  </p>
+                  {Object.keys(test.result.scores).length ? (
+                    <p className="font-mono text-xs tabular-nums">
+                      {Object.entries(test.result.scores)
+                        .map(([k, v]) => `${k}: ${formatNumber(v, 2)}`)
+                        .join(' · ')}
+                    </p>
+                  ) : null}
+                  <p className="text-xs text-fg-muted">
+                    {sessionFeeds && live.last ? t.liveNote : t.testNote}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
+          </section>
+
+          <section aria-labelledby="inspector-title" className="flex min-w-0 flex-col gap-4">
+            <h2 id="inspector-title" className="text-base font-semibold">
+              {t.steps[step]}
+            </h2>
+            {blocked ? (
+              <p role="status" className="text-sm text-fg-muted">
+                {t.sequence.blockedBanner} {info[step].reason}
+              </p>
+            ) : null}
+            <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4 border-0 p-0">
+              {step === 'image' ? (
+                <>
+                  <CameraStep {...props} />
+                  <h3 className="text-sm font-semibold">{t.triggerTitle}</h3>
+                  <TriggerStep {...props} />
+                </>
+              ) : null}
+              {step === 'samples' ? <ReferenceStep {...props} /> : null}
+              {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
+              {step === 'tools' ? (
+                <>
+                  <RegionsStep {...props} part="regions" />
+                  <ToolsStep {...props} />
+                  <PatternCrop {...props} />
+                </>
+              ) : null}
+              {step === 'quality' ? <QualityStep {...props} /> : null}
+              {step === 'outputs' ? <OutputsStep {...props} /> : null}
+              {step === 'validate' ? <ValidateStep {...props} /> : null}
+              {step === 'save' ? <SaveStep {...props} /> : null}
+            </fieldset>
+            {next ? (
+              <Button
+                variant="secondary"
+                className="self-start"
+                onClick={() => (setStep(next), setDrawing(null), setCrop(null))}
+              >
+                {t.sequence.next}: {t.steps[next]}
+                <ArrowRight aria-hidden className="size-4" />
+              </Button>
+            ) : null}
+          </section>
+        </div>
+
+        <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+          <DialogContent
+            title={
+              draft.base ? t.saveTitle((draft.latest ?? draft.base.version) + 1) : t.saveNewTitle
+            }
+            description={t.saveBody}
+          >
+            <ChangeList draft={draft} />
+            <Field label={t.notes} hint={t.notesHint}>
+              {(p) => (
+                <Textarea
+                  {...p}
+                  rows={3}
+                  value={draft.notes}
+                  onChange={(e) =>
+                    useDraft.getState().edit((d) => (d.notes = e.target.value), false)
+                  }
+                />
+              )}
+            </Field>
+            <DialogFooter>
+              <Button onClick={() => setSaveOpen(false)}>{text.ui.cancel}</Button>
+              <Button variant="primary" loading={saving} onClick={() => void save()}>
+                {t.save}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <ConfirmDialog
+          open={discardOpen}
+          onOpenChange={setDiscardOpen}
+          title={t.discardTitle}
+          description={t.discardBody}
+          confirmLabel={t.discard}
+          tone="danger"
+          onConfirm={discard}
+        />
+        <ConfirmDialog
+          open={blocker.state === 'blocked'}
+          onOpenChange={(o) => !o && blocker.reset?.()}
+          title={t.leaveTitle}
+          description={t.leaveBody}
+          confirmLabel={t.leave}
+          onConfirm={() => blocker.proceed?.()}
+        />
+      </main>
+    </ImageAidsProvider>
   )
 }
 

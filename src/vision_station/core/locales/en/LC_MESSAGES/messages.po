@@ -566,6 +566,9 @@ msgstr "Anomaly score above the limit"
 msgid "Posição do objeto (x0, y0, x1, y1)"
 msgstr "Object position (x0, y0, x1, y1)"
 
+msgid "Poucos pixels para propor uma cor: arraste sobre uma área maior"
+msgstr "Too few pixels to propose a colour: drag over a larger area"
+
 msgid "Precisa haver pelo menos uma de cada"
 msgstr "There must be at least one of each"
 

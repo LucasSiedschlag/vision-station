@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { formatNumber, formatPercent } from '@/lib/number'
 import { text as texts } from '@/texts'
 import type { Level } from '@/app/levels'
-import { widgets } from './widgets'
+import { ownedBy, widgets } from './widgets'
 
 /**
  * A form drawn from a tool's or locator's JSON Schema (docs/frontend.md §7.3), so a new tool type needs no
@@ -167,6 +167,9 @@ function Property({
   onChange,
   errors,
   path,
+  values,
+  patch,
+  level,
 }: {
   name: string
   schema: Schema
@@ -177,6 +180,9 @@ function Property({
   onChange: (v: any, remove?: boolean) => void
   errors: Record<string, string>
   path: string
+  values: Values
+  patch: (changes: Values) => void
+  level: Level
 }) {
   const { inner: s, nullable } = unwrapNullable(schema, root)
   const label = s.title ?? name
@@ -195,6 +201,9 @@ function Property({
         label={label}
         hint={hint}
         error={error}
+        values={values}
+        patch={patch}
+        level={level}
       />
     )
   const optional = nullable || (!required && s.type !== 'boolean')
@@ -230,6 +239,7 @@ function Property({
             hint={hint}
             error={error}
             unit={unit}
+            level={level}
           />
         ) : null}
       </fieldset>
@@ -249,6 +259,7 @@ function Property({
       error={error}
       unit={unit}
       placeholderDefault={!required ? s.default : undefined}
+      level={level}
     />
   )
 }
@@ -266,10 +277,12 @@ function Control({
   error,
   unit,
   placeholderDefault,
+  level,
 }: {
   name: string
   s: Schema
   root: Schema
+  level: Level
   value: any
   onChange: (v: any, remove?: boolean) => void
   errors: Record<string, string>
@@ -411,6 +424,7 @@ function Control({
           onChange={(v) => onChange(v)}
           errors={errors}
           path={path}
+          level={level}
           nested
         />
       </fieldset>
@@ -442,10 +456,13 @@ function changedAmong(schema: Schema, value: Values, names: string[]): string[] 
 /** The parameters a level hides that differ from their defaults. */
 export function hiddenChanged(schema: Schema, value: Values, level: Level): string[] {
   const properties = (schema.properties ?? {}) as Record<string, Schema>
+  const owned = ownedBy(properties) // a control that draws them shows them at every level
   return changedAmong(
     schema,
     value,
-    Object.keys(properties).filter((name) => levelOf(properties[name]!) > level),
+    Object.keys(properties).filter(
+      (name) => levelOf(properties[name]!) > level && !owned.includes(name),
+    ),
   )
 }
 
@@ -499,6 +516,15 @@ export function SchemaForm({
       required={required.includes(name)}
       errors={errors}
       path={path ? `${path}.${name}` : name}
+      values={value}
+      level={level}
+      patch={(changes) => {
+        const next = { ...value }
+        for (const [key, v] of Object.entries(changes))
+          if (v === undefined) delete next[key]
+          else next[key] = v
+        onChange(next)
+      }}
       onChange={(v, remove) => {
         const next = { ...value }
         if (remove || v === undefined) delete next[name]
@@ -507,9 +533,17 @@ export function SchemaForm({
       }}
     />
   )
-  if (nested) return <div className="flex flex-col gap-3">{Object.keys(properties).map(field)}</div>
+  const owned = ownedBy(properties)
+  if (nested)
+    return (
+      <div className="flex flex-col gap-3">
+        {Object.keys(properties)
+          .filter((n) => !owned.includes(n))
+          .map(field)}
+      </div>
+    )
 
-  const names = Object.keys(properties).filter((n) => !hide.includes(n))
+  const names = Object.keys(properties).filter((n) => !hide.includes(n) && !owned.includes(n))
   const at = (wanted: Level, group?: string) =>
     names.filter(
       (n) =>

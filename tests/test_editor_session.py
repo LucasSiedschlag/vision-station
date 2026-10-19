@@ -146,7 +146,7 @@ def test_the_draft_is_run_on_the_newest_frame_and_the_frame_follows_the_result(l
     send_draft(ws, draft(), add_files=draft()["add_files"])
     assert next_json(ws, "draft_ok")
     result = next_json(ws, "result")
-    assert result["frame_id"] == 1 and result["width"] > 0
+    assert result["frame_id"] >= 1 and result["width"] > 0  # frames before the draft only had their metrics
     assert [t["id"] for t in result["result"]["tools"]] == ["lote"]
     assert result["result"]["simulated"] is True and result["regions"] and "timings" in result
     jpeg = ws.receive_bytes()
@@ -210,3 +210,18 @@ def test_a_session_that_hears_nothing_for_a_while_ends_and_says_so(env, mnt, mon
         assert next_json(ws, "idle")
     env.rig.tick(6)
     assert env.rig.controller.state is not State.PAUSED
+
+
+def test_the_camera_controls_get_the_metrics_of_every_frame_even_before_any_draft(live):
+    """Step 1 has no tools yet, and a refused draft has no result: the focus meter and the histogram still move."""
+    env, ws, mnt, _ = live
+    first = next_json(ws, "metrics")  # no draft sent at all
+    assert first["sharpness"] > 0 and len(first["histogram"]) == 256
+    assert sum(first["histogram"]) == env.rig.acq.latest().image.shape[0] * env.rig.acq.latest().image.shape[1]
+    assert 0 <= first["clipped_low"] <= 100 and 0 <= first["clipped_high"] <= 100
+    bad = draft()
+    bad["job"]["tools"][0]["roi"] = "nowhere"
+    send_draft(ws, bad, add_files=bad["add_files"])
+    next_json(ws, "draft_error")
+    env.rig.tick(2)
+    assert next_json(ws, "metrics")["frame_id"] >= first["frame_id"]

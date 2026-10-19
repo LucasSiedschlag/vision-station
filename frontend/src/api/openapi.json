@@ -717,6 +717,102 @@
         "title": "CollectionOut",
         "type": "object"
       },
+      "ColourProposalOut": {
+        "description": "A color range for the color tool, from the pixels the person dragged over (FR-UI-13). OpenCV scales (hue 0..179).",
+        "properties": {
+          "hue": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hue"
+          },
+          "kept": {
+            "default": 0.0,
+            "title": "Kept",
+            "type": "number"
+          },
+          "leak": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leak"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "pixels": {
+            "default": 0,
+            "title": "Pixels",
+            "type": "integer"
+          },
+          "s_max": {
+            "default": 255,
+            "title": "S Max",
+            "type": "integer"
+          },
+          "s_min": {
+            "default": 0,
+            "title": "S Min",
+            "type": "integer"
+          },
+          "v_max": {
+            "default": 255,
+            "title": "V Max",
+            "type": "integer"
+          },
+          "v_min": {
+            "default": 0,
+            "title": "V Min",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ok",
+          "message",
+          "hue",
+          "s_min",
+          "s_max",
+          "v_min",
+          "v_max",
+          "pixels",
+          "kept",
+          "leak"
+        ],
+        "title": "ColourProposalOut",
+        "type": "object"
+      },
       "Counters": {
         "properties": {
           "ERROR": {
@@ -3352,6 +3448,31 @@
         "title": "StatusMessage",
         "type": "object"
       },
+      "SuggestColourBody": {
+        "properties": {
+          "exclude": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Exclude",
+            "type": "array"
+          },
+          "include": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Include",
+            "type": "array"
+          }
+        },
+        "required": ["include"],
+        "title": "SuggestColourBody",
+        "type": "object"
+      },
       "SuggestLimitsBody": {
         "properties": {
           "draft": {
@@ -4981,6 +5102,83 @@
           }
         },
         "summary": "Editor Batch"
+      }
+    },
+    "/api/editor/suggest/colour": {
+      "post": {
+        "description": "A color range from the pixels the person sampled on the image; the editor shows it as a proposal (FR-UI-13).",
+        "operationId": "suggest_colour",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestColourBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColourProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Colour"
       }
     },
     "/api/editor/suggest/limits": {

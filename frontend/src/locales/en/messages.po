@@ -64,6 +64,9 @@ msgstr "Region"
 msgid "Quando a tela do operador desenha as regiões das ferramentas sobre a imagem."
 msgstr "When the operator screen draws the tools' regions over the image."
 
+msgid "Incluir cor"
+msgstr "Include colour"
+
 msgid "Disparo"
 msgstr "Trigger"
 
@@ -208,17 +211,11 @@ msgstr "{outcome}: {reason}"
 msgid "Ao vivo ● {rate}/s"
 msgstr "Live ● {rate}/s"
 
-msgid "Propor a cor a partir da região"
-msgstr "Propose the colour from the region"
-
 msgid "Estava {o}"
 msgstr "It was {o}"
 
 msgid "imagem de referência"
 msgstr "reference image"
-
-msgid "Escolha uma região relativa à imagem para amostrar a cor."
-msgstr "Choose a region relative to the image to sample the colour."
 
 msgid "Resultado das {time}"
 msgstr "Result of {time}"
@@ -280,6 +277,9 @@ msgstr "Draw a crop around the part on the reference image and use it as the tem
 
 msgid "Acessos"
 msgstr "Access"
+
+msgid "Para preto, branco e cinzas, que não têm matiz: contam só a saturação e o brilho."
+msgstr "For black, white and grays, which have no hue: only saturation and brightness count."
 
 msgid "Ex.: http://localhost:8800, separadas por vírgula."
 msgstr "E.g. http://localhost:8800, separated by commas."
@@ -443,6 +443,9 @@ msgstr "off"
 msgid "imagem toda"
 msgstr "whole image"
 
+msgid "Gire o foco até a barra ficar verde"
+msgstr "Turn the focus until the bar turns green"
+
 msgid "Nenhum valor aceito por este parâmetro separa as amostras."
 msgstr "No value this parameter accepts separates the samples."
 
@@ -454,6 +457,9 @@ msgstr "orientation"
 
 msgid "Mude os filtros ou o período."
 msgstr "Change the filters or the period."
+
+msgid "Qualquer matiz"
+msgstr "Any hue"
 
 msgid "Amostras"
 msgstr "Samples"
@@ -509,6 +515,9 @@ msgstr "This profile cannot open this screen."
 msgid "ganho"
 msgstr "gain"
 
+msgid "sem imagem"
+msgstr "no image"
+
 msgid "Amostras novas: {good} Boas e {bad} Ruins"
 msgstr "New samples: {good} Good and {bad} Bad"
 
@@ -517,6 +526,9 @@ msgstr "{n, plural, one {# changed} other {# changed}}"
 
 msgid "Importando…"
 msgstr "Importing…"
+
+msgid "Matiz inicial"
+msgstr "Hue from"
 
 msgid "Nenhum (regiões fixas na imagem)"
 msgstr "None (regions fixed on the image)"
@@ -581,6 +593,9 @@ msgstr "Test camera"
 msgid "O programa vira cada imagem; as regiões e os resultados já usam a imagem virada. Mudar depois de capturar a referência e as amostras pede capturá-las de novo."
 msgstr "The program turns every picture; the regions and results already use the turned picture. Changing it after capturing the reference and the samples means capturing them again."
 
+msgid "Limpar amostras ({included} incluídas, {excluded} excluídas)"
+msgstr "Clear samples ({included} included, {excluded} excluded)"
+
 msgid "Preparando…"
 msgstr "Preparing…"
 
@@ -616,6 +631,9 @@ msgstr "draft from v{v}"
 
 msgid "Resultados"
 msgstr "Results"
+
+msgid "Saturação máxima"
+msgstr "Maximum saturation"
 
 msgid "Ocultar detalhes"
 msgstr "Hide details"
@@ -698,6 +716,9 @@ msgstr "disconnected"
 msgid "Conferir o rascunho"
 msgstr "Check the draft"
 
+msgid "Deixa {share} % do que você excluiu dentro da faixa."
+msgstr "Leaves {share} % of what you excluded inside the range."
+
 msgid "Muitas tentativas. Aguarde um pouco e tente de novo."
 msgstr "Too many attempts. Wait a little and try again."
 
@@ -727,6 +748,9 @@ msgstr "No regions. A tool can look at the whole image."
 
 msgid "à imagem"
 msgstr "to the image"
+
+msgid "Brilho"
+msgstr "Brightness"
 
 msgid "ERRO"
 msgstr "ERROR"
@@ -809,6 +833,9 @@ msgstr "Image"
 msgid "Modo de coleta"
 msgstr "Collection mode"
 
+msgid "Nitidez"
+msgstr "Sharpness"
+
 msgid "Apagar registros com mais de"
 msgstr "Delete records older than"
 
@@ -881,6 +908,9 @@ msgstr "{n, plural, one {# hidden setting was changed} other {# hidden settings 
 msgid "Sinal externo"
 msgstr "External signal"
 
+msgid "Matiz"
+msgstr "Hue"
+
 msgid "O operador não usa senha. Supervisor e Mantenedor entram com a senha do perfil."
 msgstr "The operator has no password. Supervisor and Maintainer log in with the profile's password."
 
@@ -926,6 +956,9 @@ msgstr "The image changed after the last validation; run Validate"
 msgid "O que incluir"
 msgstr "What to include"
 
+msgid "Histograma de brilho da imagem ao vivo"
+msgstr "Brightness histogram of the live image"
+
 msgid "a pior boa ({value}) está {distance} acima do limite, e reprova"
 msgstr "the worst good one ({value}) is {distance} above the limit, and fails"
 
@@ -958,6 +991,9 @@ msgstr "Width"
 
 msgid "padrão: {value}"
 msgstr "default: {value}"
+
+msgid "Excluir cor"
+msgstr "Exclude colour"
 
 msgid "Mesmo quando a estação já está pronta para a próxima peça."
 msgstr "Even when the station is already ready for the next part."
@@ -1022,6 +1058,9 @@ msgstr "Best approximation: {value} µs with {share} % of the pixels saturated; 
 msgid "Ações"
 msgstr "Actions"
 
+msgid "{share} % da imagem preta"
+msgstr "{share} % of the image black"
+
 msgid "Altura"
 msgstr "Height"
 
@@ -1034,6 +1073,9 @@ msgstr "Last change"
 msgid "Nenhum evento"
 msgstr "No events"
 
+msgid "Arraste sobre a cor na imagem"
+msgstr "Drag over the colour on the image"
+
 msgid "ao objeto (âncora)"
 msgstr "to the part (anchor)"
 
@@ -1045,9 +1087,6 @@ msgstr "Every sample was as expected"
 
 msgid "Decide o resultado"
 msgstr "Decides the result"
-
-msgid "Não há cor suficiente na região para propor uma faixa."
-msgstr "Not enough colour in the region to propose a range."
 
 msgid "ok"
 msgstr "ok"
@@ -1090,6 +1129,9 @@ msgstr "All events"
 
 msgid "Job {name} criado."
 msgstr "Job {name} created."
+
+msgid "Máscara na imagem"
+msgstr "Mask on the image"
 
 msgid "Capture a imagem de referência (passo Referência) para recortar um gabarito."
 msgstr "Capture the reference image (Reference step) to crop a template."
@@ -1135,6 +1177,9 @@ msgstr "none"
 
 msgid "Salvar como versão {v}"
 msgstr "Save as version {v}"
+
+msgid "Não foi possível propor uma faixa com essas amostras."
+msgstr "No range could be proposed from these samples."
 
 msgid "Restauração de backup"
 msgstr "Backup restored"
@@ -1211,6 +1256,9 @@ msgstr "min"
 msgid "Backup falhou"
 msgstr "Backup failed"
 
+msgid "No ponto mais nítido"
+msgstr "At the sharpest point"
+
 msgid "Desenhar a região de medição"
 msgstr "Draw the measuring region"
 
@@ -1228,6 +1276,9 @@ msgstr "Machine"
 
 msgid "As duas versões têm a mesma definição."
 msgstr "Both versions have the same definition."
+
+msgid "Arraste sobre o que deve ficar de fora"
+msgstr "Drag over what must stay out"
 
 msgid "Pasta das imagens"
 msgstr "Image folder"
@@ -1313,6 +1364,9 @@ msgstr "Continuous"
 msgid "Desfazer"
 msgstr "Undo"
 
+msgid "Mantém {share} % da cor amostrada."
+msgstr "Keeps {share} % of the sampled colour."
+
 msgid "Versão {v} salva."
 msgstr "Version {v} saved."
 
@@ -1340,6 +1394,9 @@ msgstr "{n, plural, =0 {No sessions ended.} one {# session ended.} other {# sess
 msgid "Todos"
 msgstr "All"
 
+msgid "Alarga ou estreita a faixa toda de uma vez, a partir da última que você ajustou."
+msgstr "Widens or narrows the whole range at once, from the last one you set by hand."
+
 msgid "0 inspeciona o mais rápido que o computador deixar. Uma imagem tirada com a cena em movimento nunca é inspecionada."
 msgstr "0 inspects as fast as the computer allows. A picture taken while the scene moves is never inspected."
 
@@ -1366,6 +1423,9 @@ msgstr "{limit}; current value {current}; {goodIn} of {goodN} good ones inside"
 
 msgid "Âncora"
 msgstr "Anchor"
+
+msgid "Saturação"
+msgstr "Saturation"
 
 msgid "Desenhar a posição do objeto"
 msgstr "Draw the position of the part"
@@ -1417,6 +1477,9 @@ msgstr "The model is trained away from the station (docs/models.md) and goes ins
 
 msgid "sinal de vida há {age} s"
 msgstr "heartbeat {age} s ago"
+
+msgid "Marque primeiro a cor com Incluir cor."
+msgstr "First mark the colour with Include colour."
 
 msgid "fora da faixa"
 msgstr "out of range"
@@ -1478,6 +1541,9 @@ msgstr "Unsaved changes are lost. The saved version stays as it was."
 msgid "O sistema disse {said}. Qual era o resultado certo?"
 msgstr "The system said {said}. What was the right result?"
 
+msgid "melhor: {peak}"
+msgstr "best: {peak}"
+
 msgid "Medição ao vivo encerrada"
 msgstr "Live measuring ended"
 
@@ -1531,6 +1597,9 @@ msgstr "Device index"
 
 msgid "A versão salva nunca muda. Para usar na estação, ative-a na tela Jobs (com verificação)."
 msgstr "A saved version never changes. To use it at the station, activate it on the Jobs screen (with verification)."
+
+msgid "{share} % da imagem saturada"
+msgstr "{share} % of the image saturated"
 
 msgid "Escolha o tipo"
 msgstr "Choose the type"
@@ -1604,6 +1673,9 @@ msgstr "Some changes take effect only after restarting the program:"
 msgid "Remover {id}"
 msgstr "Remove {id}"
 
+msgid "Matiz final"
+msgstr "Hue to"
+
 msgid "Algo deu errado ao montar esta tela."
 msgstr "Something went wrong while building this screen."
 
@@ -1673,6 +1745,9 @@ msgstr "Waiting for a part"
 msgid "A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair."
 msgstr "The station is paused while the editor measures live; it comes back by itself when you leave."
 
+msgid "Sem imagem ao vivo: a câmera não está entregando quadros."
+msgstr "No live image: the camera is not delivering frames."
+
 msgid "Fração da área de presença (0 a 1)."
 msgstr "Fraction of the presence area (0 to 1)."
 
@@ -1709,14 +1784,14 @@ msgstr "Automatic backup every"
 msgid "Filtros"
 msgstr "Filters"
 
+msgid "Reiniciar o melhor"
+msgstr "Reset the best"
+
 msgid "Os textos do operador mudaram"
 msgstr "The operator texts changed"
 
 msgid "Conectando…"
 msgstr "Connecting…"
-
-msgid "Faixa de matiz proposta: {a} a {b}. Teste e ajuste."
-msgstr "Proposed hue range: {a} to {b}. Test and adjust."
 
 msgid "Região nova: {name}"
 msgstr "New region: {name}"
@@ -1826,6 +1901,9 @@ msgstr "New job {name}: {count}"
 msgid "Não definida"
 msgstr "Not set"
 
+msgid "Saturação mínima"
+msgstr "Minimum saturation"
+
 msgid "Região de {id}: passou"
 msgstr "Region of {id}: passed"
 
@@ -1904,6 +1982,9 @@ msgstr "Errors"
 msgid "As saídas para a máquina vêm com a interface da máquina (fase B)."
 msgstr "The outputs to the machine come with the machine interface (phase B)."
 
+msgid "Exposição (escala logarítmica)"
+msgstr "Exposure (logarithmic scale)"
+
 msgid "Inícios de turno"
 msgstr "Shift starts"
 
@@ -1963,6 +2044,9 @@ msgstr "{goodIn} of {goodN} good ones inside · {badOut} of {badN} bad ones outs
 
 msgid "O rascunho tem problemas."
 msgstr "The draft has problems."
+
+msgid "Folga"
+msgstr "Margin"
 
 msgid "Qualidade"
 msgstr "Quality"
@@ -2041,6 +2125,9 @@ msgstr "images"
 
 msgid "Posição fixa"
 msgstr "Fixed position"
+
+msgid "Faixa proposta: {summary}."
+msgstr "Proposed range: {summary}."
 
 msgid "Nome da estação"
 msgstr "Station name"

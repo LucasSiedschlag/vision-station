@@ -60,3 +60,46 @@ test('the editor: live image, draw a region, test the draft and save it as the n
   const versions = page.getByRole('list', { name: 'Versões' })
   await expect(versions.getByRole('listitem').first()).toContainText('região da etiqueta')
 })
+
+test('the colour picker: drag over the image to sample a colour, see the proposal, apply it, and the page stays accessible', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+  await page.getByRole('button', { name: /Ferramentas/ }).click()
+  await page.getByRole('combobox', { name: 'Adicionar ferramenta' }).click()
+  await page.getByRole('option', { name: /\(color\)/ }).click()
+  await page.getByRole('button', { name: 'Adicionar', exact: true }).last().click()
+
+  // the colour tool draws its range itself: any hue until a colour is chosen, and the other bars
+  await expect(page.getByRole('switch', { name: 'Qualquer matiz' })).toBeChecked()
+  await page.getByRole('switch', { name: 'Qualquer matiz' }).click()
+  await expect(page.getByRole('slider', { name: 'Matiz inicial' })).toBeVisible()
+  await expect(page.getByRole('slider', { name: /^Saturação mínima/ })).toBeVisible()
+  expect(await accessibilityProblems(page)).toEqual([])
+
+  const canvas = page.getByRole('group', { name: 'Regiões sobre a imagem' })
+  await page.getByRole('button', { name: /Incluir cor/ }).click()
+  await expect(page.getByText('Arraste sobre a cor na imagem')).toBeVisible()
+  await expect(canvas).toBeInViewport() // the image stays in view while the inspector is used
+  const box = (await canvas.boundingBox())!
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.3)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.6, { steps: 5 })
+  await page.mouse.up()
+  // the proposal waits for the person: the range is applied only by *Aplicar*
+  await expect(page.getByText(/^Faixa proposta: /)).toBeVisible()
+  await expect(page.getByText('Arraste sobre a cor na imagem')).toBeHidden()
+  await page.getByRole('button', { name: 'Aplicar', exact: true }).click()
+  await expect(page.getByText(/^Faixa proposta: /)).toBeHidden()
+  await expect(page.getByRole('slider', { name: 'Matiz final' })).toBeVisible()
+  expect(await accessibilityProblems(page)).toEqual([])
+  // leaving the editor ends its session, and the station goes back to production
+  await page.goto('/')
+})

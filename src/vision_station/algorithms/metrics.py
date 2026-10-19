@@ -5,6 +5,8 @@ import numpy as np
 
 _SHARPNESS_WIDTH = 640  # measured at a fixed width, so cameras of different resolution compare
 _THUMB = (96, 54)
+SATURATED_FROM = 250  # a gray level this high counts as saturated: JPEG rarely gives the sensor's 255
+DARK_UNTIL = 5  # and this low, as crushed to black
 
 
 def _gray(image: np.ndarray) -> np.ndarray:
@@ -14,6 +16,19 @@ def _gray(image: np.ndarray) -> np.ndarray:
 def brightness(image: np.ndarray) -> float:
     """Mean gray level, 0..255."""
     return float(_gray(image).mean())
+
+
+def histogram(image: np.ndarray) -> list[int]:
+    """The 256-bin gray histogram, in pixel counts."""
+    return np.bincount(_gray(image).ravel(), minlength=256).tolist()
+
+
+def clipped(counts: list[int]) -> tuple[float, float]:
+    """The percentage of pixels crushed to black and of pixels saturated, from a `histogram`."""
+    total = sum(counts)
+    if not total:
+        return 0.0, 0.0
+    return 100.0 * sum(counts[:DARK_UNTIL]) / total, 100.0 * sum(counts[SATURATED_FROM:]) / total
 
 
 def sharpness(image: np.ndarray) -> float:

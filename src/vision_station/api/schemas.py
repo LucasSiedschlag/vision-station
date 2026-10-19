@@ -605,6 +605,26 @@ class SuggestLimitsBody(BaseModel):
     tool: str | None = None  # only this tool; None: all of them
 
 
+class SuggestColourBody(BaseModel):
+    include: Annotated[list[str], Field(min_length=1, max_length=20)]  # base64 PNG or JPEG crops of the image: the colour
+    exclude: Annotated[list[str], Field(max_length=20)] = []  # and what must stay out of the range
+
+
+class ColourProposalOut(BaseModel):
+    """A color range for the color tool, from the pixels the person dragged over (FR-UI-13). OpenCV scales (hue 0..179)."""
+
+    ok: bool
+    message: str | None = None
+    hue: tuple[int, int] | None = None  # None: any hue (grays, black, white)
+    s_min: int = 0
+    s_max: int = 255
+    v_min: int = 0
+    v_max: int = 255
+    pixels: int = 0
+    kept: float = 0.0  # share of the sampled colour inside the range
+    leak: float | None = None  # share of the excluded pixels inside it; None: nothing was excluded
+
+
 class ExposureStepOut(BaseModel):
     exposure_us: float
     saturated_percent: float

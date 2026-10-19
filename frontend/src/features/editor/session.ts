@@ -20,6 +20,18 @@ export type SessionResult = {
   timings: Record<string, unknown>
 }
 
+/** What the camera controls show of the newest frame, whatever the draft (docs/frontend.md §19.5). */
+export type CameraMetrics = {
+  frame_id: number
+  /** the sharpness the quality gate measures */
+  sharpness: number
+  /** the pixels of each of the 256 gray levels */
+  histogram: number[]
+  /** the percentage crushed to black and saturated */
+  clipped_low: number
+  clipped_high: number
+}
+
 export interface SessionState {
   /** connecting; live (the draft is being measured); busy (another editor holds the camera); refused (not a maintainer); ended */
   status: 'connecting' | 'live' | 'busy' | 'refused' | 'ended'
@@ -34,6 +46,7 @@ export interface SessionState {
   draftError: { message: string; fields: Record<string, string> } | null
   /** the session paused the station (and resumes it when it ends) */
   pausedBySession: boolean
+  metrics: CameraMetrics | null
 }
 
 export const initialSession: SessionState = {
@@ -44,6 +57,7 @@ export const initialSession: SessionState = {
   fps: 0,
   draftError: null,
   pausedBySession: false,
+  metrics: null,
 }
 
 /** What the session needs of a draft: its files (sent when they change) and its job and profile (sent on each edit). */
@@ -171,6 +185,9 @@ export class EditorSession {
           break
         case 'camera':
           this.publish({ camera: Boolean(message.connected) })
+          break
+        case 'metrics':
+          this.publish({ metrics: message as unknown as CameraMetrics })
           break
         case 'result':
           this.waiting = message as unknown as SessionResult

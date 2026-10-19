@@ -8,7 +8,6 @@ import {
   normalize,
   resize,
   rgbToHsv,
-  suggestHue,
   type Rect,
 } from './geometry'
 
@@ -46,24 +45,5 @@ describe('region geometry', () => {
     expect(rgbToHsv(255, 0, 0)).toEqual([0, 255, 255])
     expect(rgbToHsv(0, 0, 255)).toEqual([120, 255, 255])
     expect(rgbToHsv(128, 128, 128)).toEqual([0, 0, 128])
-  })
-
-  it('proposes a hue range from a sample, also around red, and refuses a gray sample', () => {
-    const blue = Array.from({ length: 50 }, (_, i): [number, number, number] => [
-      30 + (i % 5),
-      90,
-      200,
-    ])
-    const s = suggestHue(blue)!
-    expect(s.hue[0]).toBeLessThan(110)
-    expect(s.hue[1]).toBeGreaterThan(110)
-    const red = Array.from({ length: 50 }, (_, i): [number, number, number] =>
-      i % 2 ? [220, 20, 40] : [220, 40, 20],
-    )
-    const r = suggestHue(red)!
-    expect(r.hue[0]).toBeGreaterThan(r.hue[1]) // wraps through red: e.g. [170, 10]
-    expect(
-      suggestHue(Array.from({ length: 50 }, (): [number, number, number] => [120, 120, 120])),
-    ).toBeNull()
   })
 })

@@ -5,7 +5,7 @@ import {
   SliderThumb,
   SliderTrack,
 } from 'react-aria-components'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { NumberField } from './number-field'
 import { text } from '@/texts'
@@ -32,7 +32,13 @@ export function Slider({
   fields,
   isDisabled,
   className,
+  paint,
+  format,
 }: {
+  /** How a value is written (the output and what a screen reader says): a log slider shows µs, not its position. */
+  format?: (value: number) => string
+  /** Painted on the track instead of the plain bar: a colour picker shows the colours the thumbs choose among. */
+  paint?: (canvas: HTMLCanvasElement) => void
   /** Shown above the slider; with one thumb it is also the thumb's name. */
   label: string
   /** One name per thumb when there is more than one ("Início", "Fim"). */
@@ -74,7 +80,9 @@ export function Slider({
           <SliderOutput className="font-mono text-sm tabular-nums text-fg-muted">
             {({ state }) =>
               state.values
-                .map((_, i) => state.getThumbValueLabel(i) + (unit ? ` ${unit}` : ''))
+                .map((v, i) =>
+                  format ? format(v) : state.getThumbValueLabel(i) + (unit ? ` ${unit}` : ''),
+                )
                 .join(' – ')
             }
           </SliderOutput>
@@ -88,9 +96,16 @@ export function Slider({
                 : [0, state.getThumbPercent(0)]
             return (
               <>
-                <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-pill bg-surface-3" />
+                {paint ? (
+                  <PaintedTrack paint={paint} />
+                ) : (
+                  <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-pill bg-surface-3" />
+                )}
                 <div
-                  className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-pill bg-accent"
+                  className={cn(
+                    'absolute top-1/2 h-1.5 -translate-y-1/2 rounded-pill bg-accent',
+                    paint && 'h-0.5 bg-fg',
+                  )}
                   style={{ left: `${ends[0]! * 100}%`, width: `${(ends[1]! - ends[0]!) * 100}%` }}
                 />
                 {state.values.map((_, i) => (
@@ -98,6 +113,7 @@ export function Slider({
                     key={i}
                     index={i}
                     aria-label={thumbName(i)}
+                    aria-valuetext={format ? format(value[i]!) : undefined}
                     className={thumbClasses}
                   />
                 ))}
@@ -177,6 +193,21 @@ function ThumbField({
       decimals={decimals}
       unit={unit}
       isDisabled={isDisabled}
+    />
+  )
+}
+
+/** A track painted on a canvas (the colours of a colour bar), as tall as a comfortable bar. */
+function PaintedTrack({ paint }: { paint: (canvas: HTMLCanvasElement) => void }) {
+  const canvas = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    if (canvas.current) paint(canvas.current)
+  }, [paint])
+  return (
+    <canvas
+      ref={canvas}
+      aria-hidden
+      className="absolute top-1/2 h-3 w-full -translate-y-1/2 rounded-pill border border-line"
     />
   )
 }

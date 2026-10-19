@@ -15,12 +15,12 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from vision_station.algorithms.metrics import SATURATED_FROM
 from vision_station.core.i18n import tr
 from vision_station.jobs import CameraProfile
 from vision_station.jobs.camera_profile import AutoOnce, Exposure
 from vision_station.station.acquisition import Acquisition
 
-SATURATED_FROM = 250  # a gray level this high counts as saturated: JPEG rarely gives the sensor's 255
 MIN_EXPOSURE_US = 100.0
 TOLERANCE_PP = 1.0  # percentage points of saturated pixels that count as "at the target"
 NARROW_RATIO = 1.03  # a range this narrow (3 %) is finer than any camera tells apart

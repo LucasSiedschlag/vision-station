@@ -44,6 +44,9 @@
   --busy-text: light-dark(#1f5fd6, #7db0ff);
   --busy-surface: light-dark(#dce9ff, #10284a);
 
+  /* over the image (docs/frontend.md §18): the pixels a colour range takes in, hatched; it is no status */
+  --ov-mask: #e6199a;
+
   /* density: admin screens are compact, the operator screen is kiosk (docs/frontend.md §6.3) */
   --control-h: 36px;
   --control-font: 14px;

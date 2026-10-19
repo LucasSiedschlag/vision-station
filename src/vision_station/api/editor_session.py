@@ -19,6 +19,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from vision_station.algorithms import metrics
 from vision_station.api import schemas as m
 from vision_station.cameras import Frame
 from vision_station.core.i18n import render, using
@@ -147,6 +148,12 @@ async def run(ws: Any, env: SessionEnv) -> None:
             measure.text = _message(**body)  # type: ignore[attr-defined]
             return env.encode(frame.image, deps.frame_width, deps.jpeg_quality)
 
+        def frame_metrics(frame: Frame) -> str:
+            """What the camera controls show of a frame (document 05 §19.5): the sharpness of the gates, the histogram and the clipping."""
+            counts = metrics.histogram(frame.image)
+            low, high = metrics.clipped(counts)
+            return _message(type="metrics", frame_id=frame_id, sharpness=metrics.sharpness(frame.image), histogram=counts, clipped_low=low, clipped_high=high)
+
         while True:
             wait = max(0.0, next_run - loop.time())
             try:
@@ -193,10 +200,13 @@ async def run(ws: Any, env: SessionEnv) -> None:
                 sent_camera = camera_ok
                 with using(language):
                     await ws.send_text(_message(type="camera", connected=camera_ok, message="" if camera_ok else render("Câmera desconectada"), error=deps.acquisition.last_error))
-            if not camera_ok or bundle is None or frame is None or frame.timestamp == last_stamp:
+            if not camera_ok or frame is None or frame.timestamp == last_stamp:
                 continue
             last_stamp = frame.timestamp
             frame_id += 1
+            await ws.send_text(await loop.run_in_executor(None, frame_metrics, frame))  # whatever the draft: step 1 has no tools yet
+            if bundle is None:
+                continue
             started = time.monotonic()
             try:
                 with using(language):

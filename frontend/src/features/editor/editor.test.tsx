@@ -42,24 +42,27 @@ describe('the form drawn from a JSON Schema', () => {
     expect(screen.getByRole('combobox', { name: 'Medir ao longo de' })).toHaveTextContent(
       'área toda',
     )
-    expect(screen.getByLabelText('Saturação mínima')).toHaveAttribute('placeholder', 'padrão: 0')
+    expect(screen.getByLabelText('Distância máxima (ΔE)')).toHaveAttribute(
+      'placeholder',
+      'padrão: 20',
+    )
     expect(screen.getByText('valor alto demais')).toBeInTheDocument()
-    await userEvent.type(screen.getByLabelText('Saturação mínima'), '80')
+    await userEvent.type(screen.getByLabelText('Distância máxima (ΔE)'), '15')
     await userEvent.tab()
-    expect(valueOf()).toEqual({ min_fraction: 0.5, s_min: 80 })
+    expect(valueOf()).toEqual({ min_fraction: 0.5, max_distance: 15 })
   })
 
   it('an optional value is switched on, then edited; a pair of numbers is two fields', async () => {
     render(<Form schema={schemas.color} initial={{ min_fraction: 0.5 }} />)
-    await userEvent.click(screen.getByRole('switch', { name: 'Matiz (de, até)' }))
-    expect(valueOf().hue).toEqual([0, 0])
-    const second = screen.getByLabelText('Matiz (de, até), 2º valor')
-    await userEvent.clear(second)
-    await userEvent.type(second, '10')
+    await userEvent.click(screen.getByRole('switch', { name: 'Cor de referência (R, G, B)' }))
+    expect(valueOf().rgb).toEqual([0, 0, 0])
+    const third = screen.getByLabelText('Cor de referência (R, G, B), 3º valor')
+    await userEvent.clear(third)
+    await userEvent.type(third, '10')
     await userEvent.tab()
-    expect(valueOf().hue).toEqual([0, 10])
-    await userEvent.click(screen.getByRole('switch', { name: 'Matiz (de, até)' }))
-    expect(valueOf().hue).toBeNull()
+    expect(valueOf().rgb).toEqual([0, 0, 10])
+    await userEvent.click(screen.getByRole('switch', { name: 'Cor de referência (R, G, B)' }))
+    expect(valueOf().rgb).toBeNull()
   })
 
   it('lists of words, switches, and nested objects from $defs', async () => {
@@ -590,10 +593,7 @@ describe('the job editor', () => {
     expect(useDraft.getState().draft?.job.tools[0].params.min_fraction).toBe(0.55)
     await new Promise((resolve) => setTimeout(resolve, 900)) // longer than the pause before a new measurement
     expect(calls).toBe(1)
-    const hue = screen.getByLabelText('Matiz (de, até), 2º valor')
-    await userEvent.clear(hue)
-    await userEvent.type(hue, '140')
-    await userEvent.tab()
+    await userEvent.click(screen.getByRole('switch', { name: 'Qualquer matiz' })) // a band of hues: what is measured changed
     await waitFor(() => expect(calls).toBe(2), { timeout: 3000 })
   })
 
@@ -650,6 +650,40 @@ describe('the job editor', () => {
     await userEvent.tab()
     expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual({ target_brightness: 5 })
     expect(useDraft.getState().draft?.profile.exposure.value_us).toBe(6000)
+  })
+
+  it('the camera step shows the histogram and the focus meter of the live frame, and a log slider for a fixed exposure', async () => {
+    useSession.getState().signIn('tok', 'maintainer', 3600)
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Imagem e disparo/ }))
+    expect(screen.getByText(/Sem imagem ao vivo/)).toBeInTheDocument()
+    const socket = FakeSocket.all.at(-1)!
+    socket.open()
+    act(() => socket.say({ type: 'ready', fps: 4, paused_by_session: true }))
+    act(() =>
+      socket.say({
+        type: 'metrics',
+        frame_id: 1,
+        sharpness: 412,
+        histogram: new Array(256).fill(1),
+        clipped_low: 0,
+        clipped_high: 2.4,
+      }),
+    )
+    expect(await screen.findByText('2,4 % da imagem saturada')).toHaveClass('text-warn-text')
+    expect(screen.getByRole('meter', { name: 'Nitidez' })).toHaveAttribute('aria-valuenow', '412')
+    // a fixed exposure gets a slider on a log scale, written in µs, and it moves the value in the draft
+    act(() =>
+      useDraft.getState().edit((d) => (d.profile.exposure = { mode: 'manual', value_us: 8000 })),
+    )
+    const slider = await screen.findByRole('slider', { name: /Exposição \(escala logarítmica\)/ })
+    slider.focus()
+    const before = useDraft.getState().draft?.profile.exposure.value_us as number
+    await userEvent.keyboard('{ArrowRight}')
+    const after = useDraft.getState().draft?.profile.exposure.value_us as number
+    expect(after).toBeGreaterThan(before)
+    expect(after / before).toBeLessThan(1.03) // one position of 1000 over four decades
   })
 
   it('the measuring region of Auto uma vez is optional and drawn on the image', async () => {

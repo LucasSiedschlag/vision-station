@@ -225,6 +225,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/editor/suggest/colour': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Suggest Colour
+     * @description A color range from the pixels the person sampled on the image; the editor shows it as a proposal (FR-UI-13).
+     */
+    post: operations['suggest_colour']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/editor/suggest/limits': {
     parameters: {
       query?: never
@@ -1313,6 +1333,50 @@ export interface components {
       enabled: boolean
       /** Job Id */
       job_id: string
+    }
+    /**
+     * ColourProposalOut
+     * @description A color range for the color tool, from the pixels the person dragged over (FR-UI-13). OpenCV scales (hue 0..179).
+     */
+    ColourProposalOut: {
+      /** Hue */
+      hue: [number, number] | null
+      /**
+       * Kept
+       * @default 0
+       */
+      kept: number
+      /** Leak */
+      leak: number | null
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+      /**
+       * Pixels
+       * @default 0
+       */
+      pixels: number
+      /**
+       * S Max
+       * @default 255
+       */
+      s_max: number
+      /**
+       * S Min
+       * @default 0
+       */
+      s_min: number
+      /**
+       * V Max
+       * @default 255
+       */
+      v_max: number
+      /**
+       * V Min
+       * @default 0
+       */
+      v_min: number
     }
     /** Counters */
     Counters: {
@@ -2489,6 +2553,16 @@ export interface components {
       /** Warnings */
       warnings: string[]
     }
+    /** SuggestColourBody */
+    SuggestColourBody: {
+      /**
+       * Exclude
+       * @default []
+       */
+      exclude: string[]
+      /** Include */
+      include: string[]
+    }
     /** SuggestLimitsBody */
     SuggestLimitsBody: {
       draft: components['schemas']['JobDraft']
@@ -3472,6 +3546,59 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BatchOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  suggest_colour: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuggestColourBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ColourProposalOut']
         }
       }
       /** @description needs a login */

@@ -27,6 +27,7 @@ from pydantic import ValidationError
 from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, LockedOut
 from vision_station.cameras import Frame
+from vision_station.algorithms.color_range import propose_range
 from vision_station.core.i18n import render, render_schema, text_of, tr
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs.job import BUILTIN_ROIS
@@ -304,6 +305,19 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
                 for found in propose_for_criterion(tool, entry, spec, rows, getattr(deps, "limit_margin", MARGIN)):
                     proposals.append(m.LimitProposalOut(**{**found, "label": render(found["label"])}))
         return m.LimitsOut(ok=True, proposals=proposals)
+
+    @api.post("/editor/suggest/colour", response_model=m.ColourProposalOut)
+    def suggest_colour(body: m.SuggestColourBody, _: str = Depends(need("maintainer"))) -> m.ColourProposalOut:
+        """A color range from the pixels the person sampled on the image; the editor shows it as a proposal (FR-UI-13)."""
+        try:
+            include = [_decode_image(x) for x in body.include]
+            exclude = [_decode_image(x) for x in body.exclude]
+        except ValueError as exc:
+            return m.ColourProposalOut(ok=False, message=str(exc))
+        found = propose_range(include, exclude)
+        if found is None:
+            return m.ColourProposalOut(ok=False, message=render("Poucos pixels para propor uma cor: arraste sobre uma área maior"))
+        return m.ColourProposalOut(ok=True, **{k: getattr(found, k) for k in ("hue", "s_min", "s_max", "v_min", "v_max", "pixels", "kept", "leak")})
 
     @api.post("/jobs", status_code=201, response_model=m.SavedVersion, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
     def create_job(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.SavedVersion:
