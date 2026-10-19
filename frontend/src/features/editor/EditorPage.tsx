@@ -63,6 +63,8 @@ import {
   type Validation,
 } from './sequence'
 import { summarizeChanges } from './summary'
+import { useBatch } from './batch'
+import { useEditorSession } from './session'
 
 const t = text.editor
 
@@ -198,13 +200,29 @@ function Editor({
   const [selected, setSelected] = useState<string | null>(null)
   const [drawing, setDrawing] = useState<string | null>(null)
   const [crop, setCrop] = useState<Rect | null>(null)
-  const [test, setTest] = useState<DraftTestOut | null>(null)
+  const [tested, setTested] = useState<DraftTestOut | null>(null) // the last *Testar*
+  const live = useEditorSession(draft, true) // the draft on every new frame, with the station paused (§9.5)
   const [testing, setTesting] = useState(false)
   const [fields, setFields] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [source, setSource] = useState<'reference' | 'live'>('reference')
+  // the sample whose picture is on the image because its dot was chosen on a gauge
+  const [shownSample, setShownSample] = useState<string | null>(null)
+  const limitParams = Object.fromEntries(
+    (types.data?.tools ?? []).map((x) => [
+      x.name,
+      x.criteria.flatMap((c) => Object.values(c.limits)),
+    ]),
+  )
+  const batch = useBatch(draft, step === 'tools' || step === 'validate', limitParams)
+  const showSample = (path: string | null) => {
+    if (path === 'reference/reference.png') {
+      setSource('reference')
+      setShownSample(null)
+    } else setShownSample(path)
+  }
   const [image, setImage] = useState<EditorImage | null>(null)
   const [imageError, setImageError] = useState('')
   const paused = useLive((s) => s.status?.state === 'Paused')
@@ -217,23 +235,47 @@ function Editor({
   // the image: the job's reference (full size) when there is one, else a live snapshot
   const [reload, setReload] = useState(0)
   const useReference = source === 'reference' && hasReference
+  // the picture on screen is the camera's, so the session's measurements are of what is shown; on the reference or a
+  // sample the last *Testar* is what there is (it runs once per change, on that image)
+  const showsLive = !shownSample && !useReference
+  const sessionFeeds = showsLive && live.status === 'live' && live.camera !== false
+  const measurement = sessionFeeds ? live.last : null
+  const test = useMemo<DraftTestOut | null>(
+    () =>
+      measurement
+        ? {
+            result: measurement.result,
+            regions: measurement.regions,
+            anchor: measurement.anchor,
+            tools: measurement.tools,
+            timings: measurement.timings,
+            width: measurement.width,
+            height: measurement.height,
+            overlay: '',
+          }
+        : tested,
+    [measurement, tested],
+  )
+  const problems = live.draftError ? { ...fields, ...live.draftError.fields } : fields
   useEffect(() => {
     let alive = true
-    const added = draft.addFiles['reference/reference.png']
+    // a sample chosen on a gauge shows instead of the reference or the live image
+    const path = shownSample ?? (useReference ? 'reference/reference.png' : null)
+    const added = path ? draft.addFiles[path] : undefined
     const base = draft.base
     const fetchImage = async () => {
       await Promise.resolve() // state changes only after this tick, never during the effect
-      const blob = useReference
+      if (sessionFeeds) return null // the session sends the pictures
+      const blob = path
         ? added
           ? base64ToBlob(added)
-          : await fetchBlob(
-              `/api/jobs/${base!.id}/versions/${base!.version}/files/reference/reference.png`,
-            )
+          : await fetchBlob(`/api/jobs/${base!.id}/versions/${base!.version}/files/${path}`)
         : await fetchBlob('/api/snapshot.jpg')
-      return imageFromBlob(blob, useReference ? 'reference' : 'live')
+      return imageFromBlob(blob, shownSample ? 'sample' : useReference ? 'reference' : 'live')
     }
     fetchImage().then(
       (next) => {
+        if (!next) return
         if (!alive) return URL.revokeObjectURL(next.url)
         setImageError('')
         setImage((old) => {
@@ -253,7 +295,25 @@ function Editor({
       alive = false
     }
     // referenceKey: reload when the reference image changes; reload: the button
-  }, [useReference, referenceKey, reload]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [useReference, referenceKey, reload, shownSample, sessionFeeds]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // the pictures of the live session, as they come
+  const sessionFrame = sessionFeeds ? live.frame : null
+  useEffect(() => {
+    if (!sessionFrame) return
+    let alive = true
+    void imageFromBlob(sessionFrame, 'live').then((next) => {
+      if (!alive) return URL.revokeObjectURL(next.url)
+      setImageError('')
+      setImage((old) => {
+        if (old) URL.revokeObjectURL(old.url)
+        return next
+      })
+    })
+    return () => {
+      alive = false
+    }
+  }, [sessionFrame])
 
   // Ctrl+Z / Ctrl+Y, unless typing in a field
   useEffect(() => {
@@ -380,7 +440,7 @@ function Editor({
   const runTest = async () => {
     setTesting(true)
     try {
-      setTest(await editorApi.test(toRequest(draft)))
+      setTested(await editorApi.test(toRequest(draft)))
       setFields({})
     } catch (e) {
       if (e instanceof ApiError && e.fields) setFields(e.fields)
@@ -440,7 +500,7 @@ function Editor({
   const props: StepProps = {
     draft,
     image,
-    fields,
+    fields: problems,
     selected,
     setSelected,
     drawing,
@@ -452,8 +512,11 @@ function Editor({
     verifying,
     verify,
     openSave: () => setSaveOpen(true),
+    batch,
+    shownSample,
+    showSample,
   }
-  const info = stepStates(draft, fields, visited, validation)
+  const info = stepStates(draft, problems, visited, validation)
   const steps = STEPS.map((s) => ({
     id: s,
     label: t.steps[s],
@@ -529,15 +592,18 @@ function Editor({
           role="status"
           className="flex flex-wrap items-center gap-3 rounded-control border border-busy-text/40 bg-busy-surface px-3 py-2 text-sm text-busy-text"
         >
-          {t.stationPaused}
-          <Button
-            variant="ghost"
-            onClick={() =>
-              void editorApi.resumeStation().catch((e: unknown) => toast.error(describeError(e)))
-            }
-          >
-            {t.resume}
-          </Button>
+          {live.pausedBySession ? t.stationPausedBySession : t.stationPaused}
+          {live.pausedBySession ? null : (
+            // a pause of the session ends with it; this one (Aplicar, Auto uma vez) is ended here
+            <Button
+              variant="ghost"
+              onClick={() =>
+                void editorApi.resumeStation().catch((e: unknown) => toast.error(describeError(e)))
+              }
+            >
+              {t.resume}
+            </Button>
+          )}
         </div>
       ) : null}
 
@@ -554,7 +620,10 @@ function Editor({
             <SegmentedControl
               label={t.imageSource}
               value={useReference ? 'reference' : 'live'}
-              onValueChange={(v) => setSource(v as 'reference' | 'live')}
+              onValueChange={(v) => {
+                setShownSample(null)
+                setSource(v as 'reference' | 'live')
+              }}
               options={[
                 { value: 'reference', label: t.sourceReference, disabled: !hasReference },
                 { value: 'live', label: t.sourceLive },
@@ -565,7 +634,36 @@ function Editor({
               {t.refreshImage}
             </Button>
             {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
+            {shownSample ? (
+              <div role="status" className="flex items-center gap-2">
+                <Badge tone="neutral">
+                  {t.sampleShown(shownSample.replace('tests/images/', ''))}
+                </Badge>
+                <Button variant="ghost" onClick={() => setShownSample(null)}>
+                  {t.sampleBack}
+                </Button>
+              </div>
+            ) : null}
           </div>
+          <div role="status" className="flex flex-wrap items-center gap-2">
+            {live.status === 'live' ? (
+              <Badge tone={sessionFeeds ? 'ok' : 'neutral'}>
+                {t.liveOn(formatNumber(live.fps, 1))}
+              </Badge>
+            ) : (
+              <Badge tone={live.status === 'connecting' ? 'busy' : 'warn'}>
+                {t.liveState[live.status]}
+              </Badge>
+            )}
+            {live.camera === false ? (
+              <span className="text-sm text-warn-text">{t.liveCameraLost}</span>
+            ) : null}
+          </div>
+          {live.draftError ? (
+            <p role="alert" className="text-sm text-fail-text">
+              {t.liveDraftRefused(live.draftError.message)}
+            </p>
+          ) : null}
           {hiddenAnchored && step !== 'image' ? (
             <p className="text-sm text-warn-text">{t.noAnchor}</p>
           ) : null}
@@ -606,7 +704,9 @@ function Editor({
                       .join(' · ')}
                   </p>
                 ) : null}
-                <p className="text-xs text-fg-muted">{t.testNote}</p>
+                <p className="text-xs text-fg-muted">
+                  {sessionFeeds && live.last ? t.liveNote : t.testNote}
+                </p>
               </CardContent>
             </Card>
           ) : null}

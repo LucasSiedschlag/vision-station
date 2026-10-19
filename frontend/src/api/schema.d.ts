@@ -204,6 +204,48 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/editor/batch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Editor Batch
+     * @description The draft on all its samples at once (frontend.md §9.4). It feeds the dots of the tolerance gauges and the
+     *     separation line: nothing is saved or recorded, and the results are simulated.
+     */
+    post: operations['editor_batch']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/editor/suggest/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Suggest Limits
+     * @description The limits the *Boa* and *Ruim* samples suggest for each criterion of each tool (FR-UI-14). Nothing is
+     *     changed: the editor shows each proposal and applies it only when the person says so.
+     */
+    post: operations['suggest_limits']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/inspections': {
     parameters: {
       query?: never
@@ -1062,6 +1104,75 @@ export interface components {
       /** Folder */
       folder: string | null
     }
+    /**
+     * BatchOut
+     * @description The draft on all its samples (frontend.md §9.4): what feeds the dots of the gauges and the separation line.
+     */
+    BatchOut: {
+      /**
+       * Bad Ok
+       * @default 0
+       */
+      bad_ok: number
+      /**
+       * Bad Total
+       * @default 0
+       */
+      bad_total: number
+      /**
+       * Fields
+       * @default {}
+       */
+      fields: {
+        [key: string]: string
+      }
+      /**
+       * Good Ok
+       * @default 0
+       */
+      good_ok: number
+      /**
+       * Good Total
+       * @default 0
+       */
+      good_total: number
+      /** Max Ms */
+      max_ms: number | null
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+      /**
+       * Samples
+       * @default []
+       */
+      samples: components['schemas']['BatchSampleOut'][]
+      /**
+       * Tools
+       * @default []
+       */
+      tools: components['schemas']['ToolSeparationOut'][]
+    }
+    /**
+     * BatchSampleOut
+     * @description One picture of the draft's samples run through it: the reference, a *Boa*, a *Ruim* or one that should give ERROR.
+     */
+    BatchSampleOut: {
+      /** Expected */
+      expected: ('PASS' | 'FAIL' | 'ERROR') | null
+      /** Image */
+      image: string
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'reference' | 'good' | 'bad' | 'error'
+      /** Message */
+      message: string
+      /** Ok */
+      ok: boolean
+      result: components['schemas']['ResultOut'] | null
+    }
     /** CameraCheckBody */
     CameraCheckBody: {
       /**
@@ -1285,7 +1396,7 @@ export interface components {
         [key: string]: string
       }
       /** Range */
-      range: [number, number | null]
+      range: (number | null)[]
       /**
        * Unit
        * @enum {string}
@@ -1670,6 +1781,75 @@ export interface components {
        */
       tools: components['schemas']['ToolResultOut'][]
       trigger: components['schemas']['TriggerOut'] | null
+    }
+    /**
+     * LimitProposalOut
+     * @description A limit the samples suggest for one side of one criterion of one tool (FR-UI-14).
+     */
+    LimitProposalOut: {
+      /** Bad N */
+      bad_n: number
+      /**
+       * Basis
+       * @enum {string}
+       */
+      basis: 'gap' | 'from_good' | ''
+      /** Criterion */
+      criterion: string
+      /** Current */
+      current: number | null
+      /** Good N */
+      good_n: number
+      /** Label */
+      label: string
+      /** Margin Bad */
+      margin_bad: number | null
+      /** Margin Good */
+      margin_good: number | null
+      /** Nearest Bad */
+      nearest_bad: number | null
+      /** Param */
+      param: string
+      /** Proposed */
+      proposed: number | null
+      /**
+       * Reason
+       * @enum {string}
+       */
+      reason: '' | 'few_good' | 'overlap' | 'bounds'
+      /**
+       * Side
+       * @enum {string}
+       */
+      side: 'min' | 'max'
+      /** Tool */
+      tool: string
+      /**
+       * Unit
+       * @enum {string}
+       */
+      unit: 'fraction' | 'count' | 'score'
+      /** Worst Good */
+      worst_good: number | null
+    }
+    /** LimitsOut */
+    LimitsOut: {
+      /**
+       * Fields
+       * @default {}
+       */
+      fields: {
+        [key: string]: string
+      }
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+      /**
+       * Proposals
+       * @default []
+       */
+      proposals: components['schemas']['LimitProposalOut'][]
     }
     LiveMessage:
       | components['schemas']['StatusMessage']
@@ -2309,6 +2489,12 @@ export interface components {
       /** Warnings */
       warnings: string[]
     }
+    /** SuggestLimitsBody */
+    SuggestLimitsBody: {
+      draft: components['schemas']['JobDraft']
+      /** Tool */
+      tool?: string | null
+    }
     /** SystemConfig */
     SystemConfig: {
       /**
@@ -2447,6 +2633,22 @@ export interface components {
       }
       /** Version */
       version: number
+    }
+    /**
+     * ToolSeparationOut
+     * @description How well one tool alone keeps the good samples apart from the bad ones.
+     */
+    ToolSeparationOut: {
+      /** Bad Failed */
+      bad_failed: number
+      /** Bad Total */
+      bad_total: number
+      /** Good Passed */
+      good_passed: number
+      /** Good Total */
+      good_total: number
+      /** Tool */
+      tool: string
     }
     /** TriggerOut */
     TriggerOut: {
@@ -3230,6 +3432,112 @@ export interface operations {
       }
       /** @description Conflict */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  editor_batch: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BatchOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  suggest_limits: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuggestLimitsBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LimitsOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
         headers: {
           [name: string]: unknown
         }

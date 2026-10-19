@@ -25,6 +25,8 @@ import { suggestHue, type Rect } from './geometry'
 import { blobToBase64, cropPng, pixelsOf, sample, type EditorImage } from './image'
 import { useLevel } from '@/app/levels'
 import { SchemaForm } from './SchemaForm'
+import { ToolGauges } from './gauges'
+import type { Batch } from './batch'
 
 const t = text.editor
 
@@ -46,6 +48,11 @@ export interface StepProps {
   verify: () => Promise<void>
   /** Opens the dialog that saves the draft as the next version. */
   openSave: () => void
+  /** The draft on its reference and samples (the dots of the gauges), and whether it is being measured again. */
+  batch: Batch
+  /** The sample whose picture is on the image, by its path in the job; null: the reference or the live image. */
+  shownSample: string | null
+  showSample: (path: string | null) => void
 }
 
 const edit = (change: (d: Draft) => void, history = true) =>
@@ -753,7 +760,16 @@ function prefixed(fields: Record<string, string>, prefix: string): Record<string
 
 // --- 5. tools ----------------------------------------------------------------------------------------
 
-export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps) {
+export function ToolsStep({
+  draft,
+  image,
+  fields,
+  test,
+  setSelected,
+  batch,
+  shownSample,
+  showSample,
+}: StepProps) {
   const types = useTypes()
   const [level] = useLevel('editor')
   const tools: JobJson[] = draft.job.tools ?? []
@@ -919,6 +935,22 @@ export function ToolsStep({ draft, image, fields, test, setSelected }: StepProps
                     <SchemaForm
                       schema={type.params_schema}
                       level={level}
+                      hide={type.criteria
+                        .filter((c) => c.level <= level)
+                        .flatMap((c) => Object.values(c.limits))}
+                      criteriaExtra={
+                        <ToolGauges
+                          draft={draft}
+                          index={i}
+                          type={type}
+                          batch={batch.out}
+                          stale={batch.stale || batch.loading}
+                          measured={test?.result.tools?.find((x) => x.id === tool.id) ?? null}
+                          selectedSample={shownSample}
+                          onShowSample={showSample}
+                          level={level}
+                        />
+                      }
                       value={tool.params ?? {}}
                       errors={prefixed(fields, `job.tools.${i}.params`)}
                       onChange={(params) => setTools((list) => (list[i]!.params = params), false)}

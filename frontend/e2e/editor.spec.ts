@@ -44,7 +44,11 @@ test('the editor: live image, draw a region, test the draft and save it as the n
   await page.getByRole('combobox', { name: 'Região' }).click()
   await page.getByRole('option', { name: 'etiqueta' }).click()
   await page.getByRole('button', { name: 'Testar' }).click()
-  await expect(page.getByText('Testado na imagem mais nova da câmera')).toBeVisible()
+  // the session of the editor measures every new frame: *Testar* has nothing more to wait for
+  await expect(page.getByText(/^Ao vivo ● /)).toBeVisible()
+  await expect(
+    page.getByText('Medido agora, na imagem ao vivo, com a estação pausada.'),
+  ).toBeVisible()
   expect(await accessibilityProblems(page)).toEqual([])
 
   // save as version 2

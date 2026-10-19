@@ -733,6 +733,8 @@ Each project that uses the platform sets these for its jobs and its own acceptan
 | Trigger debounce (external) | FR-TRG-8 | 0 ms |
 | Trigger input edge | FR-INT-17 | rising |
 | Image orientation | FR-ACQ-10 | normal |
+| Good samples needed to propose a limit | FR-UI-14 | 3 |
+| Margin of a proposed limit, with no bad samples | FR-UI-14 | 20 % of the worst good value |
 | Reject output: results, delay, pulse | FR-INT-15 | FAIL and ERROR; delay per station; 100 ms pulse |
 | Output polarity | FR-INT-16 | all normal |
 | Machine connector | FR-INT-3..7 | none; S7, Modbus TCP server, remote I/O or OPC UA per project |

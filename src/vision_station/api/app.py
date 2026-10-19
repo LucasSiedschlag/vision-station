@@ -38,6 +38,7 @@ from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
 from vision_station.api.inspections import InspectionRegistry, Requested
+from vision_station.api.editor_session import SessionEnv, run as run_editor_session
 from vision_station.api.manage import add_management_routes
 from vision_station.cameras import DRIVERS
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
@@ -95,6 +96,8 @@ class ApiDeps:
     overlay: Callable[[Any, Any], Any] | None = None  # (frame image, result) -> image with the regions drawn
     cors_origins: tuple[str, ...] = ()  # web pages of other programs on this machine allowed to call the API
     result_image_width: int = 1920  # images of requested inspections are kept up to this width
+    editor_fps: float = 4.0  # the editor's live session runs the draft on at most this many frames a second (document 05 §19.1)
+    limit_margin: float = 0.20  # of the worst good value, for a proposed limit when there are no bad samples (document 02 §7)
 
 
 class Problem(StarletteHTTPException):
@@ -747,7 +750,16 @@ def create_app(deps: ApiDeps) -> FastAPI:
             return m.CheckOut(ok=False, message=render(tr("É a câmera em uso pela estação e ela não está mandando imagem") if not acq.last_error else tr("É a câmera em uso pela estação e ela não está mandando imagem: {why}", why=acq.last_error)))
         return _check_out(check_camera(CameraSettings.model_validate(body.model_dump())))
 
-    add_management_routes(api, deps, need, Problem, _result)
+    build_draft = add_management_routes(api, deps, need, Problem, _result)
+    session = SessionEnv(
+        deps=deps, build=build_draft, result_out=_result, encode=encode_jpeg, origin_allowed=origin_allowed,
+        language=lambda ws: choose(ws.query_params.get("lang"), language_of(ws.headers)), Problem=Problem, state={},
+    )
+
+    @api.websocket("/editor/live")
+    async def editor_live(ws: WebSocket) -> None:
+        """The editor's live session (document 05 §9.5): the draft on every new frame, with the station paused."""
+        await run_editor_session(ws, session)
 
     @api.get("/{rest:path}", include_in_schema=False)
     def unknown_api(rest: str) -> Response:

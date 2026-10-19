@@ -2,11 +2,14 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { useState } from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useLive } from '@/api/live'
 import { useSession } from '@/api/session'
 import { useLevels } from '@/app/levels'
 import { activate, chooseLocale } from '@/app/locale'
-import { mockApi, renderApp, server } from '@/test/render'
+import { FakeSocket } from '@/test/fake-socket'
+import { mockApi, renderApp, server, stateFixture } from '@/test/render'
+import criteria from '@/test/tool-criteria.json'
 import schemas from '@/test/tool-schemas.json'
 import { useDraft } from './draft'
 import { SchemaForm, hiddenChanged, type Schema } from './SchemaForm'
@@ -251,6 +254,7 @@ const kind = (name: keyof typeof schemas) => ({
   version: 1,
   description: schemas[name].description,
   params_schema: schemas[name],
+  criteria: (criteria as Record<string, unknown[]>)[name] ?? [],
 })
 const types = {
   tools: [kind('color'), kind('code')],
@@ -258,7 +262,11 @@ const types = {
   builtin_rois: ['anchor', 'frame'],
 }
 
+afterEach(() => vi.unstubAllGlobals())
+
 beforeEach(() => {
+  FakeSocket.all = []
+  vi.stubGlobal('WebSocket', FakeSocket) // the live session of the editor: it opens when the test says so
   localStorage.clear()
   useLevels.setState({ saved: {} })
   useDraft.getState().clear()
@@ -384,6 +392,222 @@ describe('the job editor', () => {
     ).toBeInTheDocument()
   })
 
+  it('the limits of a criterion are on its gauge, with the samples as dots, and a proposal applied only on Aplicar', async () => {
+    const measure = (id: string, kind: string, value: number, expected: string | null) => ({
+      image: id,
+      kind,
+      expected,
+      ok: true,
+      message: '',
+      result: {
+        outcome: 'PASS',
+        tools: [
+          {
+            id: 'tampa',
+            passed: value >= 0.4,
+            values: { fraction: value },
+            units: { fraction: 'fraction' },
+          },
+        ],
+      },
+    })
+    let asked: any = null
+    server.use(
+      http.post('*/api/editor/batch', () =>
+        HttpResponse.json({
+          ok: true,
+          samples: [
+            measure('reference/reference.png', 'reference', 0.9, null),
+            measure('tests/images/boa1.png', 'good', 0.95, 'PASS'),
+            measure('tests/images/boa2.png', 'good', 0.92, 'PASS'),
+            measure('tests/images/boa3.png', 'good', 0.97, 'PASS'),
+            measure('tests/images/ruim1.png', 'bad', 0.2, 'FAIL'),
+          ],
+          tools: [],
+        }),
+      ),
+      http.post('*/api/editor/suggest/limits', async ({ request }) => {
+        asked = await request.json()
+        return HttpResponse.json({
+          ok: true,
+          proposals: [
+            {
+              tool: 'tampa',
+              criterion: 'fraction',
+              label: 'Fração com a cor',
+              param: 'min_fraction',
+              side: 'min',
+              unit: 'fraction',
+              current: 0.4,
+              proposed: 0.57,
+              reason: '',
+              basis: 'gap',
+              worst_good: 0.92,
+              nearest_bad: 0.2,
+              margin_good: 0.35,
+              margin_bad: 0.37,
+              good_n: 3,
+              bad_n: 1,
+            },
+          ],
+        })
+      }),
+      http.get(`*/api/jobs/${JOB}/versions/2/files/tests/images/boa1.png`, () =>
+        HttpResponse.arrayBuffer(new Uint8Array([137, 80, 78, 71]).buffer),
+      ),
+    )
+    await openEditor()
+    const gauge = await screen.findByRole('region', { name: 'Fração com a cor' })
+    // the limit is on the gauge only: the form does not draw it a second time
+    expect(screen.queryByLabelText('Fração mínima da área')).not.toBeInTheDocument()
+    expect(within(gauge).getByRole('textbox', { name: 'Limite mínimo' })).toHaveValue('40%')
+    // the samples were measured: their dots, the margin in words, how many are on the right side
+    expect(await within(gauge).findAllByRole('button', { name: /boa\d\.png/ })).toHaveLength(3)
+    expect(within(gauge).getByText('3 de 3 boas dentro · 1 de 1 ruins fora')).toBeInTheDocument()
+    expect(within(gauge).getByText(/Margem: a pior boa \(92%\)/)).toBeInTheDocument()
+    // a dot shows its sample on the image, with a way back
+    await userEvent.click(within(gauge).getByRole('button', { name: /boa1\.png/ }))
+    expect(await screen.findByText('Amostra: boa1.png')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Voltar à imagem' }))
+    expect(screen.queryByText('Amostra: boa1.png')).not.toBeInTheDocument()
+    // the proposal is a ghost until Aplicar
+    await userEvent.click(within(gauge).getByRole('button', { name: 'Ajustar pelas amostras' }))
+    expect(await within(gauge).findByText(/^Proposta: limite mínimo 57%/)).toBeInTheDocument()
+    expect(asked.tool).toBe('tampa')
+    expect(useDraft.getState().draft?.job.tools[0].params.min_fraction).toBe(0.4)
+    await userEvent.click(within(gauge).getByRole('button', { name: 'Aplicar' }))
+    expect(useDraft.getState().draft?.job.tools[0].params.min_fraction).toBe(0.57)
+    expect(within(gauge).queryByRole('button', { name: 'Aplicar' })).not.toBeInTheDocument()
+  })
+
+  it('a gauge of a deeper level appears with the level, and takes its parameter out of the form', async () => {
+    await openEditor()
+    await screen.findByRole('region', { name: 'Fração com a cor' })
+    expect(screen.queryByRole('region', { name: 'Cobertura da faixa' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    expect(await screen.findByRole('region', { name: 'Cobertura da faixa' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^Avançado/ }))
+    expect(screen.queryByLabelText('Cobertura mínima')).not.toBeInTheDocument() // it is on the gauge
+    expect(screen.getByLabelText('Medir ao longo de')).toBeInTheDocument() // what is not a limit stays
+  })
+
+  it('the live session measures the draft on every new frame: the picture, the needle of the gauge and the state', async () => {
+    useSession.getState().signIn('tok', 'maintainer', 3600)
+    await openEditor()
+    const socket = FakeSocket.all.at(-1)!
+    expect(socket.url).toContain('/api/editor/live')
+    socket.open()
+    expect(socket.sent[0]).toEqual({ type: 'hello', token: 'tok' })
+    expect(await screen.findByText('Conectando à câmera…')).toBeInTheDocument()
+    // the files go once, with the first draft
+    socket.say({ type: 'ready', fps: 4, paused_by_session: true })
+    expect(socket.sent[1]).toMatchObject({ type: 'draft', job: expect.anything() })
+    // the picture on screen is the camera's: the reference is not
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Ao vivo' }))
+    act(() => {
+      socket.say({
+        type: 'result',
+        frame_id: 1,
+        width: 640,
+        height: 480,
+        result: {
+          outcome: 'PASS',
+          reason: '',
+          scores: { tampa: 1 },
+          duration_ms: 35,
+          tools: [
+            {
+              id: 'tampa',
+              passed: true,
+              values: { fraction: 0.83 },
+              units: { fraction: 'fraction' },
+            },
+          ],
+        },
+        regions: [],
+        anchor: null,
+        tools: {},
+        timings: {},
+      })
+      socket.picture()
+    })
+    expect(await screen.findByText(/^Ao vivo ● /)).toBeInTheDocument()
+    const gauge = await screen.findByRole('region', { name: 'Fração com a cor' })
+    expect(within(gauge).getByText('83%')).toBeInTheDocument() // the needle's value: the gauge is the one place for it
+    expect(
+      screen.getByText('Medido agora, na imagem ao vivo, com a estação pausada.'),
+    ).toBeInTheDocument()
+    // a draft the server refuses is a banner, and its fields mark the steps
+    act(() =>
+      socket.say({
+        type: 'draft_error',
+        message: 'O job tem campos inválidos',
+        fields: { 'job.quality.sharpness_min_ratio': 'x' },
+      }),
+    )
+    expect(
+      await screen.findByText(/O rascunho não pôde ser medido: O job tem campos inválidos/),
+    ).toBeInTheDocument()
+    expect(rail.getByRole('button', { name: /Qualidade.*precisa de atenção/ })).toBeInTheDocument()
+    // a lost camera leaves the reference and the samples to work with
+    act(() => socket.say({ type: 'camera', connected: false, message: 'Câmera desconectada' }))
+    expect(
+      await screen.findByText(/Câmera desconectada: dá para seguir ajustando na referência/),
+    ).toBeInTheDocument()
+  })
+
+  it("the pause of the session is the session's: the banner says so and offers no way to resume under it", async () => {
+    useSession.getState().signIn('tok', 'maintainer', 3600)
+    useLive.setState({
+      status: stateFixture({ state: 'Paused' }),
+      connected: true,
+      connecting: false,
+    })
+    await openEditor()
+    const socket = FakeSocket.all.at(-1)!
+    socket.open()
+    expect(screen.getByRole('button', { name: 'Retomar a estação' })).toBeInTheDocument() // Aplicar's pause
+    act(() => socket.say({ type: 'ready', fps: 4, paused_by_session: true }))
+    expect(await screen.findByText(/pausada enquanto o editor mede ao vivo/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retomar a estação' })).not.toBeInTheDocument()
+  })
+
+  it('dragging a limit does not measure the samples again, but changing what is measured does', async () => {
+    let calls = 0
+    server.use(
+      http.post('*/api/editor/batch', () => {
+        calls++
+        return HttpResponse.json({ ok: true, samples: [], tools: [] })
+      }),
+    )
+    await openEditor()
+    const box = await screen.findByRole('textbox', { name: 'Limite mínimo' })
+    await waitFor(() => expect(calls).toBe(1), { timeout: 3000 })
+    await userEvent.clear(box)
+    await userEvent.type(box, '55')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.job.tools[0].params.min_fraction).toBe(0.55)
+    await new Promise((resolve) => setTimeout(resolve, 900)) // longer than the pause before a new measurement
+    expect(calls).toBe(1)
+    const hue = screen.getByLabelText('Matiz (de, até), 2º valor')
+    await userEvent.clear(hue)
+    await userEvent.type(hue, '140')
+    await userEvent.tab()
+    await waitFor(() => expect(calls).toBe(2), { timeout: 3000 })
+  })
+
+  it('a second editor is told the camera is taken, and the first one is not disturbed', async () => {
+    useSession.getState().signIn('tok', 'maintainer', 3600)
+    await openEditor()
+    const socket = FakeSocket.all.at(-1)!
+    socket.open()
+    act(() => socket.say({ type: 'error', code: 'session_busy' }))
+    expect(await screen.findByText('Outro editor está usando a câmera')).toBeInTheDocument()
+    // the editor still works on the reference and the samples
+    expect(screen.getByRole('heading', { level: 2, name: 'Ferramentas' })).toBeInTheDocument()
+  })
+
   it('Auto uma vez measures the exposure on the camera and writes it as a fixed value, keeping its parameters', async () => {
     let sent: any = null
     server.use(
@@ -496,7 +720,7 @@ describe('the job editor', () => {
 
   it('the save dialog lists what changed in words, and the last step offers the way on', async () => {
     await openEditor()
-    const fraction = await screen.findByLabelText('Fração mínima da área')
+    const fraction = await screen.findByRole('textbox', { name: 'Limite mínimo' })
     await userEvent.clear(fraction)
     await userEvent.type(fraction, '60')
     await userEvent.tab()
@@ -578,7 +802,7 @@ describe('the job editor', () => {
     )
     const { router } = await openEditor()
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
-    const fraction = screen.getByLabelText('Fração mínima da área')
+    const fraction = await screen.findByRole('textbox', { name: 'Limite mínimo' })
     await userEvent.clear(fraction)
     await userEvent.type(fraction, '60')
     await userEvent.tab()
@@ -638,7 +862,7 @@ describe('the job editor', () => {
   it('a draft survives a change of language (the pages are mounted again, the draft is kept)', async () => {
     await openEditor()
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))
-    const fraction = screen.getByLabelText('Fração mínima da área')
+    const fraction = await screen.findByRole('textbox', { name: 'Limite mínimo' })
     await userEvent.clear(fraction)
     await userEvent.type(fraction, '60')
     await userEvent.tab()

@@ -720,6 +720,9 @@ export const text = {
     get stationPaused() {
       return t`A estação está pausada (ajuste de câmera).`
     },
+    get stationPausedBySession() {
+      return t`A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair.`
+    },
     get resume() {
       return t`Retomar a estação`
     },
@@ -814,6 +817,118 @@ export const text = {
     },
     get powerLine() {
       return t`Rede elétrica`
+    },
+    /** The tolerance gauge (docs/frontend.md §19.3). */
+    gauge: {
+      get good() {
+        return t`Boas`
+      },
+      get bad() {
+        return t`Ruins`
+      },
+      get reference() {
+        return t`Referência`
+      },
+      get current() {
+        return t`atual`
+      },
+      get notMeasured() {
+        return t`não medido`
+      },
+      get limitMin() {
+        return t`Limite mínimo`
+      },
+      get limitMax() {
+        return t`Limite máximo`
+      },
+      get useMin() {
+        return t`Usar o limite mínimo`
+      },
+      get useMax() {
+        return t`Usar o limite máximo`
+      },
+      points: (n: string) => t`${n} pontos percentuais`,
+      margin: (parts: string) => t`Margem: ${parts}.`,
+      worstGood: (side: 'min' | 'max', value: string, distance: string, inside: boolean) =>
+        side === 'min'
+          ? inside
+            ? t`a pior boa (${value}) está ${distance} acima do limite`
+            : t`a pior boa (${value}) está ${distance} abaixo do limite, e reprova`
+          : inside
+            ? t`a pior boa (${value}) está ${distance} abaixo do limite`
+            : t`a pior boa (${value}) está ${distance} acima do limite, e reprova`,
+      nearestBad: (side: 'min' | 'max', distance: string) =>
+        side === 'min'
+          ? t`a ruim mais alta, ${distance} abaixo`
+          : t`a ruim mais baixa, ${distance} acima`,
+      tally: (goodIn: number, goodN: number, badOut: number, badN: number) =>
+        t`${goodIn} de ${goodN} boas dentro · ${badOut} de ${badN} ruins fora`,
+      get onlyReference() {
+        return t`Só a referência foi medida: o limite não pode ser conferido nem proposto. Capture amostras Boas e Ruins.`
+      },
+      get adjust() {
+        return t`Ajustar pelas amostras`
+      },
+      get adjusting() {
+        return t`Calculando…`
+      },
+      get apply() {
+        return t`Aplicar`
+      },
+      get discard() {
+        return t`Descartar`
+      },
+      valueText: (limit: string, current: string, goodIn: number, goodN: number) =>
+        t`${limit}; valor atual ${current}; ${goodIn} de ${goodN} boas dentro`,
+      proposal: (
+        side: 'min' | 'max',
+        value: string,
+        goodMargin: string,
+        badMargin: string | null,
+      ) =>
+        badMargin === null
+          ? side === 'min'
+            ? t`Proposta: limite mínimo ${value}, ${goodMargin} abaixo da pior boa.`
+            : t`Proposta: limite máximo ${value}, ${goodMargin} acima da pior boa.`
+          : side === 'min'
+            ? t`Proposta: limite mínimo ${value}, no meio entre as ruins e as boas (${goodMargin} abaixo da pior boa, ${badMargin} acima da ruim mais alta).`
+            : t`Proposta: limite máximo ${value}, no meio entre as boas e as ruins (${goodMargin} acima da pior boa, ${badMargin} abaixo da ruim mais baixa).`,
+      get overlap() {
+        return t`As amostras se sobrepõem; a medição não separa boas de ruins.`
+      },
+      fewGood: (n: number) => t`São precisas pelo menos ${n} amostras Boas para propor um limite.`,
+      get bounds() {
+        return t`Nenhum valor aceito por este parâmetro separa as amostras.`
+      },
+      get stale() {
+        return t`Medindo as amostras de novo…`
+      },
+    },
+    liveOn: (rate: string) => t`Ao vivo ● ${rate}/s`,
+    liveState: {
+      get connecting() {
+        return t`Conectando à câmera…`
+      },
+      get busy() {
+        return t`Outro editor está usando a câmera`
+      },
+      get refused() {
+        return t`Entre como Mantenedor para medir ao vivo`
+      },
+      get ended() {
+        return t`Medição ao vivo encerrada`
+      },
+    },
+    get liveCameraLost() {
+      return t`Câmera desconectada: dá para seguir ajustando na referência e nas amostras.`
+    },
+    liveDraftRefused: (why: string) => t`O rascunho não pôde ser medido: ${why}`,
+    get liveNote() {
+      return t`Medido agora, na imagem ao vivo, com a estação pausada.`
+    },
+    sampleShown: (name: string) => t`Amostra: ${name}`,
+    get sampleBack() {
+      return t`Voltar à imagem`
     },
     get autoOnce() {
       return t`Auto uma vez`

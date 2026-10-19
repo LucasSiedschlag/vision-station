@@ -384,7 +384,7 @@ class CriterionSpecOut(BaseModel):
     value: str  # the key of the result's values
     label: str
     unit: Literal["fraction", "count", "score"]
-    range: tuple[float, float | None]  # None: no natural top, the gauge takes it from the data
+    range: list[float | None]  # [low, high]; a high of None: no natural top, the gauge takes it from the data
     limits: dict[Literal["min", "max"], str]  # the tool's parameters holding the limits
     direction: Literal["at_least", "at_most", "between"]
     level: Literal[1, 2, 3]
@@ -534,6 +534,75 @@ class CameraStateOut(BaseModel):
     applied: bool  # the profile in use was written to the camera
     settings: dict[str, SettingResult]  # per setting, from the last write
     station_paused: bool
+
+
+class BatchSampleOut(BaseModel):
+    """One picture of the draft's samples run through it: the reference, a *Boa*, a *Ruim* or one that should give ERROR."""
+
+    image: str  # path inside the job
+    kind: Literal["reference", "good", "bad", "error"]
+    expected: Outcome | None = None  # None for the reference
+    ok: bool  # as expected (the reference: a pass)
+    message: str  # in the language of the request
+    result: ResultOut | None = None  # None: it could not be run
+
+
+class ToolSeparationOut(BaseModel):
+    """How well one tool alone keeps the good samples apart from the bad ones."""
+
+    tool: str
+    good_total: int
+    good_passed: int
+    bad_total: int
+    bad_failed: int
+
+
+class BatchOut(BaseModel):
+    """The draft on all its samples (frontend.md §9.4): what feeds the dots of the gauges and the separation line."""
+
+    ok: bool  # the draft was accepted and could be run
+    message: str | None = None
+    fields: dict[str, str] = {}
+    samples: list[BatchSampleOut] = []
+    tools: list[ToolSeparationOut] = []
+    good_total: int = 0  # *Boa* samples, and how many came out as expected
+    good_ok: int = 0
+    bad_total: int = 0
+    bad_ok: int = 0
+    max_ms: int | None = None
+
+
+class LimitProposalOut(BaseModel):
+    """A limit the samples suggest for one side of one criterion of one tool (FR-UI-14)."""
+
+    tool: str
+    criterion: str  # the measure's name, a key of the tool's values
+    label: str
+    param: str  # the tool parameter that holds the limit
+    side: Literal["min", "max"]
+    unit: Literal["fraction", "count", "score"]
+    current: float | None
+    proposed: float | None  # None: nothing is proposed, `reason` says why
+    reason: Literal["", "few_good", "overlap", "bounds"]
+    basis: Literal["gap", "from_good", ""]
+    worst_good: float | None
+    nearest_bad: float | None
+    margin_good: float | None
+    margin_bad: float | None
+    good_n: int
+    bad_n: int
+
+
+class LimitsOut(BaseModel):
+    ok: bool
+    message: str | None = None
+    fields: dict[str, str] = {}
+    proposals: list[LimitProposalOut] = []
+
+
+class SuggestLimitsBody(BaseModel):
+    draft: JobDraft
+    tool: str | None = None  # only this tool; None: all of them
 
 
 class ExposureStepOut(BaseModel):

@@ -40,6 +40,9 @@ msgstr "Imagens fora destes limites viram ERRO com o motivo, nunca APROVADO."
 msgid "Ajustes gravados e lidos de volta."
 msgstr "Ajustes gravados e lidos de volta."
 
+msgid "Voltar à imagem"
+msgstr "Voltar à imagem"
+
 msgid "O nome da entrada, nunca a senha."
 msgstr "O nome da entrada, nunca a senha."
 
@@ -48,6 +51,9 @@ msgstr "Girada 180°"
 
 msgid "{name} pego para mover, na {place}."
 msgstr "{name} pego para mover, na {place}."
+
+msgid "Ajustar pelas amostras"
+msgstr "Ajustar pelas amostras"
 
 msgid "Voltar ao vivo"
 msgstr "Voltar ao vivo"
@@ -90,6 +96,9 @@ msgstr "Ferramenta nova: {id} ({type})"
 
 msgid "Nome da tela"
 msgstr "Nome da tela"
+
+msgid "Câmera desconectada: dá para seguir ajustando na referência e nas amostras."
+msgstr "Câmera desconectada: dá para seguir ajustando na referência e nas amostras."
 
 msgid "Só a última versão de cada job"
 msgstr "Só a última versão de cada job"
@@ -135,6 +144,9 @@ msgstr "Importe um arquivo .vjob ou .vbak, ou crie um job no editor."
 
 msgid "Sugestões"
 msgstr "Sugestões"
+
+msgid "Ruins"
+msgstr "Ruins"
 
 msgid "Espelhada"
 msgstr "Espelhada"
@@ -192,6 +204,9 @@ msgstr "Páginas de outros programas"
 
 msgid "{outcome}: {reason}"
 msgstr "{outcome}: {reason}"
+
+msgid "Ao vivo ● {rate}/s"
+msgstr "Ao vivo ● {rate}/s"
 
 msgid "Propor a cor a partir da região"
 msgstr "Propor a cor a partir da região"
@@ -293,6 +308,9 @@ msgstr "Diferenças"
 msgid "v{v} (era v{original}) · {status}"
 msgstr "v{v} (era v{original}) · {status}"
 
+msgid "Boas"
+msgstr "Boas"
+
 msgid "Pasta de rede ou pen drive. Vazio: dentro da pasta de dados."
 msgstr "Pasta de rede ou pen drive. Vazio: dentro da pasta de dados."
 
@@ -301,6 +319,9 @@ msgstr "Total"
 
 msgid "Reprovadas"
 msgstr "Reprovadas"
+
+msgid "a pior boa ({value}) está {distance} abaixo do limite"
+msgstr "a pior boa ({value}) está {distance} abaixo do limite"
 
 msgid "Tudo"
 msgstr "Tudo"
@@ -319,6 +340,9 @@ msgstr "Ainda não validado"
 
 msgid "Marcar como incorreto"
 msgstr "Marcar como incorreto"
+
+msgid "a pior boa ({value}) está {distance} acima do limite"
+msgstr "a pior boa ({value}) está {distance} acima do limite"
 
 msgid "Modo de coleta de {name}"
 msgstr "Modo de coleta de {name}"
@@ -419,6 +443,9 @@ msgstr "desligado"
 msgid "imagem toda"
 msgstr "imagem toda"
 
+msgid "Nenhum valor aceito por este parâmetro separa as amostras."
+msgstr "Nenhum valor aceito por este parâmetro separa as amostras."
+
 msgid "A descrição mudou"
 msgstr "A descrição mudou"
 
@@ -452,6 +479,9 @@ msgstr "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto 
 msgid "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
 msgstr "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
 
+msgid "Proposta: limite mínimo {value}, no meio entre as ruins e as boas ({goodMargin} abaixo da pior boa, {badMargin} acima da ruim mais alta)."
+msgstr "Proposta: limite mínimo {value}, no meio entre as ruins e as boas ({goodMargin} abaixo da pior boa, {badMargin} acima da ruim mais alta)."
+
 msgid "Ligando esta tela ao programa da estação."
 msgstr "Ligando esta tela ao programa da estação."
 
@@ -466,6 +496,9 @@ msgstr "A imagem deste resultado não foi guardada (amostragem de aprovados ou l
 
 msgid "Ex.: C920. Ou use o caminho ou o índice."
 msgstr "Ex.: C920. Ou use o caminho ou o índice."
+
+msgid "Usar o limite máximo"
+msgstr "Usar o limite máximo"
 
 msgid "Pasta de imagens (testes)"
 msgstr "Pasta de imagens (testes)"
@@ -497,8 +530,14 @@ msgstr "{id}: região {from} → {to}"
 msgid "Expandir menu"
 msgstr "Expandir menu"
 
+msgid "a ruim mais alta, {distance} abaixo"
+msgstr "a ruim mais alta, {distance} abaixo"
+
 msgid "sem sinal"
 msgstr "sem sinal"
+
+msgid "atual"
+msgstr "atual"
 
 msgid "com falhas"
 msgstr "com falhas"
@@ -566,6 +605,9 @@ msgstr "Endereço de escuta"
 msgid "Encerrar todas as sessões"
 msgstr "Encerrar todas as sessões"
 
+msgid "Calculando…"
+msgstr "Calculando…"
+
 msgid "Duração"
 msgstr "Duração"
 
@@ -605,6 +647,12 @@ msgstr "não salvo"
 msgid "Editar"
 msgstr "Editar"
 
+msgid "São precisas pelo menos {n} amostras Boas para propor um limite."
+msgstr "São precisas pelo menos {n} amostras Boas para propor um limite."
+
+msgid "Só a referência foi medida: o limite não pode ser conferido nem proposto. Capture amostras Boas e Ruins."
+msgstr "Só a referência foi medida: o limite não pode ser conferido nem proposto. Capture amostras Boas e Ruins."
+
 msgid "Esta tela perdeu a ligação com o programa e tenta de novo sozinha."
 msgstr "Esta tela perdeu a ligação com o programa e tenta de novo sozinha."
 
@@ -637,6 +685,9 @@ msgstr "Diferença de cinza"
 
 msgid "formato do pixel"
 msgstr "formato do pixel"
+
+msgid "Proposta: limite mínimo {value}, {goodMargin} abaixo da pior boa."
+msgstr "Proposta: limite mínimo {value}, {goodMargin} abaixo da pior boa."
 
 msgid "Sua sessão terminou. Entre de novo para continuar."
 msgstr "Sua sessão terminou. Entre de novo para continuar."
@@ -713,6 +764,9 @@ msgstr "Nome do job novo"
 msgid "{hint} (não usado)"
 msgstr "{hint} (não usado)"
 
+msgid "Entre como Mantenedor para medir ao vivo"
+msgstr "Entre como Mantenedor para medir ao vivo"
+
 msgid "Tipo"
 msgstr "Tipo"
 
@@ -730,6 +784,9 @@ msgstr "passo atual"
 
 msgid "Tempos"
 msgstr "Tempos"
+
+msgid "Margem: {parts}."
+msgstr "Margem: {parts}."
 
 msgid "Sem amostras. Capture amostras Boas e Ruins no passo Amostras."
 msgstr "Sem amostras. Capture amostras Boas e Ruins no passo Amostras."
@@ -781,6 +838,9 @@ msgstr "Recolher menu"
 
 msgid "Quanto tempo o objeto precisa ficar parado antes da foto."
 msgstr "Quanto tempo o objeto precisa ficar parado antes da foto."
+
+msgid "Limite máximo"
+msgstr "Limite máximo"
 
 msgid "Versão do programa"
 msgstr "Versão do programa"
@@ -851,6 +911,9 @@ msgstr "Tempo de exposição"
 msgid "Cria um job novo a partir da versão {v}, com todos os arquivos."
 msgstr "Cria um job novo a partir da versão {v}, com todos os arquivos."
 
+msgid "Medido agora, na imagem ao vivo, com a estação pausada."
+msgstr "Medido agora, na imagem ao vivo, com a estação pausada."
+
 msgid "Carregando a imagem…"
 msgstr "Carregando a imagem…"
 
@@ -862,6 +925,9 @@ msgstr "A imagem mudou depois da última validação; rode Validar"
 
 msgid "O que incluir"
 msgstr "O que incluir"
+
+msgid "a pior boa ({value}) está {distance} acima do limite, e reprova"
+msgstr "a pior boa ({value}) está {distance} acima do limite, e reprova"
 
 msgid "Não foi possível ler as informações do programa."
 msgstr "Não foi possível ler as informações do programa."
@@ -919,6 +985,9 @@ msgstr "rede elétrica"
 
 msgid "Manter livre no disco pelo menos"
 msgstr "Manter livre no disco pelo menos"
+
+msgid "As amostras se sobrepõem; a medição não separa boas de ruins."
+msgstr "As amostras se sobrepõem; a medição não separa boas de ruins."
 
 msgid "Vazio: só quando pedido."
 msgstr "Vazio: só quando pedido."
@@ -1001,6 +1070,9 @@ msgstr "Senha definida"
 msgid "O rascunho pode ser salvo."
 msgstr "O rascunho pode ser salvo."
 
+msgid "Proposta: limite máximo {value}, {goodMargin} acima da pior boa."
+msgstr "Proposta: limite máximo {value}, {goodMargin} acima da pior boa."
+
 msgid "Motivo da reprovação"
 msgstr "Motivo da reprovação"
 
@@ -1039,6 +1111,9 @@ msgstr "Som na reprovação"
 
 msgid "âncora"
 msgstr "âncora"
+
+msgid "Aplicar"
+msgstr "Aplicar"
 
 msgid "Nome da amostra"
 msgstr "Nome da amostra"
@@ -1100,6 +1175,9 @@ msgstr "Backups"
 msgid "Configurações"
 msgstr "Configurações"
 
+msgid "a pior boa ({value}) está {distance} abaixo do limite, e reprova"
+msgstr "a pior boa ({value}) está {distance} abaixo do limite, e reprova"
+
 msgid "conectando"
 msgstr "conectando"
 
@@ -1141,6 +1219,9 @@ msgstr "Baixar {name}"
 
 msgid "Desenhando… (arraste na imagem)"
 msgstr "Desenhando… (arraste na imagem)"
+
+msgid "a ruim mais baixa, {distance} acima"
+msgstr "a ruim mais baixa, {distance} acima"
 
 msgid "Máquina"
 msgstr "Máquina"
@@ -1280,6 +1361,9 @@ msgstr "Exportar CSV"
 msgid "Este resultado estava errado?"
 msgstr "Este resultado estava errado?"
 
+msgid "{limit}; valor atual {current}; {goodIn} de {goodN} boas dentro"
+msgstr "{limit}; valor atual {current}; {goodIn} de {goodN} boas dentro"
+
 msgid "Âncora"
 msgstr "Âncora"
 
@@ -1319,6 +1403,9 @@ msgstr "Gravação"
 msgid "Só em reprovação"
 msgstr "Só em reprovação"
 
+msgid "Conectando à câmera…"
+msgstr "Conectando à câmera…"
+
 msgid "{n, plural, one {+ # outra} other {+ # outras}}"
 msgstr "{n, plural, one {+ # outra} other {+ # outras}}"
 
@@ -1343,6 +1430,9 @@ msgstr "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha).
 msgid "Nunca"
 msgstr "Nunca"
 
+msgid "Outro editor está usando a câmera"
+msgstr "Outro editor está usando a câmera"
+
 msgid "ligado"
 msgstr "ligado"
 
@@ -1360,6 +1450,9 @@ msgstr "Mais lenta: {ms} ms"
 
 msgid "Mede a imagem toda"
 msgstr "Mede a imagem toda"
+
+msgid "Medindo as amostras de novo…"
+msgstr "Medindo as amostras de novo…"
 
 msgid "{name} (valor exato)"
 msgstr "{name} (valor exato)"
@@ -1384,6 +1477,9 @@ msgstr "As mudanças não salvas são perdidas. A versão salva continua como es
 
 msgid "O sistema disse {said}. Qual era o resultado certo?"
 msgstr "O sistema disse {said}. Qual era o resultado certo?"
+
+msgid "Medição ao vivo encerrada"
+msgstr "Medição ao vivo encerrada"
 
 msgid "O que a tela do operador mostra enquanto espera, ex.: Aguardando peça."
 msgstr "O que a tela do operador mostra enquanto espera, ex.: Aguardando peça."
@@ -1420,6 +1516,9 @@ msgstr "Rede"
 
 msgid "Em manutenção"
 msgstr "Em manutenção"
+
+msgid "{n} pontos percentuais"
+msgstr "{n} pontos percentuais"
 
 msgid "Aprovadas"
 msgstr "Aprovadas"
@@ -1571,6 +1670,9 @@ msgstr "Nitidez mínima"
 msgid "Aguardando objeto"
 msgstr "Aguardando objeto"
 
+msgid "A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair."
+msgstr "A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair."
+
 msgid "Fração da área de presença (0 a 1)."
 msgstr "Fração da área de presença (0 a 1)."
 
@@ -1687,6 +1789,9 @@ msgstr "Sem ligação com o sistema, não se sabe se os resultados estão sendo 
 
 msgid "Texto de espera"
 msgstr "Texto de espera"
+
+msgid "não medido"
+msgstr "não medido"
 
 msgid "Intervalo mínimo entre inspeções"
 msgstr "Intervalo mínimo entre inspeções"
@@ -1811,11 +1916,17 @@ msgstr "(atual)"
 msgid "Sobre"
 msgstr "Sobre"
 
+msgid "Amostra: {name}"
+msgstr "Amostra: {name}"
+
 msgid "Autor"
 msgstr "Autor"
 
 msgid "Duplicar job"
 msgstr "Duplicar job"
+
+msgid "Limite mínimo"
+msgstr "Limite mínimo"
 
 msgid "Ver como tabela"
 msgstr "Ver como tabela"
@@ -1847,6 +1958,9 @@ msgstr "Capture a imagem de referência primeiro"
 msgid "Só o Mantenedor. O motivo fica registrado na auditoria."
 msgstr "Só o Mantenedor. O motivo fica registrado na auditoria."
 
+msgid "{goodIn} de {goodN} boas dentro · {badOut} de {badN} ruins fora"
+msgstr "{goodIn} de {goodN} boas dentro · {badOut} de {badN} ruins fora"
+
 msgid "O rascunho tem problemas."
 msgstr "O rascunho tem problemas."
 
@@ -1855,6 +1969,9 @@ msgstr "Qualidade"
 
 msgid "Refazer"
 msgstr "Refazer"
+
+msgid "Proposta: limite máximo {value}, no meio entre as boas e as ruins ({goodMargin} acima da pior boa, {badMargin} abaixo da ruim mais baixa)."
+msgstr "Proposta: limite máximo {value}, no meio entre as boas e as ruins ({goodMargin} acima da pior boa, {badMargin} abaixo da ruim mais baixa)."
 
 msgid "Validar tudo"
 msgstr "Validar tudo"
@@ -1904,6 +2021,9 @@ msgstr "Nenhuma ferramenta ainda. Um job precisa de pelo menos uma."
 msgid "último quadro há {age} s"
 msgstr "último quadro há {age} s"
 
+msgid "Usar o limite mínimo"
+msgstr "Usar o limite mínimo"
+
 msgid "Nenhuma amostra ainda."
 msgstr "Nenhuma amostra ainda."
 
@@ -1939,3 +2059,6 @@ msgstr "Capturar de novo"
 
 msgid "Senha da câmera (entrada no cofre do Windows)"
 msgstr "Senha da câmera (entrada no cofre do Windows)"
+
+msgid "O rascunho não pôde ser medido: {why}"
+msgstr "O rascunho não pôde ser medido: {why}"

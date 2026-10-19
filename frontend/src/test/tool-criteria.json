@@ -1,0 +1,100 @@
+{
+  "code": [
+    {
+      "value": "matching",
+      "label": "Códigos aceitos",
+      "unit": "count",
+      "range": [0.0, null],
+      "limits": { "min": "min_count", "max": "max_count" },
+      "direction": "between",
+      "level": 1
+    }
+  ],
+  "color": [
+    {
+      "value": "fraction",
+      "label": "Fração com a cor",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "limits": { "min": "min_fraction", "max": "max_fraction" },
+      "direction": "between",
+      "level": 1
+    },
+    {
+      "value": "coverage",
+      "label": "Cobertura da faixa",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "limits": { "min": "min_coverage" },
+      "direction": "at_least",
+      "level": 2
+    },
+    {
+      "value": "gap",
+      "label": "Maior trecho faltando",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "limits": { "max": "max_gap" },
+      "direction": "at_most",
+      "level": 2
+    }
+  ],
+  "detect": [
+    {
+      "value": "confidence",
+      "label": "Confiança do modelo",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "limits": { "min": "min_confidence" },
+      "direction": "at_least",
+      "level": 1
+    },
+    {
+      "value": "count",
+      "label": "Ocorrências da classe contada",
+      "unit": "count",
+      "range": [0.0, null],
+      "limits": { "min": "min_count", "max": "max_count" },
+      "direction": "between",
+      "level": 1
+    },
+    {
+      "value": "score",
+      "label": "Anomalia",
+      "unit": "score",
+      "range": [0.0, null],
+      "limits": { "max": "threshold" },
+      "direction": "at_most",
+      "level": 1
+    }
+  ],
+  "pattern": [
+    {
+      "value": "count",
+      "label": "Ocorrências do padrão",
+      "unit": "count",
+      "range": [0.0, null],
+      "limits": { "min": "min_count", "max": "max_count" },
+      "direction": "between",
+      "level": 1
+    },
+    {
+      "value": "coverage",
+      "label": "Cobertura da faixa",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "limits": { "min": "min_coverage" },
+      "direction": "at_least",
+      "level": 2
+    },
+    {
+      "value": "gap",
+      "label": "Maior trecho faltando",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "limits": { "max": "max_gap" },
+      "direction": "at_most",
+      "level": 2
+    }
+  ]
+}

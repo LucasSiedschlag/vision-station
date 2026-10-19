@@ -280,6 +280,142 @@
         "title": "BackupsOut",
         "type": "object"
       },
+      "BatchOut": {
+        "description": "The draft on all its samples (frontend.md §9.4): what feeds the dots of the gauges and the separation line.",
+        "properties": {
+          "bad_ok": {
+            "default": 0,
+            "title": "Bad Ok",
+            "type": "integer"
+          },
+          "bad_total": {
+            "default": 0,
+            "title": "Bad Total",
+            "type": "integer"
+          },
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Fields",
+            "type": "object"
+          },
+          "good_ok": {
+            "default": 0,
+            "title": "Good Ok",
+            "type": "integer"
+          },
+          "good_total": {
+            "default": 0,
+            "title": "Good Total",
+            "type": "integer"
+          },
+          "max_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Ms"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "samples": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/BatchSampleOut"
+            },
+            "title": "Samples",
+            "type": "array"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ToolSeparationOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "message",
+          "fields",
+          "samples",
+          "tools",
+          "good_total",
+          "good_ok",
+          "bad_total",
+          "bad_ok",
+          "max_ms"
+        ],
+        "title": "BatchOut",
+        "type": "object"
+      },
+      "BatchSampleOut": {
+        "description": "One picture of the draft's samples run through it: the reference, a *Boa*, a *Ruim* or one that should give ERROR.",
+        "properties": {
+          "expected": {
+            "anyOf": [
+              {
+                "enum": ["PASS", "FAIL", "ERROR"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "image": {
+            "title": "Image",
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["reference", "good", "bad", "error"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["image", "kind", "expected", "ok", "message", "result"],
+        "title": "BatchSampleOut",
+        "type": "object"
+      },
       "CameraCheckBody": {
         "additionalProperties": false,
         "properties": {
@@ -708,23 +844,16 @@
             "type": "object"
           },
           "range": {
-            "maxItems": 2,
-            "minItems": 2,
-            "prefixItems": [
-              {
-                "type": "number"
-              },
-              {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              }
-            ],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "title": "Range",
             "type": "array"
           },
@@ -1674,6 +1803,179 @@
           "record_id"
         ],
         "title": "LastResultOut",
+        "type": "object"
+      },
+      "LimitProposalOut": {
+        "description": "A limit the samples suggest for one side of one criterion of one tool (FR-UI-14).",
+        "properties": {
+          "bad_n": {
+            "title": "Bad N",
+            "type": "integer"
+          },
+          "basis": {
+            "enum": ["gap", "from_good", ""],
+            "title": "Basis",
+            "type": "string"
+          },
+          "criterion": {
+            "title": "Criterion",
+            "type": "string"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "good_n": {
+            "title": "Good N",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "margin_bad": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Bad"
+          },
+          "margin_good": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Good"
+          },
+          "nearest_bad": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nearest Bad"
+          },
+          "param": {
+            "title": "Param",
+            "type": "string"
+          },
+          "proposed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed"
+          },
+          "reason": {
+            "enum": ["", "few_good", "overlap", "bounds"],
+            "title": "Reason",
+            "type": "string"
+          },
+          "side": {
+            "enum": ["min", "max"],
+            "title": "Side",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          },
+          "unit": {
+            "enum": ["fraction", "count", "score"],
+            "title": "Unit",
+            "type": "string"
+          },
+          "worst_good": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst Good"
+          }
+        },
+        "required": [
+          "tool",
+          "criterion",
+          "label",
+          "param",
+          "side",
+          "unit",
+          "current",
+          "proposed",
+          "reason",
+          "basis",
+          "worst_good",
+          "nearest_bad",
+          "margin_good",
+          "margin_bad",
+          "good_n",
+          "bad_n"
+        ],
+        "title": "LimitProposalOut",
+        "type": "object"
+      },
+      "LimitsOut": {
+        "properties": {
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Fields",
+            "type": "object"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "proposals": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LimitProposalOut"
+            },
+            "title": "Proposals",
+            "type": "array"
+          }
+        },
+        "required": ["ok", "message", "fields", "proposals"],
+        "title": "LimitsOut",
         "type": "object"
       },
       "LiveMessage": {
@@ -3050,6 +3352,27 @@
         "title": "StatusMessage",
         "type": "object"
       },
+      "SuggestLimitsBody": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/JobDraft"
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool"
+          }
+        },
+        "required": ["draft"],
+        "title": "SuggestLimitsBody",
+        "type": "object"
+      },
       "SystemConfig": {
         "additionalProperties": false,
         "properties": {
@@ -3281,6 +3604,34 @@
         },
         "required": ["id", "type", "version", "passed", "score"],
         "title": "ToolResultOut",
+        "type": "object"
+      },
+      "ToolSeparationOut": {
+        "description": "How well one tool alone keeps the good samples apart from the bad ones.",
+        "properties": {
+          "bad_failed": {
+            "title": "Bad Failed",
+            "type": "integer"
+          },
+          "bad_total": {
+            "title": "Bad Total",
+            "type": "integer"
+          },
+          "good_passed": {
+            "title": "Good Passed",
+            "type": "integer"
+          },
+          "good_total": {
+            "title": "Good Total",
+            "type": "integer"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": ["tool", "good_total", "good_passed", "bad_total", "bad_failed"],
+        "title": "ToolSeparationOut",
         "type": "object"
       },
       "TriggerOut": {
@@ -4553,6 +4904,160 @@
           }
         },
         "summary": "Export Dataset"
+      }
+    },
+    "/api/editor/batch": {
+      "post": {
+        "description": "The draft on all its samples at once (frontend.md §9.4). It feeds the dots of the tolerance gauges and the\nseparation line: nothing is saved or recorded, and the results are simulated.",
+        "operationId": "editor_batch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editor Batch"
+      }
+    },
+    "/api/editor/suggest/limits": {
+      "post": {
+        "description": "The limits the *Boa* and *Ruim* samples suggest for each criterion of each tool (FR-UI-14). Nothing is\nchanged: the editor shows each proposal and applies it only when the person says so.",
+        "operationId": "suggest_limits",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestLimitsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Limits"
       }
     },
     "/api/inspections": {

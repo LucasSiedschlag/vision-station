@@ -656,6 +656,9 @@ All endpoints live under `/api` (the WebSocket is `/api/live`); every other path
 | `GET /results…` | Browse, filter, export CSV, mark incorrect |
 | `GET /machine` | Live view of the interface map: inputs, outputs, heartbeat ages, last errors (Maintainer) |
 | `POST /bench` | Run the benchmark (Maintainer) |
+| `POST /jobs/verify`, `POST /editor/batch`, `POST /editor/suggest/limits` | The editor (Maintainer): the draft on every sample, the same run as activation (Validar); the draft on its reference and samples with every tool's values (the dots of the gauges); the limits the samples suggest (FR-UI-14) |
+| `WS /editor/live` | The editor's live session (Maintainer): the draft measured on every new frame, with the station paused (FR-UI-12, document 05 §9.5) |
+| `POST /camera/apply`, `POST /camera/auto-exposure` | The editor (Maintainer): write the settings of a draft profile; find the exposure once (*Auto uma vez*, FR-ACQ-11) |
 
 - The API listens only on the local machine by default. Opening it to the network is a configuration choice, protected by login (NFR-SEC-3).
 

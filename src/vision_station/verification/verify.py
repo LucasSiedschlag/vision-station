@@ -22,6 +22,7 @@ from vision_station.store import JobBundle
 from vision_station.algorithms import metrics
 from vision_station.verification.reference import (
     EXPECTED_FILE,
+    ExpectedCase,
     REFERENCE_IMAGE,
     REFERENCE_META,
     decode_image,
@@ -128,28 +129,50 @@ class CaseRun:
     duration_ms: int | None = None
 
 
-def run_reference_set(bundle: JobBundle, inspect: Inspector) -> list[CaseRun]:
-    """Run the job on every image of its reference set (tests/expected.yaml) and compare with what is expected."""
+@dataclass(frozen=True)
+class CaseResult:
+    """One image of the reference set run through the job: the case, what the job gave, and how it compares."""
+
+    case: ExpectedCase
+    result: InspectionResult | None  # None: it could not be run
+    ok: bool
+    message: str  # a Msg: "<image>: <what>"
+
+
+def run_cases(bundle: JobBundle, inspect: Inspector) -> list[CaseResult]:
+    """Run the job on every image of its reference set (tests/expected.yaml) and compare with what is expected. The
+    one loop of activation, of Validar and of the batch test of the editor (design rule 4)."""
     if EXPECTED_FILE not in bundle.extra:
         return []
     expected = parse_expected(bundle.extra[EXPECTED_FILE])
     informative = {t.id for t in bundle.job.tools if not t.affects_result}
-    runs: list[CaseRun] = []
+    done: list[CaseResult] = []
     for case in expected.cases:
         data = bundle.extra.get(case.image)
         image = decode_image(data) if data else None
         if image is None:
-            runs.append(CaseRun(case.image, case.outcome, None, False, tr("{image}: imagem ausente ou ilegível", image=case.image)))
+            done.append(CaseResult(case, None, False, tr("{image}: imagem ausente ou ilegível", image=case.image)))
             continue
         try:
             result = inspect(bundle, Frame(image=image, timestamp=0.0))
         except Exception as exc:  # a tool that crashes on a stored image is a failed case, not a crash of the verifier
-            runs.append(CaseRun(case.image, case.outcome, None, False, tr("{image}: erro ao inspecionar ({kind}: {exc})", image=case.image, kind=type(exc).__name__, exc=exc)))
+            done.append(CaseResult(case, None, False, tr("{image}: erro ao inspecionar ({kind}: {exc})", image=case.image, kind=type(exc).__name__, exc=exc)))
             continue
         problems = _compare(case, result, expected.tolerance, informative)
         message = tr("{image}: {what}", image=case.image, what=join(problems) if problems else tr("{outcome} como esperado", outcome=result.outcome))
-        runs.append(CaseRun(case.image, case.outcome, str(result.outcome), not problems, message, result.reason, round(result.duration_s * 1000)))
-    return runs
+        done.append(CaseResult(case, result, not problems, message))
+    return done
+
+
+def run_reference_set(bundle: JobBundle, inspect: Inspector) -> list[CaseRun]:
+    """The same run, as the short report of Validar and of the activation check."""
+    return [
+        CaseRun(
+            c.case.image, c.case.outcome, None if c.result is None else str(c.result.outcome), c.ok, c.message,
+            "" if c.result is None else c.result.reason, None if c.result is None else round(c.result.duration_s * 1000),
+        )
+        for c in run_cases(bundle, inspect)
+    ]
 
 
 def check_decision_logic(bundle: JobBundle, inspect: Inspector, require_reference_set: bool = False) -> tuple[list[Check], list[str]]:

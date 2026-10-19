@@ -544,6 +544,9 @@ msgstr "Occurrences of the pattern"
 msgid "Origem não permitida"
 msgstr "Origin not allowed"
 
+msgid "Outra sessão do editor já está aberta"
+msgstr "Another editor session is already open"
+
 msgid "Padrão do texto"
 msgstr "Text pattern"
 

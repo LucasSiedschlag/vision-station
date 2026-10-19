@@ -9,7 +9,7 @@ export interface EditorImage {
   width: number
   height: number
   /** where it came from: the job's reference image (full size) or a live snapshot (reduced) */
-  source: 'reference' | 'live'
+  source: 'reference' | 'live' | 'sample'
 }
 
 export function base64ToBlob(b64: string, type = 'image/png'): Blob {

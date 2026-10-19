@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Accordion,
   AccordionContent,
@@ -466,6 +466,8 @@ export function SchemaForm({
   path = '',
   level = 3,
   nested = false,
+  hide = [],
+  criteriaExtra,
 }: {
   schema: Schema
   root?: Schema
@@ -476,6 +478,10 @@ export function SchemaForm({
   /** The settings level to show (1 Essencial, 2 Avançado, 3 Especialista); every parameter by default. */
   level?: Level
   nested?: boolean
+  /** Parameters drawn elsewhere (the limits that a gauge holds). A changed one hidden by the level is still counted. */
+  hide?: readonly string[]
+  /** What goes at the top of the *Critérios* section: the tolerance gauges. */
+  criteriaExtra?: ReactNode
 }) {
   const base = root ?? schema
   const properties: Record<string, Schema> = schema.properties ?? {}
@@ -503,7 +509,7 @@ export function SchemaForm({
   )
   if (nested) return <div className="flex flex-col gap-3">{Object.keys(properties).map(field)}</div>
 
-  const names = Object.keys(properties)
+  const names = Object.keys(properties).filter((n) => !hide.includes(n))
   const at = (wanted: Level, group?: string) =>
     names.filter(
       (n) =>
@@ -514,7 +520,10 @@ export function SchemaForm({
   const sections: { title: string; names: string[] }[] = [
     { title: texts.ui.groupMeasure, names: at(1, 'measure') },
     { title: texts.ui.groupCriteria, names: at(1, 'criteria') },
-  ].filter((section) => section.names.length > 0)
+  ].filter(
+    (section) =>
+      section.names.length > 0 || (!!criteriaExtra && section.title === texts.ui.groupCriteria),
+  )
   const deeper = ([2, 3] as const).filter((l) => l <= level && at(l).length > 0)
   const changed = hiddenChanged(schema, value, level)
   // a closed section says how many of its settings were changed
@@ -530,6 +539,7 @@ export function SchemaForm({
           <h4 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
             {section.title}
           </h4>
+          {section.title === texts.ui.groupCriteria ? criteriaExtra : null}
           {section.names.map(field)}
         </section>
       ))}

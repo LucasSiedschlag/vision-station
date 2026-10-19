@@ -33,12 +33,13 @@ from vision_station.jobs.job import BUILTIN_ROIS
 from vision_station.locators import get_locator, locator_types
 from vision_station.records import ResultsError
 from vision_station.station.exposure import ExposureError, measure_exposure
+from vision_station.tools.limits import MARGIN, propose_for_criterion
 from vision_station.store import FormatError, JobBundle, JobRef, StoreError
 from vision_station.store.archive import check_path, sha256
 from vision_station.store.bundle import JOB_FILE, bundle_from_files
 from vision_station.tools import get_tool, tool_types
-from vision_station.verification import make_reference_files, run_reference_set
-from vision_station.verification.reference import EXPECTED_FILE, REFERENCE_META, parse_expected
+from vision_station.verification import make_reference_files, run_cases, run_reference_set
+from vision_station.verification.reference import EXPECTED_FILE, REFERENCE_IMAGE, REFERENCE_META, decode_image, parse_expected
 
 MAX_IMAGE = 32 * 1024 * 1024
 
@@ -52,7 +53,7 @@ def _type_info(name: str, version: int, entry: Any) -> m.TypeInfo:
     # what the editor shows about the type: the `about` of its parameters (schema_labels, translated), not the docstring
     criteria = [
         m.CriterionSpecOut(
-            value=c.value, label=render(c.label), unit=c.unit, range=c.range, direction=c.direction, level=c.level,
+            value=c.value, label=render(c.label), unit=c.unit, range=list(c.range), direction=c.direction, level=c.level,
             limits={k: p for k, p in (("min", c.min_param), ("max", c.max_param)) if p},
         )
         for c in getattr(entry, "criteria", ())
@@ -81,9 +82,10 @@ def _b64(data: bytes) -> str:
     return base64.b64encode(data).decode("ascii")
 
 
-def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Callable], Problem: type, result_out: Callable) -> None:
+def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Callable], Problem: type, result_out: Callable) -> Callable[..., JobBundle]:
     """`need(role)` is the login dependency of the app, `Problem` its error, `result_out(result, at)` its
-    result model builder; they are passed in so this module shares the app's rules."""
+    result model builder; they are passed in so this module shares the app's rules. It returns `build`, which the
+    editor's live session uses to turn each draft it receives into a job."""
     jobs = deps.jobs
 
     def ref_of(job_id: str, version: int) -> JobRef:
@@ -104,7 +106,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
 
     # --- drafts --------------------------------------------------------------------------------------
 
-    def build(draft: m.JobDraft, *, job_id: str, version: int, parent: int | None, author: str) -> JobBundle:
+    def build(draft: m.JobDraft, *, job_id: str, version: int, parent: int | None, author: str, extra: dict[str, bytes] | None = None) -> JobBundle:
         """The draft as a bundle with this identity, checked like an import. Raises Problem 422 with fields."""
         data = dict(draft.job)
         info = dict(data.get("job") or {})
@@ -124,17 +126,18 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             fields.update(_fields(exc, "profile"))
         if fields:
             raise Problem(422, "O job tem campos inválidos", "invalid_draft", fields=fields)
-        extra: dict[str, bytes] = {}
-        if draft.base is not None:
-            extra = dict(jobs.load(ref_of(draft.base.id, draft.base.version)).extra)
-        for path in draft.remove_files:
-            extra.pop(path, None)
-        for path, content in draft.add_files.items():
-            try:
-                check_path(path)
-                extra[path] = base64.b64decode(content, validate=True)
-            except (FormatError, binascii.Error, ValueError) as exc:
-                raise Problem(422, "Arquivo inválido no job", "invalid_draft", fields={f"add_files.{path}": str(exc)}) from exc
+        if extra is None:  # the files of the draft: the base version's, with what was added and removed
+            extra = {}
+            if draft.base is not None:
+                extra = dict(jobs.load(ref_of(draft.base.id, draft.base.version)).extra)
+            for path in draft.remove_files:
+                extra.pop(path, None)
+            for path, content in draft.add_files.items():
+                try:
+                    check_path(path)
+                    extra[path] = base64.b64decode(content, validate=True)
+                except (FormatError, binascii.Error, ValueError) as exc:
+                    raise Problem(422, "Arquivo inválido no job", "invalid_draft", fields={f"add_files.{path}": str(exc)}) from exc
         bundle = JobBundle(job, profile, extra)  # type: ignore[arg-type]
         try:
             bundle_from_files(bundle.files())
@@ -232,6 +235,75 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         ]
         times = [r.duration_ms for r in runs if r.duration_ms is not None]
         return m.VerifyOut(ok=all(r.ok for r in runs), cases=cases, max_ms=max(times) if times else None)
+
+    def run_samples(draft: m.JobDraft, role: str) -> tuple[JobBundle, list[tuple[str, str, str | None, bool, Any, Any]]]:
+        """The draft on its reference picture and on every sample, with the loop activation and Validar use. A row is
+        (image, kind, expected, ok, result or None, message)."""
+        bundle = placeholder(draft, role)
+        rows: list[tuple[str, str, str | None, bool, Any, Any]] = []
+        reference = bundle.extra.get(REFERENCE_IMAGE)
+        picture = decode_image(reference) if reference else None
+        if picture is not None:
+            try:
+                result = deps.inspect(bundle, Frame(image=picture, timestamp=0.0))
+                rows.append((REFERENCE_IMAGE, "reference", None, str(result.outcome) == "PASS", result, ""))
+            except Exception as exc:  # the reference that cannot be run is a row that says so, not a failed request
+                rows.append((REFERENCE_IMAGE, "reference", None, False, None, tr("{image}: erro ao inspecionar ({kind}: {exc})", image=REFERENCE_IMAGE, kind=type(exc).__name__, exc=exc)))
+        for done in run_cases(bundle, deps.inspect):
+            kind = {"PASS": "good", "FAIL": "bad", "ERROR": "error"}[done.case.outcome]
+            rows.append((done.case.image, kind, done.case.outcome, done.ok, done.result, done.message))
+        return bundle, rows
+
+    @api.post("/editor/batch", response_model=m.BatchOut)
+    def editor_batch(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.BatchOut:
+        """The draft on all its samples at once (frontend.md §9.4). It feeds the dots of the tolerance gauges and the
+        separation line: nothing is saved or recorded, and the results are simulated."""
+        try:
+            bundle, rows = run_samples(draft, role)
+        except Problem as exc:  # type: ignore[misc]
+            return m.BatchOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
+        samples = [
+            m.BatchSampleOut(
+                image=image, kind=kind, expected=expected, ok=ok, message=render(message) if message else "",  # type: ignore[arg-type]
+                result=None if result is None else result_out(replace(result, simulated=True), None),
+            )
+            for image, kind, expected, ok, result, message in rows
+        ]
+        deciding = [t.id for t in bundle.job.tools if t.affects_result]
+        separation = []
+        for tool_id in deciding:
+            on = lambda kind: [s for s in samples if s.kind == kind and s.result is not None and any(t.id == tool_id for t in s.result.tools)]  # noqa: E731
+            passed = lambda s: next(t.passed for t in s.result.tools if t.id == tool_id)  # type: ignore[union-attr]  # noqa: E731
+            good, bad = on("good"), on("bad")
+            separation.append(m.ToolSeparationOut(
+                tool=tool_id, good_total=len(good), good_passed=sum(passed(s) for s in good), bad_total=len(bad), bad_failed=sum(not passed(s) for s in bad),
+            ))
+        counted = [s for s in samples if s.kind in ("good", "bad")]
+        times = [s.result.duration_ms for s in samples if s.result is not None]
+        return m.BatchOut(
+            ok=True, samples=samples, tools=separation,
+            good_total=sum(s.kind == "good" for s in counted), good_ok=sum(s.kind == "good" and s.ok for s in counted),
+            bad_total=sum(s.kind == "bad" for s in counted), bad_ok=sum(s.kind == "bad" and s.ok for s in counted),
+            max_ms=max(times) if times else None,
+        )
+
+    @api.post("/editor/suggest/limits", response_model=m.LimitsOut)
+    def suggest_limits(body: m.SuggestLimitsBody, role: str = Depends(need("maintainer"))) -> m.LimitsOut:
+        """The limits the *Boa* and *Ruim* samples suggest for each criterion of each tool (FR-UI-14). Nothing is
+        changed: the editor shows each proposal and applies it only when the person says so."""
+        try:
+            bundle, rows = run_samples(body.draft, role)
+        except Problem as exc:  # type: ignore[misc]
+            return m.LimitsOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
+        proposals = []
+        for tool in bundle.job.tools:
+            if not tool.affects_result or (body.tool is not None and tool.id != body.tool):
+                continue
+            entry = get_tool(tool.type, tool.version)
+            for spec in entry.criteria:
+                for found in propose_for_criterion(tool, entry, spec, rows, getattr(deps, "limit_margin", MARGIN)):
+                    proposals.append(m.LimitProposalOut(**{**found, "label": render(found["label"])}))
+        return m.LimitsOut(ok=True, proposals=proposals)
 
     @api.post("/jobs", status_code=201, response_model=m.SavedVersion, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
     def create_job(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.SavedVersion:
@@ -463,3 +535,5 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             raise Problem(409, "Não há imagens coletadas para exportar", "dataset_empty") from exc
         jobs.audit("dataset_export", by=role, job_id=body.job_id, dataset_id=export.dataset_id, count=export.count)
         return m.DatasetExportOut(dataset_id=export.dataset_id, folder=str(export.path), count=export.count)
+
+    return build

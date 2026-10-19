@@ -811,6 +811,14 @@ The live feedback of §19.1. The client opens the session with the draft, then s
 
 The station stays paused while a session is open. Closing the session (or 10 min without messages) resumes it.
 
+**As built (VIA-0065).**
+- **Greeting.** A browser cannot put a token in the headers of a WebSocket, so the first message is `{type: hello, token, fps?}`. A token that is not a Maintainer's gets `{type: error, code: login_required}`; a second session gets `session_busy`; neither leaves the socket as a surprise. The origin is checked like `/api/live`.
+- **Draft.** `{type: draft, job, profile}` at each change, after a pause of 120 ms in the client; the files (`base`, `add_files`, `remove_files`, megabytes of samples) go **once per connection**, and again only when the set of files changes. The server keeps the files between messages, so dragging a limit does not send or decode them again. Messages are whole `job` and `profile`, not patches of fields: the cost is in the files, not in them.
+- **Answers.** `draft_ok`; `draft_error` with `message` and `fields` (the same paths as a refused save); `camera` with `connected`; `result` (the `DraftTestOut` fields: `result`, `regions`, `anchor`, `tools`, `timings`, `width`, `height`, plus `frame_id`) followed by one binary message, the JPEG of that frame; `run_error` when the draft cannot run on a picture; `idle` when 10 minutes pass with no message. A refused draft, a lost camera and a busy session are messages, never a closed socket.
+- **Rate.** At most `editor_fps` runs per second (`ApiDeps`, default 4), never queued: the next run takes the newest frame when the last one is over. The client may ask for fewer (`fps`, `{type: rate}`).
+- **Pause.** The session pauses the station on opening **only if it was running**, and resumes it on closing only then, so a pause that *Aplicar*, *Auto uma vez* or the person had made stays. A pause is taken only from some states (an inspection in progress ends first), so it is asked again until it holds, for up to 3 s. A station that is not running (Fault, CameraLost, Starting) is left alone and so is its end: closing the editor never clears a fault, *Tentar de novo* is the person's. `ready` says whether the pause is the session's (`paused_by_session`) and in which `station` state it found the station. It resumes in `finally`: on a disconnect, an error or an idle end. While the pause is the session's, the banner of the editor says so and offers no *Retomar*.
+- **Editor.** The page opens the session when it opens and shows `Ao vivo ● 3,8/s` (the measured rate), or the reason it is not live. When the image shown is the camera's, the pictures come from the session instead of `/api/snapshot.jpg`, and its regions and the needles of the gauges are the live measurement; on the reference or a sample the last *Testar* is what there is. The result bar and the filmstrip (UI-1) are not part of this task.
+
 ### 9.6 Live socket (`/api/live`)
 
 As in 0.1, plus `machine` status messages (connected, heartbeat age) for the status strip.
@@ -1017,7 +1025,7 @@ No migration: the 0.1 foundation stays and grows. Each step keeps every test gre
 | UI-1 | Workbench layout (§10.1), image workspace v2 (zoom, layers, frozen/live), filmstrip, result bar | UI-C1 |
 | UI-2 | The sequence: step rail with states, steps reordered (§4.3), samples step, *Validar* | UI-1. **Done (VIA-0064)** on the current layout; the image workspace v2 (UI-1) and the filmstrip are not part of it |
 | UI-3 | Schema metadata (`x-group`, `x-level`, `x-widget`, `criteria`) on the server; SchemaForm v2; levels (§17) | — (server: small). **Done (VIA-0062)**: the widget components themselves come with the steps that need them (UI-4, UI-5) |
-| UI-4 | Editor session (`/api/editor/live`) and batch test; `ToolToleranceGauge`; *Ajustar pelas amostras* | R2 (result contract) for per-tool values |
+| UI-4 | Editor session (`/api/editor/live`) and batch test; `ToolToleranceGauge`; *Ajustar pelas amostras* | R2 (result contract) for per-tool values. **Done (VIA-0065)** except the result bar, the filmstrip and the frozen-image states of §19.1 beyond *Sem amostras* and *Câmera perdida*, which belong to UI-1 |
 | UI-5 | Colour controls (`HsvRangePicker`, eyedropper, mask preview), camera controls (histogram, focus meter, exposure) | UI-4 |
 | UI-6 | Anchor step with pose, angle range and per-sample results | R1 (pose-based fixtures) |
 | UI-7 | Fine-tune screen (§7.12) and the server's allow-list | UI-4 |
@@ -1188,6 +1196,17 @@ One gauge per criterion. It is the same in every tool, the fine-tune screen and 
 - **No samples:** with no *Boa* or *Ruim* yet, the gauge shows the reference only and says that the limit cannot be checked or proposed; *Ajustar pelas amostras* is disabled with that reason (`aria-disabled`, tooltip).
 - **Proposal:** *Ajustar pelas amostras* (FR-UI-14) puts a ghost handle at the proposed limit (the middle of the widest gap, or an agreed margin from the worst *Boa* if no *Ruim* exist), with *Aplicar* / *Descartar*. If the samples overlap, it says so ("As amostras se sobrepõem; a medição não separa boas de ruins") and proposes nothing.
 - **Accessible name:** see §12.
+
+**As built (VIA-0065).**
+- **Where.** One gauge per criterion of the tool type (`GET /api/tools` › `criteria`) whose level the settings level shows, in the *Critérios* section of the tool, above the criteria parameters that are not limits. The parameters a gauge holds (`criteria.limits`) are not drawn a second time by the form; one that is hidden by the level and was changed still counts in the badge of §17 and is reachable through it.
+- **The limit.** A React Aria `Slider` with one thumb per limit set, and a `NumberField` (a fraction as a percentage) beside each. A limit that can be empty (`min_fraction`) has a switch *Usar o limite mínimo/máximo*; one that cannot (`min_count`) does not.
+- **The dots** come from the batch test (`POST /api/editor/batch`), measured again, after a pause of half a second, whenever something that affects a result changes; until then the numbers are marked as being measured again. The reference is a dot but never a *Boa* sample. A dot is a button: it shows its sample on the image, with *Voltar à imagem*. The ring of a dot on the wrong side is `ring-fail`.
+- **The counts and the rings** (how many good samples are inside, how many bad ones outside, the ring of a dot on the wrong side) include **every** sample. A bad sample that another tool catches and this one passes is left out of the *proposal* (the limit is not blamed for it) but still shown here, so after *Aplicar* such a dot can stay ringed inside the band: it is the other tool's to fail.
+- **The batch** is measured again only when something that changes **what** is measured changes: the limits of the criteria are not part of what it depends on, so dragging a limit never sends the samples again or makes the gauge say it is measuring.
+- **The needle** is the value of the last measurement of the tool: the live session when the picture is the camera's, the last *Testar* otherwise; none, and *não medido*, when there is neither.
+- **The margin** is written in the unit of the measure (*pontos percentuais* for a fraction), and a second line counts the samples on the right side.
+- **The proposal** (`POST /api/editor/suggest/limits`, `tools/limits.py`): the middle of the gap between the worst good value and the nearest bad one (a count is whole and on the right side of the gap); with no bad samples, the worst good value less a **margin of 20 %** of it (document 02 §7); never fewer than **3** good samples; samples that overlap, or a limit the parameter does not accept, get no proposal and the gauge says why. It shows as a dashed ghost with *Aplicar* and *Descartar*; nothing changes before *Aplicar*. A bad sample that another tool fails and this one passes is not counted against this tool: that defect is somebody else's to catch.
+- **Accessible name.** The group is named by the criterion, each thumb by its limit, and the thumb is described by "Limite mínimo 80%; valor atual 92%; 12 de 12 boas dentro".
 
 ### 19.4 Colour: `HsvRangePicker`, eyedropper, mask preview
 
