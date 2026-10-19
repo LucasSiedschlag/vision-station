@@ -818,6 +818,169 @@ export const text = {
     get powerLine() {
       return t`Rede elétrica`
     },
+    /** The strip of samples under the image (docs/frontend.md §10.1). */
+    strip: {
+      get label() {
+        return t`Amostras`
+      },
+      get reference() {
+        return t`Referência`
+      },
+      get live() {
+        return t`Ao vivo`
+      },
+      get addGood() {
+        return t`Boa`
+      },
+      get addBad() {
+        return t`Ruim`
+      },
+      get addGoodLong() {
+        return t`Capturar como Boa`
+      },
+      get addBadLong() {
+        return t`Capturar como Ruim`
+      },
+      get none() {
+        return t`Nenhuma amostra ainda. Para propor limites: 3 Boas e 1 Ruim; o recomendado é 10 Boas e 1 Ruim de cada defeito.`
+      },
+      sample: (name: string, kind: string, agrees: string) => t`${name}: ${kind}, ${agrees}`,
+      get good() {
+        return t`Boa`
+      },
+      get bad() {
+        return t`Ruim`
+      },
+      get agrees() {
+        return t`o job concorda`
+      },
+      get disagrees() {
+        return t`o job discorda`
+      },
+      get untested() {
+        return t`ainda não medida`
+      },
+      get hide() {
+        return t`Ocultar as amostras`
+      },
+      get show() {
+        return t`Mostrar as amostras`
+      },
+    },
+    get railWidth() {
+      return t`Largura da lista de passos`
+    },
+    get inspectorWidth() {
+      return t`Largura do inspetor`
+    },
+    get resultBarLabel() {
+      return t`Resultado do rascunho`
+    },
+    /** The bar under the workbench: the last verdict, a chip per tool, the time and the rate (docs/frontend.md §10.1). */
+    bar: {
+      get none() {
+        return t`Sem resultado ainda: o rascunho é medido na imagem ao vivo ou ao pedir Testar.`
+      },
+      get notRun() {
+        return t`não rodou`
+      },
+      toolChip: (id: string, state: string) => t`${id}: ${state}`,
+      get passed() {
+        return t`passou`
+      },
+      get failed() {
+        return t`reprovou`
+      },
+      rate: (rate: string) => t`Captura ${rate}/s`,
+    },
+    /** What the image area says when it cannot show the usual (docs/frontend.md §19.1). */
+    states: {
+      anchorNotFound: (code: string) => t`Âncora não encontrada (${code})`,
+      get anchorHint() {
+        return t`As ferramentas não rodaram. As amostras e a referência continuam abertas.`
+      },
+      get openAnchor() {
+        return t`Abrir o passo Âncora`
+      },
+      get cameraLost() {
+        return t`Câmera desconectada`
+      },
+      lastImage: (age: string) => t`Última imagem há ${age}.`,
+      get adjustOnReference() {
+        return t`Ajustar na referência`
+      },
+      seconds: (n: number) => t`${n} s`,
+      minutes: (n: number) => t`${n} min`,
+    },
+    /** Zoom, pan and the layers of the image (docs/frontend.md §10.2, §18). */
+    view: {
+      get zoomIn() {
+        return t`Aproximar`
+      },
+      get zoomOut() {
+        return t`Afastar`
+      },
+      get fit() {
+        return t`Ajustar à janela`
+      },
+      get actual() {
+        return t`Tamanho real (100 %)`
+      },
+      zoom: (percent: string) => t`Zoom ${percent} %`,
+      get minimap() {
+        return t`Mapa da imagem: clique para ir a outra parte`
+      },
+      get hint() {
+        return t`Roda do mouse: zoom. Espaço e arrastar: mover. Ctrl+0 ajusta; 1 mostra no tamanho real.`
+      },
+      markings: (on: number, all: number) => t`Marcações · ${on}/${all}`,
+      get markingsMenu() {
+        return t`Escolher as marcações`
+      },
+      get allMarkings() {
+        return t`Todas as marcações`
+      },
+      layers: {
+        get regions() {
+          return t`Regiões`
+        },
+        get anchors() {
+          return t`Âncoras`
+        },
+        get labels() {
+          return t`Rótulos`
+        },
+        get mask() {
+          return t`Máscara`
+        },
+        get presence() {
+          return t`Área de presença`
+        },
+        get grid() {
+          return t`Grade de pixels`
+        },
+      },
+      layerHints: {
+        get regions() {
+          return t`a região de cada ferramenta e o resultado dela`
+        },
+        get anchors() {
+          return t`onde a âncora foi achada`
+        },
+        get labels() {
+          return t`o nome ao lado de cada região`
+        },
+        get mask() {
+          return t`os pixels que a faixa de cor pega`
+        },
+        get presence() {
+          return t`a área que dispara pela imagem`
+        },
+        get grid() {
+          return t`só com zoom acima de 800 %`
+        },
+      },
+    },
     /** The tolerance gauge (docs/frontend.md §19.3). */
     gauge: {
       get good() {
@@ -930,7 +1093,6 @@ export const text = {
       },
       added: (good: number, bad: number) =>
         t`Amostras novas: ${good} boas e ${bad} ruins (entram na versão ao salvar).`,
-      captured: (name: string, outcome: string) => t`Amostra ${name} capturada (${outcome} agora).`,
       saveAs: (version: number) => t`Salvar como v${version}…`,
       get discardAll() {
         return t`Descartar ajustes`
@@ -1083,9 +1245,6 @@ export const text = {
       get ended() {
         return t`Medição ao vivo encerrada`
       },
-    },
-    get liveCameraLost() {
-      return t`Câmera desconectada: dá para seguir ajustando na referência e nas amostras.`
     },
     liveDraftRefused: (why: string) => t`O rascunho não pôde ser medido: ${why}`,
     get liveNote() {

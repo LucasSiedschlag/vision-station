@@ -47,6 +47,8 @@ export interface SessionState {
   /** the session paused the station (and resumes it when it ends) */
   pausedBySession: boolean
   metrics: CameraMetrics | null
+  /** when the camera was last told to be lost (ms since 1970); null while it delivers */
+  lostAt: number | null
 }
 
 export const initialSession: SessionState = {
@@ -58,6 +60,7 @@ export const initialSession: SessionState = {
   draftError: null,
   pausedBySession: false,
   metrics: null,
+  lostAt: null,
 }
 
 /** What the session needs of a draft: its files (sent when they change) and its job and profile (sent on each edit). */
@@ -184,7 +187,10 @@ export class EditorSession {
           })
           break
         case 'camera':
-          this.publish({ camera: Boolean(message.connected) })
+          this.publish({
+            camera: Boolean(message.connected),
+            lostAt: message.connected ? null : this.now(),
+          })
           break
         case 'metrics':
           this.publish({ metrics: message as unknown as CameraMetrics })

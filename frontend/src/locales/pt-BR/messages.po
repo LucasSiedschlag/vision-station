@@ -28,6 +28,9 @@ msgstr "Configuração desta instalação (system.yaml). Não vai nos jobs; vai 
 msgid "Versão {version} salva e verificada: pode ser ativada."
 msgstr "Versão {version} salva e verificada: pode ser ativada."
 
+msgid "Tamanho real (100 %)"
+msgstr "Tamanho real (100 %)"
+
 msgid "ajuste fino"
 msgstr "ajuste fino"
 
@@ -58,8 +61,14 @@ msgstr "Girada 180°"
 msgid "{name} pego para mover, na {place}."
 msgstr "{name} pego para mover, na {place}."
 
+msgid "Largura do inspetor"
+msgstr "Largura do inspetor"
+
 msgid "Ajustar pelas amostras"
 msgstr "Ajustar pelas amostras"
+
+msgid "onde a âncora foi achada"
+msgstr "onde a âncora foi achada"
 
 msgid "Voltar ao vivo"
 msgstr "Voltar ao vivo"
@@ -106,9 +115,6 @@ msgstr "Ferramenta nova: {id} ({type})"
 msgid "Nome da tela"
 msgstr "Nome da tela"
 
-msgid "Câmera desconectada: dá para seguir ajustando na referência e nas amostras."
-msgstr "Câmera desconectada: dá para seguir ajustando na referência e nas amostras."
-
 msgid "Só a última versão de cada job"
 msgstr "Só a última versão de cada job"
 
@@ -138,6 +144,9 @@ msgstr "resolução"
 
 msgid "Hoje"
 msgstr "Hoje"
+
+msgid "reprovou"
+msgstr "reprovou"
 
 msgid "Medir só numa região"
 msgstr "Medir só numa região"
@@ -235,6 +244,9 @@ msgstr "reprova"
 msgid "Perfil"
 msgstr "Perfil"
 
+msgid "ainda não medida"
+msgstr "ainda não medida"
+
 msgid "REPROVADO"
 msgstr "REPROVADO"
 
@@ -259,6 +271,9 @@ msgstr "Sair"
 
 msgid "Movimento cancelado. {name} voltou ao lugar."
 msgstr "Movimento cancelado. {name} voltou ao lugar."
+
+msgid "Máscara"
+msgstr "Máscara"
 
 msgid "Descartar"
 msgstr "Descartar"
@@ -434,6 +449,9 @@ msgstr "Capturar como Ruim"
 msgid "Ações de {name}"
 msgstr "Ações de {name}"
 
+msgid "Aproximar"
+msgstr "Aproximar"
+
 msgid "Baixar"
 msgstr "Baixar"
 
@@ -473,6 +491,9 @@ msgstr "imagem toda"
 msgid "Gire o foco até a barra ficar verde"
 msgstr "Gire o foco até a barra ficar verde"
 
+msgid "a área que dispara pela imagem"
+msgstr "a área que dispara pela imagem"
+
 msgid "Nenhum valor aceito por este parâmetro separa as amostras."
 msgstr "Nenhum valor aceito por este parâmetro separa as amostras."
 
@@ -494,6 +515,9 @@ msgstr "Amostras"
 msgid "Ferramenta"
 msgstr "Ferramenta"
 
+msgid "Mapa da imagem: clique para ir a outra parte"
+msgstr "Mapa da imagem: clique para ir a outra parte"
+
 msgid "Esta tela está ligada ao programa da estação."
 msgstr "Esta tela está ligada ao programa da estação."
 
@@ -505,6 +529,9 @@ msgstr "Desenhar a área de presença"
 
 msgid "Orientação da imagem"
 msgstr "Orientação da imagem"
+
+msgid "o job concorda"
+msgstr "o job concorda"
 
 msgid "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
 msgstr "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
@@ -572,6 +599,9 @@ msgstr "A qualidade da imagem mudou"
 msgid "{id}: região {from} → {to}"
 msgstr "{id}: região {from} → {to}"
 
+msgid "o nome ao lado de cada região"
+msgstr "o nome ao lado de cada região"
+
 msgid "Expandir menu"
 msgstr "Expandir menu"
 
@@ -580,9 +610,6 @@ msgstr "a ruim mais alta, {distance} abaixo"
 
 msgid "sem sinal"
 msgstr "sem sinal"
-
-msgid "Amostra {name} capturada ({outcome} agora)."
-msgstr "Amostra {name} capturada ({outcome} agora)."
 
 msgid "atual"
 msgstr "atual"
@@ -682,6 +709,9 @@ msgstr "Ocultar detalhes"
 
 msgid "Todos os jobs"
 msgstr "Todos os jobs"
+
+msgid "Rótulos"
+msgstr "Rótulos"
 
 msgid "Job criado"
 msgstr "Job criado"
@@ -788,6 +818,9 @@ msgstr "Amostra"
 msgid "Mantenedor"
 msgstr "Mantenedor"
 
+msgid "Abrir o passo Âncora"
+msgstr "Abrir o passo Âncora"
+
 msgid "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
 msgstr "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
 
@@ -812,6 +845,9 @@ msgstr "passa"
 msgid "Esse endereço não existe."
 msgstr "Esse endereço não existe."
 
+msgid "Ocultar as amostras"
+msgstr "Ocultar as amostras"
+
 msgid "O que você ajustou e por quê"
 msgstr "O que você ajustou e por quê"
 
@@ -820,6 +856,9 @@ msgstr "O último backup automático falhou: {e}"
 
 msgid "Repetir as imagens"
 msgstr "Repetir as imagens"
+
+msgid "Zoom {percent} %"
+msgstr "Zoom {percent} %"
 
 msgid "Nenhum job ainda"
 msgstr "Nenhum job ainda"
@@ -841,6 +880,9 @@ msgstr "{hint} (não usado)"
 
 msgid "Tipo"
 msgstr "Tipo"
+
+msgid "Marcações · {on}/{all}"
+msgstr "Marcações · {on}/{all}"
 
 msgid "conectada"
 msgstr "conectada"
@@ -1007,6 +1049,9 @@ msgstr "Cria um job novo a partir da versão {v}, com todos os arquivos."
 msgid "Medido agora, na imagem ao vivo, com a estação pausada."
 msgstr "Medido agora, na imagem ao vivo, com a estação pausada."
 
+msgid "Escolher as marcações"
+msgstr "Escolher as marcações"
+
 msgid "Carregando a imagem…"
 msgstr "Carregando a imagem…"
 
@@ -1079,14 +1124,26 @@ msgstr "Senha do {role} definida. As sessões dele foram encerradas."
 msgid "Capturar a imagem de referência"
 msgstr "Capturar a imagem de referência"
 
+msgid "Ajustar na referência"
+msgstr "Ajustar na referência"
+
 msgid "Trocar a senha do {role}"
 msgstr "Trocar a senha do {role}"
+
+msgid "Âncora não encontrada ({code})"
+msgstr "Âncora não encontrada ({code})"
 
 msgid "rede elétrica"
 msgstr "rede elétrica"
 
+msgid "a região de cada ferramenta e o resultado dela"
+msgstr "a região de cada ferramenta e o resultado dela"
+
 msgid "Manter livre no disco pelo menos"
 msgstr "Manter livre no disco pelo menos"
+
+msgid "Afastar"
+msgstr "Afastar"
 
 msgid "As amostras se sobrepõem; a medição não separa boas de ruins."
 msgstr "As amostras se sobrepõem; a medição não separa boas de ruins."
@@ -1138,6 +1195,9 @@ msgstr "Última troca"
 
 msgid "Nenhum evento"
 msgstr "Nenhum evento"
+
+msgid "Resultado do rascunho"
+msgstr "Resultado do rascunho"
 
 msgid "Arraste sobre a cor na imagem"
 msgstr "Arraste sobre a cor na imagem"
@@ -1195,6 +1255,9 @@ msgstr "Todos os motivos"
 
 msgid "falhou"
 msgstr "falhou"
+
+msgid "Última imagem há {age}."
+msgstr "Última imagem há {age}."
 
 msgid "Todos os eventos"
 msgstr "Todos os eventos"
@@ -1346,6 +1409,9 @@ msgstr "Desenhar a região de medição"
 msgid "Baixar {name}"
 msgstr "Baixar {name}"
 
+msgid "{n} s"
+msgstr "{n} s"
+
 msgid "Imagens de {name}"
 msgstr "Imagens de {name}"
 
@@ -1363,6 +1429,9 @@ msgstr "As duas versões têm a mesma definição."
 
 msgid "Arraste sobre o que deve ficar de fora"
 msgstr "Arraste sobre o que deve ficar de fora"
+
+msgid "Largura da lista de passos"
+msgstr "Largura da lista de passos"
 
 msgid "Pasta das imagens"
 msgstr "Pasta das imagens"
@@ -1390,6 +1459,9 @@ msgstr "Atualizar imagem"
 
 msgid "Nome do dispositivo"
 msgstr "Nome do dispositivo"
+
+msgid "Área de presença"
+msgstr "Área de presença"
 
 msgid "Âncora alterada ({type})"
 msgstr "Âncora alterada ({type})"
@@ -1436,6 +1508,9 @@ msgstr "30 dias"
 msgid "Remover a região {name}"
 msgstr "Remover a região {name}"
 
+msgid "o job discorda"
+msgstr "o job discorda"
+
 msgid "Solte aqui o modelo (.onnx) e o cartão (.card.yaml)"
 msgstr "Solte aqui o modelo (.onnx) e o cartão (.card.yaml)"
 
@@ -1462,6 +1537,9 @@ msgstr "informativa"
 
 msgid "ativo: v{v}"
 msgstr "ativo: v{v}"
+
+msgid "Sem resultado ainda: o rascunho é medido na imagem ao vivo ou ao pedir Testar."
+msgstr "Sem resultado ainda: o rascunho é medido na imagem ao vivo ou ao pedir Testar."
 
 msgid "sem conexão"
 msgstr "sem conexão"
@@ -1493,6 +1571,9 @@ msgstr "Alarga ou estreita a faixa toda de uma vez, a partir da última que voc�
 msgid "0 inspeciona o mais rápido que o computador deixar. Uma imagem tirada com a cena em movimento nunca é inspecionada."
 msgstr "0 inspeciona o mais rápido que o computador deixar. Uma imagem tirada com a cena em movimento nunca é inspecionada."
 
+msgid "Grade de pixels"
+msgstr "Grade de pixels"
+
 msgid "Especialista"
 msgstr "Especialista"
 
@@ -1510,6 +1591,9 @@ msgstr "Exportar CSV"
 
 msgid "Este resultado estava errado?"
 msgstr "Este resultado estava errado?"
+
+msgid "Nenhuma amostra ainda. Para propor limites: 3 Boas e 1 Ruim; o recomendado é 10 Boas e 1 Ruim de cada defeito."
+msgstr "Nenhuma amostra ainda. Para propor limites: 3 Boas e 1 Ruim; o recomendado é 10 Boas e 1 Ruim de cada defeito."
 
 msgid "{limit}; valor atual {current}; {goodIn} de {goodN} boas dentro"
 msgstr "{limit}; valor atual {current}; {goodIn} de {goodN} boas dentro"
@@ -1580,6 +1664,9 @@ msgstr "sinal de vida há {age} s"
 msgid "Marque primeiro a cor com Incluir cor."
 msgstr "Marque primeiro a cor com Incluir cor."
 
+msgid "Mostrar as amostras"
+msgstr "Mostrar as amostras"
+
 msgid "fora da faixa"
 msgstr "fora da faixa"
 
@@ -1597,6 +1684,9 @@ msgstr "Outro editor está usando a câmera"
 
 msgid "ligado"
 msgstr "ligado"
+
+msgid "{n} min"
+msgstr "{n} min"
 
 msgid "Localizador"
 msgstr "Localizador"
@@ -1655,6 +1745,9 @@ msgstr "Nenhum job"
 msgid "Pelo botão Inspecionar agora ou por outro programa"
 msgstr "Pelo botão Inspecionar agora ou por outro programa"
 
+msgid "{name}: {kind}, {agrees}"
+msgstr "{name}: {kind}, {agrees}"
+
 msgid "Tempo parado"
 msgstr "Tempo parado"
 
@@ -1702,6 +1795,9 @@ msgstr "A versão salva nunca muda. Para usar na estação, ative-a na tela Jobs
 
 msgid "{share} % da imagem saturada"
 msgstr "{share} % da imagem saturada"
+
+msgid "Ajustar à janela"
+msgstr "Ajustar à janela"
 
 msgid "Escolha o tipo"
 msgstr "Escolha o tipo"
@@ -1796,6 +1892,9 @@ msgstr "Importação"
 msgid "Brilho mínimo"
 msgstr "Brilho mínimo"
 
+msgid "As ferramentas não rodaram. As amostras e a referência continuam abertas."
+msgstr "As ferramentas não rodaram. As amostras e a referência continuam abertas."
+
 msgid "GB"
 msgstr "GB"
 
@@ -1804,6 +1903,9 @@ msgstr "Quantos guardar"
 
 msgid "estação"
 msgstr "estação"
+
+msgid "Roda do mouse: zoom. Espaço e arrastar: mover. Ctrl+0 ajusta; 1 mostra no tamanho real."
+msgstr "Roda do mouse: zoom. Espaço e arrastar: mover. Ctrl+0 ajusta; 1 mostra no tamanho real."
 
 msgid "Gabarito"
 msgstr "Gabarito"
@@ -1838,6 +1940,9 @@ msgstr "Perfil ou senha incorretos."
 msgid "aplicado"
 msgstr "aplicado"
 
+msgid "Todas as marcações"
+msgstr "Todas as marcações"
+
 msgid "Nitidez mínima"
 msgstr "Nitidez mínima"
 
@@ -1871,6 +1976,9 @@ msgstr "Fazer backup"
 msgid "Esse resultado não tem imagem guardada"
 msgstr "Esse resultado não tem imagem guardada"
 
+msgid "Âncoras"
+msgstr "Âncoras"
+
 msgid "Ligada, mas a máquina ainda não deu sinal de vida."
 msgstr "Ligada, mas a máquina ainda não deu sinal de vida."
 
@@ -1894,6 +2002,9 @@ msgstr "Motivos"
 
 msgid "Os textos do operador mudaram"
 msgstr "Os textos do operador mudaram"
+
+msgid "os pixels que a faixa de cor pega"
+msgstr "os pixels que a faixa de cor pega"
 
 msgid "Conectando…"
 msgstr "Conectando…"
@@ -2035,6 +2146,9 @@ msgstr "renumerada"
 
 msgid "balanço de branco"
 msgstr "balanço de branco"
+
+msgid "só com zoom acima de 800 %"
+msgstr "só com zoom acima de 800 %"
 
 msgid "Câmera"
 msgstr "Câmera"
@@ -2183,6 +2297,9 @@ msgstr "Proposta: limite máximo {value}, no meio entre as boas e as ruins ({goo
 msgid "Validar tudo"
 msgstr "Validar tudo"
 
+msgid "Captura {rate}/s"
+msgstr "Captura {rate}/s"
+
 msgid "Nova região"
 msgstr "Nova região"
 
@@ -2215,6 +2332,9 @@ msgstr "Vale só para você, neste navegador. A tela do operador usa o idioma da
 
 msgid "Exportar o dataset de {name}"
 msgstr "Exportar o dataset de {name}"
+
+msgid "{id}: {state}"
+msgstr "{id}: {state}"
 
 msgid "Nada mudou em relação à versão de origem."
 msgstr "Nada mudou em relação à versão de origem."

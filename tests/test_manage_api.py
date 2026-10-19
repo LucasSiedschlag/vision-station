@@ -97,6 +97,9 @@ def test_create_read_and_open_a_job(env, mnt):
     assert full["reference"]["sharpness"] > 0 and len(full["expected"]["cases"]) == 3
     img = env.client.get(f"/api/jobs/{job_id}/versions/1/files/reference/reference.png", headers=mnt)
     assert img.status_code == 200 and img.headers["content-type"] == "image/png"
+    small = env.client.get(f"/api/jobs/{job_id}/versions/1/files/reference/reference.png?width=64", headers=mnt)  # a thumbnail for the filmstrip
+    assert small.status_code == 200 and small.headers["content-type"] == "image/jpeg" and len(small.content) < len(img.content)
+    assert cv2.imdecode(np.frombuffer(small.content, np.uint8), cv2.IMREAD_COLOR).shape[1] == 64
     assert env.client.get(f"/api/jobs/{job_id}/versions/9", headers=mnt).status_code == 404
     assert any(a["kind"] == "job_create" and a["job_id"] == job_id for a in env.jobs.read_audit())
 

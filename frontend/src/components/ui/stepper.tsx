@@ -16,7 +16,16 @@ export interface Step {
  * The steps of a longer task (the job editor). A step's state is an icon and a word for screen readers, not colour
  * alone, and the reason for a state is plain text under the step. A blocked step can still be opened to read.
  */
-export function Stepper({ steps, onSelect }: { steps: Step[]; onSelect?: (id: string) => void }) {
+export function Stepper({
+  steps,
+  onSelect,
+  compact = false,
+}: {
+  steps: Step[]
+  onSelect?: (id: string) => void
+  /** Only the numbered icons, the names in a tooltip and for screen readers: for a narrow window (docs/frontend.md §10.1). */
+  compact?: boolean
+}) {
   const words = {
     done: text.ui.stepDone,
     todo: text.ui.stepTodo,
@@ -30,9 +39,11 @@ export function Stepper({ steps, onSelect }: { steps: Step[]; onSelect?: (id: st
           <button
             type="button"
             aria-current={step.current ? 'step' : undefined}
+            title={compact ? `${step.label}${step.reason ? `: ${step.reason}` : ''}` : undefined}
             onClick={() => onSelect?.(step.id)}
             className={cn(
               'flex min-h-control w-full items-center gap-3 rounded-control px-3 py-1 text-left fs-control hover:bg-surface-3',
+              compact && 'justify-center px-1',
               step.current && 'bg-surface-3 font-medium',
               step.status === 'blocked' && 'text-fg-muted',
             )}
@@ -58,7 +69,7 @@ export function Stepper({ steps, onSelect }: { steps: Step[]; onSelect?: (id: st
                 index + 1
               )}
             </span>
-            <span className="flex min-w-0 flex-col">
+            <span className={cn('flex min-w-0 flex-col', compact && 'sr-only')}>
               <span>{step.label}</span>
               {step.reason ? (
                 <span className="text-xs font-normal text-fg-muted">{step.reason}</span>

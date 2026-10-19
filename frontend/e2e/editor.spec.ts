@@ -134,3 +134,59 @@ test('the fine-tune: a supervisor opens it from the job, sees only the gauges, a
   // leaving ends the session and the station goes back to production
   await page.goto('/')
 })
+
+test('the workbench: zoom and pan the image, the markings menu, the strip of samples and the result bar', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+  await page.getByRole('button', { name: /Ferramentas/ }).click()
+
+  // the three panels, with a handle to resize each side, and the bar under them
+  await expect(page.getByRole('separator', { name: 'Largura da lista de passos' })).toBeVisible()
+  await expect(page.getByRole('separator', { name: 'Largura do inspetor' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Resultado do rascunho' })).toBeVisible()
+  await expect(
+    page
+      .getByRole('toolbar', { name: 'Amostras' })
+      .or(page.getByRole('region', { name: 'Amostras' })),
+  ).toBeVisible()
+
+  // the wheel zooms around the pointer; the buttons fit and go to 100 %
+  const canvas = page.getByRole('group', { name: 'Regiões sobre a imagem' })
+  const zoom = page.getByText(/^\d+ %$/)
+  const fitted = await zoom.textContent()
+  const box = (await canvas.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.wheel(0, -600)
+  await expect(zoom).not.toHaveText(fitted!)
+  await page.getByRole('button', { name: 'Ajustar à janela' }).click()
+  await expect(zoom).toHaveText(fitted!)
+  await page.getByRole('button', { name: 'Tamanho real (100 %)' }).click()
+  await expect(zoom).toHaveText('100 %')
+  await expect(page.getByRole('button', { name: /^Mapa da imagem/ })).toHaveCount(0) // above 200 % only
+  await page.keyboard.press('Control+0')
+  await expect(zoom).toHaveText(fitted!)
+
+  // the markings: the menu has a check per layer and the key M turns them all off
+  await page.getByRole('button', { name: 'Escolher as marcações' }).click()
+  await expect(page.getByRole('menuitemcheckbox', { name: /Grade de pixels/ })).not.toBeChecked()
+  await page.keyboard.press('Escape')
+  const markings = page.getByRole('button', { name: /^Marcações · \d\/6$/ })
+  await expect(markings).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('m')
+  await expect(page.getByRole('button', { name: 'Marcações · 0/6' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await page.keyboard.press('m')
+  await expect(markings).toHaveAttribute('aria-pressed', 'true')
+  expect(await accessibilityProblems(page)).toEqual([])
+  await page.goto('/')
+})

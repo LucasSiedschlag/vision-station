@@ -19,7 +19,6 @@ import { Select } from '@/components/ui/select'
 import { LevelSwitch } from '@/app/shell/LevelSwitch'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmDialog, Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
@@ -50,6 +49,16 @@ import {
 import { ImageAidsProvider, type ImageAids } from './image-aids'
 import { maskGrid, type HsvRange } from '@/components/vision/hsv-model'
 import { describeHsv } from '@/components/vision/hsv-model'
+import { useDefaultLayout } from 'react-resizable-panels'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { cn } from '@/lib/cn'
+import { captureSample } from './capture'
+import { Filmstrip } from './Filmstrip'
+import { LayerMenu } from './LayerMenu'
+import { ResultBar } from './ResultBar'
+import { AnchorNotFound, CameraLost } from './StateBanners'
+import { useNarrow } from './use-narrow'
+import { drawn, useLayers } from './layers'
 import { RegionCanvas, type Shape } from './RegionCanvas'
 import { hiddenChanged } from './SchemaForm'
 import {
@@ -277,6 +286,25 @@ function Editor({
     () => (pixels && maskRange ? maskGrid(pixels, maskRange) : null),
     [pixels, maskRange],
   )
+  const layerState = useLayers()
+  const layers = drawn(layerState)
+  // the workbench (docs/frontend.md §10.1): panel sizes are kept in this browser; a narrow window starts with the rail collapsed
+  const narrow = useNarrow(1500)
+  const [railPx, setRailPx] = useState(narrow ? 56 : 200)
+  const bench = useDefaultLayout({ id: 'editor-bench', storage: localStorage })
+  // on a short screen the strip starts closed, with only its buttons: the picture needs the height (docs/frontend.md §10.1)
+  const [stripOpen, setStripOpen] = useState(() => window.innerHeight >= 900)
+  const [capturing, setCapturing] = useState<'good' | 'bad' | null>(null)
+  const captureFromStrip = async (kind: 'good' | 'bad') => {
+    setCapturing(kind)
+    try {
+      toast.message(await captureSample(draft, kind))
+    } catch (e) {
+      toast.error(describeError(e))
+    } finally {
+      setCapturing(null)
+    }
+  }
   const paused = useLive((s) => s.status?.state === 'Paused')
 
   const hasReference = draftFiles(draft).includes('reference/reference.png')
@@ -308,6 +336,8 @@ function Editor({
         : tested,
     [measurement, tested],
   )
+  // the last measurement could not find the anchor (E201, E202): the tools did not run (docs/frontend.md §19.1)
+  const anchorLost = !!test && [201, 202].includes(test.result.error_code ?? 0)
   const problems = live.draftError ? { ...fields, ...live.draftError.fields } : fields
   useEffect(() => {
     let alive = true
@@ -616,8 +646,8 @@ function Editor({
 
   return (
     <ImageAidsProvider value={aids}>
-      <main className="flex flex-col gap-4 p-4">
-        <header className="flex flex-wrap items-center gap-3">
+      <main className="flex h-full min-h-0 flex-col gap-2 pt-4">
+        <header className="flex flex-wrap items-center gap-3 px-4">
           <Link
             to={draft.base ? `/jobs/${draft.base.id}` : '/jobs'}
             className="inline-flex items-center gap-1 text-sm text-accent-text hover:underline"
@@ -667,7 +697,7 @@ function Editor({
         {recovered ? (
           <div
             role="status"
-            className="flex flex-wrap items-center gap-3 rounded-control border border-warn-text/40 bg-warn-surface px-3 py-2 text-sm text-warn-text"
+            className="mx-4 flex flex-wrap items-center gap-3 rounded-control border border-warn-text/40 bg-warn-surface px-3 py-2 text-sm text-warn-text"
           >
             {t.recovered}
             <Button variant="ghost" onClick={() => (onForget(), setDiscardOpen(true))}>
@@ -678,7 +708,7 @@ function Editor({
         {paused ? (
           <div
             role="status"
-            className="flex flex-wrap items-center gap-3 rounded-control border border-busy-text/40 bg-busy-surface px-3 py-2 text-sm text-busy-text"
+            className="mx-4 flex flex-wrap items-center gap-3 rounded-control border border-busy-text/40 bg-busy-surface px-3 py-2 text-sm text-busy-text"
           >
             {live.pausedBySession ? t.stationPausedBySession : t.stationPaused}
             {live.pausedBySession ? null : (
@@ -697,164 +727,196 @@ function Editor({
           </div>
         ) : null}
 
-        <div className="grid-editor grid gap-4">
-          <nav aria-label={t.stepsLabel}>
-            <Stepper
-              steps={steps}
-              onSelect={(s) => (setStep(s as StepId), setDrawing(null), setCrop(null))}
-            />
-          </nav>
-
-          <section
-            aria-label={t.imageLabel}
-            // the image stays in view while the inspector scrolls: sampling a colour needs both at once
-            className="sticky top-4 flex min-w-0 flex-col gap-3 self-start"
+        <div className="min-h-0 flex-1 px-2">
+          <ResizablePanelGroup
+            orientation="horizontal"
+            defaultLayout={bench.defaultLayout}
+            onLayoutChanged={bench.onLayoutChanged}
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <SegmentedControl
-                label={t.imageSource}
-                value={useReference ? 'reference' : 'live'}
-                onValueChange={(v) => {
-                  setShownSample(null)
-                  setSource(v as 'reference' | 'live')
-                }}
-                options={[
-                  { value: 'reference', label: t.sourceReference, disabled: !hasReference },
-                  { value: 'live', label: t.sourceLive },
-                ]}
-              />
-              <Button variant="ghost" onClick={() => setReload((n) => n + 1)}>
-                <RefreshCw aria-hidden className="size-4" />
-                {t.refreshImage}
-              </Button>
-              {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
-              {shownSample ? (
-                <div role="status" className="flex items-center gap-2">
-                  <Badge tone="neutral">
-                    {t.sampleShown(shownSample.replace('tests/images/', ''))}
-                  </Badge>
-                  <Button variant="ghost" onClick={() => setShownSample(null)}>
-                    {t.sampleBack}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-            <div role="status" className="flex flex-wrap items-center gap-2">
-              {live.status === 'live' ? (
-                <Badge tone={sessionFeeds ? 'ok' : 'neutral'}>
-                  {t.liveOn(formatNumber(live.fps, 1))}
-                </Badge>
-              ) : (
-                <Badge tone={live.status === 'connecting' ? 'busy' : 'warn'}>
-                  {t.liveState[live.status]}
-                </Badge>
-              )}
-              {live.camera === false ? (
-                <span className="text-sm text-warn-text">{t.liveCameraLost}</span>
-              ) : null}
-            </div>
-            {live.draftError ? (
-              <p role="alert" className="text-sm text-fail-text">
-                {t.liveDraftRefused(live.draftError.message)}
-              </p>
-            ) : null}
-            {hiddenAnchored && step !== 'image' ? (
-              <p className="text-sm text-warn-text">{t.noAnchor}</p>
-            ) : null}
-            <RegionCanvas
-              image={image}
-              shapes={shapes}
-              selected={selected}
-              onSelect={setSelected}
-              onChange={onShapeChange}
-              onDelete={onShapeDelete}
-              drawing={drawing}
-              emptyText={imageError || t.loadingImage}
-              pixels={pixels}
-              mask={mask}
-              readout={(x, y, rgb) =>
-                `x ${x}, y ${y} · RGB ${rgb.join(', ')} · ${describeHsv(rgb, level >= 3)}`
-              }
-              onGestureEnd={onGestureEnd}
-            />
-            {test ? (
-              <Card>
-                <CardContent className="flex flex-col gap-2">
-                  <p role="status" className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      tone={
-                        test.result.outcome === 'PASS'
-                          ? 'ok'
-                          : test.result.outcome === 'FAIL'
-                            ? 'fail'
-                            : 'warn'
-                      }
-                    >
-                      {t.outcome[test.result.outcome]}
-                    </Badge>
-                    <span className="text-sm">{test.result.reason}</span>
-                    <span className="ml-auto font-mono text-xs text-fg-muted tabular-nums">
-                      {test.result.duration_ms} ms
-                    </span>
-                  </p>
-                  {Object.keys(test.result.scores).length ? (
-                    <p className="font-mono text-xs tabular-nums">
-                      {Object.entries(test.result.scores)
-                        .map(([k, v]) => `${k}: ${formatNumber(v, 2)}`)
-                        .join(' · ')}
+            <ResizablePanel
+              id="rail"
+              defaultSize={narrow ? 56 : 200}
+              minSize={56}
+              maxSize={260}
+              onResize={(size) => setRailPx(size.inPixels)}
+            >
+              <nav aria-label={t.stepsLabel} className="h-full overflow-y-auto p-1">
+                <Stepper
+                  steps={steps}
+                  compact={railPx < 120}
+                  onSelect={(s) => (setStep(s as StepId), setDrawing(null), setCrop(null))}
+                />
+              </nav>
+            </ResizablePanel>
+            <ResizableHandle aria-label={t.railWidth} />
+            <ResizablePanel id="image" minSize="30">
+              <section aria-label={t.imageLabel} className="flex h-full min-w-0 flex-col px-2">
+                <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SegmentedControl
+                      label={t.imageSource}
+                      value={useReference ? 'reference' : 'live'}
+                      onValueChange={(v) => {
+                        setShownSample(null)
+                        setSource(v as 'reference' | 'live')
+                      }}
+                      options={[
+                        { value: 'reference', label: t.sourceReference, disabled: !hasReference },
+                        { value: 'live', label: t.sourceLive },
+                      ]}
+                    />
+                    <Button variant="ghost" onClick={() => setReload((n) => n + 1)}>
+                      <RefreshCw aria-hidden className="size-4" />
+                      {t.refreshImage}
+                    </Button>
+                    <LayerMenu />
+                    {drawing ? <Badge tone="busy">{t.drawingHint}</Badge> : null}
+                    {shownSample ? (
+                      <div role="status" className="flex items-center gap-2">
+                        <Badge tone="neutral">
+                          {t.sampleShown(shownSample.replace('tests/images/', ''))}
+                        </Badge>
+                        <Button variant="ghost" onClick={() => setShownSample(null)}>
+                          {t.sampleBack}
+                        </Button>
+                      </div>
+                    ) : null}
+                    <div role="status" className="ml-auto flex flex-wrap items-center gap-2">
+                      {live.status === 'live' ? (
+                        <Badge tone={sessionFeeds ? 'ok' : 'neutral'}>
+                          {t.liveOn(formatNumber(live.fps, 1))}
+                        </Badge>
+                      ) : (
+                        <Badge tone={live.status === 'connecting' ? 'busy' : 'warn'}>
+                          {t.liveState[live.status]}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {live.camera === false ? (
+                    <CameraLost
+                      since={live.lostAt}
+                      canUseReference={hasReference}
+                      onReference={() => (setShownSample(null), setSource('reference'))}
+                    />
+                  ) : null}
+                  {live.draftError ? (
+                    <p role="alert" className="text-sm text-fail-text">
+                      {t.liveDraftRefused(live.draftError.message)}
                     </p>
                   ) : null}
-                  <p className="text-xs text-fg-muted">
-                    {sessionFeeds && live.last ? t.liveNote : t.testNote}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : null}
-          </section>
-
-          <section aria-labelledby="inspector-title" className="flex min-w-0 flex-col gap-4">
-            <h2 id="inspector-title" className="text-base font-semibold">
-              {t.steps[step]}
-            </h2>
-            {blocked ? (
-              <p role="status" className="text-sm text-fg-muted">
-                {t.sequence.blockedBanner} {info[step].reason}
-              </p>
-            ) : null}
-            <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4 border-0 p-0">
-              {step === 'image' ? (
-                <>
-                  <CameraStep {...props} />
-                  <h3 className="text-sm font-semibold">{t.triggerTitle}</h3>
-                  <TriggerStep {...props} />
-                </>
-              ) : null}
-              {step === 'samples' ? <ReferenceStep {...props} /> : null}
-              {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
-              {step === 'tools' ? (
-                <>
-                  <RegionsStep {...props} part="regions" />
-                  <ToolsStep {...props} />
-                  <PatternCrop {...props} />
-                </>
-              ) : null}
-              {step === 'quality' ? <QualityStep {...props} /> : null}
-              {step === 'outputs' ? <OutputsStep {...props} /> : null}
-              {step === 'validate' ? <ValidateStep {...props} /> : null}
-              {step === 'save' ? <SaveStep {...props} /> : null}
-            </fieldset>
-            {next ? (
-              <Button
-                variant="secondary"
-                className="self-start"
-                onClick={() => (setStep(next), setDrawing(null), setCrop(null))}
+                  {hiddenAnchored && step !== 'image' ? (
+                    <p className="text-sm text-warn-text">{t.noAnchor}</p>
+                  ) : null}
+                  {anchorLost ? (
+                    <AnchorNotFound
+                      code={`E${test!.result.error_code}`}
+                      reason={test!.result.reason}
+                      onOpen={() => (setStep('anchor'), setDrawing(null), setCrop(null))}
+                    />
+                  ) : null}
+                  <div className={cn(live.camera === false && showsLive && 'opacity-60')}>
+                    <RegionCanvas
+                      image={image}
+                      shapes={shapes}
+                      selected={selected}
+                      onSelect={setSelected}
+                      onChange={onShapeChange}
+                      onDelete={onShapeDelete}
+                      drawing={drawing}
+                      emptyText={imageError || t.loadingImage}
+                      pixels={pixels}
+                      mask={mask}
+                      readout={(x, y, rgb) =>
+                        `x ${x}, y ${y} · RGB ${rgb.join(', ')} · ${describeHsv(rgb, level >= 3)}`
+                      }
+                      onGestureEnd={onGestureEnd}
+                      layers={layers}
+                      caption={
+                        shownSample
+                          ? t.sampleShown(shownSample.replace('tests/images/', ''))
+                          : useReference
+                            ? t.sourceReference
+                            : t.sourceLive
+                      }
+                    />
+                  </div>
+                </div>
+                <Filmstrip
+                  draft={draft}
+                  batch={batch.out}
+                  shown={shownSample}
+                  live={!useReference}
+                  open={stripOpen}
+                  onToggle={() => setStripOpen((o) => !o)}
+                  onShow={(path) =>
+                    path === 'reference/reference.png'
+                      ? (setShownSample(null), setSource('reference'))
+                      : setShownSample(path)
+                  }
+                  onLive={() => (setShownSample(null), setSource('live'))}
+                  onCapture={(kind) => void captureFromStrip(kind)}
+                  capturing={capturing}
+                  canCapture={live.camera !== false}
+                />
+              </section>
+            </ResizablePanel>
+            <ResizableHandle aria-label={t.inspectorWidth} />
+            <ResizablePanel id="inspector" defaultSize={440} minSize={360} maxSize={520}>
+              <section
+                aria-labelledby="inspector-title"
+                className="flex h-full min-w-0 flex-col gap-4 overflow-y-auto px-3"
               >
-                {t.sequence.next}: {t.steps[next]}
-                <ArrowRight aria-hidden className="size-4" />
-              </Button>
-            ) : null}
-          </section>
+                <h2 id="inspector-title" className="text-base font-semibold">
+                  {t.steps[step]}
+                </h2>
+                {blocked ? (
+                  <p role="status" className="text-sm text-fg-muted">
+                    {t.sequence.blockedBanner} {info[step].reason}
+                  </p>
+                ) : null}
+                <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4 border-0 p-0">
+                  {step === 'image' ? (
+                    <>
+                      <CameraStep {...props} />
+                      <h3 className="text-sm font-semibold">{t.triggerTitle}</h3>
+                      <TriggerStep {...props} />
+                    </>
+                  ) : null}
+                  {step === 'samples' ? <ReferenceStep {...props} /> : null}
+                  {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
+                  {step === 'tools' ? (
+                    <>
+                      <RegionsStep {...props} part="regions" />
+                      <ToolsStep {...props} />
+                      <PatternCrop {...props} />
+                    </>
+                  ) : null}
+                  {step === 'quality' ? <QualityStep {...props} /> : null}
+                  {step === 'outputs' ? <OutputsStep {...props} /> : null}
+                  {step === 'validate' ? <ValidateStep {...props} /> : null}
+                  {step === 'save' ? <SaveStep {...props} /> : null}
+                </fieldset>
+                {next ? (
+                  <Button
+                    variant="secondary"
+                    className="self-start"
+                    onClick={() => (setStep(next), setDrawing(null), setCrop(null))}
+                  >
+                    {t.sequence.next}: {t.steps[next]}
+                    <ArrowRight aria-hidden className="size-4" />
+                  </Button>
+                ) : null}
+              </section>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
+        <ResultBar
+          test={test}
+          tools={(draft.job.tools ?? []) as JobJson[]}
+          rate={live.status === 'live' && sessionFeeds ? live.fps : null}
+          note={sessionFeeds && live.last ? t.liveNote : t.testNote}
+        />
 
         <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
           <DialogContent

@@ -556,8 +556,10 @@ describe('the job editor', () => {
     // a lost camera leaves the reference and the samples to work with
     act(() => socket.say({ type: 'camera', connected: false, message: 'Câmera desconectada' }))
     expect(
-      await screen.findByText(/Câmera desconectada: dá para seguir ajustando na referência/),
+      await screen.findByText('Câmera desconectada', { selector: 'strong' }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ajustar na referência' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Capturar como Boa' })).toBeDisabled() // there is no picture to take
   })
 
   it("the pause of the session is the session's: the banner says so and offers no way to resume under it", async () => {
@@ -934,6 +936,17 @@ describe('the job editor', () => {
             scores: { tampa: 0.2 },
             duration_ms: 12,
             at: null,
+            tools: [
+              {
+                id: 'tampa',
+                type: 'color',
+                version: 1,
+                passed: false,
+                score: 0.2,
+                values: {},
+                criteria: [],
+              },
+            ],
           },
           regions: [{ tool: 'tampa', roi: 'cap', rect: [576, 108, 1344, 324], passed: false }],
           anchor: null,
@@ -948,7 +961,11 @@ describe('the job editor', () => {
     await openEditor()
     await userEvent.click(screen.getByRole('button', { name: 'Testar' }))
     const result = await screen.findByText('Tampa ausente', { selector: 'span' })
-    expect(result.closest('[role="status"]')).toHaveTextContent('Reprovado')
+    const bar = screen.getByRole('group', { name: 'Resultado do rascunho' })
+    expect(result.closest('[role="group"]')).toBe(bar)
+    expect(bar).toHaveTextContent('Reprovado')
+    expect(within(bar).getByLabelText('tampa: reprovou')).toBeInTheDocument() // a chip for the tool, with no value
+    expect(bar).toHaveTextContent('12 ms')
     expect(sent.draft.base).toEqual({ id: JOB, version: 2 })
     expect(sent.image).toBeNull()
   })

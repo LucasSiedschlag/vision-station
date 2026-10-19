@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/input'
 import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { useBatch } from './batch'
+import { captureSample } from './capture'
 import { ChangeList } from './EditorPage'
 import { forgetDraft, toRequest, useDraft, type Draft, type JobJson } from './draft'
 import { ToolGauges } from './gauges'
@@ -166,18 +167,7 @@ function Tune({ draft, name }: { draft: Draft; name: string }) {
   const capture = async (kind: 'good' | 'bad') => {
     setBusy(kind)
     try {
-      const taken = new Set((draft.expected?.cases ?? []).map((c) => c.image))
-      let n = 1
-      const prefix = kind === 'good' ? 'boa' : 'ruim'
-      while (taken.has(`tests/images/${prefix}-ajuste-${n}.png`)) n++
-      const sampleName = `${prefix}-ajuste-${n}`
-      const out = await editorApi.captureCase(toRequest(draft), sampleName)
-      useDraft.getState().edit((d) => {
-        d.addFiles[out.path] = out.image
-        d.expected ??= { tolerance: 0.05, cases: [] }
-        d.expected.cases.push({ image: out.path, outcome: kind === 'good' ? 'PASS' : 'FAIL' })
-      })
-      toast.message(tune.captured(sampleName, t.outcome[out.result.outcome]))
+      toast.message(await captureSample(draft, kind))
     } catch (e) {
       toast.error(describeError(e))
     } finally {

@@ -910,6 +910,11 @@ The image never drops below 60 % of the height.
   - a badge says what is shown: *Ao vivo*, *Referência*, *Amostra 4 (Ruim: sem fita)*, or *Resultado 14:32:07*;
   - live frames never replace a frozen image without the user asking.
 
+**As built (VIA-0044).**
+- **Workbench** (§10.1): three resizable panels, the step rail, the image and the inspector, with a handle each (`react-resizable-panels`, keyboard-resizable, named). The sizes are kept in this browser (`editor-bench`); the rail is 200 px and collapses by itself to numbered icons, names in a tooltip and for screen readers, when it is dragged narrow or the window is under 1500 px; the inspector is 360–520 px, 440 by default. Each panel scrolls on its own, and under them are the **strip of samples** and the **result bar**. Not built: the F6 key that cycles the panels, `[` and `]` between steps, and the filmstrip as a drawer at 1366×768 (it is a strip that starts closed on a screen under 900 px high, with its buttons in sight).
+- **Zoom and pan:** the wheel zooms around the pointer up to 16 screen pixels for each image pixel, Space and drag (or the middle button) moves, buttons zoom, fit (`Ctrl+0`) and show the image at 100 % (`1`); the keys work while the pointer is over the image and nothing is being typed, and Space is left to a button or a slider that has the focus. The percentage is screen pixels per image pixel, so "100 %" is the image as it is. A **mini-map** appears above 200 % and the **pixel grid** (a layer) above 800 %. The picture is a transform of one box (picture, mask, regions and labels move together), the text of a label keeps its size, and the handles of a region keep theirs. A frame of another size starts fitted; the live frames of one size keep the zoom. Not built: the canvas/SVG split of §10.2 (it is `<img>` + SVG + a mask canvas), x, y in the anchor's coordinates and mm in the readout, and the pan with two fingers.
+- **What the image is**, over its corner: *Ao vivo*, *Referência*, *Amostra boa-1*. Not built: *Resultado 14:32:07* (a result frozen from the results list).
+
 ### 10.3 Shapes and editing
 
 These are as in 0.1:
@@ -1127,6 +1132,8 @@ FR-UI-9. Overlays are drawn by the client from the result contract (architecture
 
 **Rule:** turning overlays off **never hides the verdict or the reason**. With overlays off, the operator screen still lists the failing tools by name (§7.1).
 
+**As built (VIA-0044).** One split button above the image, *Marcações · 5/6*: the button is the master switch (key `M`, except while typing) and the arrow opens the menu with *Todas as marcações* and a check per layer with what it shows. The layers built are **Regiões** (the region of each tool and its verdict), **Âncoras**, **Rótulos**, **Máscara** (the colour range of §19.4), **Área de presença** and **Grade de pixels** (off by default; only above 800 % zoom). A working aid, a crop or a colour sample being dragged, is in no layer and is never hidden. The choice is kept in this browser (`vision-station-layers`). Not built: **Medições** (what each tool measured: matches, edges, blobs, codes with their text) and the editor/operator defaults of the *Configurações › Estação* setting, which wait for the tool overlays (R4); the operator screen keeps its single *Marcações* button.
+
 ---
 
 ## 19. Vision controls (new in 0.2)
@@ -1159,6 +1166,11 @@ On a frozen image (reference or a sample), the run happens once per change, on t
 | **Câmera perdida** (E401) | last frame dimmed, with its age, under a dialog-like card | as above | *! ERRO · E401 · Câmera desconectada* | *Reconectar*; *Ajustar na referência* (tuning goes on with the reference and samples) |
 
 In every one of them the controls stay usable on the reference and the samples: only the live image is lost.
+
+**As built (VIA-0044).**
+- **Strip of samples** (`Filmstrip`, a toolbar moved with the arrows, Home and End): the reference with a star, each *Boa* and *Ruim* sample of the reference set with a ✓ or ✕ for whether the job agrees with its label (from the batch test), and the live image; *+ Boa* and *+ Ruim* take a sample from the camera with the verdict the draft gives it (`captureSample`, named `boa-n` or `ruim-n`; the fine-tune uses the same). Pictures are thumbnails (`GET …/files/{path}?width=160`) asked for when they come near the screen. With no samples it says what is needed: 3 *Boas* and 1 *Ruim* to propose limits, 10 and 1 per defect recommended, never required.
+- **Result bar** (`ResultBar`, a group, not a live region, since it changes several times a second): the verdict and its reason, a chip per tool (✓, ✕ or – when it did not run) **without values**, the time and the rate (*Captura 3,8/s*), and where the measurement comes from. The old result card under the image is gone. Not built: the time against the job's budget on this PC (FR-ADM-5 has no budget yet).
+- **States of the image:** *Âncora não encontrada* (E201 and E202 of the last measurement) names the error, says the tools did not run and opens the Anchor step; *Câmera desconectada* shows how long ago the last image came (it counts the seconds), dims the live image and offers the reference; the capture buttons are off without a camera. *Carregando* and *Sem amostras* were there already (the placeholder of the image, the message of the strip).
 
 ### 19.2 SchemaForm v2 and the widget registry
 

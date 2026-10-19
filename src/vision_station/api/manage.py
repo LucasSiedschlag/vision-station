@@ -203,12 +203,20 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         )
 
     @api.get("/jobs/{job_id}/versions/{version}/files/{path:path}", responses={200: {"content": {"application/octet-stream": {}}}, 404: {"model": m.Problem}})
-    def job_file(job_id: str, version: int, path: str, _: str = Depends(need("supervisor"))) -> Response:
-        """One file of a saved version (a reference image, a template), for the editor to show."""
+    def job_file(job_id: str, version: int, path: str, width: int | None = QueryParam(None, ge=32, le=1920), _: str = Depends(need("supervisor"))) -> Response:
+        """One file of a saved version (a reference image, a template), for the editor to show. `width` reduces an image
+        (the thumbnails of the filmstrip do not carry full frames)."""
         data = jobs.load(ref_of(job_id, version)).extra.get(path)
         if data is None:
             raise Problem(404, "Esse arquivo não existe nesse job", "file_not_found")
         kind = "image/png" if path.lower().endswith(".png") else "image/jpeg" if path.lower().endswith((".jpg", ".jpeg")) else "application/octet-stream"
+        if width is not None and kind != "application/octet-stream":
+            image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+            if image is not None and image.shape[1] > width:
+                image = cv2.resize(image, (width, max(1, round(image.shape[0] * width / image.shape[1]))), interpolation=cv2.INTER_AREA)
+                ok, jpeg = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                if ok:
+                    return Response(jpeg.tobytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
         return Response(data, media_type=kind, headers={"Cache-Control": "no-store"})
 
     @api.post("/jobs/validate", response_model=m.DraftCheckOut)
