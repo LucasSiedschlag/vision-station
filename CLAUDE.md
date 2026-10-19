@@ -15,19 +15,19 @@ Current state: platform core implemented (cameras, jobs, store, station, verific
 | `docs/project-scope.md` | 01: what a fixed station is, in/out of scope, deliverables D1–D11, phases, risks |
 | `docs/requirements-and-use-cases.md` | 02: `FR-*` / `NFR-*` requirements (MoSCoW + phase letter), use cases `UC-01..14`, PC tiers M/R, project values |
 | `docs/architecture.md` | 03: components, the **job** model, `.vjob` / `.vbak` formats, camera abstraction, state machine, flows; new in 0.4: pose-based fixtures (§14), tool catalog and validation checklist (§15), machine interface (§16), robustness patterns (§17), refactors R0–R9 (§18), phases A–F (§19) |
-| `docs/technical-decisions.md` | 04: decisions `TD-01..30`, PC tiers M/R, network, known problems, bench tests |
+| `docs/technical-decisions.md` | 04: decisions `TD-01..32`, PC tiers M/R, network, known problems, bench tests |
 | `docs/frontend.md` | 05 (v0.3): the web interface (shadcn + Tailwind + React Aria, TD-29; pt-BR + en, TD-30): the order of work (§4.3), screens by role, workbench and image workspace (§10), settings levels (§17), overlays (§18), vision controls (§19), API contract, migration plan (§15) |
 | `docs/integration.md` | 06: how another program uses Vision Station through the local API (inspections with an id, result and pictures, live view, allowed origins) |
 | `docs/models.md` | 07: the `detect` tool, training offline, ONNX export, the model card |
 | `docs/job-format.md` | 08: `.vjob`/`.vbak` format (D8) |
-| `docs/reference-cognex-keyence.md` | 09: market reference, Cognex In-Sight and Keyence IV/IV3 feature by feature; §18 says what we adopt (TD-31) |
+| `docs/reference-cognex-keyence.md` | 09: market reference, Cognex In-Sight and Keyence IV/IV3 feature by feature; §18 says what we adopt (TD-31, TD-32); §19–§22 are the model of the job × station split and of the acquisition block |
 | `docs/guias/` | Portuguese guides: installation, operator, backup and restore (D10), building the installer |
 
 Docs cross-reference each other by ID (`FR-JOB-9`, `TD-04`, `§7.3`). Keep IDs stable; when a decision changes, update the TD record and every place that cites it.
 
 ## Design rules that must survive into code
 
-1. **The job is the unit of configuration.** Everything affecting a result lives in the job (`.vjob` ZIP + `manifest.json` with SHA-256). Camera IP/password, backup paths and user accounts are *system configuration*, never in a job.
+1. **The job is the unit of configuration.** Everything affecting a result lives in the job (`.vjob` ZIP + `manifest.json` with SHA-256). Camera IP/password, backup paths, user accounts, the input and output lines (line, edge, polarity) and how jobs are selected are *system configuration*, never in a job. The test: restored on another PC with the same camera, must the job still carry it? (architecture §4.6, TD-32). The trigger *type* and its timing are in the job, in its `acquisition` block, written in full.
 2. **Configuration lives on the PC, not the camera.** Apply settings on every open/reconnect/activation, then **read back** and report what did not apply.
 3. **Saved job versions are immutable.** Edits create a new version; writes are atomic (temp folder/file, then rename).
 4. **A job is active only after verification** (camera/view part with reference image + decision-logic part with the reference set).

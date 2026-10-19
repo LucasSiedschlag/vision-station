@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | Document | 09 — Market reference (Cognex In-Sight EasyBuilder, Keyence IV / IV3) |
-| Version | 0.2 — §18 items 4, 5, 6, 21, 22, 23, 29 decided (TD-31). 0.1 — first version |
-| Date | 2026-10-17 |
+| Version | 0.4 — accepted as the model (2026-10-18): §18 items 38–44 decided in TD-32, the open points of §22 settled. 0.3 — who owns what, job versus sensor (§19); Cognex *AcquireImage* as the model of the acquisition block (§20); the station layer (§21); our configuration flow checked against both (§22); sources moved to §23. 0.2 — §18 items 4, 5, 6, 21, 22, 23, 29 decided (TD-31). 0.1 — first version |
+| Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
-| Status | Reference. Facts come from the vendors' public documentation (links in §19). Where a page does not say something, this document says "not documented" instead of guessing. The comparison with Vision Station and the proposals are in §18; nothing here changes a requirement by itself. |
+| Status | Reference. Facts come from the vendors' public documentation (links in §23). Where a page does not say something, this document says "not documented" instead of guessing. The comparison with Vision Station and the proposals are in §18; nothing here changes a requirement by itself. §19–§22 describe the shape the references share and where we differ. The owner accepted them as the model on 2026-10-18; the decisions that follow are TD-32 (§18 items 38–44). |
 
 Related documents: 02 — Requirements · 03 — Architecture (§14 fixtures, §15 tools, §16 machine interface) · 05 — Frontend (§4.3 order of work, §7.3 editor, §19 vision controls) · project documents 05 (OPC UA for Machine Vision) and 06 (generic vision systems).
 
@@ -85,6 +85,8 @@ Set in *Set Up Image › Edit Acquisition Settings › Trigger*.
 | **Industrial Ethernet** (also *Network*) | The PLC sets the *Trigger* bit over EtherNet/IP, PROFINET, POWERLINK, SLMP Scanner or CC-Link IE Field Basic (§10.2) |
 | **Timestamp** | A PLC sends a timestamp trigger over EtherNet/IP (only some In-Sight 5000, 7000 Gen2 and 9000 models) |
 
+**Where it lives (§19, §20):** the trigger type is a parameter of `AcquireImage`, the function that sits permanently in cell A0 of the job, so it is saved with the job. Which physical line or protocol delivers an *External* trigger is a sensor setting (*Discrete I/O Settings*, §9.1).
+
 **Timing settings:**
 
 | Setting | Range | Default | Applies to |
@@ -107,6 +109,8 @@ Set in *Image Optimization › Trigger Options*.
 | **Trigger Delay** | *External* | 0 – 1 000 ms | 0 ms | Wait between the trigger input and imaging, for when the trigger signal comes before the part is in place |
 
 **External** means a photoelectric sensor or a PLC on input **IN1** (§9.3). While setting up, the operator can image with a temporary internal trigger. There is a separate **Trigger Error** output (§9.4), and the RUN screen counts triggers and trigger errors (§14).
+
+**Where it lives (§19):** *Trigger Options* is the first screen of the Setup Navigator, the per-program setup (§2.2). The electrical side of the trigger, IN1 and its rising or falling edge, is a sensor setting under *Sensor Advanced › Environmental › I/O Settings*.
 
 ### 3.3 Signals around the trigger
 
@@ -508,6 +512,8 @@ The transports are S7 (client of a DB), Modbus TCP server, remote I/O and OPC UA
 | Saving | **Offline** only, unless *Allow Online Job Save*; saving at the maximum trigger rate may cause missed triggers | Settings backed up to USB or PC; IV3 **Auto setting backup/restore** |
 | Versions | Not documented | Not documented |
 
+What a job or program holds, and what stays on the sensor, is in §19.
+
 **Vision Station:** jobs are **immutable versions** with notes, verification before activation and A/B replay (FR-JOB-12). Neither vendor documents versions. This is a real difference in our favour and should stay central.
 
 ---
@@ -698,12 +704,169 @@ Status: **Has** = already in our documents; **Adopt** = proposed here, needs a d
 | 35 | Mask inside a region | — | Masking function | — | Consider (job format) |
 | 36 | FTP / SD image export | Yes | SD, FTP, SFTP | Local + backup | No |
 | 37 | EtherNet/IP, PROFINET | Yes | Yes | S7, Modbus, OPC UA | No (for now) |
+| 38 | **One acquisition block** in the job: trigger, image settings, calibration | `AcquireImage` | Image Optimization | `acquisition:` in job format 2 (architecture §4.1, document 08 §7) | **Decided** (TD-32 §2) |
+| 39 | **The trigger type carries its own timing** | `Delay` (by type) | Internal interval, External delay | Sub-block per type: `external {delay_ms, debounce_ms}`, `continuous {interval_ms}`, `image_presence {…}` | **Decided** (TD-32 §3). Two named fields instead of one overloaded `Delay`: deliberate difference |
+| 40 | **Trigger debounce** | `Trigger Debounce` in `AcquireImage` | IN1 edge on the sensor | `external.debounce_ms` in the job (FR-TRG-8); the edge in the station (FR-INT-17) | **Decided** (TD-32 §4) |
+| 41 | **Jobs written in full** | Every `AcquireImage` parameter is in every job | — | Format 2 refuses an incomplete block (FR-JOB-16) | **Decided** (TD-32 §5) |
+| 42 | **Orientation** | `Orientation` 0 – 3 | — | `orientation` in the profile (FR-ACQ-10) | **Decided** (TD-32 §6) |
+| 43 | **Auto-exposure parameters** | Mode, Max Exposure, Target Brightness, Auto Expose Region | Auto brightness adjustment | For *Auto uma vez* only (FR-ACQ-11). Continuous auto exposure: **No** (principles 1 and 2) | **Decided** (TD-32 §6) |
+| 44 | **Input line settings in the station** | Discrete I/O Settings | I/O Settings: IN1 edge, IN2–IN6 roles | `machine.remote_io.inputs` `{line, function, edge}` (FR-INT-17) | **Decided** (TD-32 §8) |
 
 **Decided on 2026-10-17** (TD-31): items 4, 5, 6, 21, 22, 23 and 29, now requirements FR-TRG-6/7, FR-INT-14..16 and FR-LOG-9 (document 02 v0.6) and architecture §16.7. Item 21 went the other way from the proposal: the Error output stays normal (energized on error), and every output gets a polarity setting so an integrator can make it fail-safe.
 
 ---
 
-## 19. Sources
+## 19. Who owns what: the job or program, and the sensor
+
+Both vendors keep two layers apart. One travels with the job or program and says **what to inspect and how to take the picture**. The other stays with the sensor and says **how this sensor is wired, named and reached**. The setup flow does not show the split (Cognex puts the I/O and Communication steps inside EasyBuilder's flow). The split is in where each setting is stored and in the menus.
+
+How sure each statement is: **stated** is quoted from the vendor's page; **inferred** is read from the page's structure and is marked so.
+
+### 19.1 Cognex
+
+| Layer | What it holds | Evidence |
+|---|---|---|
+| **Job** (`.job` / `.jobx`) | The spreadsheet, with **`AcquireImage` in cell A0**: trigger type, delay or interval, debounce, exposure, gain, light, orientation, image area, white balance and focus regions (§20). The tools. Calibration. | *Stated*: "AcquireImage exists permanently in cell A0 and cannot be cut, copied, or cleared". Saving a job "only saves the tool settings and the information specific to that job". |
+| **Sensor** (`proc.set`) | Network configuration and vision-system settings: user list, discrete I/O, date and time, host list, serial and FTP settings | *Stated*: the *Store Settings* command "stores the In-Sight sensor settings to the proc.set file", with the sensor Offline and Full Access. *Inferred* from the factory reset, which clears the user list, discrete I/O, date/time, host list, serial and FTP settings. The page that defines `proc.set` could not be read (error 429), so its exact contents are not quoted. |
+| Both | *Communication* step: results formatting and "up to two protocols per job" (§10.1) sit in the job; addresses and the network sit on the sensor | *Inferred*; the pages do not label each part |
+
+The *Discrete I/O Settings* dialog says its changes "are saved to flash memory", not into a job. The only mention of a job there is the naming rule of the job to load, a numeric prefix of 0 to 127.
+
+### 19.2 Keyence IV
+
+| Layer | What it holds | Evidence |
+|---|---|---|
+| **Program** (Setup Navigator: Image Optimization, Master Registration, Tool Settings, Output Assignment) | **Trigger Options** (internal or external, interval 1 – 10 000 ms, delay 1 – 1 000 ms), brightness and focus, the master image, the tools, **what each output line means** | *Stated*: *Trigger Options* is a button of the Image Optimization screen of the Settings Navigator, which the manual's chapter 4 calls "Setting the Judgment Condition". *Inferred*: that these are saved per program; the manual pages I could read never say "per program" for the trigger. |
+| **Sensor** (*Sensor Setup Menu › Sensor Advanced*) | Four groups, below | *Stated*, with the menu text quoted |
+
+*Sensor Advanced*:
+
+| Group | Contents |
+|---|---|
+| **Environmental** | **I/O Settings**: "Sets the input/output settings for the sensor", with *Input Settings* (the trigger timing of IN1, rising or falling edge; the role of IN2 to IN6: OFF, Program bit0 to bit4, Clear Error, Ext. Master Save), *Output Settings* (OUT1 to OUT4 formats, latching, one-shot) and *Polarity and I/O Monitor*. **Device Name/Pass** (sensor name, password lock). **Network Settings**. **Adv. Network Settings** (FTP client, field network). |
+| **Setup Adjustment** | Display only: tilt correction, rotate 180°, white balance of the monitor |
+| **Program** | **Program Switch Method** (Monitor/PC, External IN, field network). **Auto Focus Adj Pos**: "whether or not to share the adjusting position for auto focus to all programs" |
+| **System** | Sensor information, initialize the sensor, update the sensor software |
+
+The *Auto Focus Adj Pos* option shows the default: image settings belong to each program, and sharing across programs is an explicit sensor choice.
+
+### 19.3 OPC UA for Machine Vision (OPC 40100-1)
+
+The same two layers appear in the standard that machine builders use to talk to vision systems. A *recipe* is where "properties, procedures and parameters that describe a machine vision job" are stored. *Configurations* are managed as separate objects (add, activate, transfer). The specification leaves the content of a recipe open, so it confirms the split but not what goes on each side.
+
+### 19.4 What the two products agree on
+
+| Kind of setting | Layer | Cognex | Keyence |
+|---|---|---|---|
+| **How and when the image is taken**: trigger type, delay, interval, exposure, gain, light, focus, orientation, image area | **Job / program** | `AcquireImage` | Image Optimization |
+| **What is judged**: fixture, tools, limits | Job / program | Locate Part, Inspect Part | Master, Tool Settings |
+| **What the result means on an output**: which tool or total drives which line | Job / program | tool option *Include In Job Pass* | Output Assignment (step 4) |
+| **How a signal enters or leaves the sensor**: which line is the trigger, edge, role of each input, polarity, formats | **Sensor** | Discrete I/O Settings | I/O Settings (IN1 edge, IN2–IN6 roles, OUT formats, polarity) |
+| **Network, protocols' addresses, users, name, password, date and time** | Sensor | Network, User Access and Date/Time dialogs | Device Name/Pass, Network Settings |
+| **How a program or job is selected**: the method, the numbering | Sensor (method), job (its number in the file name for Cognex) | I/O *Job ID Number* bits, PLC command | *Program Switch Method*, IN2–IN6 as Program bits |
+| **Firmware, factory reset, system information** | Sensor | Add Sensor to Network, firmware update | System group |
+
+Two things are **not** uniform, and the note matters if we copy only one:
+- **Trigger debounce.** Cognex keeps it in `AcquireImage` (job, 0 – 65 536 µs, default 1, *Camera* trigger only). Keyence keeps the electrical side of IN1, the edge, on the sensor.
+- **Where the trigger source is wired.** In both, the job says *which kind* of trigger it uses (*External*, *Industrial Ethernet*, *Manual*, *Continuous*), and the sensor says *how the signal gets in*. A job never names a pin.
+
+---
+
+## 20. Cognex `AcquireImage`: the model of the job's acquisition block
+
+`AcquireImage` is one function with every parameter of how the picture is taken. Keyence's *Image Optimization* step is the same idea as a screen. The table is the complete parameter list of In-Sight Explorer 6.3 (model-dependent ranges are summarised), with what Vision Station has today.
+
+| Parameter | Values (default) | Meaning | Vision Station today |
+|---|---|---|---|
+| **Trigger** | 0 Camera (default), 1 Continuous, 2 External, 5 Timestamp, 6 Industrial Ethernet, 32 Manual, 99 Network | The source of the acquisition. Not to be changed from the spreadsheet while Online | `trigger.mode`: `image_presence`, `manual`, `external`, `continuous` (document 03 §5) |
+| **Delay** | 0 – 10 000 ms. With *Camera* or *Network*: wait between the trigger and the acquisition. With *Continuous*: the interval between acquisitions (500 ms; never shorter than the processing time) | One parameter, two meanings by trigger type | `trigger.delay_ms` and `trigger.interval_ms` (FR-TRG-6/7); two fields |
+| **Trigger Debounce** | 0 – 65 536 µs (1); *Camera* trigger only | Minimum time the trigger input stays active to count | none |
+| **Manual** | 0 off, 1 on (1) | Whether F5 or the trigger button may acquire while Offline | the button is always available (FR-TRG-3) |
+| **Exposure** | ms, model range (for example 0.016 – 1000) | Light integration time | camera profile `exposure` |
+| **Auto Exposure › Mode** | 0 Disabled, 1 Continuous, 2 Single-shot | Single-shot sets the exposure on the first image and reuses it | The profile has `exposure.mode` `auto` or `manual` (a value only in manual); *Auto uma vez* measures once and writes the manual value. No target brightness, maximum or region |
+| **Auto Exposure › Max Exposure**, **Target Brightness** | Target 0 – 100 (10): percentage of saturated pixels | Limits of the automatic computation | none |
+| **Auto Expose Region** | x, y, height, width in fixture coordinates | Where brightness is measured | none (§18 item 10) |
+| **Start Row**, **Number of Rows** | per resolution | Acquire only a band of rows, to save time | none |
+| **Light Control** | mode (exposure-controlled, always on, off); intensity 0 – 100 | The integrated light | none (a UVC camera has no light control) |
+| **Gain**, **Offset** | model range (Gain 0 – 255, 128 on many models) | Sensor gain and DC level | camera profile `gain`; no offset |
+| **Orientation** | 0 normal, 1 mirrored, 2 flipped, 3 rotated 180° | Image orientation | none |
+| **White Balance Region** | x, y, height, width | Where white balance is measured | profile `white_balance` (a value, no region) |
+| **Focus Metric Region** | x, y, height, width, angle, curve | Where the focus score is measured | profile `focus`; the focus meter of document 05 §19.5 |
+| **High Dynamic Range** | Disabled, HDR+, HDR; kernel size | Pixel-wise range extension, some models | none (Keyence IV3 also lists HDR and high gain) |
+| **Network Trigger** | master on or off, master name, master data | A camera triggers others | not applicable |
+| **Buffer Mode** | 0 overlapped (default), 1 single | Image buffers | not applicable (the acquisition thread keeps the latest frame) |
+| Calibration (*Set Up Image*, outside `AcquireImage`) | *Field of View* or *Import* | Results in real units | `calibration` in job format 2 (FR-INS-15) |
+
+### 20.1 The shape the references share
+
+- **One block.** All acquisition parameters sit together: trigger type with its timing, and the image settings. A person sets "how a picture is taken" in one place, and a job file holds it as one unit.
+- **The trigger type carries its own timing.** *Delay* is a single parameter whose meaning depends on the type; Keyence has the same pair under *Internal* (interval) and *External* (delay).
+- **Regions in fixture coordinates.** Auto exposure, white balance and focus each take a region, so they follow the part.
+- **The source of an external trigger is not in the block.** The block says *External*; the sensor's I/O settings say which line.
+
+### 20.2 Where Vision Station differs
+
+| | References | Vision Station |
+|---|---|---|
+| Where acquisition settings live | One block (`AcquireImage`; one Setup Navigator step) | Three places: `trigger` in `job.yaml`, `camera/profile.yaml` (exposure, gain, white balance, focus), `quality` limits in `job.yaml` |
+| Step in the editor | The first step after connecting (*Set Up Image*, *Image Optimization*) | Step 1 *Imagem* for the camera, step 5 *Disparo e qualidade* for the trigger (§22) |
+| Trigger types | Hardware, serial, network, continuous, manual | Adds `image_presence`, with its own area, stillness time and thresholds. It has no equivalent in either product, so it belongs in the trigger type, as a type with parameters |
+| Auto exposure | Mode (disabled, continuous, single-shot), maximum, target, region, stored with the job | `auto` or `manual`, and the value written by *Auto uma vez*; no maximum, target or region |
+| Camera-specific settings | Per sensor model, in the same function | `camera/profile.yaml` per driver (`raw` for what is not modelled) |
+
+---
+
+## 21. The station layer, according to the references
+
+What Cognex keeps in `proc.set` and Keyence in *Sensor Advanced* is the **sensor's own configuration**. For us the sensor is the PC with its camera, so the equivalent is `system.yaml` and the commissioning (document 03 §5; document 05 §7.11).
+
+| Sensor setting (reference) | Cognex | Keyence | Vision Station | Note |
+|---|---|---|---|---|
+| Input lines: which is the trigger, **edge**, role of the others | Discrete I/O Settings | I/O Settings: IN1 edge; IN2–IN6 roles | `machine.remote_io`: which input is the trigger | We have no edge (rising or falling) and no debounce for it |
+| Output lines: function, **polarity**, formats, pulse | Output Details | Output Settings, Polarity | `machine.remote_io.outputs` `{line, function, polarity}` (FR-INT-15/16) | Has |
+| Network and addressing | Network Settings | Network Settings | `network` (listen address, allowed origins) | Has |
+| Protocols of the field network | Communication step | Adv. Network Settings | `machine:` adapters | Has (phase B) |
+| Device name, password lock | Host name, User Access | Device Name/Pass | `station.name`, accounts (FR-ADM-1) | Has |
+| Date and time | Date/Time Settings | (sensor clock) | the operating system | Not ours |
+| How a job is selected | I/O Job ID bits, PLC command | **Program Switch Method** | `machine.jobs` numbering; PLC, OPC UA or API | Has |
+| Sharing an image setting across programs | — | *Auto Focus Adj Pos* | focus is stored per job (FR-ACQ-8) | Same default |
+| Language, display | — | Setup Adjustment (tilt, rotation of the monitor) | `station.language` | Ours |
+| Firmware, factory reset, information | Add Sensor to Network, firmware | System group | About, restore (document 05 §7.11), installer | Has |
+| Image storage | Filmstrip | Image history | `recording:` | Has |
+
+One more point the references settle: the **meaning** of an output is job content (Keyence *Output Assignment* is step 4 of the program; Cognex *Include In Job Pass* is a tool option), while **line, polarity and format** are sensor content. Our job format 2 `outputs` (which tool values go to the machine, FR-INT-11) and `affects_result` are on the job side; `machine.remote_io.outputs` is on the sensor side.
+
+---
+
+## 22. Is our configuration flow in line with the references?
+
+Checked against document 05 §4.3, §7.3, §7.11 and document 03 §5.
+
+| # | Question | Cognex / Keyence | Vision Station | Verdict |
+|---|---|---|---|---|
+| 1 | Is the sensor-level setup done once, apart from the job? | Cognex: *Get Connected* first, but I/O and Communication come inside the flow. Keyence: *Sensor Advanced* is separate from the Setup Navigator | Commissioning once per installation (camera, performance, passwords, machine, backup), then the job | **In line**, and closer to Keyence than to Cognex |
+| 2 | Does the job start with the image? | *Set Up Image* (step 2 of 9); *Image Optimization* (step 1 of 4) | Step 1 *Imagem* | **In line** |
+| 3 | Is the trigger part of that first step? | Yes: Cognex *Set Up Image › Edit Acquisition Settings › Trigger*; Keyence *Image Optimization › Trigger Options* | Step 5 *Disparo e qualidade*, with a trigger control in the top bar | **Differs.** The top bar shows it, but the setup sits late in the sequence and apart from the camera settings |
+| 4 | Are all acquisition parameters set together? | One block | Camera in step 1, trigger in step 5, quality gates in step 5 | **Differs** (§20.2) |
+| 5 | Reference image before tools? | Keyence yes (*Master Registration*); Cognex no separate step | Step 2 *Amostras* | **In line** with Keyence |
+| 6 | Locating before inspecting? | *Locate Part* then *Inspect Part*; Keyence *Position Adjustment* is in Tool Settings | Step 3 *Âncora*, step 4 *Ferramentas* | **In line** |
+| 7 | Output meaning set in the job flow? | Keyence step 4 *Output Assignment*; Cognex *Inputs/Outputs* step | Step 6 *Resultado e saídas* (which tools decide; texts; values to the machine) | **In line**; the wiring is in commissioning, as the references keep it on the sensor |
+| 8 | Is the trigger *source* chosen outside the job? | Yes (Discrete I/O Settings; I/O Settings) | `Configurações › Máquina`, not per job | **In line** |
+| 9 | Are the electrical details of the trigger input configurable? | Cognex debounce; Keyence IN1 edge | Which input only | **Differs**: no edge, no debounce |
+| 10 | Is an unfinished or unverified job kept from running? | Cognex: edit Offline, then Run; Keyence: test mode | Immutable versions; Validar; activation verifies | **Beyond** the references (ours only) |
+| 11 | Is a job selected from the machine by number? | Job ID bits; Program bits | `machine.jobs` | **In line** |
+| 12 | Does a setting that belongs to the image travel with the job? | Light intensity, focus distance, white balance "saved with the job" (Cognex) | Camera profile is in the job; zoom and focus per job (FR-ACQ-8) | **In line** |
+
+**Summary.** The split between layers is the same as the references': what the picture is and what is judged in the job; wiring, network, identity and selection method on the station. The differences are in the **job's acquisition block**: its parameters are spread over three files and two steps, the trigger is set late, the trigger type does not carry all its timing the way `AcquireImage` does, and a few `AcquireImage` and *Trigger Options* parameters are missing (§20: debounce, auto-exposure limits and region, orientation, image area). On the station side the references also configure the input line (edge, debounce) and we do not.
+
+The owner accepted this document as the model on 2026-10-18, and TD-32 settled what follows from it: the acquisition block, the trigger in step 1, debounce in the job and the edge in the station, jobs written in full, the two-layer rule (architecture §4.6). The open points seen while checking are settled as follows:
+- The text of TD-31 ("defaults keep old jobs unchanged") against the 500 ms default of the interval: the fields move into the trigger type's sub-block and every job is written in full, so no default can change a saved version (TD-32 §5). Code written before this (the interval in format 1) is transitional.
+- Document 03 §5 and document 05 §4.3 now agree: the trigger is job content and is set in step 1.
+- FR-TRG-6/7 "per job" stands, as in `AcquireImage`.
+
+---
+
+## 23. Sources
 
 **Cognex (In-Sight Explorer / EasyBuilder help):**
 - [Application Steps](https://docs.cognex.com/is_621/web/EN/ise/Content/EasyBuilder/AppSteps.htm)
@@ -724,6 +887,14 @@ Status: **Has** = already in our documents; **Adopt** = proposed here, needs a d
 - [Filmstrip: Sensor Settings](https://docs.cognex.com/is_573/web/EN/ezb/Content/EasyBuilder/Filmstrip_Sensor.htm)
 - [User Access Settings Dialog](https://docs.cognex.com/is_573/web/EN/ezb/Content/Dialogs/UserListDialog.htm)
 
+**Cognex, added in 0.3:**
+- [AcquireImage](https://docs.cognex.com/is_631/web/EN/ise/Content/Reference/AcquireImage.htm)
+- [Managing In-Sight Jobs](https://docs.cognex.com/is2d_2311/web/EN/InSight_Sheet/Content/Topics/EZB/getting-started-managing-jobs.htm)
+- [Store Settings](https://docs.cognex.com/is_574/web/EN/ise/Content/Communications_Reference/StoreSettings.htm)
+- [Configure Discrete I/O Lines](https://docs.cognex.com/is_610/web/EN/ise/Content/Dialogs/DiscreteIOConfigure.htm)
+- [Network Settings Dialog](https://support.cognex.com/docs/is_613/web/EN/ise/Content/Dialogs/NetworkSettingsDialog.htm)
+- [Add Sensor/Device to Network Dialog](https://support.cognex.com/docs/is_574/web/EN/ise/Content/Dialogs/AddSensorsDialog.htm) (what a reset clears)
+
 **Cognex (In-Sight 2800):** [How to Train Edge Learning](https://www.cognex.com/blogs/machine-vision/how-to-train-edge-learning).
 
 **Keyence:**
@@ -735,5 +906,8 @@ Status: **Has** = already in our documents; **Adopt** = proposed here, needs a d
   - output assignment, p. 128;
   - limit adjustment, p. 148;
   - Tool Auto Tuning, p. 149.
+- IV Series User's Manual (Monitor), pages read in 0.3 on the manualsdir.com copy (its viewer pages, not the manual's own numbering): [trigger options](https://www.manualsdir.com/manuals/658109/keyence-iv-series.html?page=78) (the manual's p. 76), [Sensor Advanced menu](https://www.manualsdir.com/manuals/658109/keyence-iv-series.html?page=201), [I/O Settings](https://www.manualsdir.com/manuals/658109/keyence-iv-series.html?page=202). The official PDFs sit behind a download form and were not read.
 - [IV3 Series functional specifications](https://www.keyence.com/products/vision/vision-sensor/iv3/specs/)
 - [IV3 Series product page](https://www.keyence.com/products/vision/vision-sensor/iv3/)
+
+**OPC Foundation:** [OPC 40100-1, UA for Machine Vision, Part 1](https://reference.opcfoundation.org/specs/OPC-40100-1).

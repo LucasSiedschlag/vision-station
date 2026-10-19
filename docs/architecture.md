@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 03 — Architecture |
-| Version | 0.5 — remote I/O outputs, delayed reject and trigger timing (§16.7, TD-31). 0.4 — robust core: pose-based fixtures, result contract, machine connectors, validated tool catalog, CPU-only tiers |
-| Date | 2026-10-17 |
+| Version | 0.6 — the job's acquisition block and the two layers, job and station (§4.1, §4.2, §4.5, §4.6, TD-32). 0.5 — remote I/O outputs, delayed reject and trigger timing (§16.7, TD-31). 0.4 — robust core: pose-based fixtures, result contract, machine connectors, validated tool catalog, CPU-only tiers |
+| Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform architecture. Sections 1–13 describe the system; sections 14–19 are new in 0.4 and describe the target the refactors (§18) lead to. Where the code is not there yet, the text says so. |
 
@@ -20,7 +20,7 @@ This document describes **how** the system is organized. Library and platform ch
 
 ## 1. Design principles
 
-1. **The job is the unit of configuration.** Everything needed to reproduce an inspection lives inside a job. Nothing that affects a result may live only in code, the registry, or a camera's memory (FR-JOB-2).
+1. **The job is the unit of configuration.** Everything needed to reproduce an inspection lives inside a job. Nothing that affects a result may live only in code, the registry, or a camera's memory (FR-JOB-2). What describes the installation (wiring, network, identity, how jobs are selected) lives in the system configuration, not in the job. §4.6 tells which is which, following the two reference products (document 09 §19).
 2. **Configuration lives on the PC, not on the camera.** The camera is treated as replaceable hardware. Its settings are written from the job on every start and read back. The job never trusts what the camera already holds (FR-ACQ-4).
 3. **Saved jobs are never changed.** Editing creates a new version, so any version can be restored exactly (FR-JOB-5).
 4. **A job is only active once verified.** Loading, importing or reconnecting always ends with a verification step (FR-JOB-9).
@@ -211,14 +211,12 @@ Since R0 (2026-10-17) the packages `core/`, `algorithms/`, `geometry/`, `pipelin
 | Part | Content | Why it's in the job |
 |---|---|---|
 | Metadata | id, name, version, author, created/changed dates, description, parent version | Identify and trace |
-| Camera profile | Driver type, resolution, format, exposure, gain, white balance, focus, zoom, and image-processing switches | Same image on any installation |
-| Camera raw settings | The driver's own full settings dump (e.g. the Hikvision image-settings XML) | Restores settings we don't model by name |
-| Calibration (optional, format 2) | Pixels-to-millimetres scale, and optionally lens distortion, measured with the job's camera, lens and zoom | Measurements in mm (FR-INS-15) |
+| **Acquisition** (format 2; one block, TD-32) | **Trigger:** the type (`image_presence`, `manual`, `external`, `continuous`) with the parameters of that type: presence area, stillness time and thresholds; delay and debounce; minimum interval. **Image:** the camera profile (resolution, format, exposure and the target brightness, maximum and measuring region of *Auto uma vez*, gain, white balance, focus, zoom, orientation, image-processing switches) and the calibration. Written in full in every version (FR-JOB-16) | Same inspection moment and same image on any installation. Cognex keeps all of it in `AcquireImage` (document 09 §20) |
+| Camera raw settings | The driver's own full settings dump (e.g. the Hikvision image-settings XML), including what a driver offers beyond the normalized settings (gain offset, HDR) | Restores settings we don't model by name |
 | Geometry | Fixtures (an ordered list of locators, each optionally inside another fixture), and ROIs relative to a fixture or to the frame | Tolerates object placement, including rotation (NFR-ACC-4, §14) |
 | Tools | Ordered list: tool type, type version, ROI, parameters, thresholds, reason message, whether it affects the result | Same decision logic |
 | Decision rule | How tool results combine into PASS / FAIL (`all_pass` of the tools that affect the result) | Same final result |
-| Trigger settings | Mode (`image_presence`, `manual`, `external`, `continuous`), presence area, stillness time, re-arm rule | Same inspection moment |
-| Image-quality limits | Expected brightness and sharpness ranges vs. reference; optional color-reference patch with a drift limit | Detect drift (FR-ACQ-7, FR-INS-16) |
+| Image-quality limits (`quality`; no equivalent in the reference products) | Expected brightness and sharpness ranges vs. reference; optional color-reference patch with a drift limit | Detect drift (FR-ACQ-7, FR-INS-16) |
 | Outputs (optional, format 2) | Which tool values are published to the machine interface as user values, with units | Same data to the PLC (FR-INT-11) |
 | Model(s) | ONNX / OpenVINO files, checksum, model card (task, classes, input size, training data, metrics, latency per PC tier) | Same model, traceable |
 | Taught data | Files a tool learned at the station: variation-model statistics, anomaly memory bank | Same decision after restore |
@@ -235,7 +233,7 @@ A job file is a ZIP archive with a fixed layout. Text files are UTF-8, and all p
 ```
 tampa-azul-etiqueta_v7.vjob
 ├── manifest.json            # format version, job id/version, file list with SHA-256, app version that wrote it
-├── job.yaml                 # metadata, geometry, tools, decision rule, trigger, quality limits, outputs, screen texts
+├── job.yaml                 # metadata, acquisition (trigger, image), geometry, tools, decision rule, quality limits, outputs, screen texts
 ├── camera/
 │   ├── profile.yaml         # normalized camera settings (driver-independent names)
 │   ├── calibration.yaml     # format 2, optional: mm per px, distortion
@@ -265,9 +263,13 @@ job:
   parent_version: 7
   author: lucas
   created_at: 2026-11-20T15:40:00-03:00
-camera_profile: camera/profile.yaml
-calibration: camera/calibration.yaml          # optional
-trigger: {mode: external}                     # the PLC triggers (UC-11)
+acquisition:                                  # one block, written in full (TD-32, FR-JOB-16)
+  trigger:
+    type: external                            # the PLC triggers (UC-11); the line or protocol is station configuration
+    external: {delay_ms: 0, debounce_ms: 0}
+  image:
+    profile: camera/profile.yaml              # resolution, format, exposure, gain, white balance, focus, zoom, orientation
+    calibration: camera/calibration.yaml      # optional
 quality:
   brightness: {min: 90, max: 170}
   sharpness_min_ratio: 0.7
@@ -301,7 +303,7 @@ ui:
 
 Rules:
 - **Checksums:** every file is listed in `manifest.json` with its SHA-256. Import refuses the file if anything is missing or different (FR-JOB-8).
-- **Format version:** `format` is an integer. Newer software includes a **migrator** for each older format and upgrades on import, never in place (NFR-MAI-1). Format 1 → 2: `geometry.locator` becomes a single fixture named `anchor` with angle 0 and scale 1; ROIs `relative_to: anchor` keep their meaning, so results are identical (FR-JOB-13). Older software refuses a newer format with a clear message.
+- **Format version:** `format` is an integer. Newer software includes a **migrator** for each older format and upgrades on import, never in place (NFR-MAI-1). Format 1 → 2: `trigger` and `camera_profile` become the `acquisition` block (`trigger.mode` → `acquisition.trigger.type`; the presence settings go under `image_presence`; a continuous trigger without an interval gets `interval_ms: 0`, the behaviour it had; the delay and the debounce get 0; TD-32); `geometry.locator` becomes a single fixture named `anchor` with angle 0 and scale 1; ROIs `relative_to: anchor` keep their meaning, so results are identical (FR-JOB-13). Older software refuses a newer format with a clear message.
 - **Tool versions:** each tool and locator type carries a version. If the software no longer supports that version, the job is refused rather than run with different logic.
 - **Two languages (format 2, TD-30):** texts written in the job (`reason_fail`, `ui.waiting`, sample notes) are maps `{pt-BR: …, en: …}`; format-1 strings migrate as pt-BR (FR-JOB-15).
 - **No secrets, no code:** the writer refuses anything marked secret (NFR-SEC-1); the loader refuses any file type the job's tools and locators don't name, so a job can't carry code (FR-PLT-12).
@@ -358,13 +360,33 @@ backup_2026-10-02_1800.vbak
 | **Machine interface**: enabled adapters, their addresses, interface map version, cycle time, heartbeat timeout, result-buffer depth, acknowledge mode | `system.yaml` → `machine:` |
 | **Job numbers**: number (1–999) → job id, for the PLC | `system.yaml` → `machine.jobs:` |
 | **Products**: product name → job id, for OPC UA `PrepareProduct` | `system.yaml` → `machine.products:` |
-| **Remote I/O**: module address, which input is the trigger, the output list `{line, function, polarity}` (§16.7) | `system.yaml` → `machine.remote_io:` |
+| **Remote I/O**: module address, the input list `{line, function, edge}` (trigger, clear error), the output list `{line, function, polarity}` (§16.7) | `system.yaml` → `machine.remote_io:` |
 | Challenge-test policy (when it is required) | `system.yaml` → `challenge:` |
 | Thread caps per PC tier, measured tier | `system.yaml` → `performance:` (written by the benchmark, editable) |
 
 `system.yaml` is validated on load (a damaged file stops the program with the reason; a missing one means the defaults) and refused if any key looks like a secret. Recording limits, backups and the station's settings apply at once when changed; the camera, the network and the machine adapters after a restart, which the settings screen says. The file goes into every `.vbak`, so a restore brings the installation's settings back too.
 
 This split follows MERLIC's separation of the vision app, the recipe and the communication configuration: the same job runs with different PLCs and different PLC numbering without changing the job.
+
+### 4.6 Where a setting lives: the job or the station
+
+Cognex and Keyence keep the same two layers apart (document 09 §19). So do we, and OPC 40100 names them *recipe* and *configuration*.
+
+**The rule (TD-32):** a setting is in the **job** if it follows the product and the view of the camera on it; it is in the **station** (`system.yaml`) if it follows the installation. The test: the same job, restored on another PC with the same camera, must still carry the setting.
+
+| Kind of setting | Layer | Example here | Cognex | Keyence |
+|---|---|---|---|---|
+| How and when the picture is taken | **Job** | `acquisition.trigger.type` and its timing, `acquisition.image` | `AcquireImage` | Image Optimization |
+| What is judged | Job | geometry, tools, decision | Locate Part, Inspect Part | Master, Tool Settings |
+| What a result means on the outside | Job | `outputs` (which values), `affects_result`, texts | *Include In Job Pass* | Output Assignment |
+| Image-quality limits, reference, samples | Job | `quality`, `reference/`, `tests/` | — | — |
+| How a signal enters or leaves the PC | **Station** | `machine.remote_io.inputs` (line, function, edge), `outputs` (line, function, polarity) | Discrete I/O Settings | I/O Settings |
+| Which camera, which network, which protocol | Station | `camera:`, `network:`, `machine:` adapters | Network Settings, Communication | Network Settings |
+| Identity, accounts, language | Station | accounts, `station.name`, `station.language` | User Access, host name | Device Name/Pass |
+| How a job is selected, and its number | Station | `machine.jobs`, `machine.products` | Job ID bits | Program Switch Method |
+| Backups, recording, performance | Station | `backup:`, `recording:`, `performance:` | Filmstrip | Image history |
+
+A job never names a pin, an address or a protocol. It says *which kind* of trigger it uses; the station says *how the signal gets in*. Debounce is the one electrical parameter that stays in the job, because Cognex keeps it in `AcquireImage` (TD-32 §4); the edge of the input is the station's, as in Keyence.
 
 ---
 
@@ -935,7 +957,7 @@ The map has a version (`v1`). Within a major version, changes are only additions
 - **Acknowledge mode** (system setting): `ack` (default; ResultValid held until ResultAck; results buffered, proposed depth 8, overrun flagged) or `no_ack` (ResultValid held until the next trigger).
 - **Heartbeats** both ways (proposed period 500 ms, timeout 1.5 s): if the machine's heartbeat stops, Vision Station raises Error E601 and stops accepting triggers; if Vision Station's stops, the PLC program must treat the station as faulted (sample block provided).
 - **Simulated results** (editor test, replay, file camera, benchmark) are never signalled: `Simulated` = 1 and ResultValid stays 0 (FR-INT-12).
-- **One trigger source.** A job in `trigger.mode: external` takes triggers from the machine interface (or the local API); `image_presence` jobs ignore the machine Trigger bit and still report state and results.
+- **One trigger source.** A job whose trigger type is `external` takes triggers from the machine interface (or the local API); `image_presence` jobs ignore the machine Trigger bit and still report state and results.
 
 ### 16.4 Commands
 
@@ -963,13 +985,15 @@ Adapters never call the controller directly. The handshake engine translates inp
 
 ### 16.7 Remote I/O outputs and the delayed reject (new in 0.5, TD-31)
 
-Lines without a PLC use the remote I/O module directly. Each output line is configured in `system.yaml`:
+Lines without a PLC use the remote I/O module directly. Each input and output line is configured in `system.yaml` (the wiring is station configuration, §4.6):
 
 ```yaml
 machine:
   remote_io:
     address: 192.168.10.20
-    trigger_input: 0
+    inputs:
+      - {line: 0, function: trigger, edge: rising}     # edge: rising (default) | falling (FR-INT-17)
+      - {line: 1, function: clear_error}
     outputs:
       - {line: 0, function: ready}
       - {line: 1, function: pass}

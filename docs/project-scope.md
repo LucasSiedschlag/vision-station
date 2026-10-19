@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 01 — Project Scope |
-| Version | 0.3 — deliverables D12–D13 and the hardening phases A–F (document 03 §19) |
-| Date | 2026-10-16 |
+| Version | 0.4 — the two layers, job and station (§4.4, TD-32); objective 2 and the trigger scope reworded. 0.3 — deliverables D12–D13 and the hardening phases A–F (document 03 §19) |
+| Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform scope (TD-19) |
 
@@ -27,7 +27,7 @@ Define what Vision Station does and does not do, what it delivers and under whic
 ## 3. Objectives
 
 1. Inspect an object at a fixed station and give a clear **PASS / FAIL / ERROR** with a reason in Portuguese or English (the station's language), never a false PASS.
-2. Be configured, not programmed: a **job** holds the camera settings and an ordered list of **tools** (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, relative to the frame or to an **anchor** found by a **locator**.
+2. Be configured, not programmed: a **job** holds the **acquisition** (how and when the picture is taken: the trigger and the camera settings) and an ordered list of **tools** (`color`, `pattern`, `code`, `detect`), each looking at a region the user draws, relative to the frame or to an **anchor** found by a **locator**.
 3. Keep every setting that affects a result in the job; export a job or a full backup to a **single file**; restore it on a replacement PC or camera and **verify automatically** that it behaves the same.
 4. Treat the camera as a plugin: a USB webcam (Logitech C920) now, a Hikvision IP camera and others later, with no change to jobs or inspection code.
 5. Run on an ordinary Windows 11 PC, CPU only, as a service with a local web screen.
@@ -37,7 +37,7 @@ Define what Vision Station does and does not do, what it delivers and under whic
 
 ### 4.1 Platform software
 - Acquisition from camera plugins (UVC for the C920 now; Hikvision ISAPI + RTSP/snapshot later; a file camera for tests), with settings applied and read back on every open, reconnect and activation.
-- Triggers for a still object: image presence + stillness, manual, external signal, continuous.
+- Triggers for a still object: image presence + stillness, manual, external signal, continuous. The job chooses the trigger type and its timing; the line or protocol that carries an external signal belongs to the station (§4.4).
 - Inspection pipeline: image quality gate, locator, regions, tools, `all_pass` decision, reason text.
 - Tools by type, each a versioned module: `color`, `pattern`, `code`, `detect` (trained model, ONNX).
 - Jobs: create, edit (from the screen), version, export/import `.vjob`, full backup `.vbak`, verification before activation.
@@ -51,6 +51,14 @@ Define what Vision Station does and does not do, what it delivers and under whic
 
 ### 4.3 Model tooling
 - A documented, offline path to label images, train, validate and export a model that a `detect` tool runs.
+
+### 4.4 Two layers: the job and the station
+
+The two reference products (Cognex In-Sight, Keyence IV) and the OPC UA standard for machine vision keep two layers apart, and so does Vision Station (document 03 §4.6, TD-32):
+- The **job** (the *recipe*) holds what follows the product and the camera's view of it: the acquisition (trigger type with its timing, image settings), the geometry, the tools, the decision, what a result means outside, the reference and the samples. It is exported, restored on another PC and verified.
+- The **station** (the *configuration*, `system.yaml`) holds what follows the installation: which camera and network, which signal lines and with which edge and polarity, which protocols, accounts, language, how jobs are selected and numbered, backups and recording. It does not travel with a job; a full backup carries it.
+
+A job never names a pin, an address or a protocol.
 
 ## 5. Out of scope
 

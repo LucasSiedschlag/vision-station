@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.10 — TD-31: trigger timing and remote I/O outputs, decided from the market reference (document 09). 0.9 — TD-29 revised: shadcn/ui + Tailwind kept, React Aria added (the Mantine plan of 0.8 reverted); TD-30: interface in Portuguese and English. 0.7 — TD-21..TD-28: pose-based fixtures, result contract, machine interface, OPC UA, algorithms, OCR, teaching from good parts, CPU-only PC tiers; TD-18 amended |
-| Date | 2026-10-17 |
+| Version | 0.11 — TD-32: the job's acquisition block and the two layers, job and station (document 09 v0.3); TD-31 and TD-19 item 4 amended. 0.10 — TD-31: trigger timing and remote I/O outputs, decided from the market reference (document 09). 0.9 — TD-29 revised: shadcn/ui + Tailwind kept, React Aria added (the Mantine plan of 0.8 reverted); TD-30: interface in Portuguese and English. 0.7 — TD-21..TD-28: pose-based fixtures, result contract, machine interface, OPC UA, algorithms, OCR, teaching from good parts, CPU-only PC tiers; TD-18 amended |
+| Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
 
@@ -50,7 +50,8 @@ Each decision follows the same format: **context → options → decision → co
 | TD-28 | PC tiers | **Tier M** (Intel N100 class) and **tier R** (Core i5 12th+), both without a dedicated GPU; built-in **benchmark** classifies the PC; iGPU optional. |
 | TD-29 | UI components | **shadcn/ui + Radix + Tailwind kept**; **React Aria Components** for colour, range and number controls; shadcn `Sidebar`, `Resizable`, `Command`, `Chart`; `@dnd-kit`. Extends TD-20. |
 | TD-30 | Interface languages | **Portuguese (pt-BR) and English**; **Lingui** with PO catalogs in the interface, gettext/Babel PO catalogs on the server; job texts in both languages (format 2). Supersedes the pt-BR-only rule of TD-20/document 05 0.1. |
-| TD-31 | Trigger timing and remote I/O outputs | Trigger delay 0–1 000 ms per job; continuous interval 500 ms; refused triggers counted and assignable to an output; Error output stays normal; delayed reject in inspections or ms with a queue; low-margin PASS images kept; output polarity per line. From document 09 (market reference). |
+| TD-31 | Trigger timing and remote I/O outputs | Trigger delay 0–1 000 ms per job; continuous interval 500 ms; refused triggers counted and assignable to an output; Error output stays normal; delayed reject in inspections or ms with a queue; low-margin PASS images kept; output polarity per line. From document 09 (market reference). Amended by TD-32: the fields live in the trigger type's sub-block, and jobs are written in full instead of relying on defaults. |
+| TD-32 | Acquisition block and the two layers | **One `acquisition` block in the job** (trigger type with its own timing, image settings, calibration), **written in full**; debounce in the job, input-line edge in the station; trigger moves to step 1 of the editor; rule: job = follows the product and the view, station = follows the installation. From document 09 v0.3. |
 
 ---
 
@@ -538,7 +539,7 @@ Models are added only where the classical tools can't separate good objects from
 | `detect` | Runs a trained object detector or anomaly model on the region. | **yes**, offline | ONNX Runtime (MIT), model per TD-08 | defects that need learning; "which objects are present" |
 
    All four are part of the platform for the first delivery (amendment below); `detect` needs the offline training path (TD-08).
-4. **Trigger modes.** A job picks one: `image_presence` (object present and still, as today), `manual`, `external`, or `continuous` (no trigger; still frames inspected one after another, e.g. a code reader). `continuous` is named now and built when a project needs it. Objects that move during capture are out of scope.
+4. **Trigger modes.** (Amended by TD-32: the choice is `acquisition.trigger.type`, with the parameters of each type next to it.) A job picks one: `image_presence` (object present and still, as today), `manual`, `external`, or `continuous` (no trigger; still frames inspected one after another, e.g. a code reader). `continuous` is named now and built when a project needs it. Objects that move during capture are out of scope.
 5. **Screen text comes from the job and the language file**, not from code: "Aguardando caixa" becomes the job's `ui.waiting` text, with a neutral default.
 6. **Repository layout.**
    - `src/vision_station/`: the platform (cameras, jobs, tools, station, API, screen). No customer words.
@@ -846,12 +847,39 @@ Models are added only where the classical tools can't separate good objects from
 | 7 | Output polarity | Keyence N.O./N.C. per output | **Normal or inverted per remote I/O output**, all normal by default (FR-INT-16). Lets an integrator build a fail-safe line without code |
 
 **Consequences.**
-- Job format 2 gains `trigger.delay_ms` and `trigger.interval_ms` (defaults keep old jobs unchanged).
+- Job format 2 gains `trigger.delay_ms` and `trigger.interval_ms` (defaults keep old jobs unchanged). *Amended by TD-32:* in `acquisition.trigger`, inside the sub-block of their type, and written in full in every job; "defaults keep old jobs unchanged" is replaced by the migrator writing the old behaviour.
 - `system.yaml › machine.remote_io.outputs` becomes a list of `{line, function, polarity}`; the `reject` function carries `on`, `delay` (`{inspections: N}` or `{ms: T}`) and `pulse_ms` (architecture §16.7).
 - The handshake engine owns the reject queue; R3 adds tests for the queue, for clearing on stop and for the Error raised on a lost reject.
 - Statistics (document 05 §7.13) show refused triggers; the machine monitor (§7.14) shows the reject queue.
 
 **Revisit when:** a project needs an encoder-based tracking delay (pulses rather than inspections), or a site asks for the Error output fail-safe by default.
+
+### TD-32 — The job's acquisition block, and the two layers: job and station
+
+**Context.** The owner accepted document 09 v0.3 as the model on 2026-10-18 (§19–§22). Cognex and Keyence agree on two points. First, the **trigger type, its timing and the image settings are one unit that travels with the job or program**: Cognex's `AcquireImage` sits permanently in cell A0 of the job; Keyence's *Image Optimization* is the first screen of the program setup. Second, **wiring, network, identity and the way jobs are selected stay on the sensor** (`proc.set`; *Sensor Advanced*). Our job spread acquisition over three places (`trigger` and `quality` in `job.yaml`, the camera profile in its own file), the editor set the trigger late (step 5), and TD-31 said that new trigger fields have "defaults that keep old jobs unchanged", which a default of 500 ms for the continuous interval does not do.
+
+**Decisions.**
+
+| # | Topic | References | Decision |
+|---|---|---|---|
+| 1 | Which layer owns a setting | Cognex job × `proc.set`; Keyence program × *Sensor Advanced*; OPC 40100 recipe × configuration | **A setting is in the job if it follows the product and the view; in the station (`system.yaml`) if it follows the installation.** The test is whether the same job restored on another PC with the same camera must still carry it. The table of architecture §4.6 lists every case |
+| 2 | One acquisition block | `AcquireImage`; *Image Optimization* | **Job format 2 has one `acquisition:` block** with the trigger, the image settings (the camera profile, orientation, the parameters of the automatic exposure) and the calibration. The driver-specific dump stays in `camera/raw/` |
+| 3 | The trigger type carries its timing | Cognex *Delay* (delay or interval by type); Keyence *Internal* interval, *External* delay | `acquisition.trigger.type` is `image_presence`, `external`, `manual` or `continuous`, and **each type has its own parameters**: `external: {delay_ms, debounce_ms}`, `continuous: {interval_ms}`, `image_presence: {roi, still_ms, rearm, diff_threshold, min_area, motion_area}`. Two named fields, not Cognex's one overloaded `Delay`: a person and a PLC programmer read them without knowing the type rule |
+| 4 | Trigger debounce | Cognex: in `AcquireImage` (0 – 65 536 µs, default 1). Keyence: the electrical side of IN1 is a sensor setting | **Debounce is in the job** (`external.debounce_ms`, 0 – 65 ms, default 0), as in `AcquireImage` (0 – 65 536 µs, default 1 µs). Milliseconds, because our line is read through a Modbus module, not a hardware input. The **edge** (rising or falling) and the role of each input line are **station** settings, as in Keyence *I/O Settings* |
+| 5 | Written in full | Cognex writes every `AcquireImage` parameter in every job | **The writer always writes every parameter of the acquisition block, and format 2 refuses a block with one missing.** Software updates can then never change the behaviour of a saved version by changing a default (design principle 3). The editor offers the defaults of the project values (document 02 §7); the migrator writes the behaviour the old code had |
+| 6 | Image parameters adopted | `AcquireImage`: Orientation, Auto Exposure (Mode, Max Exposure, Target Brightness, Auto Expose Region) | **Adopted:** `orientation` (`normal`, `mirror`, `flip`, `rotate180`, applied at acquisition so every coordinate is in the oriented frame) and, for the editor's *Auto uma vez*, `target_brightness`, `max_exposure_us` and the measuring `region`, kept in the profile so the measurement can be repeated. The job still runs with the **fixed value** it measured. **Not adopted:** continuous auto exposure (the picture would depend on the lighting of the moment, against principles 1 and 2); image area by rows (we process regions, so a smaller band saves nothing); light control (no integrated light; external lighting is a project matter); gain offset, HDR (driver capabilities, kept in `camera/raw/` when a driver offers them); buffer mode, network trigger, timestamp (not applicable) |
+| 7 | Quality limits | No equivalent in either product | **Stay a separate job section** (`quality`), checked at verification and on every inspection. They are proposed from the samples, so they come after the samples in the order of work |
+| 8 | Station input lines | Cognex *Discrete I/O Settings*; Keyence *I/O Settings* (IN1 edge, IN2–IN6 roles) | `machine.remote_io.inputs` is a list of `{line, function, edge}` (functions `trigger`, `clear_error`; edge `rising` default or `falling`), replacing the single `trigger_input` (architecture §16.7, FR-INT-17) |
+| 9 | Order of work | Trigger is part of the first step in both products | **The trigger moves to step 1**, which becomes *Imagem e disparo*. Step 5 is *Qualidade*. The trigger control in the top bar stays and edits the same value (document 05 §4.3) |
+
+**Consequences.**
+- Job format 2 (R1, VIA-0070) carries the `acquisition` block. The migrator maps format 1: `trigger.mode` → `acquisition.trigger.type`; the presence settings → `image_presence`; `camera_profile` → `acquisition.image`; a continuous trigger without an interval → `interval_ms: 0` (it ran without one); `delay_ms` → 0; `debounce_ms` → 0.
+- **Format 1 is transitional.** Code written before this decision (the continuous `interval_ms` in `trigger`, with a default of 500 ms) is aligned when format 2 is written; until then format 1 is not extended.
+- TD-31 stands for what it decided (delay and interval **per job**, 500 ms as the project value) and is amended in two points: where the fields live (the type's sub-block) and the rule of writing in full instead of "defaults keep old jobs unchanged".
+- Documents changed with this decision: 01 (§3, §4.1, §4.4), 02 (FR-PLT-3, FR-TRG-6/7/8, FR-ACQ-10/11, FR-INT-6/17, FR-JOB-16, FR-UI-11), 03 (§1, §4.1, §4.2, §4.5, §4.6, §16.3, §16.7), 05 (§4.3, §7.3, §4.4), 08, 09.
+- The editor changes its steps (document 05 §4.3): the trigger leaves step 5.
+
+**Revisit when:** a GenICam camera with a hardware trigger input is used (phase F: debounce then belongs to the camera, and the question of layer 1 returns for it), or a second installation of the same job shows that debounce depends on the wiring.
 
 ---
 

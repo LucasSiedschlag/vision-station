@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 02 — Functional Requirements, Non-Functional Requirements and Use Cases |
-| Version | 0.6 — trigger timing and remote I/O outputs from the market reference (document 09, TD-31): FR-TRG-6/7, FR-INT-14..16, FR-LOG-9 new; FR-INT-6 changed. 0.5 — interface in Portuguese and English (FR-UI-5, FR-INS-7 changed; FR-JOB-15 new; TD-30). 0.4 — interface requirements of document 05 v0.2 (FR-UI-9..14, FR-JOB-14, FR-ADM-8). 0.3 — robust core, machine connectors, minimum tool set, CPU-only PC tiers |
-| Date | 2026-10-17 |
+| Version | 0.7 — the job's acquisition block and the two layers, job and station (document 09 v0.3, TD-32): FR-TRG-8, FR-ACQ-10/11, FR-INT-17, FR-JOB-16 new; FR-PLT-3, FR-TRG-6/7, FR-INT-6, FR-UI-11 changed. 0.6 — trigger timing and remote I/O outputs from the market reference (document 09, TD-31): FR-TRG-6/7, FR-INT-14..16, FR-LOG-9 new; FR-INT-6 changed. 0.5 — interface in Portuguese and English (FR-UI-5, FR-INS-7 changed; FR-JOB-15 new; TD-30). 0.4 — interface requirements of document 05 v0.2 (FR-UI-9..14, FR-JOB-14, FR-ADM-8). 0.3 — robust core, machine connectors, minimum tool set, CPU-only PC tiers |
+| Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform requirements (TD-19). New and changed items are marked **(new 0.3)** / **(changed 0.3)**. |
 
@@ -72,6 +72,8 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-ACQ-7 | The system shall measure image sharpness and brightness on each inspection frame and compare them with the job's reference image. | S |
 | FR-ACQ-8 | For the motorized lens, the system shall store the zoom and focus position in the job and restore it. | S |
 | FR-ACQ-9 | **(new 0.3)** The system shall support GenICam cameras (GigE Vision / USB3 Vision) through a GenTL producer, with hardware trigger and an exposure-end event, behind the same camera interface. | C (F) |
+| FR-ACQ-10 | **(new 0.7)** A job shall set the image **orientation** — normal, mirrored, flipped or rotated 180° — applied at acquisition, so that every region and result is in the oriented frame (Cognex `AcquireImage` *Orientation*). | S |
+| FR-ACQ-11 | **(new 0.7)** The editor's *Auto uma vez* shall take its **target brightness**, **maximum exposure** and **measuring region** from the job's image settings, so that the measurement can be repeated. The job still runs with the fixed value it measured; automatic exposure that follows each image is not offered (principles 1 and 2). | C |
 
 ### 3.2 Trigger (TRG)
 
@@ -82,8 +84,9 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-TRG-3 | The operator shall be able to trigger an inspection manually from the screen. | M |
 | FR-TRG-4 | The system shall inspect each object exactly once until it leaves the area. It shall not re-trigger while the same object stays in place. | M |
 | FR-TRG-5 | In `continuous` mode the system shall inspect still frames one after another with no trigger (for example a code reader at a station), and still never inspect a frame taken while the scene moves. | C |
-| FR-TRG-6 | **(new 0.6)** In `external` mode a job may set a **trigger delay** of 0–1000 ms (default 0) between the accepted trigger and the frame used for the inspection, for machines whose signal comes before the object has settled. The delay is per job (TD-31). | S (B) |
-| FR-TRG-7 | **(new 0.6)** In `continuous` mode a job shall set a **minimum interval** between inspections (default 500 ms; 0 = as fast as the PC allows). FR-TRG-5 still applies: a frame taken while the scene moves is never inspected. | C |
+| FR-TRG-6 | **(new 0.6, changed 0.7)** In the `external` trigger type a job may set (`acquisition.trigger.external.delay_ms`) a **trigger delay** of 0–1000 ms (default 0) between the accepted trigger and the frame used for the inspection, for machines whose signal comes before the object has settled. The delay is per job (TD-31). | S (B) |
+| FR-TRG-7 | **(new 0.6, changed 0.7)** In the `continuous` trigger type a job shall set (`acquisition.trigger.continuous.interval_ms`) a **minimum interval** between inspections (default 500 ms; 0 = as fast as the PC allows). FR-TRG-5 still applies: a frame taken while the scene moves is never inspected. | C |
+| FR-TRG-8 | **(new 0.7)** In the `external` trigger type a job shall set a **debounce**, 0–65 ms (default 0): the least time the trigger input stays active before it counts, as in Cognex *Trigger Debounce*. It is a job setting (`acquisition.trigger.external.debounce_ms`); the edge of the input is station configuration (FR-INT-17). | S (B) |
 
 ### 3.3 Inspection (INS)
 
@@ -125,6 +128,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-JOB-13 | **(new 0.3)** Jobs in format 1 shall be migrated to format 2 on import or first load, as a new copy, giving the same results on their reference sets. | M (A) |
 | FR-JOB-14 | **(new 0.4)** The Supervisor shall be able to change a job's tolerance limits only (parameters marked tunable), creating a new version that is verified before activation and recorded in the audit log. The server shall refuse any other change made through this path (document 05 §7.12). | S |
 | FR-JOB-15 | **(new 0.5)** Texts written in a job (failure reasons, waiting text, sample notes) shall hold both languages (job format 2). A missing translation falls back to the other language and is flagged when the job is validated; format-1 texts are read as Portuguese. | M (A) |
+| FR-JOB-16 | **(new 0.7)** The acquisition block of a job (trigger type with its parameters, image settings, calibration) shall be written in full in every saved version, and a job whose block lacks a parameter shall be refused. A change of a default in the software shall never change the behaviour of a saved version; a format migrator writes the behaviour the older software had (TD-32). | M |
 
 ### 3.5 Operator screen (UI)
 
@@ -140,7 +144,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-UI-8 | **(new 0.3)** The screen shall show the machine-interface status when one is enabled: connected, heartbeat, the last trigger source, and the job number. | S (B) |
 | FR-UI-9 | **(new 0.4)** The image overlays (regions, anchors, measurements, labels, masks) shall be switchable on and off, as a whole and per layer, on the operator screen and in the editor. A station setting sets the operator default and whether the operator may switch them. Turning them off never hides the verdict or the reason (document 05 §18). | M |
 | FR-UI-10 | **(new 0.4)** Configuration screens shall show settings at three levels — Essencial, Avançado, Especialista. A level changes what is shown, never what is allowed or any value; a section that hides changed values shall say so (document 05 §17). | M |
-| FR-UI-11 | **(new 0.4)** Configuration shall follow the order of work: commissioning (camera, performance, passwords, machine, backup) once per installation; per job: image → samples → anchor → tools → trigger and quality → result and outputs → validate → save. Each step shows its state and what it needs; steps can be visited in any order (document 05 §4.3). | M |
+| FR-UI-11 | **(new 0.4, changed 0.7)** Configuration shall follow the order of work: commissioning (camera, performance, passwords, machine, backup) once per installation; per job: image and trigger → samples → anchor → tools → quality → result and outputs → validate → save (TD-32). Each step shows its state and what it needs; steps can be visited in any order (document 05 §4.3). | M |
 | FR-UI-12 | **(new 0.4)** While a job is edited, every change shall be applied to the next captured frame (or to the frozen image) and its effect shown — measured values, gauges, masks, overlays, verdict and time — at a rate the PC allows (document 05 §19.1). | M |
 | FR-UI-13 | **(new 0.4)** Every tolerance shall be adjustable on a gauge that shows the current measurement, the samples' values and the allowed band, with a number field for precision; colours shall be chosen by sampling the image, with the range shown on colour bars and as a mask on the image (document 05 §19.3–19.4). | M |
 | FR-UI-14 | **(new 0.4)** The system shall propose tolerance limits from samples labelled good and bad, show the resulting margin or that the samples overlap, and apply them only when the user confirms. | S |
@@ -168,7 +172,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-INT-3 | **(new 0.3)** The system shall offer one machine interface — trigger, ready, acknowledge, acquisition done, result valid, pass/fail/error, error code, reason code, sequence, job number, heartbeats, user values — defined once as a versioned interface map and carried unchanged by every connector. | M (B) |
 | FR-INT-4 | **(new 0.3)** The system shall connect to Siemens S7-1200 and S7-1500 PLCs as a client of an interface data block. | M (B) |
 | FR-INT-5 | **(new 0.3)** The system shall act as a Modbus TCP server holding the interface map, for any PLC or HMI acting as client. | M (B) |
-| FR-INT-6 | **(changed 0.6)** The system shall drive 24 V digital I/O through a Modbus TCP remote I/O module: one input as trigger and assignable outputs — ready, pass, fail, error, busy, online, job change done / failed, trigger refused (FR-INT-14) and reject (FR-INT-15) — plus a tower light. | S (B) |
+| FR-INT-6 | **(changed 0.7)** The system shall drive 24 V digital I/O through a Modbus TCP remote I/O module: inputs with a function and an edge (FR-INT-17) — the trigger and a clear-error input — and assignable outputs — ready, pass, fail, error, busy, online, job change done / failed, trigger refused (FR-INT-14) and reject (FR-INT-15) — plus a tower light. | S (B) |
 | FR-INT-7 | **(new 0.3)** The system shall expose an OPC UA server following OPC 40100-1, targeting the *Simple Inline Vision System* profile: state machine, jobs as recipes, products, `StartSingleJob`, results by event with a typed result content. | S (E) |
 | FR-INT-8 | **(new 0.3)** The machine shall be able to select the active job by number (and, on OPC UA, by product). Numbers and products are mapped to jobs in the system configuration, not in the jobs. The new job becomes active only after verification; a failure is signalled, and the station stays out of Ready. | M (B) |
 | FR-INT-9 | **(new 0.3)** Results shall be held valid until the machine acknowledges them (acknowledge mode) or until the next trigger (no-acknowledge mode). In acknowledge mode, unacknowledged results shall be buffered up to a configured depth and an overrun flagged. | M (B) |
@@ -179,6 +183,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-INT-14 | **(new 0.6)** Every refused trigger (`TriggerRefused`, document 03 §16.2) shall be counted per job, shift and day in the statistics, and shall be assignable as a pulse on a remote I/O output. | S (B) |
 | FR-INT-15 | **(new 0.6)** A remote I/O output may act as a **delayed reject**: it fires for FAIL and ERROR results (each configurable; both by default) either **N inspections** after the one that failed or **T ms** after its trigger, as a pulse of 10–1000 ms (default 100 ms). Pending rejects are held in a queue; on stop, job change or restart the queue is cleared, the loss is logged, and the machine sees Error until it is acknowledged (TD-31). | S (B) |
 | FR-INT-16 | **(new 0.6)** Each remote I/O output shall have a polarity, **normal** (energized when the signal is true) or **inverted**, set in the system configuration. Every output, including Error, is normal by default (TD-31). | S (B) |
+| FR-INT-17 | **(new 0.7)** Each remote I/O input shall have a function (`trigger`, `clear_error`) and an edge, **rising** or **falling**, set in the system configuration (document 09 §19, Keyence *I/O Settings*). Debounce is a job setting (FR-TRG-8). | S (B) |
 
 ### 3.8 Data collection and model (MDL)
 
@@ -210,7 +215,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 |---|---|---|
 | FR-PLT-1 | **(changed 0.3)** The system shall offer inspection tools by type, each with its own parameters and a user-drawn region. Today: `color`, `pattern`, `code`, `detect`. Minimum set (tier 1, FR-PLT-9) adds `brightness`, `blob`, `edge`, `pattern` v2 and `compare`. | M (`color`, `pattern`, `code`), S (`detect`) |
 | FR-PLT-2 | A new tool type shall be added without changing the job manager, the station controller, the API or the screen. | M |
-| FR-PLT-3 | A job shall choose its trigger mode: `image_presence`, `manual`, `external` or `continuous`. | M (`continuous` built when a project needs it) |
+| FR-PLT-3 | **(changed 0.7)** A job shall choose its trigger type in its acquisition block (`acquisition.trigger.type`): `image_presence`, `manual`, `external` or `continuous`. The parameters of each type are written next to it (FR-TRG-1, -5, -6, -7, -8). Which line or protocol delivers an `external` trigger is not in the job: it is station configuration (FR-INT-6, FR-INT-17). | M (`continuous` built when a project needs it) |
 | FR-PLT-4 | A job shall work without a locator, with regions relative to the frame. | M |
 | FR-PLT-5 | The texts the operator screen shows for a job shall come from the job and the language file, not from code. | M |
 | FR-PLT-6 | Customer jobs, reference images, acceptance data and notes shall live in each customer project, outside this repository; the platform code and its examples contain no customer words. | M |
@@ -575,7 +580,7 @@ Covers: NFR-REL-2, NFR-REL-7.
 |---|---|
 | Actor | Machine (PLC) (primary), System |
 | Goal | The machine decides when to inspect and acts on the result (pass the part, reject it, stop) |
-| Preconditions | A machine connector is enabled; the active job uses `trigger.mode: external`; heartbeats running |
+| Preconditions | A machine connector is enabled; the active job has the `external` trigger type; heartbeats running |
 | Trigger | The machine has a part in position and still |
 
 **Main flow**
@@ -704,7 +709,7 @@ Covers: FR-JOB-14, FR-UI-13/14, FR-LOG-5.
 | UC-08 Update model | FR-MDL-*, FR-JOB-5 |
 | UC-09 Camera lost | FR-ACQ-5, NFR-REL-3/7 |
 | UC-10 Start-up | FR-ADM-2, NFR-REL-2/7 |
-| UC-11 Machine-driven inspection | FR-INT-3..6/9..12/14..16, FR-TRG-2/6, NFR-PERF-6, NFR-REL-7..9, NFR-SEC-4/6 |
+| UC-11 Machine-driven inspection | FR-INT-3..6/9..12/14..17, FR-TRG-2/6/8, NFR-PERF-6, NFR-REL-7..9, NFR-SEC-4/6 |
 | UC-12 Job change from the machine | FR-INT-8, FR-LOG-5 |
 | UC-13 Teach from good parts | FR-MDL-5, FR-PLT-9, NFR-PERF-5 |
 | UC-14 Challenge test | FR-ADM-6, NFR-ACC-6 |
@@ -725,6 +730,9 @@ Each project that uses the platform sets these for its jobs and its own acceptan
 | External trigger source | FR-TRG-2 | none (image trigger) |
 | Trigger delay (external) | FR-TRG-6 | 0 ms |
 | Minimum interval (continuous) | FR-TRG-7 | 500 ms |
+| Trigger debounce (external) | FR-TRG-8 | 0 ms |
+| Trigger input edge | FR-INT-17 | rising |
+| Image orientation | FR-ACQ-10 | normal |
 | Reject output: results, delay, pulse | FR-INT-15 | FAIL and ERROR; delay per station; 100 ms pulse |
 | Output polarity | FR-INT-16 | all normal |
 | Machine connector | FR-INT-3..7 | none; S7, Modbus TCP server, remote I/O or OPC UA per project |

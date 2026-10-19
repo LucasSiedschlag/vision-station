@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 08 — Job file format (deliverable D8) |
-| Format | 1 |
-| Date | 2026-10-15 |
+| Format | 1 (format 2 is described in §7, TD-32) |
+| Date | 2026-10-18 |
 | Code | `src/vision_station/jobs/`, `src/vision_station/store/` |
 
 A job holds everything that affects an inspection result (architecture §4). It is saved as an immutable version in the job store and exchanged as one `.vjob` file. A `.vbak` holds every job plus the system configuration. Both are ZIP archives with a `manifest.json`.
@@ -74,8 +74,7 @@ trigger:
   diff_threshold: 25                         # gray levels that count as a change (1–255)
   min_area: 0.05                             # fraction of the area that must differ to count as present
   motion_area: 0.01                          # fraction that must change between frames to count as moving
-  delay_ms: 0                                # external: wait 0–1000 ms after the trigger before the frame (FR-TRG-6)
-  interval_ms: 500                           # continuous: minimum time between inspections; 0 = as fast as possible (FR-TRG-7). Written only when not 500, so a job that does not use it opens in older versions too
+  interval_ms: 500                           # continuous only; transitional (VIA-0064), moves into the format-2 block (§7); written only when not 500
 quality:
   brightness: {min: 15, max: 245}             # outside: ERROR
   sharpness_min_ratio: 0.5                   # vs. the reference image; below: ERROR
@@ -148,3 +147,38 @@ jobs/<job-id>/v<n>.vjob
 ```
 
 Restoring checks the whole file first, stores the versions it does not have (an identical version is skipped; a version whose number is already used here with different content is stored as the next version, never overwritten), and activates nothing: the restored active version is shown to be verified and activated. Results and recorded images are not in backups.
+
+## 7. Format 2: the `acquisition` block (TD-32, written when R1 lands)
+
+Format 2 groups everything about **how and when the picture is taken** in one block, as Cognex does in `AcquireImage` and Keyence in *Image Optimization* (document 09 §20). It replaces `trigger` and `camera_profile`. The rest of `job.yaml` keeps its place (`quality`, `geometry`, `tools`, `decision`, `outputs`, `ui`).
+
+```yaml
+format: 2
+acquisition:
+  trigger:
+    type: continuous                  # image_presence | external | manual | continuous
+    # the parameters of the chosen type are written; the others may be left out
+    continuous: {interval_ms: 500}    # 0–10000; 0 = as fast as the PC allows (FR-TRG-7)
+    # external:       {delay_ms: 0, debounce_ms: 0}                 # delay 0–1000 (FR-TRG-6), debounce 0–65 (FR-TRG-8)
+    # image_presence: {roi: [0.1, 0.1, 0.9, 0.9], still_ms: 500, rearm: object_absent,
+    #                  diff_threshold: 25, min_area: 0.05, motion_area: 0.01}
+  image:
+    profile: camera/profile.yaml      # section 4 below, plus orientation and the parameters of Auto uma vez
+    calibration: camera/calibration.yaml   # optional (FR-INS-15)
+```
+
+`camera/profile.yaml` in format 2 adds (the other settings are those of section 4):
+
+```yaml
+orientation: normal                   # normal | mirror | flip | rotate180 (FR-ACQ-10)
+exposure:
+  mode: manual                        # manual | auto (auto: the driver's own; manual is the rule of the editor)
+  value_us: 33000
+  auto_once: {target_brightness: 10, max_exposure_us: 100000, region: [0.3, 0.3, 0.7, 0.7]}   # FR-ACQ-11
+```
+
+Rules:
+- **Written in full** (FR-JOB-16). The editor writes every parameter of the block, including the ones of the chosen trigger type; the loader refuses a format-2 block with a parameter missing. A change of a default in the software can then never change a saved version.
+- **The type decides which sub-block is read.** A sub-block of another type may be present and is ignored (switching the type in the editor keeps what the person typed).
+- **A job never names a pin, an address or a protocol.** `external` says that the trigger comes from outside; which line, edge or protocol carries it is station configuration (`system.yaml › machine`, architecture §4.6).
+- **Migration from format 1:** `trigger.mode` becomes `type`; `trigger.presence_roi`, `still_ms`, `rearm`, `diff_threshold`, `min_area` and `motion_area` go under `image_presence`; `external` gets `delay_ms: 0` and `debounce_ms: 0`; `continuous` gets `interval_ms: 0`, the behaviour it had; `camera_profile` becomes `image.profile`; `calibration` moves under `image`. The migrator writes the file; the format-1 file is never changed (NFR-MAI-1).

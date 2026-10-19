@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Document | 05 — Frontend (web interface) |
-| Version | 0.3 — 0.2 (the interface of a vision system: configuration sequence, vision controls with live feedback, three settings levels, image overlays) on **shadcn/ui + Tailwind + React Aria** (TD-29, revised) and **in Portuguese and English** (TD-30) |
-| Date | 2026-10-16 |
+| Version | 0.3 — the trigger moves to step 1, *Imagem e disparo*, and step 5 becomes *Qualidade* (§4.3, TD-32). 0.3 — 0.2 (the interface of a vision system: configuration sequence, vision controls with live feedback, three settings levels, image overlays) on **shadcn/ui + Tailwind + React Aria** (TD-29, revised) and **in Portuguese and English** (TD-30) |
+| Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Design for review. Replaces 0.1 (14/10/2026) and 0.2 (same day as 0.3; 0.2 planned a migration to Mantine, reverted by the owner after weighing the trade-offs). Sections 1–16 keep the numbers of 0.1, which code comments and tasks cite; sections 17–19 are new. What is built today is in §15. |
 
@@ -164,7 +164,7 @@ frontend/
     - the active job and version;
     - the **station mode badge**: *Em produção* (green outline) or *Em manutenção* (amber, while an editor or the machine monitor holds the station paused);
     - the user menu (role, settings level, **language**, theme, logout). Language is changed once or a few times per project, so it never sits in the top bar; the operator screen language is *Configurações › Estação*.
-  - **Editor top bar** (§7.3) adds, next to the job name, the **trigger control** (`Disparo: Pela imagem ● peça parada há 0,6 s ▾`): the job's trigger mode and what the trigger would do now on the live image (*aguardando peça*, *aguardando sinal · DI1*, *pronto*, *a cada 500 ms*, *sem câmera*). Its menu picks among the four modes, each with a one-line explanation, and links to step 5 for the presence area, still time and delays. It is a job setting (draft), shown in the top bar because it decides how every inspection starts.
+  - **Editor top bar** (§7.3) adds, next to the job name, the **trigger control** (`Disparo: Pela imagem ● peça parada há 0,6 s ▾`): the job's trigger mode and what the trigger would do now on the live image (*aguardando peça*, *aguardando sinal · DI1*, *pronto*, *a cada 500 ms*, *sem câmera*). Its menu picks among the four modes, each with a one-line explanation, and links to step 1 for the presence area, still time, delay, debounce and interval. It is a job setting (draft), shown in the top bar because it decides how every inspection starts.
   - The operator screen is one click away ("Estação").
 - **Status strip** (footer), always visible in admin mode and on the operator screen. It has four named indicators, each a dot **and** a word; clicking one opens its detail:
   - **Sistema:** the browser reaches the core.
@@ -184,15 +184,15 @@ A station is set up in a fixed order, because each step needs the one before it:
 ```
  Instalação (uma vez)                      Job (por produto)                                      Produção
 ┌───────────────────────┐   ┌───────────────────────────────────────────────────────────────┐   ┌──────────────┐
-│ Comissionamento §7.11 │   │ 1 Imagem → 2 Amostras → 3 Âncora → 4 Ferramentas →            │   │ Estação §7.1 │
-│ câmera, desempenho,   │──▶│ 5 Disparo e qualidade → 6 Resultado e saídas → 7 Validar →    │──▶│ Ajuste fino  │
+│ Comissionamento §7.11 │   │ 1 Imagem e disparo → 2 Amostras → 3 Âncora → 4 Ferramentas →  │   │ Estação §7.1 │
+│ câmera, desempenho,   │──▶│ 5 Qualidade → 6 Resultado e saídas → 7 Validar →              │──▶│ Ajuste fino  │
 │ senhas, máquina       │   │ 8 Salvar e ativar                                  §7.3       │   │ §7.12        │
 └───────────────────────┘   └───────────────────────────────────────────────────────────────┘   └──────────────┘
 ```
 
 **Answer to "what comes first?":**
 - **The camera is chosen once per installation**, in the commissioning wizard (and later in *Configurações › Câmera*). It is system configuration (architecture §4.5), not part of a job.
-- **A job begins with the image of this product**: exposure, focus and white balance on the camera already chosen.
+- **A job begins with the image of this product and how it is taken**: exposure, focus and white balance on the camera already chosen, and the trigger. Cognex keeps both in `AcquireImage` and Keyence in the first screen of the program (document 09 §20); the trigger decides how every picture is taken, so it is set with the image (TD-32).
 - Then the job **captures the images it will learn from**: the reference image and samples marked *Boa* and *Ruim*.
 - Only then come the fixture and the tools, because both are taught and checked on those images.
 
@@ -200,11 +200,11 @@ The 0.1 editor captured the reference at step 6, after the tools that need it. 0
 
 | # | Step | What the user does | Needs | Done when | Mirrors |
 |---|---|---|---|---|---|
-| 1 | **Imagem** | Exposure, gain, white balance, focus, zoom on the live image; histogram and focus meter guide each setting | A connected camera | Settings applied and read back without errors | Cognex *Set Up Image*, Keyence *Image optimization* |
+| 1 | **Imagem e disparo** | Exposure, gain, white balance, focus, zoom, orientation on the live image; histogram and focus meter guide each setting. Then the **trigger**: its type and the parameters of that type (presence area and stillness; delay and debounce; interval). The source of an external signal is not here: it is in *Configurações › Máquina* | A connected camera | Settings applied and read back without errors; trigger values set (defaults are valid) | Cognex *Set Up Image* (`AcquireImage`), Keyence *Image optimization* (*Trigger Options*) |
 | 2 | **Amostras** | Capture the **imagem de referência** (a good part, nominal position) and **amostras**: more good parts (*Boa*) and known defects (*Ruim*), placed as in production | Step 1 | Reference image captured | Keyence *Master registration*; our reference set (FR-JOB-9) |
 | 3 | **Âncora** | Choose how the part is found (or *sem âncora*: the part is always in the same place); teach it on the reference; set the allowed angle and shift; see it found on every sample | Step 2 | Found on every *Boa* sample, or skipped | Cognex *Locate Part* (fixture), architecture §14 |
 | 4 | **Ferramentas** | Add tools, draw their regions on the anchor, set what they measure and their tolerances with gauges that show every sample | Step 2 (and 3 if anchored) | At least one tool; every *Boa* passes and every *Ruim* fails at least one tool | Cognex *Inspect Part*, Keyence *Tool settings* |
-| 5 | **Disparo e qualidade** | How an inspection starts (image, machine, button, continuous); the presence area; image quality gates, proposed from the samples | Step 2 | Values set (defaults are valid) | Cognex trigger settings |
+| 5 | **Qualidade** | Image quality gates (brightness, sharpness, colour reference), proposed from the samples | Step 2 | Values set (defaults are valid) | — (neither product has quality gates) |
 | 6 | **Resultado e saídas** | Which tools decide; the operator texts; the values published to the machine (FR-INT-11) | Step 4 | Defaults are valid | Keyence *Output assignment*, Cognex *Inputs/Outputs* |
 | 7 | **Validar** | Run the job on all samples; see the time budget on this PC (FR-ADM-5); compare with the version in production (A/B replay, FR-JOB-12) | Step 4 | All samples as expected, budget met (or accepted with a note) | Our verification (architecture §7.3) |
 | 8 | **Salvar e ativar** | Write the note, save version n+1, optionally activate it with verification | Step 7 | Saved | Cognex *Save Job* / *Run Job* |
@@ -226,7 +226,7 @@ The 0.1 editor captured the reference at step 6, after the tools that need it. 0
   - **Salvar** is never blocked: the top bar's *Salvar…* always works. If the job was not validated, the step says "Ainda não validado".
   - **Validar** runs `POST /api/jobs/verify`: the draft on every sample of its reference set, the same run (`run_reference_set`) that activation does, so a green Validar is not refused at activation for its samples. Nothing is saved or recorded. It returns, per sample, what was expected, what the job said, the reason and the time. The camera and view part of the verification (settings applied, the live frame against the reference) needs the camera and is done when the job is activated. The batch test with per-tool values (`/api/editor/batch`), the A/B replay and the time budget on this PC come with UI-4 and phase C.
   - **Amostras** is the reference image and the samples; *Boa* is expected `PASS`, *Ruim* is `FAIL`, *Com erro* is `ERROR`.
-  - **Disparo e qualidade** holds the trigger mode, its timing and the quality gates. The trigger control in the top bar sets the same value (`setTriggerMode`), so the two always agree. *Contínuo* has **Intervalo mínimo** (`trigger.interval_ms`, FR-TRG-7, default 500 ms, 0 to 10 000): the station waits that long between two inspections, and still never inspects a frame taken while the scene moves. The live "parado há 0,6 s" readout of the control comes with the editor session (UI-4).
+  - **Disparo e qualidade** (as built, to be realigned with TD-32: the trigger moves to step 1 and this step becomes *Qualidade*) holds the trigger mode, its timing and the quality gates. The trigger control in the top bar sets the same value (`setTriggerMode`), so the two always agree. *Contínuo* has **Intervalo mínimo** (`trigger.interval_ms`, FR-TRG-7, default 500 ms, 0 to 10 000): the station waits that long between two inspections, and still never inspects a frame taken while the scene moves. The live "parado há 0,6 s" readout of the control comes with the editor session (UI-4).
   - **Resultado e saídas** has one switch per tool (*Decide o resultado*, `affects_result`) and the operator's waiting text. The outputs to the machine come with phase B.
   - **Mudanças:** the save dialog and *Salvar* list what changed in words (`summary.ts`: camera, reference, samples, anchor, regions, each changed tool parameter by its title, trigger, texts), against the version the draft started from. A draft kept by an older build, or a new job, has no version to compare with.
   - An existing job opens at *Ferramentas*; a new one at *Imagem*. *Próximo passo* at the bottom of each step leads forward.
@@ -242,11 +242,11 @@ The 0.1 editor captured the reference at step 6, after the tools that need it. 0
 |---|---|---|
 | P1 | Jobs list | Entry: *Novo job* or *Editar* |
 | P2 | Editor workbench | Step rail, image workspace, inspector, result bar (§10.1). Steps are local states of P2: the image stays, the inspector changes |
-| P2.1 | Inspector: Imagem | Camera controls, histogram, focus meter |
+| P2.1 | Inspector: Imagem e disparo | Camera controls, histogram, focus meter; trigger type and its parameters, presence area |
 | P2.2 | Inspector: Amostras | Capture reference, capture and label samples, filmstrip |
 | P2.3 | Inspector: Âncora | Locator choice, teaching, angle/shift ranges, results per sample |
 | P2.4 | Inspector: Ferramentas | Tool list + selected tool's sections and gauges |
-| P2.5 | Inspector: Disparo e qualidade | Trigger mode, presence area, quality gates |
+| P2.5 | Inspector: Qualidade | Quality gates |
 | P2.6 | Inspector: Resultado e saídas | Deciding tools, texts, machine values |
 | P2.7 | Inspector: Validar | Run on samples, budget, A/B against production |
 | P3 | Save dialog | Note, save, optionally activate (blocking) |
@@ -507,7 +507,7 @@ These are as built in 0.1 (list, versions, activate with verification, import, e
 
 The station is paused (*Em manutenção*) while the editor holds a camera session, and resumes when the editor is closed or idle.
 
-**1 · Imagem**
+**1 · Imagem e disparo**
 
 | Level | Controls |
 |---|---|
@@ -520,6 +520,14 @@ The station is paused (*Em manutenção*) while the editor holds a camera sessio
 - Optional **focus peaking** layer: edges tinted in `ov-select`.
 
 *Aplicar na câmera* runs the existing apply + read-back and shows the per-setting report inline.
+
+**Trigger** (the second half of the step, one `acquisition.trigger` block, TD-32):
+- **Type:** a segmented control with a one-line explanation each (*Pela imagem*, *Pela máquina*, *Botão*, *Contínuo*); the same choice as the trigger control in the editor top bar. *Pela máquina* covers every external source (24 V input, S7, Modbus, OPC UA, local API): the source and the edge of the input are chosen once in *Configurações › Máquina*, not per job.
+- **The parameters of the chosen type** (TD-31, TD-32):
+  - *Pela máquina*: **Atraso após o sinal** (0–1000 ms, default 0, FR-TRG-6), with the frame it would take shown against the live image; **Filtro do sinal** (debounce, 0–65 ms, default 0, FR-TRG-8);
+  - *Contínuo*: **Intervalo mínimo** (default 500 ms, FR-TRG-7);
+  - *Pela imagem*: the presence area drawn on the image, the stillness time, and a live **"presença / movimento / parado há 0,6 s"** readout, so the maintainer sees the trigger decide.
+- **Orientation** (FR-ACQ-10) is with the image controls; the parameters of *Auto uma vez* (target brightness, maximum exposure, measuring region, FR-ACQ-11) are in the exposure control at the Avançado level.
 
 **2 · Amostras**
 - *Capturar referência*: freezes the current frame as the reference image. The reference is shown first in the filmstrip, with a star.
@@ -569,14 +577,8 @@ The inspector is split vertically (§10.1):
   - "Todas as boas passam · 3 de 4 ruins reprovam (falta *aba aberta*)", computed from the batch test;
   - shown again in step 7.
 
-**5 · Disparo e qualidade**
-- **Trigger mode:** a segmented control with a one-line explanation each (*Pela imagem*, *Pela máquina*, *Botão*, *Contínuo*); the same choice as the trigger control in the editor top bar. *Pela máquina* covers every external source (24 V input, S7, Modbus, OPC UA, local API): the source is chosen once in *Configurações › Máquina*, not per job.
-- **Timing** (TD-31): *Pela máquina* shows **Atraso após o sinal** (0–1000 ms, default 0, FR-TRG-6), with the frame it would take shown against the live image; *Contínuo* shows **Intervalo mínimo** (default 500 ms, FR-TRG-7).
-- **For image presence:**
-  - the presence area drawn on the image;
-  - the stillness time;
-  - a live **"presença / movimento / parado há 0,6 s"** readout, so the maintainer sees the trigger decide.
-- **Quality gates:**
+**5 · Qualidade**
+- **Quality gates** (they come after the samples because they are proposed from them):
   - brightness range on the histogram;
   - sharpness ratio against the reference;
   - colour-reference patch (FR-INS-16);
@@ -824,11 +826,11 @@ At **1920×1080**:
 
 ```
 ┌ Job · v8 · [Disparo: Pela imagem ● parada 0,6 s ▾] ─ [Nível ▾] ─ [▶ Testar] [Salvar…] ─ (LS ▾) ┐
-│ ① Imagem     ✓ │ ● Ao vivo                       [◧ Marcações · 5/5 ▾]│ Ferramentas            │
+│ ① Imagem/disp ✓│ ● Ao vivo                       [◧ Marcações · 5/5 ▾]│ Ferramentas            │
 │ ② Amostras   ✓ │                                                      │ ┌────────────────────┐ │
 │ ③ Âncora     ✓ │                  IMAGEM                              │ │ ⠿ tampa    ✓ cor   │ │
 │ ④ Ferramentas ●│          zoom / pan, camadas, réguas                 │ │ ⠿ lote     ✓ código│ │
-│ ⑤ Disparo      │                                                      │ │ ⠿ largura  ✕ borda │ │
+│ ⑤ Qualidade    │                                                      │ │ ⠿ largura  ✕ borda │ │
 │ ⑥ Resultado    │                                                      │ └────────────────────┘ │
 │ ⑦ Validar    ! │                                                      │ largura · borda        │
 │ ⑧ Salvar       │                                                      │ ▸ Região               │
@@ -1086,7 +1088,7 @@ FR-UI-9. Overlays are drawn by the client from the result contract (architecture
 | Medições | What each tool measured: matches, edges and widths, blobs, codes with their text, defect areas | on | on FAIL only |
 | Rótulos | Tool names and values next to their regions | on | off |
 | Máscara | The selected tool's mask or debug image (§19.4) | off (on while a colour or threshold control has focus) | never |
-| Área de presença | The trigger area and its live state | step 5 only | off |
+| Área de presença | The trigger area and its live state | step 1 only | off |
 | Grade e réguas | Pixel grid (zoom ≥ 8×), rulers in px or mm | off | never |
 
 **Controls:**
