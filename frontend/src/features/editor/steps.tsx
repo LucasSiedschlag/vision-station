@@ -200,6 +200,21 @@ export function CameraStep({ draft }: StepProps) {
           />
         )}
       </Field>
+      <Field label={t.orientation} hint={t.orientationHint}>
+        {(props) => (
+          <Select
+            {...props}
+            value={p.orientation ?? 'normal'}
+            onValueChange={(v) =>
+              set((q) => (v === 'normal' ? delete q.orientation : (q.orientation = v)))
+            }
+            options={(['normal', 'mirror', 'flip', 'rotate180'] as const).map((value) => ({
+              value,
+              label: t.orientations[value],
+            }))}
+          />
+        )}
+      </Field>
       <Button variant="primary" loading={busy} onClick={() => void apply()}>
         <Camera aria-hidden className="size-4" />
         {t.applyCamera}

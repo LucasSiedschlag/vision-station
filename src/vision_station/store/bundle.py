@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import yaml
 from pydantic import ValidationError
 
-from vision_station.jobs import CameraProfile, Job, dump_job, parse_job
+from vision_station.jobs import CameraProfile, Job, dump_job, dump_profile, parse_job
 from vision_station.store.archive import MANIFEST, check_path
 from vision_station.store.errors import FormatError
 from vision_station.locators import LocatorError, check_job_locator
@@ -26,7 +26,7 @@ class JobBundle:
     def files(self) -> dict[str, bytes]:
         files = {
             JOB_FILE: dump_job(self.job).encode("utf-8"),
-            self.job.camera_profile: yaml.safe_dump(self.profile.model_dump(mode="json"), sort_keys=False).encode("utf-8"),
+            self.job.camera_profile: dump_profile(self.profile).encode("utf-8"),
         }
         for name, data in self.extra.items():
             check_path(name)

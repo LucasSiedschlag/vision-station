@@ -92,7 +92,7 @@ describe('what changed, in words', () => {
   it('the camera, the reference image and the samples', () => {
     const j = job([tool({})])
     const draft = from(j, j, {
-      profile: { exposure: { value_us: 4000 } },
+      profile: { exposure: { value_us: 4000 }, orientation: 'mirror' },
       addFiles: { 'reference/reference.png': 'AAAA' },
       expected: {
         cases: [
@@ -109,7 +109,8 @@ describe('what changed, in words', () => {
       }),
     })
     expect(summarizeChanges(draft, types)).toEqual([
-      expect.stringContaining('Câmera, exposure'),
+      'Câmera, exposição: value_us 8000 → value_us 4000',
+      'Câmera, orientação: Normal → Espelhada',
       'Nova imagem de referência',
       'Amostras novas: 0 Boas e 2 Ruins',
       '1 amostra removida',

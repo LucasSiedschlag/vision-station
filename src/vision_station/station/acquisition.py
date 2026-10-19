@@ -19,6 +19,7 @@ from typing import Any
 import numpy as np
 
 from vision_station.cameras import ApplyReport, Camera, CameraError, Frame
+from vision_station.cameras.orientation import orient
 from vision_station.jobs import CameraProfile
 
 
@@ -145,6 +146,8 @@ class Acquisition:
                 return  # still settling: this frame may not show the new settings yet
             self.applied_serial, self._settling = self._settling, None
         with self._lock:
+            if self._profile is not None and self._profile.orientation != "normal":
+                frame = Frame(orient(frame.image, self._profile.orientation), frame.timestamp)  # FR-ACQ-10
             self._latest = frame
 
     def _dead(self, frame: Frame) -> bool:

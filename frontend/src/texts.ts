@@ -591,6 +591,39 @@ export const text = {
         return t`A descrição mudou`
       },
       camera: (setting: string, from: string, to: string) => t`Câmera, ${setting}: ${from} → ${to}`,
+      // the names of the camera settings in the summary; a setting not listed keeps its key
+      settings: {
+        get resolution() {
+          return t`resolução`
+        },
+        get pixel_format() {
+          return t`formato do pixel`
+        },
+        get exposure() {
+          return t`exposição`
+        },
+        get gain() {
+          return t`ganho`
+        },
+        get white_balance() {
+          return t`balanço de branco`
+        },
+        get focus() {
+          return t`foco`
+        },
+        get zoom() {
+          return t`zoom`
+        },
+        get power_line_hz() {
+          return t`rede elétrica`
+        },
+        get low_light_compensation() {
+          return t`compensação de pouca luz`
+        },
+        get orientation() {
+          return t`orientação`
+        },
+      } as Record<string, string>,
       get reference() {
         return t`Nova imagem de referência`
       },
@@ -781,6 +814,26 @@ export const text = {
     },
     get powerLine() {
       return t`Rede elétrica`
+    },
+    get orientation() {
+      return t`Orientação da imagem`
+    },
+    get orientationHint() {
+      return t`O programa vira cada imagem; as regiões e os resultados já usam a imagem virada. Mudar depois de capturar a referência e as amostras pede capturá-las de novo.`
+    },
+    orientations: {
+      get normal() {
+        return t`Normal`
+      },
+      get mirror() {
+        return t`Espelhada`
+      },
+      get flip() {
+        return t`De cabeça para baixo`
+      },
+      get rotate180() {
+        return t`Girada 180°`
+      },
     },
     get applyCamera() {
       return t`Aplicar na câmera`

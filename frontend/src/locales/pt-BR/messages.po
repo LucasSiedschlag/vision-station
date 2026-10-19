@@ -43,6 +43,9 @@ msgstr "Ajustes gravados e lidos de volta."
 msgid "O nome da entrada, nunca a senha."
 msgstr "O nome da entrada, nunca a senha."
 
+msgid "Girada 180°"
+msgstr "Girada 180°"
+
 msgid "{name} pego para mover, na {place}."
 msgstr "{name} pego para mover, na {place}."
 
@@ -112,6 +115,9 @@ msgstr "Estação"
 msgid "Brilho máximo"
 msgstr "Brilho máximo"
 
+msgid "resolução"
+msgstr "resolução"
+
 msgid "Hoje"
 msgstr "Hoje"
 
@@ -123,6 +129,9 @@ msgstr "Importe um arquivo .vjob ou .vbak, ou crie um job no editor."
 
 msgid "Sugestões"
 msgstr "Sugestões"
+
+msgid "Espelhada"
+msgstr "Espelhada"
 
 msgid "Este passo está bloqueado: dá para ler, não para editar."
 msgstr "Este passo está bloqueado: dá para ler, não para editar."
@@ -239,6 +248,9 @@ msgstr "Adicionar ferramenta"
 msgid "Quando"
 msgstr "Quando"
 
+msgid "compensação de pouca luz"
+msgstr "compensação de pouca luz"
+
 msgid "Desenhe um recorte em volta do objeto na imagem de referência e use-o como gabarito."
 msgstr "Desenhe um recorte em volta do objeto na imagem de referência e use-o como gabarito."
 
@@ -335,6 +347,9 @@ msgstr "Entrar"
 msgid "Subir {id}"
 msgstr "Subir {id}"
 
+msgid "zoom"
+msgstr "zoom"
+
 msgid "Pelo menos 8 caracteres. Ela não é mostrada de novo."
 msgstr "Pelo menos 8 caracteres. Ela não é mostrada de novo."
 
@@ -398,6 +413,9 @@ msgstr "imagem toda"
 msgid "A descrição mudou"
 msgstr "A descrição mudou"
 
+msgid "orientação"
+msgstr "orientação"
+
 msgid "Mude os filtros ou o período."
 msgstr "Mude os filtros ou o período."
 
@@ -415,6 +433,9 @@ msgstr "Âncora nova ({type})"
 
 msgid "Desenhar a área de presença"
 msgstr "Desenhar a área de presença"
+
+msgid "Orientação da imagem"
+msgstr "Orientação da imagem"
 
 msgid "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
 msgstr "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
@@ -442,6 +463,9 @@ msgstr "Pasta de imagens (testes)"
 
 msgid "Este perfil não pode abrir esta tela."
 msgstr "Este perfil não pode abrir esta tela."
+
+msgid "ganho"
+msgstr "ganho"
 
 msgid "Amostras novas: {good} Boas e {bad} Ruins"
 msgstr "Amostras novas: {good} Boas e {bad} Ruins"
@@ -503,6 +527,9 @@ msgstr "Nome: {from} → {to}"
 msgid "Testar câmera"
 msgstr "Testar câmera"
 
+msgid "O programa vira cada imagem; as regiões e os resultados já usam a imagem virada. Mudar depois de capturar a referência e as amostras pede capturá-las de novo."
+msgstr "O programa vira cada imagem; as regiões e os resultados já usam a imagem virada. Mudar depois de capturar a referência e as amostras pede capturá-las de novo."
+
 msgid "Preparando…"
 msgstr "Preparando…"
 
@@ -511,6 +538,9 @@ msgstr "Reprovado"
 
 msgid "Cor ou contraste"
 msgstr "Cor ou contraste"
+
+msgid "Normal"
+msgstr "Normal"
 
 msgid "v{v}"
 msgstr "v{v}"
@@ -589,6 +619,9 @@ msgstr "Descartar o rascunho"
 
 msgid "Diferença de cinza"
 msgstr "Diferença de cinza"
+
+msgid "formato do pixel"
+msgstr "formato do pixel"
 
 msgid "Sua sessão terminou. Entre de novo para continuar."
 msgstr "Sua sessão terminou. Entre de novo para continuar."
@@ -725,6 +758,9 @@ msgstr "Em português, para o operador. Pode usar valores da ferramenta, ex.: {e
 msgid "Adicione ao menos uma ferramenta"
 msgstr "Adicione ao menos uma ferramenta"
 
+msgid "foco"
+msgstr "foco"
+
 msgid "Recolher menu"
 msgstr "Recolher menu"
 
@@ -859,6 +895,9 @@ msgstr "Capturar a imagem de referência"
 
 msgid "Trocar a senha do {role}"
 msgstr "Trocar a senha do {role}"
+
+msgid "rede elétrica"
+msgstr "rede elétrica"
 
 msgid "Manter livre no disco pelo menos"
 msgstr "Manter livre no disco pelo menos"
@@ -1184,6 +1223,9 @@ msgstr "Desligada, a ferramenta é medida e gravada, mas nunca reprova a peça."
 msgid "Padrão (logo, marca)"
 msgstr "Padrão (logo, marca)"
 
+msgid "De cabeça para baixo"
+msgstr "De cabeça para baixo"
+
 msgid "Imagem guardada por amostragem."
 msgstr "Imagem guardada por amostragem."
 
@@ -1390,6 +1432,9 @@ msgstr "Dataset"
 
 msgid "Balanço de branco"
 msgstr "Balanço de branco"
+
+msgid "exposição"
+msgstr "exposição"
 
 msgid "A regra de decisão mudou"
 msgstr "A regra de decisão mudou"
@@ -1657,6 +1702,9 @@ msgstr "Formato dos arquivos de job"
 
 msgid "renumerada"
 msgstr "renumerada"
+
+msgid "balanço de branco"
+msgstr "balanço de branco"
 
 msgid "Câmera"
 msgstr "Câmera"

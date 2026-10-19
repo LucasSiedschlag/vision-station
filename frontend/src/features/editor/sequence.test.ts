@@ -149,6 +149,8 @@ describe('Validar and what changes after it', () => {
       reason: 'A imagem mudou depois da última validação; rode Validar',
     })
     expect(info.validate.state).toBe('attention')
+    const mirrored = { ...base, profile: { ...base.profile, orientation: 'mirror' } }
+    expect(stepStates(mirrored, {}, none, run).tools.state).toBe('attention') // the pictures were taken the other way
     const another = { ...base, addFiles: { ...base.addFiles, 'tests/images/b.png': 'BBBB' } }
     expect(stepStates(another, {}, none, run).tools.state).toBe('attention')
   })

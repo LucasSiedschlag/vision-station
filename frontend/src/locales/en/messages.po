@@ -43,6 +43,9 @@ msgstr "Settings written and read back."
 msgid "O nome da entrada, nunca a senha."
 msgstr "The entry name, never the password."
 
+msgid "Girada 180°"
+msgstr "Rotated 180°"
+
 msgid "{name} pego para mover, na {place}."
 msgstr "{name} picked up, at {place}."
 
@@ -112,6 +115,9 @@ msgstr "Station"
 msgid "Brilho máximo"
 msgstr "Maximum brightness"
 
+msgid "resolução"
+msgstr "resolution"
+
 msgid "Hoje"
 msgstr "Today"
 
@@ -123,6 +129,9 @@ msgstr "Import a .vjob or .vbak file, or create a job in the editor."
 
 msgid "Sugestões"
 msgstr "Suggestions"
+
+msgid "Espelhada"
+msgstr "Mirrored"
 
 msgid "Este passo está bloqueado: dá para ler, não para editar."
 msgstr "This step is blocked: you can read it, not edit it."
@@ -239,6 +248,9 @@ msgstr "Add tool"
 msgid "Quando"
 msgstr "When"
 
+msgid "compensação de pouca luz"
+msgstr "low-light compensation"
+
 msgid "Desenhe um recorte em volta do objeto na imagem de referência e use-o como gabarito."
 msgstr "Draw a crop around the part on the reference image and use it as the template."
 
@@ -335,6 +347,9 @@ msgstr "Log in"
 msgid "Subir {id}"
 msgstr "Move {id} up"
 
+msgid "zoom"
+msgstr "zoom"
+
 msgid "Pelo menos 8 caracteres. Ela não é mostrada de novo."
 msgstr "At least 8 characters. It is not shown again."
 
@@ -398,6 +413,9 @@ msgstr "whole image"
 msgid "A descrição mudou"
 msgstr "The description changed"
 
+msgid "orientação"
+msgstr "orientation"
+
 msgid "Mude os filtros ou o período."
 msgstr "Change the filters or the period."
 
@@ -415,6 +433,9 @@ msgstr "New anchor ({type})"
 
 msgid "Desenhar a área de presença"
 msgstr "Draw the presence area"
+
+msgid "Orientação da imagem"
+msgstr "Image orientation"
 
 msgid "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
 msgstr "{n, plural, =0 {No files in the job (reference, templates, reference set).} one {# file in the job (reference, templates, reference set).} other {# files in the job (reference, templates, reference set).}}"
@@ -442,6 +463,9 @@ msgstr "Image folder (tests)"
 
 msgid "Este perfil não pode abrir esta tela."
 msgstr "This profile cannot open this screen."
+
+msgid "ganho"
+msgstr "gain"
 
 msgid "Amostras novas: {good} Boas e {bad} Ruins"
 msgstr "New samples: {good} Good and {bad} Bad"
@@ -503,6 +527,9 @@ msgstr "Name: {from} → {to}"
 msgid "Testar câmera"
 msgstr "Test camera"
 
+msgid "O programa vira cada imagem; as regiões e os resultados já usam a imagem virada. Mudar depois de capturar a referência e as amostras pede capturá-las de novo."
+msgstr "The program turns every picture; the regions and results already use the turned picture. Changing it after capturing the reference and the samples means capturing them again."
+
 msgid "Preparando…"
 msgstr "Preparing…"
 
@@ -511,6 +538,9 @@ msgstr "Fail"
 
 msgid "Cor ou contraste"
 msgstr "Colour or contrast"
+
+msgid "Normal"
+msgstr "Normal"
 
 msgid "v{v}"
 msgstr "v{v}"
@@ -589,6 +619,9 @@ msgstr "Discard the draft"
 
 msgid "Diferença de cinza"
 msgstr "Grey difference"
+
+msgid "formato do pixel"
+msgstr "pixel format"
 
 msgid "Sua sessão terminou. Entre de novo para continuar."
 msgstr "Your session ended. Log in again to continue."
@@ -725,6 +758,9 @@ msgstr "In Portuguese, for the operator. It can use the tool's values, e.g. {exa
 msgid "Adicione ao menos uma ferramenta"
 msgstr "Add at least one tool"
 
+msgid "foco"
+msgstr "focus"
+
 msgid "Recolher menu"
 msgstr "Collapse menu"
 
@@ -859,6 +895,9 @@ msgstr "Capture the reference image"
 
 msgid "Trocar a senha do {role}"
 msgstr "Change the {role} password"
+
+msgid "rede elétrica"
+msgstr "power line"
 
 msgid "Manter livre no disco pelo menos"
 msgstr "Keep at least this much disk free"
@@ -1184,6 +1223,9 @@ msgstr "When off, the tool is measured and recorded but never fails the part."
 msgid "Padrão (logo, marca)"
 msgstr "Pattern (logo, mark)"
 
+msgid "De cabeça para baixo"
+msgstr "Upside down"
+
 msgid "Imagem guardada por amostragem."
 msgstr "Image kept by sampling."
 
@@ -1390,6 +1432,9 @@ msgstr "Dataset"
 
 msgid "Balanço de branco"
 msgstr "White balance"
+
+msgid "exposição"
+msgstr "exposure"
 
 msgid "A regra de decisão mudou"
 msgstr "The decision rule changed"
@@ -1657,6 +1702,9 @@ msgstr "Job file format"
 
 msgid "renumerada"
 msgstr "renumbered"
+
+msgid "balanço de branco"
+msgstr "white balance"
 
 msgid "Câmera"
 msgstr "Camera"

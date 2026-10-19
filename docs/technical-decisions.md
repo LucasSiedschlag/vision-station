@@ -874,7 +874,7 @@ Models are added only where the classical tools can't separate good objects from
 
 **Consequences.**
 - Job format 2 (R1, VIA-0070) carries the `acquisition` block. The migrator maps format 1: `trigger.mode` → `acquisition.trigger.type`; the presence settings → `image_presence`; `camera_profile` → `acquisition.image`; a continuous trigger without an interval → `interval_ms: 0` (it ran without one); `delay_ms` → 0; `debounce_ms` → 0.
-- **Format 1 is transitional.** Code written before this decision (the continuous `interval_ms` in `trigger`, with a default of 500 ms) is aligned when format 2 is written; until then format 1 is not extended.
+- **Format 1 is transitional.** Code written before this decision (the continuous `interval_ms` in `trigger`, with a default of 500 ms) is aligned when format 2 is written; until then format 1 is not extended, with one exception: the profile gains an optional `orientation` (VIA-0083), applied by the program to every frame and written to `profile.yaml` only when it is not `normal`, so a job that does not use it still opens in an older version.
 - TD-31 stands for what it decided (delay and interval **per job**, 500 ms as the project value) and is amended in two points: where the fields live (the type's sub-block) and the rule of writing in full instead of "defaults keep old jobs unchanged".
 - Documents changed with this decision: 01 (§3, §4.1, §4.4), 02 (FR-PLT-3, FR-TRG-6/7/8, FR-ACQ-10/11, FR-INT-6/17, FR-JOB-16, FR-UI-11), 03 (§1, §4.1, §4.2, §4.5, §4.6, §16.3, §16.7), 05 (§4.3, §7.3, §4.4), 08, 09.
 - The editor changes its steps (document 05 §4.3): the trigger leaves step 5.

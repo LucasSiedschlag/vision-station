@@ -14,7 +14,18 @@ function show(value: unknown, unit?: string): string {
     return unit === 'fraction' ? formatPercent(value) : formatNumber(value)
   if (typeof value === 'boolean') return value ? c.on : c.off
   if (Array.isArray(value)) return value.map((v) => show(v)).join(', ')
+  if (typeof value === 'object')
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, v]) => `${key} ${show(v)}`)
+      .join(', ')
   return String(value)
+}
+
+/** A camera setting as a person reads it: the orientation by its name, the others by their values. */
+function profileValue(key: string, value: unknown): string {
+  if (key === 'orientation')
+    return text.editor.orientations[(value ?? 'normal') as keyof typeof text.editor.orientations]
+  return show(value)
 }
 
 function paramChanges(
@@ -59,7 +70,13 @@ export function summarizeChanges(
 
   for (const key of Object.keys({ ...baseProfile, ...draft.profile }))
     if (!same(baseProfile?.[key], draft.profile[key]))
-      out.push(c.camera(key, show(baseProfile?.[key]), show(draft.profile[key])))
+      out.push(
+        c.camera(
+          c.settings[key] ?? key,
+          profileValue(key, baseProfile?.[key]),
+          profileValue(key, draft.profile[key]),
+        ),
+      )
 
   if ('reference/reference.png' in draft.addFiles) out.push(c.reference)
   const before = new Set(

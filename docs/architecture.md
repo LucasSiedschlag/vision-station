@@ -420,6 +420,7 @@ focus: {mode: manual, value: 30}
 zoom: {value: 1200}          # motorized lens only
 power_line_hz: 60
 low_light_compensation: false
+orientation: normal          # normal | mirror | flip | rotate180; applied by the program, not by the driver (FR-ACQ-10)
 ```
 
 Each driver maps these to its own controls. A setting a driver can't apply is reported, never silently skipped (FR-JOB-11). The `raw/` dump is applied only by the driver that wrote it, after the normalized settings.

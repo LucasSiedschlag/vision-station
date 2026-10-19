@@ -118,7 +118,10 @@ focus: {mode: manual, value: 30}
 zoom: {value: 4.0}                  # motorized lens only
 power_line_hz: 60                   # 50 | 60
 low_light_compensation: false
+orientation: normal                 # normal | mirror | flip | rotate180 (FR-ACQ-10); left out of the file when normal
 ```
+
+`orientation` is not written to the camera: the program turns every frame as it comes in (`station/acquisition.py`), so the live view, the reference, the samples, the regions and the results are all in the turned picture. It is not in the apply report of the camera (FR-ACQ-4). The stored pictures were taken turned and are never turned again. None of the turns changes the size of the picture.
 
 `mode: auto` takes no value; `mode: manual` needs one. The settings are written to the camera on every open, reconnect and activation, then read back; what did not apply is reported (FR-ACQ-4).
 
@@ -170,7 +173,7 @@ acquisition:
 `camera/profile.yaml` in format 2 adds (the other settings are those of section 4):
 
 ```yaml
-orientation: normal                   # normal | mirror | flip | rotate180 (FR-ACQ-10)
+orientation: normal                   # already in format 1 (VIA-0083); written in full in format 2
 exposure:
   mode: manual                        # manual | auto (auto: the driver's own; manual is the rule of the editor)
   value_us: 33000

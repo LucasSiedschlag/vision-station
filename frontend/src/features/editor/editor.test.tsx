@@ -384,6 +384,24 @@ describe('the job editor', () => {
     ).toBeInTheDocument()
   })
 
+  it('the orientation of the image is chosen with the camera, kept out of the profile when normal, and told in the summary', async () => {
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Imagem e disparo/ }))
+    const select = screen.getByRole('combobox', { name: 'Orientação da imagem' })
+    expect(select).toHaveTextContent('Normal')
+    await userEvent.click(select)
+    await userEvent.click(screen.getByRole('option', { name: 'Espelhada' }))
+    expect(useDraft.getState().draft?.profile.orientation).toBe('mirror')
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar…' }))
+    const dialog = screen.getByRole('dialog', { name: 'Salvar como versão 3' })
+    expect(within(dialog).getByText('Câmera, orientação: Normal → Espelhada')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    await userEvent.click(screen.getByRole('combobox', { name: 'Orientação da imagem' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Normal' }))
+    expect(useDraft.getState().draft?.profile).not.toHaveProperty('orientation')
+  })
+
   it('the trigger is set with the image, in the first step, and the quality gates are a step of their own (TD-32)', async () => {
     await openEditor()
     const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))

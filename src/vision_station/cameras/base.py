@@ -12,10 +12,10 @@ from typing import Any
 
 import numpy as np
 
-from vision_station.jobs import CameraProfile
+from vision_station.jobs import PROGRAM_SIDE, CameraProfile
 
-# Names used in reports and capabilities: the fields of CameraProfile
-SETTINGS = tuple(CameraProfile.model_fields)
+# Names used in reports and capabilities: the fields of CameraProfile that the camera itself is given
+SETTINGS = tuple(name for name in CameraProfile.model_fields if name not in PROGRAM_SIDE)
 
 
 class CameraError(Exception):

@@ -1,7 +1,8 @@
 """Driver-independent camera settings stored in a job (architecture §5.2)."""
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -50,6 +51,9 @@ class WhiteBalance(_Strict):
         return self
 
 
+Orientation = Literal["normal", "mirror", "flip", "rotate180"]
+
+
 class Zoom(_Strict):
     value: float
 
@@ -70,3 +74,19 @@ class CameraProfile(_Strict):
     zoom: Zoom | None = None  # motorized lens only
     power_line_hz: Literal[50, 60] = 60
     low_light_compensation: bool = False
+    # applied by the program to every frame, not written to the camera (FR-ACQ-10, TD-32); see PROGRAM_SIDE
+    orientation: Orientation = "normal"
+
+
+# Profile fields the program applies to the frames itself: a driver neither writes nor reads them back, so they are
+# not camera settings in a report (FR-ACQ-4)
+PROGRAM_SIDE = ("orientation",)
+
+
+def dump_profile(profile: CameraProfile) -> str:
+    """The profile as YAML. A normal orientation is left out: it is what a profile without the key means, and a job
+    that does not use it still opens in a version that does not know the field (TD-32)."""
+    data: dict[str, Any] = profile.model_dump(mode="json")
+    if data["orientation"] == "normal":
+        del data["orientation"]
+    return yaml.safe_dump(data, sort_keys=False)
