@@ -66,6 +66,9 @@ msgstr "The camera opened but sent no image"
 msgid "A câmera não abriu: {why}"
 msgstr "The camera did not open: {why}"
 
+msgid "A câmera não está conectada"
+msgstr "The camera is not connected"
+
 #, python-brace-format
 msgid "A câmera parou de responder: {why}"
 msgstr "The camera stopped responding: {why}"
@@ -474,6 +477,10 @@ msgid "Não foi possível gravar na pasta: {why}"
 msgstr "Could not write to the folder: {why}"
 
 #, python-brace-format
+msgid "Não foi possível medir a exposição: {why}"
+msgstr "The exposure could not be measured: {why}"
+
+#, python-brace-format
 msgid "Não foi possível salvar: {why}"
 msgstr "Could not save: {why}"
 
@@ -648,6 +655,15 @@ msgstr "Empty: no limit"
 
 msgid "Verificação do job falhou"
 msgstr "Job verification failed"
+
+msgid "a câmera não aplicou o ajuste a tempo"
+msgstr "the camera did not apply the setting in time"
+
+msgid "a câmera não está conectada"
+msgstr "the camera is not connected"
+
+msgid "a câmera parou de mandar imagem"
+msgstr "the camera stopped sending pictures"
 
 msgid "a imagem não está em base64"
 msgstr "the image is not base64"

@@ -119,9 +119,13 @@ zoom: {value: 4.0}                  # motorized lens only
 power_line_hz: 60                   # 50 | 60
 low_light_compensation: false
 orientation: normal                 # normal | mirror | flip | rotate180 (FR-ACQ-10); left out of the file when normal
+# exposure may carry how the editor's Auto uma vez measures (FR-ACQ-11); left out of the file when not set:
+# exposure: {mode: manual, value_us: 15625, auto_once: {target_brightness: 10, max_exposure_us: 100000, region: [0.25, 0.25, 0.75, 0.75]}}
 ```
 
 `orientation` is not written to the camera: the program turns every frame as it comes in (`station/acquisition.py`), so the live view, the reference, the samples, the regions and the results are all in the turned picture. It is not in the apply report of the camera (FR-ACQ-4). The stored pictures were taken turned and are never turned again. None of the turns changes the size of the picture.
+
+`auto_once` (VIA-0083): `target_brightness` is the percentage of saturated pixels (gray level 250 or more) the measurement looks for in `region` (0–100, default 10), `max_exposure_us` the longest exposure it may choose (default 100 000), `region` a rectangle of the frame (default all of it). The editor's *Auto uma vez* reads them; the job runs with the fixed `value_us` it wrote, so the parameters change nothing at inspection time.
 
 `mode: auto` takes no value; `mode: manual` needs one. The settings are written to the camera on every open, reconnect and activation, then read back; what did not apply is reported (FR-ACQ-4).
 

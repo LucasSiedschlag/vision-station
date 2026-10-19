@@ -45,6 +45,8 @@ export const editorApi = {
   create: (body: JobDraftBody) => call(api.POST('/api/jobs', { body })),
   saveVersion: (id: string, body: JobDraftBody) =>
     call(api.POST('/api/jobs/{job_id}/versions', { params: { path: { job_id: id } }, body })),
+  autoExposure: (profile: Record<string, unknown>) =>
+    call(api.POST('/api/camera/auto-exposure', { body: profile })),
   applyCamera: (profile: Record<string, unknown>) =>
     call(api.POST('/api/camera/apply', { params: { query: { wait_s: 5 } }, body: profile })),
   resumeStation: () =>

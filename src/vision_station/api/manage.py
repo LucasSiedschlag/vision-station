@@ -27,11 +27,12 @@ from pydantic import ValidationError
 from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, LockedOut
 from vision_station.cameras import Frame
-from vision_station.core.i18n import render, render_schema, tr
+from vision_station.core.i18n import render, render_schema, text_of, tr
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs.job import BUILTIN_ROIS
 from vision_station.locators import get_locator, locator_types
 from vision_station.records import ResultsError
+from vision_station.station.exposure import ExposureError, measure_exposure
 from vision_station.store import FormatError, JobBundle, JobRef, StoreError
 from vision_station.store.archive import check_path, sha256
 from vision_station.store.bundle import JOB_FILE, bundle_from_files
@@ -331,6 +332,29 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             time.sleep(0.05)
         jobs.audit("camera_apply", by=role)
         return camera_state()
+
+    @api.post("/camera/auto-exposure", response_model=m.AutoExposureOut, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
+    def auto_exposure(profile: dict[str, Any], role: str = Depends(need("maintainer"))) -> m.AutoExposureOut:
+        """*Auto uma vez*: find the exposure once, with the settings of this draft profile, and leave the camera on it.
+        The station is paused first, as in `/camera/apply`; the measuring parameters are the profile's
+        `exposure.auto_once`. It takes several seconds: the camera is written and settles at every step."""
+        try:
+            parsed = CameraProfile.model_validate(profile)
+        except ValidationError as exc:
+            raise Problem(422, "Ajustes de câmera inválidos", "invalid_profile", fields=_fields(exc, "profile")) from exc
+        if not deps.acquisition.connected:
+            raise Problem(409, "A câmera não está conectada", "camera_not_connected")
+        deps.controller.pause()
+        try:
+            found = measure_exposure(deps.acquisition, parsed)
+        except ExposureError as exc:
+            raise Problem(409, tr("Não foi possível medir a exposição: {why}", why=text_of(exc)), "auto_exposure_failed") from exc
+        jobs.audit("camera_auto_exposure", by=role, value_us=found.value_us)
+        return m.AutoExposureOut(
+            value_us=found.value_us, saturated_percent=found.saturated_percent, target_percent=found.target_percent,
+            reached=found.reached, limit=found.limit,  # type: ignore[arg-type]
+            steps=[m.ExposureStepOut(exposure_us=s.exposure_us, saturated_percent=s.saturated_percent) for s in found.steps],
+        )
 
     # --- reference image and reference set ---------------------------------------------------------------
 

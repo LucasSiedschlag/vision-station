@@ -111,6 +111,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/camera/auto-exposure': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Auto Exposure
+     * @description *Auto uma vez*: find the exposure once, with the settings of this draft profile, and leave the camera on it.
+     *     The station is paused first, as in `/camera/apply`; the measuring parameters are the profile's
+     *     `exposure.auto_once`. It takes several seconds: the camera is written and settles at every step.
+     */
+    post: operations['auto_exposure']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/camera/state': {
     parameters: {
       query?: never
@@ -974,6 +996,28 @@ export interface components {
       /** Total */
       total: number
     }
+    /**
+     * AutoExposureOut
+     * @description What *Auto uma vez* found (FR-ACQ-11). The camera is left on `value_us`; the editor writes it in the draft as a
+     *     fixed exposure.
+     */
+    AutoExposureOut: {
+      /**
+       * Limit
+       * @enum {string}
+       */
+      limit: '' | 'max' | 'min'
+      /** Reached */
+      reached: boolean
+      /** Saturated Percent */
+      saturated_percent: number
+      /** Steps */
+      steps: components['schemas']['ExposureStepOut'][]
+      /** Target Percent */
+      target_percent: number
+      /** Value Us */
+      value_us: number
+    }
     /** BackupItem */
     BackupItem: {
       /** Created At */
@@ -1341,6 +1385,13 @@ export interface components {
       name: string
       /** Version */
       version: number
+    }
+    /** ExposureStepOut */
+    ExposureStepOut: {
+      /** Exposure Us */
+      exposure_us: number
+      /** Saturated Percent */
+      saturated_percent: number
     }
     /** FixtureOut */
     FixtureOut: {
@@ -2900,6 +2951,70 @@ export interface operations {
       }
       /** @description needs another role */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  auto_exposure: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          [key: string]: unknown
+        }
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AutoExposureOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
         headers: {
           [name: string]: unknown
         }

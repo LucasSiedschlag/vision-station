@@ -25,9 +25,33 @@ class ManualOrAuto(_Strict):
         return self
 
 
+Fraction = Annotated[float, Field(ge=0, le=1)]
+
+
+class AutoOnce(_Strict):
+    """How the editor's *Auto uma vez* measures the exposure (FR-ACQ-11, Cognex `AcquireImage` Auto Exposure).
+
+    The exposure is searched until `target_brightness` percent of the pixels of `region` are saturated, without going
+    over `max_exposure_us`. The job then runs with the fixed value that was found; nothing follows the light of the
+    moment (principles 1 and 2)."""
+
+    target_brightness: Annotated[float, Field(ge=0, le=100)] = 10.0  # percent of saturated pixels
+    max_exposure_us: Annotated[float, Field(ge=100)] = 100_000.0
+    region: tuple[Fraction, Fraction, Fraction, Fraction] | None = None  # x0, y0, x1, y1 of the frame; None: all of it
+
+    @model_validator(mode="after")
+    def _region_has_area(self) -> Self:
+        if self.region is not None:
+            x0, y0, x1, y1 = self.region
+            if not (x0 < x1 and y0 < y1):
+                raise ValueError("region must be [x0, y0, x1, y1] with x0 < x1 and y0 < y1")
+        return self
+
+
 class Exposure(_Strict):
     mode: Literal["auto", "manual"]
     value_us: Annotated[float, Field(gt=0)] | None = None
+    auto_once: AutoOnce | None = None  # how *Auto uma vez* measures; written only when set
 
     @model_validator(mode="after")
     def _manual_needs_value(self) -> Self:
@@ -84,9 +108,11 @@ PROGRAM_SIDE = ("orientation",)
 
 
 def dump_profile(profile: CameraProfile) -> str:
-    """The profile as YAML. A normal orientation is left out: it is what a profile without the key means, and a job
-    that does not use it still opens in a version that does not know the field (TD-32)."""
+    """The profile as YAML. A normal orientation and an absent `auto_once` are left out: they are what a profile without
+    the key means, and a job that does not use them still opens in a version that does not know the fields (TD-32)."""
     data: dict[str, Any] = profile.model_dump(mode="json")
     if data["orientation"] == "normal":
         del data["orientation"]
+    if data["exposure"]["auto_once"] is None:
+        del data["exposure"]["auto_once"]
     return yaml.safe_dump(data, sort_keys=False)

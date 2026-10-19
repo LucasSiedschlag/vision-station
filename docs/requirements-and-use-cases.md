@@ -73,7 +73,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-ACQ-8 | For the motorized lens, the system shall store the zoom and focus position in the job and restore it. | S |
 | FR-ACQ-9 | **(new 0.3)** The system shall support GenICam cameras (GigE Vision / USB3 Vision) through a GenTL producer, with hardware trigger and an exposure-end event, behind the same camera interface. | C (F) |
 | FR-ACQ-10 | **(new 0.7)** A job shall set the image **orientation** — normal, mirrored, flipped or rotated 180° — applied at acquisition, so that every region and result is in the oriented frame (Cognex `AcquireImage` *Orientation*). | S |
-| FR-ACQ-11 | **(new 0.7)** The editor's *Auto uma vez* shall take its **target brightness**, **maximum exposure** and **measuring region** from the job's image settings, so that the measurement can be repeated. The job still runs with the fixed value it measured; automatic exposure that follows each image is not offered (principles 1 and 2). | C |
+| FR-ACQ-11 | **(new 0.7, built in VIA-0083)** The editor's *Auto uma vez* shall measure the exposure once, with the station paused: it searches the exposure until a **target percentage of the pixels** of a **measuring region** are saturated (default 10 %, the whole picture), never going over a **maximum exposure**, and leaves the camera on the result. These three parameters are the job's (`exposure.auto_once`). A camera with coarse steps (the C920 has factor-of-two steps) takes the nearest step, so the result is the step closest to the target, and the editor says so. The job then runs with the **fixed value** it measured; automatic exposure that follows each image is not offered (principles 1 and 2). | C |
 
 ### 3.2 Trigger (TRG)
 

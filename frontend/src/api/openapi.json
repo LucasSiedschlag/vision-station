@@ -134,6 +134,49 @@
         "title": "AuditOut",
         "type": "object"
       },
+      "AutoExposureOut": {
+        "description": "What *Auto uma vez* found (FR-ACQ-11). The camera is left on `value_us`; the editor writes it in the draft as a\nfixed exposure.",
+        "properties": {
+          "limit": {
+            "enum": ["", "max", "min"],
+            "title": "Limit",
+            "type": "string"
+          },
+          "reached": {
+            "title": "Reached",
+            "type": "boolean"
+          },
+          "saturated_percent": {
+            "title": "Saturated Percent",
+            "type": "number"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/ExposureStepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "target_percent": {
+            "title": "Target Percent",
+            "type": "number"
+          },
+          "value_us": {
+            "title": "Value Us",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value_us",
+          "saturated_percent",
+          "target_percent",
+          "reached",
+          "limit",
+          "steps"
+        ],
+        "title": "AutoExposureOut",
+        "type": "object"
+      },
       "BackupItem": {
         "properties": {
           "created_at": {
@@ -928,6 +971,21 @@
         },
         "required": ["version", "name"],
         "title": "DuplicateBody",
+        "type": "object"
+      },
+      "ExposureStepOut": {
+        "properties": {
+          "exposure_us": {
+            "title": "Exposure Us",
+            "type": "number"
+          },
+          "saturated_percent": {
+            "title": "Saturated Percent",
+            "type": "number"
+          }
+        },
+        "required": ["exposure_us", "saturated_percent"],
+        "title": "ExposureStepOut",
         "type": "object"
       },
       "FixtureOut": {
@@ -4102,6 +4160,95 @@
           }
         },
         "summary": "Apply Camera"
+      }
+    },
+    "/api/camera/auto-exposure": {
+      "post": {
+        "description": "*Auto uma vez*: find the exposure once, with the settings of this draft profile, and leave the camera on it.\nThe station is paused first, as in `/camera/apply`; the measuring parameters are the profile's\n`exposure.auto_once`. It takes several seconds: the camera is written and settles at every step.",
+        "operationId": "auto_exposure",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Profile",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoExposureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Auto Exposure"
       }
     },
     "/api/camera/state": {

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Camera, Crop, Pipette, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Camera, Crop, Pipette, Plus, Sun, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { describeError } from '@/api/mutations'
@@ -98,8 +98,38 @@ function ModeValue({
   )
 }
 
-export function CameraStep({ draft }: StepProps) {
+export function CameraStep({ draft, drawing, setDrawing }: StepProps) {
   const p = draft.profile
+  const [level] = useLevel('editor')
+  const [measuring, setMeasuring] = useState(false)
+  const autoOnce: JobJson = p.exposure?.auto_once ?? {}
+  // the measuring parameters belong to the exposure and travel with it, whatever the mode or the value
+  const exposureWith = (q: JobJson, exposure: JobJson) =>
+    q.exposure?.auto_once ? { ...exposure, auto_once: q.exposure.auto_once } : exposure
+  const setAutoOnce = (change: (a: JobJson) => void) =>
+    set((q) => {
+      q.exposure ??= { mode: 'auto' }
+      q.exposure.auto_once ??= {}
+      change(q.exposure.auto_once)
+      if (Object.keys(q.exposure.auto_once).length === 0) delete q.exposure.auto_once
+    })
+  const measure = async () => {
+    setMeasuring(true)
+    try {
+      const found = await editorApi.autoExposure(p)
+      const value = Math.round(found.value_us)
+      set((q) => (q.exposure = exposureWith(q, { mode: 'manual', value_us: value })))
+      toast.success(
+        found.reached
+          ? t.autoOnceDone(value, found.saturated_percent)
+          : t.autoOnceLimit(found.limit, value, found.saturated_percent, found.target_percent),
+      )
+    } catch (e) {
+      toast.error(describeError(e))
+    } finally {
+      setMeasuring(false)
+    }
+  }
   const [state, setState] = useState<CameraState | null>(null)
   const [busy, setBusy] = useState(false)
   const set = (change: (profile: JobJson) => void) => edit((d) => change(d.profile))
@@ -160,14 +190,79 @@ export function CameraStep({ draft }: StepProps) {
         onMode={(m) =>
           set(
             (q) =>
-              (q.exposure =
+              (q.exposure = exposureWith(
+                q,
                 m === 'manual'
                   ? { mode: 'manual', value_us: q.exposure?.value_us ?? 33000 }
-                  : { mode: 'auto' }),
+                  : { mode: 'auto' },
+              )),
           )
         }
-        onValue={(v) => set((q) => (q.exposure = { mode: 'manual', value_us: v }))}
+        onValue={(v) => set((q) => (q.exposure = exposureWith(q, { mode: 'manual', value_us: v })))}
       />
+      <div className="flex flex-col gap-2 rounded-control border border-line p-3">
+        <Button variant="secondary" loading={measuring} onClick={() => void measure()}>
+          <Sun aria-hidden className="size-4" />
+          {t.autoOnce}
+        </Button>
+        <p className="text-sm text-fg-muted">{t.autoOnceHint}</p>
+        {level >= 2 ? (
+          <>
+            <Field label={t.autoTarget} hint={t.autoTargetHint}>
+              {(props) => (
+                <NumberField
+                  {...props}
+                  value={num(autoOnce.target_brightness)}
+                  placeholder={text.ui.defaultValue(formatNumber(10))}
+                  onChange={(v) =>
+                    setAutoOnce((a) =>
+                      v === null ? delete a.target_brightness : (a.target_brightness = v),
+                    )
+                  }
+                  min={0}
+                  max={100}
+                  decimals={1}
+                  unit="%"
+                />
+              )}
+            </Field>
+            <Field label={t.autoMax}>
+              {(props) => (
+                <NumberField
+                  {...props}
+                  value={num(autoOnce.max_exposure_us)}
+                  placeholder={text.ui.defaultValue(formatNumber(100000))}
+                  onChange={(v) =>
+                    setAutoOnce((a) =>
+                      v === null ? delete a.max_exposure_us : (a.max_exposure_us = v),
+                    )
+                  }
+                  min={100}
+                  decimals={0}
+                  unit="µs"
+                />
+              )}
+            </Field>
+            <Switch
+              checked={!!autoOnce.region}
+              onCheckedChange={(on) => {
+                setAutoOnce((a) => (on ? (a.region = [0.25, 0.25, 0.75, 0.75]) : delete a.region))
+                if (!on && drawing === 'autoexp') setDrawing(null)
+              }}
+              label={t.autoRegion}
+              hint={autoOnce.region ? undefined : t.autoRegionAll}
+            />
+            {autoOnce.region ? (
+              <Button
+                variant={drawing === 'autoexp' ? 'primary' : 'ghost'}
+                onClick={() => setDrawing(drawing === 'autoexp' ? null : 'autoexp')}
+              >
+                {drawing === 'autoexp' ? t.drawingNow : t.drawAutoRegion}
+              </Button>
+            ) : null}
+          </>
+        ) : null}
+      </div>
       <ModeValue label={t.gain} valueLabel={t.value} {...manualPair('gain')} />
       <ModeValue
         label={t.whiteBalance}

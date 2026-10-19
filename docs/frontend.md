@@ -528,6 +528,7 @@ The station is paused (*Em manutenção*) while the editor holds a camera sessio
   - *Contínuo*: **Intervalo mínimo** (default 500 ms, FR-TRG-7);
   - *Pela imagem*: the presence area drawn on the image, the stillness time, and a live **"presença / movimento / parado há 0,6 s"** readout, so the maintainer sees the trigger decide.
 - **Orientation** (FR-ACQ-10) is with the image controls; the parameters of *Auto uma vez* (target brightness, maximum exposure, measuring region, FR-ACQ-11) are in the exposure control at the Avançado level.
+- **As built (VIA-0083).** *Auto uma vez* is a button under the exposure: `POST /api/camera/auto-exposure` pauses the station, searches the exposure (a bisection on its logarithm, one measure per step, about 20 s on the C920 because each step writes the camera and waits for it to settle), leaves the camera on the result and answers with the value, the share of saturated pixels it gives and every measure. The editor writes the value as a fixed exposure and keeps the parameters. If the target cannot be reached (the C920's steps jump from 0 % to about 20 % saturated, a longest exposure still short of it, a shortest one already over it) it says so and keeps the nearest step. The region is drawn on the image like the presence area. The *Essencial* level shows only the button.
 
 **2 · Amostras**
 - *Capturar referência*: freezes the current frame as the reference image. The reference is shown first in the filmstrip, with a star.

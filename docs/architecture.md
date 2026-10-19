@@ -421,6 +421,7 @@ zoom: {value: 1200}          # motorized lens only
 power_line_hz: 60
 low_light_compensation: false
 orientation: normal          # normal | mirror | flip | rotate180; applied by the program, not by the driver (FR-ACQ-10)
+# exposure: {mode: manual, value_us: 15625, auto_once: {target_brightness: 10, max_exposure_us: 100000}}   # how Auto uma vez measures (FR-ACQ-11)
 ```
 
 Each driver maps these to its own controls. A setting a driver can't apply is reported, never silently skipped (FR-JOB-11). The `raw/` dump is applied only by the driver that wrote it, after the normalized settings.

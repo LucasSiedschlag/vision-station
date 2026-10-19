@@ -301,6 +301,14 @@ function Editor({
         kind: 'presence',
         editable: true,
       })
+    if (step === 'image' && draft.profile.exposure?.auto_once?.region)
+      out.push({
+        id: 'autoexp',
+        label: t.autoRegionLabel,
+        rect: draft.profile.exposure.auto_once.region,
+        kind: 'presence',
+        editable: true,
+      })
     if (locator?.type === 'fixed' && locator.params?.rect)
       out.push({
         id: 'locator',
@@ -353,6 +361,7 @@ function Editor({
     const edit = useDraft.getState().edit
     edit((d) => {
       if (shapeId === 'presence') d.job.trigger.presence_roi = rect
+      else if (shapeId === 'autoexp') d.profile.exposure.auto_once.region = rect
       else if (shapeId === 'locator')
         d.job.geometry.locator.params = { ...d.job.geometry.locator.params, rect }
       else if (shapeId.startsWith('roi:')) {

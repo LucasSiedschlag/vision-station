@@ -91,6 +91,19 @@ class Acquisition:
         age = self.age_s()
         return age is not None and age > self.stall_timeout_s
 
+    def exposure_us(self) -> float | None:
+        """The exposure the camera says it is using now; None when it cannot say (or is not manual). A camera with
+        coarse steps applies the nearest one, and this is how a search learns which."""
+        if not self._connected:
+            return None
+        try:
+            back = self._camera.read_back().get("exposure")
+        except Exception:
+            return None
+        if isinstance(back, dict) and back.get("mode") == "manual" and back.get("value_us"):
+            return float(back["value_us"])
+        return None
+
     # --- configuration ------------------------------------------------------
 
     @property

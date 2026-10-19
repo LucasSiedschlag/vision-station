@@ -815,6 +815,46 @@ export const text = {
     get powerLine() {
       return t`Rede elétrica`
     },
+    get autoOnce() {
+      return t`Auto uma vez`
+    },
+    get autoOnceHint() {
+      return t`Mede a exposição agora, com a câmera pausada, e deixa o valor fixo no job. Leva alguns segundos.`
+    },
+    autoOnceDone: (value: number, saturated: number) => {
+      const share = formatNumber(saturated, 1)
+      return t`Exposição ajustada para ${value} µs (${share} % de pixels saturados).`
+    },
+    autoOnceLimit: (limit: string, value: number, saturated: number, target: number) => {
+      const share = formatNumber(saturated, 1)
+      const goal = formatNumber(target, 1)
+      if (limit === 'max')
+        return t`Mesmo com a exposição máxima (${value} µs) só ${share} % dos pixels saturam; o alvo era ${goal} %. Ficou no máximo.`
+      if (limit === 'min')
+        return t`Mesmo com a exposição mínima (${value} µs) ${share} % dos pixels saturam; o alvo era ${goal} %. Ficou no mínimo.`
+      return t`Melhor aproximação: ${value} µs com ${share} % de pixels saturados; o alvo era ${goal} %.`
+    },
+    get autoTarget() {
+      return t`Brilho-alvo do Auto uma vez`
+    },
+    get autoTargetHint() {
+      return t`Percentual de pixels saturados que a exposição deve alcançar na região medida`
+    },
+    get autoMax() {
+      return t`Exposição máxima do Auto uma vez`
+    },
+    get autoRegion() {
+      return t`Medir só numa região`
+    },
+    get autoRegionAll() {
+      return t`Mede a imagem toda`
+    },
+    get drawAutoRegion() {
+      return t`Desenhar a região de medição`
+    },
+    get autoRegionLabel() {
+      return t`Região de medição da exposição`
+    },
     get orientation() {
       return t`Orientação da imagem`
     },

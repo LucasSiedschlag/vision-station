@@ -384,6 +384,65 @@ describe('the job editor', () => {
     ).toBeInTheDocument()
   })
 
+  it('Auto uma vez measures the exposure on the camera and writes it as a fixed value, keeping its parameters', async () => {
+    let sent: any = null
+    server.use(
+      http.post('*/api/camera/auto-exposure', async ({ request }) => {
+        sent = await request.json()
+        return HttpResponse.json({
+          value_us: 4000.4,
+          saturated_percent: 9.6,
+          target_percent: 10,
+          reached: true,
+          limit: '',
+          steps: [{ exposure_us: 4000.4, saturated_percent: 9.6 }],
+        })
+      }),
+    )
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Imagem e disparo/ }))
+    // Avançado shows the parameters of the measurement
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    const target = screen.getByLabelText('Brilho-alvo do Auto uma vez')
+    expect(target).toHaveAttribute('placeholder', 'padrão: 10')
+    await userEvent.type(target, '5')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual({ target_brightness: 5 })
+    await userEvent.click(screen.getByRole('button', { name: 'Auto uma vez' }))
+    expect(
+      await screen.findByText('Exposição ajustada para 4000 µs (9,6 % de pixels saturados).'),
+    ).toBeInTheDocument()
+    expect(sent.exposure.auto_once).toEqual({ target_brightness: 5 })
+    expect(useDraft.getState().draft?.profile.exposure).toEqual({
+      mode: 'manual',
+      value_us: 4000,
+      auto_once: { target_brightness: 5 },
+    })
+    // typing another value, or going back to automatic, does not lose the parameters
+    const value = screen.getByLabelText('Tempo de exposição')
+    await userEvent.clear(value)
+    await userEvent.type(value, '6000')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual({ target_brightness: 5 })
+    expect(useDraft.getState().draft?.profile.exposure.value_us).toBe(6000)
+  })
+
+  it('the measuring region of Auto uma vez is optional and drawn on the image', async () => {
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Imagem e disparo/ }))
+    expect(screen.queryByLabelText('Brilho-alvo do Auto uma vez')).not.toBeInTheDocument() // Essencial
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    await userEvent.click(screen.getByRole('switch', { name: 'Medir só numa região' }))
+    expect(useDraft.getState().draft?.profile.exposure.auto_once.region).toEqual([
+      0.25, 0.25, 0.75, 0.75,
+    ])
+    expect(screen.getByRole('button', { name: 'Desenhar a região de medição' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('switch', { name: 'Medir só numa região' }))
+    expect(useDraft.getState().draft?.profile.exposure).not.toHaveProperty('auto_once')
+  })
+
   it('the orientation of the image is chosen with the camera, kept out of the profile when normal, and told in the summary', async () => {
     await openEditor()
     const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))

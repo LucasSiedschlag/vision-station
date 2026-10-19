@@ -1,6 +1,7 @@
 """Management endpoints (VIA-0026): types, jobs as drafts, camera tuning, reference, users, audit, dataset."""
 
 import base64
+import time
 
 import cv2
 import numpy as np
@@ -187,6 +188,35 @@ def test_camera_tuning_pauses_the_station_and_reports_each_setting(env, mnt):
     env.client.post("/api/station/resume", headers=mnt)
     env.rig.tick(5)
     assert env.client.get("/api/camera/state", headers=mnt).json()["profile"]["exposure"]["value_us"] != 12000  # the job's again
+
+
+def test_auto_exposure_measures_once_pauses_the_station_and_leaves_the_camera_on_the_result(env, mnt, monkeypatch):
+    from types import SimpleNamespace
+
+    from vision_station.station import exposure
+
+    # the acquisition thread does not run in these tests: waiting for the camera runs the rig by hand
+    monkeypatch.setattr(exposure, "time", SimpleNamespace(sleep=lambda s: env.rig.tick(1), monotonic=time.monotonic))
+    profile = env.client.get("/api/camera/state", headers=mnt).json()["profile"]
+    profile["exposure"] = {"mode": "manual", "value_us": 8000, "auto_once": {"target_brightness": 5, "max_exposure_us": 50000}}
+    r = env.client.post("/api/camera/auto-exposure", headers=mnt, json=profile)
+    assert r.status_code == 200, r.text
+    found = r.json()
+    assert found["limit"] == "max" and found["value_us"] == 50000 and not found["reached"]  # the scene never saturates
+    assert found["target_percent"] == 5 and found["steps"][0] == {"exposure_us": 50000.0, "saturated_percent": 0.0}
+    state = env.client.get("/api/camera/state", headers=mnt).json()
+    assert state["station_paused"] and state["profile"]["exposure"]["value_us"] == 50000 and state["profile"]["exposure"]["mode"] == "manual"
+    assert env.client.post("/api/camera/auto-exposure", headers=mnt, json={"exposure": "bright"}).status_code == 422
+    assert env.client.post("/api/camera/auto-exposure", json=profile).status_code == 401
+    assert env.client.post("/api/camera/auto-exposure", headers=login(env), json=profile).status_code == 403
+
+
+def test_auto_exposure_says_so_when_there_is_no_camera(env, mnt):
+    env.rig.camera.fail_read = True
+    env.rig.tick(3)  # the acquisition notices the loss
+    profile = env.client.get("/api/camera/state", headers=mnt).json()["profile"]
+    r = env.client.post("/api/camera/auto-exposure", headers=mnt, json=profile)
+    assert r.status_code == 409 and r.json()["code"] == "camera_not_connected"
 
 
 def test_reference_image_and_reference_cases(env, mnt):

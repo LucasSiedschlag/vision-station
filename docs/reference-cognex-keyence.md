@@ -811,7 +811,7 @@ Two things are **not** uniform, and the note matters if we copy only one:
 | Where acquisition settings live | One block (`AcquireImage`; one Setup Navigator step) | Three places: `trigger` in `job.yaml`, `camera/profile.yaml` (exposure, gain, white balance, focus), `quality` limits in `job.yaml` |
 | Step in the editor | The first step after connecting (*Set Up Image*, *Image Optimization*) | Step 1 *Imagem* for the camera, step 5 *Disparo e qualidade* for the trigger (§22) |
 | Trigger types | Hardware, serial, network, continuous, manual | Adds `image_presence`, with its own area, stillness time and thresholds. It has no equivalent in either product, so it belongs in the trigger type, as a type with parameters |
-| Auto exposure | Mode (disabled, continuous, single-shot), maximum, target, region, stored with the job | `auto` or `manual`, and the value written by *Auto uma vez*; no maximum, target or region |
+| Auto exposure | Mode (disabled, continuous, single-shot), maximum, target, region, stored with the job | `auto` or `manual`, and the value written by *Auto uma vez*, with its target, maximum and region in `exposure.auto_once` (VIA-0083). Single-shot only; the continuous mode is deliberately not offered |
 | Camera-specific settings | Per sensor model, in the same function | `camera/profile.yaml` per driver (`raw` for what is not modelled) |
 
 ---

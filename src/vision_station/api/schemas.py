@@ -536,6 +536,23 @@ class CameraStateOut(BaseModel):
     station_paused: bool
 
 
+class ExposureStepOut(BaseModel):
+    exposure_us: float
+    saturated_percent: float
+
+
+class AutoExposureOut(BaseModel):
+    """What *Auto uma vez* found (FR-ACQ-11). The camera is left on `value_us`; the editor writes it in the draft as a
+    fixed exposure."""
+
+    value_us: float
+    saturated_percent: float  # what that exposure gives in the measuring region
+    target_percent: float
+    reached: bool  # within a point of the target; False: the best the range allowed
+    limit: Literal["", "max", "min"]  # "max": still short of the target at the maximum exposure; "min": over it at the shortest
+    steps: list[ExposureStepOut]
+
+
 class ReferenceBody(BaseModel):
     image: str | None = None  # base64 PNG or JPEG; None: the camera's newest frame
 

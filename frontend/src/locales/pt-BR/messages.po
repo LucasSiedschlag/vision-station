@@ -121,6 +121,12 @@ msgstr "resolução"
 msgid "Hoje"
 msgstr "Hoje"
 
+msgid "Medir só numa região"
+msgstr "Medir só numa região"
+
+msgid "Exposição ajustada para {value} µs ({share} % de pixels saturados)."
+msgstr "Exposição ajustada para {value} µs ({share} % de pixels saturados)."
+
 msgid "{name} · v{v}"
 msgstr "{name} · v{v}"
 
@@ -153,6 +159,9 @@ msgstr "Tentar de novo"
 
 msgid "Reprovados e erros sempre guardam a imagem."
 msgstr "Reprovados e erros sempre guardam a imagem."
+
+msgid "Brilho-alvo do Auto uma vez"
+msgstr "Brilho-alvo do Auto uma vez"
 
 msgid "sem nota"
 msgstr "sem nota"
@@ -515,6 +524,9 @@ msgstr "Para a ferramenta de padrão: desenhe um recorte do logo ou marca na ima
 msgid "Voltar para Jobs"
 msgstr "Voltar para Jobs"
 
+msgid "Percentual de pixels saturados que a exposição deve alcançar na região medida"
+msgstr "Percentual de pixels saturados que a exposição deve alcançar na região medida"
+
 msgid "Conferir campos"
 msgstr "Conferir campos"
 
@@ -544,6 +556,9 @@ msgstr "Normal"
 
 msgid "v{v}"
 msgstr "v{v}"
+
+msgid "Mesmo com a exposição mínima ({value} µs) {share} % dos pixels saturam; o alvo era {goal} %. Ficou no mínimo."
+msgstr "Mesmo com a exposição mínima ({value} µs) {share} % dos pixels saturam; o alvo era {goal} %. Ficou no mínimo."
 
 msgid "Endereço de escuta"
 msgstr "Endereço de escuta"
@@ -782,6 +797,9 @@ msgstr "Supervisor"
 msgid "{failed} de {total} amostras não saíram como esperado"
 msgstr "{failed} de {total} amostras não saíram como esperado"
 
+msgid "Região de medição da exposição"
+msgstr "Região de medição da exposição"
+
 msgid "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
 msgstr "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
 
@@ -928,6 +946,9 @@ msgstr "Resultado marcado como incorreto. A imagem vai para o treinamento."
 
 msgid "Ainda sem amostras Boas e Ruins"
 msgstr "Ainda sem amostras Boas e Ruins"
+
+msgid "Melhor aproximação: {value} µs com {share} % de pixels saturados; o alvo era {goal} %."
+msgstr "Melhor aproximação: {value} µs com {share} % de pixels saturados; o alvo era {goal} %."
 
 msgid "Ações"
 msgstr "Ações"
@@ -1112,6 +1133,9 @@ msgstr "min"
 msgid "Backup falhou"
 msgstr "Backup falhou"
 
+msgid "Desenhar a região de medição"
+msgstr "Desenhar a região de medição"
+
 msgid "Baixar {name}"
 msgstr "Baixar {name}"
 
@@ -1265,6 +1289,9 @@ msgstr "Desenhar a posição do objeto"
 msgid "Tipo da amostra {image}"
 msgstr "Tipo da amostra {image}"
 
+msgid "Exposição máxima do Auto uma vez"
+msgstr "Exposição máxima do Auto uma vez"
+
 msgid "Endereço"
 msgstr "Endereço"
 
@@ -1330,6 +1357,9 @@ msgstr "Versão {v} de {name} ativada."
 
 msgid "Mais lenta: {ms} ms"
 msgstr "Mais lenta: {ms} ms"
+
+msgid "Mede a imagem toda"
+msgstr "Mede a imagem toda"
 
 msgid "{name} (valor exato)"
 msgstr "{name} (valor exato)"
@@ -1423,6 +1453,9 @@ msgstr "Esperado"
 
 msgid "O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo."
 msgstr "O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo."
+
+msgid "Auto uma vez"
+msgstr "Auto uma vez"
 
 msgid "Capture a imagem de referência"
 msgstr "Capture a imagem de referência"
@@ -1739,6 +1772,9 @@ msgstr "não rodou"
 msgid "Não foi possível ler os resultados."
 msgstr "Não foi possível ler os resultados."
 
+msgid "Mesmo com a exposição máxima ({value} µs) só {share} % dos pixels saturam; o alvo era {goal} %. Ficou no máximo."
+msgstr "Mesmo com a exposição máxima ({value} µs) só {share} % dos pixels saturam; o alvo era {goal} %. Ficou no máximo."
+
 msgid "Boa"
 msgstr "Boa"
 
@@ -1894,6 +1930,9 @@ msgstr "Menu"
 
 msgid "Reconectando automaticamente."
 msgstr "Reconectando automaticamente."
+
+msgid "Mede a exposição agora, com a câmera pausada, e deixa o valor fixo no job. Leva alguns segundos."
+msgstr "Mede a exposição agora, com a câmera pausada, e deixa o valor fixo no job. Leva alguns segundos."
 
 msgid "Capturar de novo"
 msgstr "Capturar de novo"
