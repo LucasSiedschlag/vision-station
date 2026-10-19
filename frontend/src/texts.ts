@@ -1471,6 +1471,38 @@ export const text = {
       }),
   },
   results: {
+    /** The values of a result against the limits it had, frozen at that result (docs/frontend.md §7.4). */
+    gauge: {
+      get tools() {
+        return t`Ferramentas`
+      },
+      get informative() {
+        return t`informativa`
+      },
+      min: (value: string) => t`mínimo ${value}`,
+      max: (value: string) => t`máximo ${value}`,
+      inside: (distance: string) => t`dentro, ${distance} da borda`,
+      outside: (distance: string) => t`fora, ${distance} além da borda`,
+      get codes() {
+        return t`Motivos`
+      },
+      get frozen() {
+        return t`Os limites são os que valiam neste resultado.`
+      },
+    },
+    get reasonCode() {
+      return t`Motivo`
+    },
+    get allReasons() {
+      return t`Todos os motivos`
+    },
+    reasonOption: (label: string, count: number) => t`${label} (${count})`,
+    get belowMin() {
+      return t`abaixo do mínimo`
+    },
+    get aboveMax() {
+      return t`acima do máximo`
+    },
     get title() {
       return t`Resultados`
     },
@@ -1584,6 +1616,21 @@ export const text = {
     },
   },
   dataset: {
+    get viewImages() {
+      return t`Ver imagens`
+    },
+    get hideImages() {
+      return t`Ocultar imagens`
+    },
+    imagesOf: (name: string) => t`Imagens de ${name}`,
+    get collected() {
+      return t`coletada`
+    },
+    corrected: (label: string) => t`corrigida: ${label}`,
+    get imagesEmpty() {
+      return t`Nenhuma imagem ainda.`
+    },
+    imageAlt: (id: string, what: string) => t`${id}: ${what}`,
     get title() {
       return t`Dataset e coleta`
     },
@@ -1939,6 +1986,13 @@ export const text = {
     get loadError() {
       return t`Não foi possível ler a auditoria.`
     },
+    tuneHead: (by: string, from: number, to: number) => t`${by}: v${from} → v${to}`,
+    get tuneVerified() {
+      return t`verificada`
+    },
+    get tuneNotVerified() {
+      return t`não passou na verificação`
+    },
     kinds: {
       get activate() {
         return t`Job ativado`
@@ -1966,6 +2020,9 @@ export const text = {
       },
       get job_duplicate() {
         return t`Job duplicado`
+      },
+      get job_tune() {
+        return t`Ajuste fino`
       },
       get settings() {
         return t`Configurações alteradas`

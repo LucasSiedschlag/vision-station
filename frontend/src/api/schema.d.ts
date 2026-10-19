@@ -204,6 +204,46 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/dataset/{job_id}/images': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Dataset Images
+     * @description The images a job has in the dataset, newest first, for the grid with their labels (document 05 §7.5).
+     */
+    get: operations['dataset_images']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/dataset/{job_id}/images/{image_id}.jpg': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Dataset Image
+     * @description One image of the dataset, reduced to `width` (a grid of thumbnails does not carry full frames).
+     */
+    get: operations['dataset_image']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/editor/batch': {
     parameters: {
       query?: never
@@ -712,6 +752,26 @@ export interface paths {
     }
     /** Results Csv */
     get: operations['results_csv']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/results/reason-codes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Result Reason Codes
+     * @description The reason codes in the results the other filters select, with how many each has: the options of the code filter.
+     */
+    get: operations['result_reason_codes']
     put?: never
     post?: never
     delete?: never
@@ -1505,6 +1565,29 @@ export interface components {
       /** Folder */
       folder: string
     }
+    /** DatasetImage */
+    DatasetImage: {
+      /** Added At */
+      added_at: string
+      /** Id */
+      id: string
+      /** Label */
+      label: ('PASS' | 'FAIL') | null
+      /** Result */
+      result: string | null
+      /**
+       * Source
+       * @enum {string}
+       */
+      source: 'collected' | 'corrected'
+    }
+    /** DatasetImagesOut */
+    DatasetImagesOut: {
+      /** Images */
+      images: components['schemas']['DatasetImage'][]
+      /** Total */
+      total: number
+    }
     /** DatasetJob */
     DatasetJob: {
       /** Collecting */
@@ -2016,12 +2099,24 @@ export interface components {
       /** Verified */
       verified: boolean | null
     }
+    /** ReasonCodeCount */
+    ReasonCodeCount: {
+      /** Code */
+      code: string
+      /** Count */
+      count: number
+    }
     /** ReasonCodeOut */
     ReasonCodeOut: {
       /** Code */
       code: string
       /** Tool */
       tool: string
+    }
+    /** ReasonCodesOut */
+    ReasonCodesOut: {
+      /** Codes */
+      codes: components['schemas']['ReasonCodeCount'][]
     }
     /** RecentResult */
     RecentResult: {
@@ -3549,6 +3644,124 @@ export interface operations {
       }
       /** @description Conflict */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  dataset_images: {
+    parameters: {
+      query?: {
+        limit?: number
+        offset?: number
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatasetImagesOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  dataset_image: {
+    parameters: {
+      query?: {
+        width?: number
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path: {
+        job_id: string
+        image_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+          'image/jpeg': unknown
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Not Found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5124,6 +5337,7 @@ export interface operations {
         job_id?: string | null
         outcome?: string | null
         incorrect_only?: boolean
+        reason_code?: string | null
         limit?: number
         offset?: number
       }
@@ -5181,6 +5395,7 @@ export interface operations {
         job_id?: string | null
         outcome?: string | null
         incorrect_only?: boolean
+        reason_code?: string | null
       }
       header?: {
         authorization?: string | null
@@ -5198,6 +5413,61 @@ export interface operations {
         content: {
           'application/json': unknown
           'text/csv': unknown
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  result_reason_codes: {
+    parameters: {
+      query?: {
+        since?: string | null
+        until?: string | null
+        job_id?: string | null
+        outcome?: string | null
+        incorrect_only?: boolean
+      }
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReasonCodesOut']
         }
       }
       /** @description needs a login */

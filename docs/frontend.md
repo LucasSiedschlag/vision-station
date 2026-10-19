@@ -611,9 +611,16 @@ As built in 0.1 (filters in the URL, CSV, side panel with original/marked image,
 - it lists per-tool values with their tolerance gauges, frozen at that result;
 - a filter by **reason code** (FR-INS-14).
 
+**As built (VIA-0069).**
+- **Per-tool gauges, frozen.** The panel lists every tool of the result (`tools` of the result contract) with, for each criterion that has a limit, a read-only gauge (`FrozenGauge`): the allowed band from the tool type's criteria (`GET /api/tools`), the value the tool measured as a needle, and in words the limit it had and how far inside or outside the value was. Limits and values are those recorded with the result, not the job's today. A criterion the screen has no gauge for (a rule, a type it does not know) is a line of text. A record from before the contract has no tools and shows none.
+- **Reason-code filter.** `reason_code` on `GET /api/results` and `/results.csv` (a code is `<tool type>.<criterion>`, matched in the contract the record keeps); the options come from `GET /api/results/reason-codes`, which counts the codes among the results the *other* filters select. They are written in words ("Fração com a cor, abaixo do mínimo (12)"), the code itself for a type the screen does not know. The choice is in the address (`reason=`).
+- **Not built:** zoom and the layer switch of the image workspace (§10, §18) in the panel, which wait for the workspace of UI-1.
+
 ### 7.5 Dataset and collection (`/dataset`, maintainer)
 
 As built in 0.1, plus the image grid preview with labels (lazy, virtualized).
+
+**As built (VIA-0069).** *Ver imagens* on a job opens its images as a grid of thumbnails: `GET /api/dataset/{job}/images` (a page of 48, newest first, with what each one is: collected, or corrected with the right label) and `GET /api/dataset/{job}/images/{id}.jpg?width=320`, reduced on the server so the grid does not carry full frames. The picture is fetched with the login, only when its tile comes near the screen (`IntersectionObserver`), so a page asks for what is about to be seen. It is paged and lazy, not virtualized: a page is 48 tiles.
 
 ### 7.6 Settings (`/settings/*`, maintainer)
 
@@ -640,6 +647,8 @@ As in 0.1, with three new event kinds:
 - *ajuste fino* (§7.12);
 - *troca de job pela máquina*;
 - *saída forçada* (§7.14).
+
+**As built (VIA-0069).** The *Ajuste fino* event (`job_tune`, §7.12) is in the kind filter and reads in words: who, the versions, the note, each limit as "tool: parameter, before → after" and whether the version passed verification. *Troca de job pela máquina* and *saída forçada* are not built: the machine interface that raises them is not (VIA-0070 and later).
 
 ### 7.9 About (`/about`, supervisor+)
 

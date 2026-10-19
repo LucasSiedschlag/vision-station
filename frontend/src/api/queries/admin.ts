@@ -12,6 +12,7 @@ export interface ResultsFilter {
   job_id?: string
   outcome?: 'PASS' | 'FAIL' | 'ERROR'
   incorrect_only?: boolean
+  reason_code?: string
   offset: number
 }
 
@@ -22,6 +23,15 @@ export function useResults(filter: ResultsFilter) {
     queryKey: ['results', filter],
     placeholderData: keepPreviousData,
     queryFn: () => call(api.GET('/api/results', { params: { query: { ...filter, limit: PAGE } } })),
+  })
+}
+
+/** The reason codes the other filters leave, with how many results each has: the options of the code filter. */
+export function useReasonCodes(filter: Omit<ResultsFilter, 'offset' | 'reason_code'>) {
+  return useQuery({
+    queryKey: ['results', 'reason-codes', filter],
+    placeholderData: keepPreviousData,
+    queryFn: () => call(api.GET('/api/results/reason-codes', { params: { query: filter } })),
   })
 }
 
@@ -41,6 +51,26 @@ export function useMarkIncorrect() {
 
 export function useDataset() {
   return useQuery({ queryKey: ['dataset'], queryFn: () => call(api.GET('/api/dataset')) })
+}
+
+export type DatasetImage = components['schemas']['DatasetImage']
+
+export const IMAGES_PAGE = 48
+
+export function useDatasetImages(jobId: string | null, offset: number) {
+  return useQuery({
+    queryKey: ['dataset', jobId, 'images', offset],
+    enabled: jobId !== null,
+    queryFn: () =>
+      call(
+        api.GET('/api/dataset/{job_id}/images', {
+          params: {
+            path: { job_id: jobId! },
+            query: { limit: IMAGES_PAGE, offset },
+          },
+        }),
+      ),
+  })
 }
 
 export function useSetCollection() {

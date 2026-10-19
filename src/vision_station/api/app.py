@@ -616,10 +616,10 @@ def create_app(deps: ApiDeps) -> FastAPI:
 
     # --- supervisor: results ---------------------------------------------------------------------------
 
-    def query_of(since: datetime | None, until: datetime | None, job_id: str | None, outcome: str | None, incorrect_only: bool) -> Query:
+    def query_of(since: datetime | None, until: datetime | None, job_id: str | None, outcome: str | None, incorrect_only: bool, reason_code: str | None = None) -> Query:
         if outcome and outcome not in ("PASS", "FAIL", "ERROR"):
             raise Problem(422, "O resultado deve ser PASS, FAIL ou ERROR", "validation_error", fields={"outcome": "PASS, FAIL ou ERROR"})
-        return Query(since=since, until=until, job_id=job_id, outcome=outcome, incorrect_only=incorrect_only)
+        return Query(since=since, until=until, job_id=job_id, outcome=outcome, incorrect_only=incorrect_only, reason_code=reason_code or None)
 
     @api.get("/results", response_model=m.ResultsOut)
     def results(
@@ -628,11 +628,12 @@ def create_app(deps: ApiDeps) -> FastAPI:
         job_id: str | None = None,
         outcome: str | None = None,
         incorrect_only: bool = False,
+        reason_code: str | None = None,
         limit: int = QueryParam(100, ge=1, le=1000),
         offset: int = QueryParam(0, ge=0),
         _: str = Depends(need("supervisor")),
     ) -> m.ResultsOut:
-        q = query_of(since, until, job_id, outcome, incorrect_only)
+        q = query_of(since, until, job_id, outcome, incorrect_only, reason_code)
         return m.ResultsOut(total=deps.results.count(q), results=[_record(r) for r in deps.results.find(q, limit, offset)])
 
     @api.get("/results.csv", responses={200: {"content": {"text/csv": {}}}})
@@ -642,11 +643,25 @@ def create_app(deps: ApiDeps) -> FastAPI:
         job_id: str | None = None,
         outcome: str | None = None,
         incorrect_only: bool = False,
+        reason_code: str | None = None,
         _: str = Depends(need("supervisor")),
     ) -> Response:
         buffer = io.StringIO()
-        deps.results.export_csv(buffer, query_of(since, until, job_id, outcome, incorrect_only))
+        deps.results.export_csv(buffer, query_of(since, until, job_id, outcome, incorrect_only, reason_code))
         return Response("﻿" + buffer.getvalue(), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="resultados.csv"'})
+
+    @api.get("/results/reason-codes", response_model=m.ReasonCodesOut)
+    def result_reason_codes(
+        since: datetime | None = None,
+        until: datetime | None = None,
+        job_id: str | None = None,
+        outcome: str | None = None,
+        incorrect_only: bool = False,
+        _: str = Depends(need("supervisor")),
+    ) -> m.ReasonCodesOut:
+        """The reason codes in the results the other filters select, with how many each has: the options of the code filter."""
+        found = deps.results.reason_codes(query_of(since, until, job_id, outcome, incorrect_only))
+        return m.ReasonCodesOut(codes=[m.ReasonCodeCount(code=c, count=n) for c, n in found])
 
     @api.get("/results/{record_id}", response_model=m.RecordOut, responses={404: {"model": m.Problem}})
     def one_result(record_id: str, _: str = Depends(need("supervisor"))) -> m.RecordOut:

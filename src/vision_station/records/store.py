@@ -20,7 +20,7 @@ import sqlite3
 import threading
 import uuid
 from collections.abc import Callable, Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -144,6 +144,7 @@ class Query:
     job_id: str | None = None
     outcome: str | None = None
     incorrect_only: bool = False  # results an operator marked as wrong
+    reason_code: str | None = None  # `<tool type>.<criterion>` among the reason codes of the result (FR-INS-14)
 
 
 @dataclass(frozen=True)
@@ -342,6 +343,9 @@ class ResultStore:
             args.append(q.outcome)
         if q.incorrect_only:
             clauses.append("correct_outcome IS NOT NULL")
+        if q.reason_code:
+            clauses.append("EXISTS (SELECT 1 FROM json_each(inspections.contract, '$.reason_codes') WHERE json_extract(value, '$.code') = ?)")
+            args.append(q.reason_code)
         return (" WHERE " + " AND ".join(clauses)) if clauses else "", args
 
     def find(self, query: Query = Query(), limit: int = 100, offset: int = 0) -> list[InspectionRecord]:
@@ -436,6 +440,28 @@ class ResultStore:
             self._db.execute("UPDATE inspections SET correct_outcome=?, corrected_at=?, corrected_by=?, sampled=1 WHERE id=?", (correct_outcome, now.isoformat(timespec="seconds"), by, rid))
             self._add_dataset(rid, record.job_id, record.job_name, record.job_version, (self.root / record.image_path).read_bytes(), result=record.outcome, label=correct_outcome, source="corrected", now=now)
             return self.get(rid)  # type: ignore[return-value]
+
+    def reason_codes(self, query: Query = Query()) -> list[tuple[str, int]]:
+        """The reason codes that appear in the results of the query (the code filter itself left out), with how many results."""
+        where, args = self._where(replace(query, reason_code=None))
+        sql = (
+            "SELECT json_extract(j.value, '$.code') AS code, COUNT(DISTINCT inspections.id) FROM inspections, "
+            f"json_each(inspections.contract, '$.reason_codes') AS j{where} GROUP BY code ORDER BY COUNT(DISTINCT inspections.id) DESC, code"
+        )
+        with self._lock:
+            return [(r[0], r[1]) for r in self._db.execute(sql, args).fetchall() if r[0]]
+
+    def dataset_items(self, job_id: str, limit: int = 48, offset: int = 0) -> list[dict[str, str | None]]:
+        """The images of a job in the dataset, newest first: what the grid shows."""
+        with self._lock:
+            rows = self._db.execute("SELECT id, result, label, source, added_at FROM dataset WHERE job_id=? ORDER BY added_at DESC, id LIMIT ? OFFSET ?", (job_id, limit, offset)).fetchall()
+        return [dict(zip(("id", "result", "label", "source", "added_at"), r)) for r in rows]
+
+    def dataset_file(self, job_id: str, image_id: str) -> Path | None:
+        with self._lock:
+            row = self._db.execute("SELECT file FROM dataset WHERE job_id=? AND id=?", (job_id, image_id)).fetchone()
+        path = (self.root / row[0]) if row else None
+        return path if path is not None and path.is_file() else None
 
     def dataset_count(self, job_id: str | None = None) -> int:
         with self._lock:

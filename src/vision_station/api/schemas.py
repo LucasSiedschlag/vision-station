@@ -718,6 +718,28 @@ class AuditOut(BaseModel):
     total: int
 
 
+class ReasonCodeCount(BaseModel):
+    code: str  # `<tool type>.<criterion>`
+    count: int
+
+
+class ReasonCodesOut(BaseModel):
+    codes: list[ReasonCodeCount]
+
+
+class DatasetImage(BaseModel):
+    id: str
+    result: str | None  # what the station said when it was collected; None: from a correction
+    label: Literal["PASS", "FAIL"] | None  # what the person said it should be, when they corrected it
+    source: Literal["collected", "corrected"]
+    added_at: str
+
+
+class DatasetImagesOut(BaseModel):
+    total: int
+    images: list[DatasetImage]
+
+
 class DatasetJob(BaseModel):
     job_id: str
     name: str

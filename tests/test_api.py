@@ -546,3 +546,30 @@ def test_two_requests_at_once_are_one_inspection_and_a_409_never_two_accepted(en
     done = env.client.get(f"/api/inspections/{first.json()['id']}").json()
     assert done["status"] == "done" and done["reference"] == "a"
     assert env.client.post("/api/inspections", json={"reference": "c"}).status_code == 202  # free again
+
+
+def test_the_reason_code_filter_and_the_dataset_grid_are_served_with_their_roles(env):
+    sup, mnt = login(env), login(env, "maintainer")
+    assert env.client.get("/api/results/reason-codes").status_code == 401
+    assert env.client.get("/api/results/reason-codes", headers=sup).json() == {"codes": []}
+    assert env.client.get("/api/results?reason_code=color.min_fraction", headers=sup).json()["total"] == 0
+    assert env.client.get("/api/results.csv?reason_code=color.min_fraction", headers=sup).status_code == 200
+    job = JOB["job_id"]
+    assert env.client.get(f"/api/dataset/{job}/images", headers=sup).status_code == 403  # the dataset is the Maintainer's
+    assert env.client.get(f"/api/dataset/{job}/images", headers=mnt).json() == {"total": 0, "images": []}
+    assert env.client.get(f"/api/dataset/{job}/images/nothing.jpg", headers=mnt).status_code == 404
+
+
+def test_a_dataset_image_is_served_reduced_for_the_grid(env):
+    mnt = login(env, "maintainer")
+    job = JOB["job_id"]
+    env.results.set_collection(job, True)
+    env.results.record(res(Outcome.PASS), np.zeros((1080, 1920, 3), np.uint8), **JOB)
+    listing = env.client.get(f"/api/dataset/{job}/images", headers=mnt).json()
+    assert listing["total"] == 1 and listing["images"][0]["source"] == "collected" and listing["images"][0]["label"] is None
+    image_id = listing["images"][0]["id"]
+    small = env.client.get(f"/api/dataset/{job}/images/{image_id}.jpg?width=320", headers=mnt)
+    assert small.status_code == 200 and small.headers["content-type"] == "image/jpeg"
+    shown = cv2.imdecode(np.frombuffer(small.content, np.uint8), cv2.IMREAD_COLOR)
+    assert shown.shape[1] == 320 and shown.shape[0] == 180  # reduced, same proportion
+    assert env.client.get(f"/api/dataset/other-job/images/{image_id}.jpg", headers=mnt).status_code == 404

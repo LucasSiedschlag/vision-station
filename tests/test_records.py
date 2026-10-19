@@ -389,3 +389,41 @@ def test_the_sequence_continues_after_a_restart(tmp_path, clock):
         assert store.next_sequence() == 0  # wraps like the controller
         store.record(res(sequence=0), None, **JOB)
         assert store.next_sequence() == 1
+
+
+def test_results_are_filtered_by_reason_code_and_the_codes_on_offer_follow_the_other_filters(store):
+    """FR-INS-14: the supervisor finds the failures of one criterion; the options are what the other filters leave."""
+    from vision_station.core.results import ReasonCode
+
+    def fail(code, tool="t"):
+        return res(Outcome.FAIL, "x", reason_codes=(ReasonCode(tool, code),))
+
+    store.record(fail("color.min_fraction"), frame(), **JOB)
+    store.record(fail("color.min_fraction"), frame(), **JOB)
+    store.record(fail("code.min_count", "c"), frame(), **JOB)
+    store.record(res(Outcome.PASS), frame(), **JOB)
+    other = {**JOB, "job_id": "other", "job_name": "Outra"}
+    store.record(fail("pattern.min_score", "p"), frame(), **other)
+    assert store.count(Query(reason_code="color.min_fraction")) == 2
+    assert [r.reason_codes[0]["code"] for r in store.find(Query(reason_code="code.min_count"))] == ["code.min_count"]
+    assert store.count(Query(reason_code="nothing.here")) == 0
+    assert store.count(Query(reason_code="color.min_fraction", outcome="PASS")) == 0  # together with the other filters
+    assert store.reason_codes() == [("color.min_fraction", 2), ("code.min_count", 1), ("pattern.min_score", 1)]
+    assert store.reason_codes(Query(job_id=JOB["job_id"], reason_code="code.min_count")) == [("color.min_fraction", 2), ("code.min_count", 1)]  # its own filter does not hide the others
+    out = io.StringIO()
+    store.export_csv(out, Query(reason_code="code.min_count"))
+    assert len(out.getvalue().splitlines()) == 2
+
+
+def test_the_dataset_lists_the_images_of_a_job_with_their_labels(store):
+    store.set_collection(JOB["job_id"], True)
+    store.record(res(Outcome.PASS), frame(), **JOB)
+    wrong = store.record(res(Outcome.PASS), frame(), **JOB)
+    store.mark_incorrect(wrong.id, "FAIL", by="supervisor")
+    items = store.dataset_items(JOB["job_id"])
+    assert {(i["source"], i["label"]) for i in items} == {("collected", None), ("corrected", "FAIL")}
+    assert store.dataset_items(JOB["job_id"], limit=1, offset=1) != store.dataset_items(JOB["job_id"], limit=1, offset=0)
+    assert store.dataset_items("other") == []
+    path = store.dataset_file(JOB["job_id"], items[0]["id"])
+    assert path is not None and path.suffix == ".jpg"
+    assert store.dataset_file("other", items[0]["id"]) is None  # an id of another job is not its image

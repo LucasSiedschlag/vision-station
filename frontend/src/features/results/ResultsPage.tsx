@@ -7,11 +7,14 @@ import { downloadFile, fetchBlob } from '@/api/download'
 import {
   PAGE,
   useMarkIncorrect,
+  useReasonCodes,
   useResults,
   type RecordOut,
   type ResultsFilter,
 } from '@/api/queries/admin'
+import { useTypes, type TypeInfo } from '@/api/queries/editor'
 import { useJobs } from '@/api/queries/jobs'
+import { FrozenGauge } from '@/components/vision/FrozenGauge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -47,15 +50,24 @@ export function ResultsPage() {
   const outcome = (params.get('outcome') as ResultsFilter['outcome'] | null) ?? undefined
   const jobId = params.get('job') ?? undefined
   const incorrect = params.get('incorrect') === '1'
+  const reasonCode = params.get('reason') ?? undefined
   const offset = Number(params.get('offset') ?? 0)
   const filter: ResultsFilter = {
     since: since(period),
     job_id: jobId,
     outcome,
     incorrect_only: incorrect || undefined,
+    reason_code: reasonCode,
     offset,
   }
   const results = useResults(filter)
+  const types = useTypes()
+  const reasonCodes = useReasonCodes({
+    since: filter.since,
+    job_id: filter.job_id,
+    outcome: filter.outcome,
+    incorrect_only: filter.incorrect_only,
+  })
   const jobs = useJobs()
   const [open, setOpen] = useState<RecordOut | null>(null)
 
@@ -116,6 +128,26 @@ export function ResultsPage() {
               value={outcome ?? 'all'}
               onValueChange={(v) => set('outcome', v === 'all' ? null : v)}
               options={Object.entries(t.outcomes).map(([value, label]) => ({ value, label }))}
+            />
+          )}
+        </Field>
+        <Field label={t.reasonCode} className="min-w-64">
+          {(props) => (
+            <Select
+              {...props}
+              value={reasonCode ?? 'all'}
+              onValueChange={(v) => set('reason', v === 'all' ? null : v)}
+              options={[
+                { value: 'all', label: t.allReasons },
+                ...(reasonCodes.data?.codes ?? []).map((c) => ({
+                  value: c.code,
+                  label: t.reasonOption(reasonLabel(c.code, types.data?.tools ?? []), c.count),
+                })),
+                // a code that is in the address but not in the list (the other filters changed): still shown, so it can be cleared
+                ...(reasonCode && !reasonCodes.data?.codes.some((c) => c.code === reasonCode)
+                  ? [{ value: reasonCode, label: reasonLabel(reasonCode, types.data?.tools ?? []) }]
+                  : []),
+              ]}
             />
           )}
         </Field>
@@ -194,6 +226,67 @@ export function ResultsPage() {
       )}
       {open ? <ResultSheet record={open} onClose={() => setOpen(null)} /> : null}
     </main>
+  )
+}
+
+/** A reason code in words: "Fração com a cor, abaixo do mínimo", or the code itself for a type this screen does not know. */
+export function reasonLabel(code: string, tools: Pick<TypeInfo, 'name' | 'criteria'>[]): string {
+  const [type, criterion] = code.split('.', 2)
+  const spec = tools
+    .find((x) => x.name === type)
+    ?.criteria.find((c) => c.limits.min === criterion || c.limits.max === criterion)
+  if (!spec) return code
+  return `${spec.label}, ${spec.limits.min === criterion ? t.belowMin : t.aboveMax}`
+}
+
+/** What the tools measured on this result, against the limits they had then. */
+function Tools({ record }: { record: RecordOut }) {
+  const types = useTypes()
+  const g = t.gauge
+  const list = record.tools ?? [] // a record from before the contract has none
+  if (!list.length) return null
+  return (
+    <section aria-label={g.tools} className="flex flex-col gap-2">
+      <h3 className="text-sm font-semibold">{g.tools}</h3>
+      {list.map((tool) => {
+        const info = types.data?.tools.find((x) => x.name === tool.type)
+        return (
+          <div key={tool.id} className="flex flex-col gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              {tool.id}
+              <Badge tone={tool.passed ? 'ok' : 'fail'}>
+                {tool.passed ? text.operator.outcome.PASS : text.operator.outcome.FAIL}
+              </Badge>
+              {tool.affects_result ? null : <Badge tone="neutral">{g.informative}</Badge>}
+            </p>
+            {tool.criteria.map((c) => {
+              const spec = info?.criteria.find((x) => x.value === c.measure)
+              if (spec && c.value !== null && c.limit !== null && c.kind !== 'rule')
+                return (
+                  <FrozenGauge
+                    key={c.code}
+                    label={spec.label}
+                    unit={spec.unit}
+                    range={spec.range}
+                    limits={
+                      c.kind === 'min' ? { min: c.limit, max: null } : { min: null, max: c.limit }
+                    }
+                    value={c.value}
+                    passed={c.passed}
+                  />
+                )
+              return (
+                <p key={c.code} className="font-mono text-xs tabular-nums text-fg-muted">
+                  {c.code}: {c.value === null ? '—' : formatNumber(c.value, 3)}
+                  {c.limit === null ? '' : ` / ${formatNumber(c.limit, 3)}`} {c.passed ? '✓' : '✕'}
+                </p>
+              )
+            })}
+          </div>
+        )
+      })}
+      <p className="text-xs text-fg-muted">{g.frozen}</p>
+    </section>
   )
 }
 
@@ -290,6 +383,7 @@ function ResultSheet({ record, onClose }: { record: RecordOut; onClose: () => vo
             </p>
           </div>
         ) : null}
+        <Tools record={record} />
         <Timings title={t.timings} seconds={record.timings} />
         <Timings title={t.toolTimings} seconds={record.tool_timings ?? {}} />
         {record.correct_outcome ? (

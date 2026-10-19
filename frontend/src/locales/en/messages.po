@@ -226,6 +226,9 @@ msgstr "reference image"
 msgid "Resultado das {time}"
 msgstr "Result of {time}"
 
+msgid "{label} ({count})"
+msgstr "{label} ({count})"
+
 msgid "reprova"
 msgstr "fails"
 
@@ -437,6 +440,9 @@ msgstr "Download"
 msgid "Essencial"
 msgstr "Essential"
 
+msgid "Os limites são os que valiam neste resultado."
+msgstr "The limits are the ones in force for this result."
+
 msgid "Um sinal de outro equipamento dispara a inspeção"
 msgstr "A signal from other equipment starts the inspection"
 
@@ -502,6 +508,9 @@ msgstr "Image orientation"
 
 msgid "{n, plural, =0 {Nenhum arquivo no job (referência, gabaritos, conjunto de referência).} one {# arquivo no job (referência, gabaritos, conjunto de referência).} other {# arquivos no job (referência, gabaritos, conjunto de referência).}}"
 msgstr "{n, plural, =0 {No files in the job (reference, templates, reference set).} one {# file in the job (reference, templates, reference set).} other {# files in the job (reference, templates, reference set).}}"
+
+msgid "máximo {value}"
+msgstr "maximum {value}"
 
 msgid "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
 msgstr "{n, plural, =0 {No result left unrecorded} one {# result not recorded} other {# results not recorded}}"
@@ -583,6 +592,9 @@ msgstr "failing"
 
 msgid "Manual"
 msgstr "Manual"
+
+msgid "Nenhuma imagem ainda."
+msgstr "No images yet."
 
 msgid "Imagem mostrada"
 msgstr "Image shown"
@@ -920,6 +932,9 @@ msgstr "already present"
 msgid "Supervisor"
 msgstr "Supervisor"
 
+msgid "{by}: v{from} → v{to}"
+msgstr "{by}: v{from} → v{to}"
+
 msgid "{failed} de {total} amostras não saíram como esperado"
 msgstr "{failed} of {total} samples were not as expected"
 
@@ -928,6 +943,9 @@ msgstr "Exposure measuring region"
 
 msgid "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
 msgstr "The system checks the job on the reference set before activating. The station then uses this version and checks the camera and the reference image when it switches."
+
+msgid "corrigida: {label}"
+msgstr "corrected: {label}"
 
 msgid "Página anterior"
 msgstr "Previous page"
@@ -955,6 +973,9 @@ msgstr "The operator has no password. Supervisor and Maintainer log in with the 
 
 msgid "Obrigatório: fica no registro de auditoria. Ex.: lote novo de tampas, luz do turno da noite."
 msgstr "Required: it goes in the audit log. E.g. a new lot of caps, the night shift's light."
+
+msgid "{id}: {what}"
+msgstr "{id}: {what}"
 
 msgid "Todas as versões"
 msgstr "All versions"
@@ -1021,6 +1042,9 @@ msgstr "Use as template"
 
 msgid "Tempo de cada ferramenta"
 msgstr "Time of each tool"
+
+msgid "dentro, {distance} da borda"
+msgstr "inside, {distance} from the edge"
 
 msgid "Não foi possível ler a lista de jobs."
 msgstr "Could not read the list of jobs."
@@ -1166,6 +1190,9 @@ msgstr "A job (.vjob) or a backup (.vbak). Importing stores the versions; activa
 msgid "Redesenhar"
 msgstr "Redraw"
 
+msgid "Todos os motivos"
+msgstr "All reasons"
+
 msgid "falhou"
 msgstr "failed"
 
@@ -1259,6 +1286,9 @@ msgstr "Name"
 msgid "Ajuste de câmera"
 msgstr "Camera adjustment"
 
+msgid "não passou na verificação"
+msgstr "did not pass verification"
+
 msgid "o objeto (âncora)"
 msgstr "the part (anchor)"
 
@@ -1315,6 +1345,9 @@ msgstr "Draw the measuring region"
 
 msgid "Baixar {name}"
 msgstr "Download {name}"
+
+msgid "Imagens de {name}"
+msgstr "Images of {name}"
 
 msgid "Desenhando… (arraste na imagem)"
 msgstr "Drawing… (drag on the image)"
@@ -1379,6 +1412,9 @@ msgstr "Compare with"
 msgid "Arraste sobre a imagem para desenhar"
 msgstr "Drag on the image to draw"
 
+msgid "verificada"
+msgstr "verified"
+
 msgid "Amostra {name}: o rascunho diz {now}; esperado {expected}."
 msgstr "Sample {name}: the draft says {now}; expected {expected}."
 
@@ -1421,6 +1457,9 @@ msgstr "Keeps {share} % of the sampled colour."
 msgid "Versão {v} salva."
 msgstr "Version {v} saved."
 
+msgid "informativa"
+msgstr "informative"
+
 msgid "ativo: v{v}"
 msgstr "active: v{v}"
 
@@ -1432,6 +1471,9 @@ msgstr "When off, the tool is measured and recorded but never fails the part."
 
 msgid "Padrão (logo, marca)"
 msgstr "Pattern (logo, mark)"
+
+msgid "Ocultar imagens"
+msgstr "Hide images"
 
 msgid "De cabeça para baixo"
 msgstr "Upside down"
@@ -1529,6 +1571,9 @@ msgstr "blocked"
 msgid "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
 msgstr "The model is trained away from the station (docs/models.md) and goes inside the job."
 
+msgid "mínimo {value}"
+msgstr "minimum {value}"
+
 msgid "sinal de vida há {age} s"
 msgstr "heartbeat {age} s ago"
 
@@ -1615,6 +1660,9 @@ msgstr "Still time"
 
 msgid "Exportar tudo"
 msgstr "Export all"
+
+msgid "abaixo do mínimo"
+msgstr "below the minimum"
 
 msgid "Backup"
 msgstr "Backup"
@@ -1841,6 +1889,9 @@ msgstr "Filters"
 msgid "Reiniciar o melhor"
 msgstr "Reset the best"
 
+msgid "Motivos"
+msgstr "Reasons"
+
 msgid "Os textos do operador mudaram"
 msgstr "The operator texts changed"
 
@@ -1870,6 +1921,9 @@ msgstr "Pages"
 
 msgid "Estava OK"
 msgstr "It was OK"
+
+msgid "fora, {distance} além da borda"
+msgstr "outside, {distance} beyond the edge"
 
 msgid "Descrição"
 msgstr "Description"
@@ -1954,6 +2008,9 @@ msgstr "New job {name}: {count}"
 
 msgid "Não definida"
 msgstr "Not set"
+
+msgid "coletada"
+msgstr "collected"
 
 msgid "Saturação mínima"
 msgstr "Minimum saturation"
@@ -2090,6 +2147,9 @@ msgstr "Fields with problems"
 msgid "Marcado como incorreto. A imagem vai para o treinamento."
 msgstr "Marked as incorrect. The image goes to training."
 
+msgid "acima do máximo"
+msgstr "above the maximum"
+
 msgid "Arquivo"
 msgstr "File"
 
@@ -2143,6 +2203,9 @@ msgstr "Cancel"
 
 msgid "Sem ligação com o sistema, o estado da máquina não é conhecido."
 msgstr "Without a link to the system, the machine state is not known."
+
+msgid "Ver imagens"
+msgstr "View images"
 
 msgid "Job duplicado"
 msgstr "Job duplicated"

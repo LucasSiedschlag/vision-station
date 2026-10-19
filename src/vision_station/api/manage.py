@@ -568,6 +568,25 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             out.append(m.DatasetJob(job_id=job_id, name=name, collecting=deps.results.collecting(job_id), images=deps.results.dataset_count(job_id)))
         return m.DatasetOut(jobs=out, total=deps.results.dataset_count())
 
+    @api.get("/dataset/{job_id}/images", response_model=m.DatasetImagesOut)
+    def dataset_images(job_id: str, limit: int = QueryParam(48, ge=1, le=200), offset: int = QueryParam(0, ge=0), _: str = Depends(need("maintainer"))) -> m.DatasetImagesOut:
+        """The images a job has in the dataset, newest first, for the grid with their labels (document 05 §7.5)."""
+        return m.DatasetImagesOut(total=deps.results.dataset_count(job_id), images=[m.DatasetImage(**row) for row in deps.results.dataset_items(job_id, limit, offset)])
+
+    @api.get("/dataset/{job_id}/images/{image_id}.jpg", responses={200: {"content": {"image/jpeg": {}}}, 404: {"model": m.Problem}})
+    def dataset_image(job_id: str, image_id: str, width: int = QueryParam(320, ge=64, le=1920), _: str = Depends(need("maintainer"))) -> Response:
+        """One image of the dataset, reduced to `width` (a grid of thumbnails does not carry full frames)."""
+        path = deps.results.dataset_file(job_id, image_id)
+        if path is None:
+            raise Problem(404, "Essa imagem não existe", "image_not_found")
+        image = cv2.imread(str(path))
+        if image is None:
+            raise Problem(404, "Essa imagem não existe", "image_not_found")
+        if image.shape[1] > width:
+            image = cv2.resize(image, (width, max(1, round(image.shape[0] * width / image.shape[1]))), interpolation=cv2.INTER_AREA)
+        ok, jpeg = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        return Response(jpeg.tobytes() if ok else b"", media_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
+
     @api.post("/dataset/export", response_model=m.DatasetExportOut, responses={409: {"model": m.Problem}})
     def export_dataset(body: m.DatasetExportBody, role: str = Depends(need("maintainer"))) -> m.DatasetExportOut:
         """Images and labels for training, into <data>/exports/ (training happens offline, TD-08)."""

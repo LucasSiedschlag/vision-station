@@ -653,7 +653,8 @@ All endpoints live under `/api` (the WebSocket is `/api/live`); every other path
 | `POST /trigger` | Manual trigger (FR-TRG-3) |
 | `POST /inspections`, `GET /inspections/{id}` | Other programs: request an inspection by id, get the result and pictures (FR-INT-1) |
 | `GET/POST /jobs…` | List, activate, export, import (logged-in users only) |
-| `GET /results…` | Browse, filter, export CSV, mark incorrect |
+| `GET /results…` | Browse, filter (period, job, outcome, wrong, reason code), export CSV, mark incorrect; `GET /results/reason-codes` the codes the other filters leave (FR-INS-14) |
+| `GET /dataset/{job}/images…` | The dataset grid (Maintainer): a page of images with their labels, and one image reduced to a width |
 | `GET /machine` | Live view of the interface map: inputs, outputs, heartbeat ages, last errors (Maintainer) |
 | `POST /bench` | Run the benchmark (Maintainer) |
 | `POST /jobs/verify`, `POST /editor/batch`, `POST /editor/suggest/limits`, `POST /editor/suggest/colour` | The editor (Maintainer): the draft on every sample, the same run as activation (Validar); the draft on its reference and samples with every tool's values (the dots of the gauges); the limits the samples suggest (FR-UI-14); a color range from the pixels dragged over on the image (FR-UI-13) |

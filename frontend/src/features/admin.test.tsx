@@ -30,8 +30,33 @@ const record = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
+const tools = {
+  tools: [
+    {
+      name: 'color',
+      version: 1,
+      description: '',
+      params_schema: {},
+      criteria: [
+        {
+          value: 'fraction',
+          label: 'Fração com a cor',
+          unit: 'fraction',
+          limits: { min: 'min_fraction', max: 'max_fraction' },
+          range: [0, 1],
+          level: 1,
+        },
+      ],
+    },
+  ],
+  locators: [],
+  builtin_rois: [],
+}
+
 beforeEach(() => {
   server.use(
+    http.get('*/api/tools', () => HttpResponse.json(tools)),
+    http.get('*/api/results/reason-codes', () => HttpResponse.json({ codes: [] })),
     http.get('*/api/jobs', () =>
       HttpResponse.json({
         jobs: [
@@ -167,7 +192,136 @@ describe('results', () => {
   })
 })
 
+describe('results: the tools of a result and the reason code', () => {
+  const failed = record({
+    reason_codes: [{ tool: 'tampa', code: 'color.min_fraction' }],
+    tools: [
+      {
+        id: 'tampa',
+        type: 'color',
+        version: 1,
+        passed: false,
+        score: 0.2,
+        margin: -0.3,
+        values: { fraction: 0.2 },
+        units: { fraction: 'fraction' },
+        affects_result: true,
+        criteria: [
+          {
+            code: 'min_fraction',
+            kind: 'min',
+            measure: 'fraction',
+            value: 0.2,
+            limit: 0.5,
+            passed: false,
+            score: 0.4,
+            margin: -0.3,
+          },
+        ],
+      },
+    ],
+  })
+
+  it('the panel shows each tool with its gauge frozen at that result: value, limit and how far outside', async () => {
+    server.use(
+      http.get('*/api/results', () => HttpResponse.json({ total: 1, results: [failed] })),
+      http.get(
+        '*/api/results/r1/image',
+        () => new HttpResponse(new Uint8Array([1]), { headers: { 'Content-Type': 'image/jpeg' } }),
+      ),
+    )
+    as('supervisor')
+    renderApp('/results')
+    await userEvent.click(await screen.findByRole('button', { name: /^Abrir o resultado de/ }))
+    const sheet = await screen.findByRole('dialog', { name: 'Resultado' })
+    const gauge = await within(sheet).findByRole('region', { name: 'Fração com a cor' })
+    expect(within(gauge).getByText('20%')).toBeInTheDocument()
+    expect(within(gauge).getByText(/mínimo 50%/)).toBeInTheDocument()
+    expect(within(gauge).getByText(/fora, 30 pontos percentuais além da borda/)).toBeInTheDocument()
+    expect(within(gauge).getByRole('img')).toHaveAccessibleName(/mínimo 50%/)
+    expect(
+      within(sheet).getByText('Os limites são os que valiam neste resultado.'),
+    ).toBeInTheDocument()
+  })
+
+  it('filters by reason code, in words, with the options the other filters leave', async () => {
+    const queries: URLSearchParams[] = []
+    server.use(
+      http.get('*/api/results', ({ request }) => {
+        queries.push(new URL(request.url).searchParams)
+        return HttpResponse.json({ total: 1, results: [failed] })
+      }),
+      http.get('*/api/results/reason-codes', () =>
+        HttpResponse.json({
+          codes: [
+            { code: 'color.min_fraction', count: 12 },
+            { code: 'xyz.other', count: 1 },
+          ],
+        }),
+      ),
+    )
+    as('supervisor')
+    const { router } = renderApp('/results')
+    await userEvent.click(await screen.findByRole('combobox', { name: 'Motivo' }))
+    expect(screen.getByRole('option', { name: 'xyz.other (1)' })).toBeInTheDocument() // a type this screen does not know: the code
+    await userEvent.click(
+      screen.getByRole('option', { name: 'Fração com a cor, abaixo do mínimo (12)' }),
+    )
+    await waitFor(() => expect(queries.at(-1)!.get('reason_code')).toBe('color.min_fraction'))
+    expect(router.state.location.search).toContain('reason=color.min_fraction')
+  })
+})
+
 describe('dataset', () => {
+  it('shows the images of a job in a grid with what each one is, one page at a time', async () => {
+    const asked: string[] = []
+    server.use(
+      http.get('*/api/dataset', () =>
+        HttpResponse.json({
+          jobs: [{ job_id: 'j1', name: 'Tampa azul', collecting: false, images: 2 }],
+          total: 2,
+        }),
+      ),
+      http.get('*/api/dataset/j1/images', () =>
+        HttpResponse.json({
+          total: 2,
+          images: [
+            {
+              id: 'a1',
+              result: 'PASS',
+              label: null,
+              source: 'collected',
+              added_at: '2026-10-15T10:00:00',
+            },
+            {
+              id: 'b2',
+              result: 'PASS',
+              label: 'FAIL',
+              source: 'corrected',
+              added_at: '2026-10-15T11:00:00',
+            },
+          ],
+        }),
+      ),
+      http.get('*/api/dataset/j1/images/:file', ({ params }) => {
+        asked.push(String(params.file))
+        return new HttpResponse(new Uint8Array([1]), { headers: { 'Content-Type': 'image/jpeg' } })
+      }),
+    )
+    as('maintainer')
+    renderApp('/dataset')
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver imagens' }))
+    const grid = await screen.findByRole('region', { name: 'Imagens de Tampa azul' })
+    expect(within(grid).getByText('coletada')).toBeInTheDocument()
+    expect(within(grid).getByText('corrigida: Reprovado')).toBeInTheDocument()
+    await waitFor(() => expect(asked.sort()).toEqual(['a1.jpg', 'b2.jpg']))
+    expect(
+      await within(grid).findByRole('img', { name: 'b2: corrigida: Reprovado' }),
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Ocultar imagens' }))
+    expect(screen.queryByRole('region', { name: 'Imagens de Tampa azul' })).not.toBeInTheDocument()
+  })
+
   it('turns collection on for a job and exports its images', async () => {
     let collection: any = null
     server.use(
@@ -328,6 +482,41 @@ describe('access', () => {
     )
     expect(await screen.findByText('3 sessões encerradas.')).toBeInTheDocument()
     expect(useSession.getState().expired).toBe(true)
+  })
+})
+
+describe('audit: the fine-tune', () => {
+  it('says what moved: who, the versions, the note and each limit before and after', async () => {
+    server.use(
+      http.get('*/api/audit', () =>
+        HttpResponse.json({
+          total: 1,
+          events: [
+            {
+              at: '2026-10-19T14:00:00-03:00',
+              kind: 'job_tune',
+              data: {
+                by: 'supervisor',
+                job_id: 'j1',
+                version: 4,
+                parent: 3,
+                notes: 'lote novo de tampas',
+                verified: true,
+                changes: [{ tool: 'tampa', param: 'min_fraction', old: 0.5, new: 0.4 }],
+              },
+            },
+          ],
+        }),
+      ),
+    )
+    as('supervisor')
+    renderApp('/audit')
+    expect(await screen.findByText('Ajuste fino', { selector: 'td' })).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'supervisor: v3 → v4 · “lote novo de tampas” · tampa: min_fraction, 0.5 → 0.4 · verificada',
+      ),
+    ).toBeInTheDocument()
   })
 })
 

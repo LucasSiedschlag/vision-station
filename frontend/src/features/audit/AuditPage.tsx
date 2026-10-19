@@ -16,10 +16,32 @@ import { text } from '@/texts'
 
 const t = text.audit
 
-/** One line of details: the fields of an event as "name: value", in the order they came. */
+/** One line of details: the fields of an event as "name: value", in the order they came. A fine-tune says its limits in words. */
 function details(event: AuditEvent): string {
+  if (event.kind === 'job_tune') return tuneDetails(event)
   return Object.entries(event.data)
     .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`)
+    .join(' · ')
+}
+
+/** A fine-tune: who, the version, the note and each limit that moved, "tool: parameter, before → after" (§7.12). */
+function tuneDetails(event: AuditEvent): string {
+  const d = event.data as {
+    by?: string
+    version?: number
+    parent?: number
+    notes?: string
+    verified?: boolean
+    changes?: { tool: string; param: string; old: unknown; new: unknown }[]
+  }
+  const shown = (v: unknown) => (v === null || v === undefined ? '—' : String(v))
+  return [
+    t.tuneHead(d.by ?? '', d.parent ?? 0, d.version ?? 0),
+    d.notes ? `“${d.notes}”` : '',
+    ...(d.changes ?? []).map((c) => `${c.tool}: ${c.param}, ${shown(c.old)} → ${shown(c.new)}`),
+    d.verified ? t.tuneVerified : t.tuneNotVerified,
+  ]
+    .filter(Boolean)
     .join(' · ')
 }
 
