@@ -184,3 +184,59 @@ def test_a_job_whose_template_is_missing_is_refused_when_loaded():
     with pytest.raises(FormatError, match="locator/template.png"):
         bundle_from_files(files)
     assert bundle_from_files(bundle.files()).job == bundle.job
+
+
+# --- blob v2: a pose (architecture §14, FR-INS-11) ---------------------------------------------------------
+
+
+def turned_part(angle, size=(480, 640), at=(320.0, 240.0), scale=1.0):
+    """A dark 160 x 90 part on a light bench, turned counter-clockwise on the screen by `angle` degrees."""
+    img = np.full((*size, 3), BENCH, np.uint8)
+    cx, cy = at
+    img[round(cy - 45) : round(cy + 45), round(cx - 80) : round(cx + 80)] = PART
+    matrix = cv2.getRotationMatrix2D(at, angle, scale)
+    return cv2.warpAffine(img, matrix, (size[1], size[0]), flags=cv2.INTER_LINEAR, borderValue=BENCH)
+
+
+def test_blob_v2_is_registered_next_to_v1():
+    assert {("blob", 1), ("blob", 2)} <= set(locator_types())
+
+
+@pytest.mark.parametrize("angle", [-15.0, -6.0, 0.0, 8.0, 15.0, 30.0])
+def test_blob_v2_gives_the_centre_and_the_angle_of_a_turned_part(angle):
+    a = run_locator("blob", 2, turned_part(angle), {"mode": "dark", "taught_size": [160, 90]})
+    assert a is not None
+    assert a.angle == pytest.approx(angle, abs=1.5)
+    cx, cy = a.centre
+    assert (cx * 640, cy * 480) == pytest.approx((320, 240), abs=2.0)
+    assert a.scale == pytest.approx(1.0, abs=0.03)
+    assert a.score > 0.9
+
+
+def test_blob_v2_with_the_taught_size_tells_the_long_side_from_the_short_one():
+    """A part turned past 45° is the same rectangle as one turned the other way: the taught proportions decide."""
+    a = run_locator("blob", 2, turned_part(70.0), {"mode": "dark", "taught_size": [160, 90]})
+    assert a is not None and a.angle == pytest.approx(70.0, abs=2.0)
+    b = run_locator("blob", 2, turned_part(-70.0), {"mode": "dark", "taught_size": [160, 90]})
+    assert b is not None and b.angle == pytest.approx(-70.0, abs=2.0)
+    portrait = run_locator("blob", 2, turned_part(0.0), {"mode": "dark", "taught_size": [90, 160]})  # taught standing up
+    assert portrait is not None and abs(portrait.angle) == pytest.approx(90.0, abs=2.0)
+
+
+def test_blob_v2_without_a_taught_size_gives_the_smallest_turn_and_the_size_found():
+    a = run_locator("blob", 2, turned_part(20.0), {"mode": "dark"})
+    assert a is not None and a.angle == pytest.approx(20.0, abs=2.0) and a.scale == 1.0
+    x0, y0, x1, y1 = a.rect
+    assert ((x1 - x0) * 640, (y1 - y0) * 480) == pytest.approx((160, 90), abs=3)
+
+
+def test_blob_v2_measures_the_scale():
+    a = run_locator("blob", 2, turned_part(10.0, scale=1.3), {"mode": "dark", "taught_size": [160, 90]})
+    assert a is not None and a.scale == pytest.approx(1.3, abs=0.04)
+
+
+def test_blob_v2_finds_nothing_where_there_is_nothing_and_v1_is_unchanged():
+    plain = np.full((480, 640, 3), BENCH, np.uint8)
+    assert run_locator("blob", 2, plain, {"mode": "dark"}) is None
+    a = run_locator("blob", 1, turned_part(0.0), {"mode": "dark"})
+    assert a is not None and a.angle == 0.0 and a.scale == 1.0  # the upright rectangle, as always

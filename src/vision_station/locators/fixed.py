@@ -1,4 +1,4 @@
-"""Fixed locator: the object is always in the same place, so the anchor is a rectangle written in the job.
+"""Fixed locator: the object is always in the same place, so the fixture is a rectangle written in the job.
 
 For stations where a jig or a mark holds the object in position, and for jobs that only need a named area.
 """
@@ -10,7 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.schema_labels import labels, meta
-from vision_station.locators.base import Anchor, LocatorType, register
+from vision_station.geometry.pose import Fixture
+from vision_station.locators.base import LocatorType, register
 
 
 class FixedParams(BaseModel):
@@ -29,8 +30,8 @@ class FixedParams(BaseModel):
         return self
 
 
-def locate(frame: np.ndarray, params: FixedParams, files: JobFiles) -> Anchor:
-    return Anchor(rect=params.rect)
+def locate(frame: np.ndarray, params: FixedParams, files: JobFiles) -> Fixture:
+    return Fixture(rect=params.rect)
 
 
 FIXED = register(LocatorType(name="fixed", version=1, params=FixedParams, locate=locate))

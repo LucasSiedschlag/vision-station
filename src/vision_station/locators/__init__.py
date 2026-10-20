@@ -4,7 +4,6 @@ from vision_station.locators import blob as _blob  # noqa: F401  (registers the 
 from vision_station.locators import fixed as _fixed  # noqa: F401
 from vision_station.locators import template as _template  # noqa: F401
 from vision_station.locators.base import (
-    Anchor,
     LocatorError,
     LocatorType,
     check_job_locator,
@@ -15,4 +14,4 @@ from vision_station.locators.base import (
     validate_params,
 )
 
-__all__ = ["Anchor", "LocatorError", "LocatorType", "check_job_locator", "get_locator", "locator_types", "register", "run_locator", "validate_params"]
+__all__ = ["LocatorError", "LocatorType", "check_job_locator", "get_locator", "locator_types", "register", "run_locator", "validate_params"]

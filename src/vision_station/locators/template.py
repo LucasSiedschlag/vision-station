@@ -14,7 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.schema_labels import labels, meta
-from vision_station.locators.base import Anchor, LocatorError, LocatorType, register
+from vision_station.geometry.pose import Fixture
+from vision_station.locators.base import LocatorError, LocatorType, register
 
 Fraction = Annotated[float, Field(ge=0, le=1)]
 
@@ -51,7 +52,7 @@ def _gray(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
 
 
-def locate(frame: np.ndarray, params: TemplateParams, files: JobFiles) -> Anchor | None:
+def locate(frame: np.ndarray, params: TemplateParams, files: JobFiles) -> Fixture | None:
     template = files.image(params.template, gray=True)
     if float(template.std()) < 1.0:
         raise LocatorError(f"template {params.template} is flat: nothing to match")
@@ -72,7 +73,7 @@ def locate(frame: np.ndarray, params: TemplateParams, files: JobFiles) -> Anchor
     x0 = sx0 + mx / scale
     y0 = sy0 + my / scale
     rect = (x0 / width, y0 / height, min(1.0, (x0 + tw / scale) / width), min(1.0, (y0 + th / scale) / height))
-    return Anchor(rect=rect, score=float(best))
+    return Fixture(rect=rect, score=float(best))
 
 
 TEMPLATE = register(LocatorType(name="template", version=1, params=TemplateParams, locate=locate, needs=lambda p: [p.template]))

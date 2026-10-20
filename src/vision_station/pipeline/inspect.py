@@ -21,7 +21,8 @@ from vision_station.core.results import FixturePose, InspectionResult, Outcome, 
 from vision_station.geometry.regions import PixelRect, RegionError, resolve_roi
 from vision_station.jobs import Job
 from vision_station.jobs.job import Tool
-from vision_station.locators import Anchor, LocatorError, run_locator
+from vision_station.geometry.pose import Fixture
+from vision_station.locators import LocatorError, run_locator
 from vision_station.pipeline.quality import brightness_gate, sharp_enough
 from vision_station.pipeline.stop import Stop
 from vision_station.store.bundle import JobBundle
@@ -38,7 +39,7 @@ def _error(code: ErrorCode, reason: str, started: float, timings: dict[str, Any]
 
 
 
-def _locate(job: Job, image: np.ndarray, files: JobFiles) -> Anchor | None:
+def _locate(job: Job, image: np.ndarray, files: JobFiles) -> Fixture | None:
     locator = job.geometry.locator
     if locator is None:
         return None
@@ -135,12 +136,12 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports), fixtures=fixtures)
 
 
-def _pose(anchor: Anchor) -> FixturePose:
+def _pose(anchor: Fixture) -> FixturePose:
     x0, y0, x1, y1 = anchor.rect
     return FixturePose("anchor", (x0 + x1) / 2, (y0 + y1) / 2, angle=None, scale=None, score=float(anchor.score))
 
 
-def _run(tool: Tool, job: Job, anchor: Anchor | None, image: np.ndarray, files: JobFiles) -> tuple[PixelRect, ToolResult, float, float]:
+def _run(tool: Tool, job: Job, anchor: Fixture | None, image: np.ndarray, files: JobFiles) -> tuple[PixelRect, ToolResult, float, float]:
     """One tool on its region: the region, the result, the checked score and the time it took. Raises Stop."""
     try:
         _, px = resolve_roi(job, tool.roi, anchor, image.shape)

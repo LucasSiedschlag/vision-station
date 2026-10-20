@@ -2,7 +2,7 @@
 
 from vision_station.core.i18n import tr
 from vision_station.jobs import Job
-from vision_station.locators import Anchor
+from vision_station.geometry.pose import Fixture
 
 PixelRect = tuple[int, int, int, int]  # x0, y0, x1, y1
 
@@ -15,7 +15,7 @@ class RegionError(Exception):
         self.text = text  # keeps a Msg: str(exc) would flatten it to Portuguese
 
 
-def resolve_roi(job: Job, name: str, anchor: Anchor | None, shape: tuple[int, ...]) -> tuple[tuple[float, float, float, float], PixelRect]:
+def resolve_roi(job: Job, name: str, anchor: Fixture | None, shape: tuple[int, ...]) -> tuple[tuple[float, float, float, float], PixelRect]:
     """The region `name` as fractions of the frame and as pixels. Raises RegionError if it cannot be cut."""
     if name == "frame":
         rect = (0.0, 0.0, 1.0, 1.0)

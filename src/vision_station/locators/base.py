@@ -1,7 +1,8 @@
 """Locators: find the thing to inspect in the frame, so regions can be placed relative to it (TD-19, architecture §7.1).
 
-A locator turns a frame into an *anchor*: a rectangle, as fractions of the frame, that regions can be relative
-to. A job without a locator uses only the frame. Locator types are registered by name and version, like tools.
+A locator turns a frame into a *fixture* (`geometry.pose.Fixture`): where the object is, how it is turned and how large
+it is, so regions can be placed in its own axes (architecture §14). A job without a locator uses only the frame.
+Locator types are registered by name and version, like tools.
 """
 
 from collections.abc import Callable, Mapping
@@ -12,6 +13,7 @@ import numpy as np
 from pydantic import BaseModel, ValidationError
 
 from vision_station.core.jobfiles import JobFileError, JobFiles, check_files
+from vision_station.geometry.pose import Fixture
 from vision_station.jobs import Job
 
 
@@ -20,17 +22,11 @@ class LocatorError(Exception):
 
 
 @dataclass(frozen=True)
-class Anchor:
-    rect: tuple[float, float, float, float]  # x0, y0, x1, y1 as fractions of the frame
-    score: float = 1.0  # how sure the locator is, 0..1
-
-
-@dataclass(frozen=True)
 class LocatorType:
     name: str
     version: int
     params: type[BaseModel]
-    locate: Callable[[np.ndarray, Any, JobFiles], Anchor | None]  # (frame, validated params, job files) -> anchor, or None
+    locate: Callable[[np.ndarray, Any, JobFiles], Fixture | None]  # (image, validated params, job files) -> fixture in the image's own coordinates, or None
     needs: Callable[[Any], list[str]] = lambda params: []  # job files the validated params refer to
 
 
@@ -67,7 +63,7 @@ def validate_params(name: str, version: int, params: Mapping[str, Any]) -> BaseM
         raise LocatorError(f"invalid parameters for locator '{name}' v{version}: {exc}") from exc
 
 
-def run_locator(name: str, version: int, frame: np.ndarray, params: Mapping[str, Any], files: JobFiles | Mapping[str, bytes] | None = None) -> Anchor | None:
+def run_locator(name: str, version: int, frame: np.ndarray, params: Mapping[str, Any], files: JobFiles | Mapping[str, bytes] | None = None) -> Fixture | None:
     locator = get_locator(name, version)
     return locator.locate(frame, validate_params(name, version, params), files if isinstance(files, JobFiles) else JobFiles(files))
 
