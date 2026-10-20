@@ -40,6 +40,8 @@ from vision_station.store import FormatError, JobBundle, JobRef, StoreError
 from vision_station.store.archive import check_path, sha256
 from vision_station.store.bundle import JOB_FILE, bundle_from_files
 from vision_station.tools import get_tool, tool_types
+from vision_station.pipeline.inspect import outline
+from vision_station.pipeline import locate_fixtures
 from vision_station.verification import make_reference_files, run_cases, run_reference_set, verify_stored_job
 from vision_station.verification.reference import EXPECTED_FILE, REFERENCE_IMAGE, REFERENCE_META, decode_image, parse_expected
 
@@ -296,6 +298,29 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             bad_total=sum(s.kind == "bad" for s in counted), bad_ok=sum(s.kind == "bad" and s.ok for s in counted),
             max_ms=max(times) if times else None,
         )
+
+    @api.post("/editor/locate", response_model=m.LocateOut)
+    def editor_locate(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.LocateOut:
+        """Only the locating step of the draft on its reference picture and on every sample: where each fixture is found, with its
+        pose, or why it is not (frontend.md §7.3, step 3). Nothing is saved or recorded."""
+        try:
+            bundle = placeholder(draft, role)
+        except Problem as exc:  # type: ignore[misc]
+            return m.LocateOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
+        expected = parse_expected(bundle.extra[EXPECTED_FILE]).cases if EXPECTED_FILE in bundle.extra else []
+        pictures = ([(REFERENCE_IMAGE, "reference")] if REFERENCE_IMAGE in bundle.extra else []) + [(c.image, {"PASS": "good", "FAIL": "bad", "ERROR": "error"}[c.outcome]) for c in expected]
+        out = []
+        for path, kind in pictures:
+            image = decode_image(bundle.extra[path]) if path in bundle.extra else None
+            if image is None:
+                continue
+            fixtures, stop = locate_fixtures(bundle, image)
+            shapes = [m.FixtureShape(**(outline(f, image.shape) | {"name": f.name})) for f in fixtures.values()]
+            out.append(m.LocateSampleOut(
+                image=path, kind=kind, width=image.shape[1], height=image.shape[0], fixtures=shapes, found=stop is None,  # type: ignore[arg-type]
+                error_code=0 if stop is None else int(stop.code), reason="" if stop is None else render(stop.text),
+            ))
+        return m.LocateOut(ok=True, samples=out)
 
     @api.post("/editor/suggest/limits", response_model=m.LimitsOut)
     def suggest_limits(body: m.SuggestLimitsBody, role: str = Depends(need("supervisor"))) -> m.LimitsOut:

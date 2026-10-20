@@ -502,6 +502,7 @@ class FixtureShape(BaseModel):
     angle: float = 0.0
     scale: float = 1.0
     score: float = 1.0
+    taught: list[float] | None = None  # the box it was taught with, before the angle and the scale: what regions are fractions of
     corners: list[list[float]] | None = None  # in pixels
 
 
@@ -515,6 +516,26 @@ class DraftTestOut(BaseModel):
     width: int
     height: int
     overlay: str  # base64 JPEG of the frame with the regions drawn
+
+
+class LocateSampleOut(BaseModel):
+    """The fixtures of a draft on one picture of its reference set: where each was found, or why not (the anchor step)."""
+
+    image: str  # path inside the job
+    kind: Literal["reference", "good", "bad", "error"]
+    width: int
+    height: int
+    fixtures: list[FixtureShape]  # the ones found, in order; fewer than the job has when it stopped
+    found: bool  # all of them, inside their ranges
+    error_code: int = 0
+    reason: str = ""  # in the language of the request
+
+
+class LocateOut(BaseModel):
+    ok: bool
+    message: str | None = None
+    fields: dict[str, str] = {}
+    samples: list[LocateSampleOut] = []
 
 
 class CaseRunOut(BaseModel):

@@ -58,9 +58,10 @@ def _within(spec: FixtureSpec, fixture: Fixture) -> None:
             raise Stop(ErrorCode.OUT_OF_POSITION, tr("Objeto '{name}' fora da área permitida", name=spec.name))
 
 
-def _locate(job: Job, image: np.ndarray, files: JobFiles) -> dict[str, Fixture]:
-    """The fixtures of the job, in order; one that is searched inside another looks in that one's upright cut (FR-INS-12)."""
-    found: dict[str, Fixture] = {}
+def _locate(job: Job, image: np.ndarray, files: JobFiles, found: dict[str, Fixture] | None = None) -> dict[str, Fixture]:
+    """The fixtures of the job, in order; one that is searched inside another looks in that one's upright cut (FR-INS-12).
+    `found` is filled as they are found, so a caller that gets a `Stop` still has the ones before it."""
+    found = {} if found is None else found
     for spec in job.geometry.fixtures:
         parent = found.get(spec.inside) if spec.inside else None
         searched, inner = image, None
@@ -79,9 +80,20 @@ def _locate(job: Job, image: np.ndarray, files: JobFiles) -> dict[str, Fixture]:
         if inner is not None:
             fixture = compose(inner, parent, fixture, image.shape)
         fixture = replace(fixture, name=spec.name)
+        found[spec.name] = fixture  # kept even when it is refused: the editor shows how far off it is
         _within(spec, fixture)
-        found[spec.name] = fixture
     return found
+
+
+def locate_fixtures(bundle: JobBundle, image: np.ndarray) -> tuple[dict[str, Fixture], Stop | None]:
+    """Only the locating step of the pipeline: the fixtures found, and why it stopped when it did not find them all or one is
+    out of its range. The editor's anchor step shows it on every sample (docs/frontend.md §7.3)."""
+    found: dict[str, Fixture] = {}
+    try:
+        _locate(bundle.job, image, JobFiles(bundle.extra), found)
+    except Stop as stop:
+        return found, stop
+    return found, None
 
 
 def inspect_job(bundle: JobBundle, frame: Frame) -> InspectionResult:
@@ -160,8 +172,8 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     first = next(iter(fixtures.values()), None)
     details: Mapping[str, Any] = {
         "timings": timings,
-        "anchor": None if first is None else _outline(first, image.shape),
-        "fixtures": [_outline(f, image.shape) | {"name": f.name} for f in fixtures.values()],
+        "anchor": None if first is None else outline(first, image.shape),
+        "fixtures": [outline(f, image.shape) | {"name": f.name} for f in fixtures.values()],
         "regions": regions,
         "tools": tool_details,
     }
@@ -178,9 +190,9 @@ def _pose(fixture: Fixture) -> FixturePose:
     return FixturePose(fixture.name, x, y, angle=fixture.angle, scale=fixture.scale, score=float(fixture.score))
 
 
-def _outline(fixture: Fixture, shape: tuple[int, ...]) -> dict[str, Any]:
+def outline(fixture: Fixture, shape: tuple[int, ...]) -> dict[str, Any]:
     """What the API and the overlay get of a fixture: its upright box (the one the locator gave, when it is not turned), the pose, and the outline."""
-    out: dict[str, Any] = {"rect": list(fixture.bounds(shape)), "score": fixture.score, "angle": fixture.angle, "scale": fixture.scale}
+    out: dict[str, Any] = {"rect": list(fixture.bounds(shape)), "taught": list(fixture.rect), "score": fixture.score, "angle": fixture.angle, "scale": fixture.scale}
     if not fixture.upright:
         out["corners"] = [[round(float(x), 1), round(float(y), 1)] for x, y in fixture.corners(shape)]
     return out
