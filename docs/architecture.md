@@ -183,7 +183,7 @@ The station thread is the only one that runs the pipeline. Tools may use native 
 ```
 src/vision_station/
 ├── core/            # pure types shared everywhere: Pose, Fixture, result contract, error-code catalog
-├── jobs/            # job model (format 1 and 2), camera profile, migrators
+├── jobs/            # job model (format 2), camera profile
 ├── store/           # .vjob / .vbak archives, job store
 ├── cameras/         # driver interface; uvc, hikvision, file (genicam later)
 ├── station/         # acquisition, image trigger, controller (state machine)
@@ -211,13 +211,13 @@ Since R0 (2026-10-17) the packages `core/`, `algorithms/`, `geometry/`, `pipelin
 | Part | Content | Why it's in the job |
 |---|---|---|
 | Metadata | id, name, version, author, created/changed dates, description, parent version | Identify and trace |
-| **Acquisition** (format 2; one block, TD-32) | **Trigger:** the type (`image_presence`, `manual`, `external`, `continuous`) with the parameters of that type: presence area, stillness time and thresholds; delay and debounce; minimum interval. **Image:** the camera profile (resolution, format, exposure and the target brightness, maximum and measuring region of *Auto uma vez*, gain, white balance, focus, zoom, orientation, image-processing switches) and the calibration. Written in full in every version (FR-JOB-16) | Same inspection moment and same image on any installation. Cognex keeps all of it in `AcquireImage` (document 09 §20) |
+| **Acquisition** (format 3; one block, TD-32) | **Trigger:** the type (`image_presence`, `manual`, `external`, `continuous`) with the parameters of that type: presence area, stillness time and thresholds; delay and debounce; minimum interval. **Image:** the camera profile (resolution, format, exposure and the target brightness, maximum and measuring region of *Auto uma vez*, gain, white balance, focus, zoom, orientation, image-processing switches) and the calibration. Written in full in every version (FR-JOB-16) | Same inspection moment and same image on any installation. Cognex keeps all of it in `AcquireImage` (document 09 §20) |
 | Camera raw settings | The driver's own full settings dump (e.g. the Hikvision image-settings XML), including what a driver offers beyond the normalized settings (gain offset, HDR) | Restores settings we don't model by name |
 | Geometry | Fixtures (an ordered list of locators, each optionally inside another fixture), and ROIs relative to a fixture or to the frame | Tolerates object placement, including rotation (NFR-ACC-4, §14) |
 | Tools | Ordered list: tool type, type version, ROI, parameters, thresholds, reason message, whether it affects the result | Same decision logic |
 | Decision rule | How tool results combine into PASS / FAIL (`all_pass` of the tools that affect the result) | Same final result |
 | Image-quality limits (`quality`; no equivalent in the reference products) | Expected brightness and sharpness ranges vs. reference; optional color-reference patch with a drift limit | Detect drift (FR-ACQ-7, FR-INS-16) |
-| Outputs (optional, format 2) | Which tool values are published to the machine interface as user values, with units | Same data to the PLC (FR-INT-11) |
+| Outputs (optional, format 3) | Which tool values are published to the machine interface as user values, with units | Same data to the PLC (FR-INT-11) |
 | Model(s) | ONNX / OpenVINO files, checksum, model card (task, classes, input size, training data, metrics, latency per PC tier) | Same model, traceable |
 | Taught data | Files a tool learned at the station: variation-model statistics, anomaly memory bank | Same decision after restore |
 | Reference image | One image of a good object taken when the job was saved | Verify the camera view after restore |
@@ -236,11 +236,11 @@ tampa-azul-etiqueta_v7.vjob
 ├── job.yaml                 # metadata, acquisition (trigger, image), geometry, tools, decision rule, quality limits, outputs, screen texts
 ├── camera/
 │   ├── profile.yaml         # normalized camera settings (driver-independent names)
-│   ├── calibration.yaml     # format 2, optional: mm per px, distortion
+│   ├── calibration.yaml     # format 3, optional: mm per px, distortion
 │   └── raw/                 # driver-specific dumps, used only by the same driver
 ├── locators/                # templates and shape models used by locators
 ├── patterns/                # templates used by pattern tools
-├── taught/                  # variation models, anomaly memory banks (format 2)
+├── taught/                  # variation models, anomaly memory banks (format 3)
 ├── models/
 │   ├── defects.onnx
 │   └── defects.card.yaml
@@ -252,7 +252,7 @@ tampa-azul-etiqueta_v7.vjob
     └── images/*.png
 ```
 
-**Format 2** (introduced by R1, §18) changes the geometry and adds optional parts. Example `job.yaml`, shortened:
+**Format 2** (R1, VIA-0070) changes the geometry (fixtures with a pose) and the texts (both languages); the optional parts and the `acquisition` block below are **format 3** (VIA-0084). Example `job.yaml`, shortened:
 
 ```yaml
 format: 2
@@ -303,7 +303,7 @@ ui:
 
 Rules:
 - **Checksums:** every file is listed in `manifest.json` with its SHA-256. Import refuses the file if anything is missing or different (FR-JOB-8).
-- **Format version:** `format` is an integer. Newer software includes a **migrator** for each older format and upgrades on import, never in place (NFR-MAI-1). Format 1 → 2: `trigger` and `camera_profile` become the `acquisition` block (`trigger.mode` → `acquisition.trigger.type`; the presence settings go under `image_presence`; a continuous trigger without an interval gets `interval_ms: 0`, the behaviour it had; the delay and the debounce get 0; TD-32); `geometry.locator` becomes a single fixture named `anchor` with angle 0 and scale 1; ROIs `relative_to: anchor` keep their meaning, so results are identical (FR-JOB-13). Older software refuses a newer format with a clear message.
+- **Format version:** `format` is an integer. Newer software refuses a file of a newer format with a clear message, and **refuses an older one too: there is no migrator** (decision of 2026-10-20: nothing is deployed, so a format is forced and old data is made again; `MIGRATORS` in `store/archive.py` stays as the place for one when a station is installed). Format 2 (R1): `geometry.locator` became `geometry.fixtures`, a list of fixtures with a pose, a range and an optional `inside`; ROIs are relative to `frame` or to a fixture; `reason_fail` and `ui.waiting` are `{pt-BR, en}`. Format 3 (VIA-0084): `trigger` and `camera_profile` become the `acquisition` block (TD-32).
 - **Tool versions:** each tool and locator type carries a version. If the software no longer supports that version, the job is refused rather than run with different logic.
 - **Two languages (format 2, TD-30):** texts written in the job (`reason_fail`, `ui.waiting`, sample notes) are maps `{pt-BR: …, en: …}`; format-1 strings migrate as pt-BR (FR-JOB-15).
 - **No secrets, no code:** the writer refuses anything marked secret (NFR-SEC-1); the loader refuses any file type the job's tools and locators don't name, so a job can't carry code (FR-PLT-12).
@@ -820,7 +820,7 @@ Region    = (fixture | frame, rect)       # rect = fractions of the fixture's ta
 
 - **Fixture chains.** A fixture may be searched **inside** another fixture (`inside: part`, `search` in the parent's fractions): a label inside a part, a cap on a bottle. Fixtures run in job order, so a chain is a list, not a graph. A tool type may also *produce* a fixture in a later version (Cognex lets edge and pattern tools do this); not planned until a project needs it.
 - **Allowed range.** Each fixture states its allowed angle and scale range (search range) and, optionally, an allowed position box. A pose outside them is **ERROR E202**, never FAIL: the object is not where the job can judge it.
-- **Format 1 compatibility.** A format-1 anchor is a fixture named `anchor` with angle 0 and scale 1; a format-1 ROI relative to `anchor` maps to exactly the same pixels, so migrated jobs give identical results (FR-JOB-13, checked by the reference set).
+- **No format-1 compatibility** (decision of 2026-10-20: nothing is deployed). A fixture placed as taught (angle 0, scale 1) is cut with the arithmetic the pipeline had before poses, so a job gives the same numbers: `tests/test_pose.py` checks it against the old `resolve_roi` in thousands of random cases.
 
 ### 14.3 Upright region images
 
@@ -832,6 +832,14 @@ For a region in a rotated fixture, the geometry component builds the affine tran
 ### 14.4 Calibration (FR-INS-15)
 
 `camera/calibration.yaml` holds `mm_per_px` (one value, or x and y), the method (`known_dimension` or `checkerboard`), the date and the residual error. Measurement tools (`edge`, `blob`, later `measure`) report both pixels and millimetres when the job is calibrated; a threshold in millimetres in a job without calibration refuses the job on load. The scale is per job because zoom and focus are per job (Hikvision motorized lens). Lens distortion correction (camera matrix + coefficients from OpenCV's calibration) is optional and applied to region cuts only, not to the whole frame, to keep the cost low.
+
+### 14.5 As built (VIA-0070)
+
+- **`geometry/pose.py`:** `Fixture(rect, angle, scale, score, name)` keeps the box the locator gave (fractions of the frame, **before** angle and scale), so a fixture placed as taught is cut with the old expression; `cut(image, rect, fixture)` returns an upright picture, its bounding box, its corners and the map from the picture to the frame; `compose` takes a fixture found in the cut of another to the frame. Angles are degrees, counter-clockwise on the screen. A turned region that leaves the picture (half a pixel of rounding is allowed) is E301.
+- **Locators:** all return a `Fixture` in the coordinates of the image they were given, which is what makes a chain work. `fixed`, `template` v1 and `blob` v1 are unchanged (angle 0, scale 1). **`blob` v2** gives the pose from `cv2.minAreaRect`; with `taught_size` the taught proportions pick the long side, the angle is in (-90°, 90°] and the scale is the area ratio, without it the angle is the smallest turn (-45° to 45°). `shape` and `edges` are R5.
+- **Pipeline:** the fixtures are found in order (one with `inside` is searched in the upright cut of that fixture); a pose outside the `range` of its fixture (angle, scale, position box of the centre) is **E202**, never FAIL. `details` carries `anchor` (the first fixture: `rect` is its upright box, plus `angle`, `scale`, `corners` when turned), `fixtures` (all) and the corners of each turned region; the contract's `FixturePose` has the angle and the scale; the overlay draws turned outlines.
+- **Texts:** `reason_fail` and `ui.waiting` are `{pt-BR, en}` (`jobs/job.py::Text`); a tool's reason is a `Bilingual` text (`core/i18n.py`) that shows in the language of whoever reads it and is recorded in the station language, like the texts of the catalog.
+- **Editor:** the anchor step edits `geometry.fixtures[0]` (named `anchor`) and offers the newest version of each locator; the texts have a field for each language, side by side, with a note when one is missing; an anchor found turned is drawn as its outline and the regions on it are not edited on the frame (the full anchor step, with the range, the angle dial and the chains, is VIA-0071); E202 shows its own banner.
 
 ---
 
@@ -1055,7 +1063,7 @@ Each refactor keeps the existing tests green at every commit and adds its own. O
 | ID | Refactor | Changes | Acceptance | Depends on |
 |---|---|---|---|---|
 | **R0** | Package layout | Move code into `core/`, `pipeline/`, `geometry/`, `algorithms/`, `models/` (§3.3) without behaviour change | All tests pass unchanged; no API change | — |
-| **R1** | Pose and fixtures; job format 2 | `Pose`, `Fixture`, fixture chains, upright region cuts, allowed ranges (E202), format-1 migrator | Format-1 reference sets give identical results after migration; rotated synthetic parts pass V4 at ±15° | R0 |
+| **R1** | Pose and fixtures; job format 2 | `Pose`, `Fixture`, fixture chains, upright region cuts, allowed ranges (E202), job format 2 (no migrator) | An upright fixture cuts exactly what it did before; the reference sets of the tests give the same results; rotated synthetic parts pass V4 at ±15° | R0 |
 | **R2** | Result contract and error codes | Structured result (§10.3), error-code catalog, reason codes, `affects_result`, `simulated`, `sequence` | API keeps old fields; records store the new ones; every `_Stop` path has a code | R0 |
 | **R3** | Machine interface + S7 + Modbus server + remote I/O | Handshake engine, interface map v1, three adapters, `/api/machine` page, PLC sample block | Handshake test suite against a simulated PLC (both adapters); fail-safe tests (kill core, drop link, stop heartbeat) | R2 |
 | **R4** | Tool harness | `algorithms/`, validation checklist V1–V10 automated, tool overlays, benchmark command, tier classification | Existing four tools pass V1–V10 or have tracked exceptions | R0, R2 |

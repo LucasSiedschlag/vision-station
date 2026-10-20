@@ -20,10 +20,21 @@ import { Switch } from '@/components/ui/switch'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
-import { useDraft, toRequest, draftFiles, type Draft, type JobJson } from './draft'
+import { BilingualField } from './BilingualField'
+import {
+  useDraft,
+  toRequest,
+  draftFiles,
+  locatorOf,
+  setLocator,
+  withText,
+  type Draft,
+  type JobJson,
+} from './draft'
 import { type Rect } from './geometry'
 import { blobToBase64, cropPng, type EditorImage } from './image'
 import { useLevel } from '@/app/levels'
+import { currentLocale } from '@/app/locale'
 import { AidsRegion } from './image-aids'
 import { SchemaForm } from './SchemaForm'
 import { ToolGauges } from './gauges'
@@ -614,7 +625,7 @@ export function RegionsStep({
   const types = useTypes()
   const [level] = useLevel('editor')
   const geometry = draft.job.geometry ?? { rois: {} }
-  const locator = geometry.locator ?? null
+  const locator = locatorOf(draft.job)
   const rois: Record<string, { relative_to: string; rect: Rect }> = geometry.rois ?? {}
   const [newName, setNewName] = useState('')
   const schema = types.data?.locators.find((l) => l.name === locator?.type)?.params_schema
@@ -636,11 +647,11 @@ export function RegionsStep({
     edit((d) => {
       d.addFiles[path] = png
       d.removeFiles = d.removeFiles.filter((p) => p !== path)
-      d.job.geometry.locator = {
+      setLocator(d.job.geometry, {
         type: 'template',
         version: 1,
-        params: { ...(d.job.geometry.locator?.params ?? {}), template: path },
-      }
+        params: { ...(locatorOf(d.job)?.params ?? {}), template: path },
+      })
     })
     setCrop(null)
     setDrawing(null)
@@ -659,13 +670,13 @@ export function RegionsStep({
                 onValueChange={(v) =>
                   setGeometry((g) => {
                     if (v === 'none') {
-                      delete g.locator
+                      setLocator(g, null)
                       for (const r of Object.values(g.rois ?? {}) as JobJson[])
                         r.relative_to = 'frame'
                       return
                     }
                     const [type, version] = v.split('@')
-                    g.locator = {
+                    setLocator(g, {
                       type,
                       version: Number(version),
                       params:
@@ -674,15 +685,27 @@ export function RegionsStep({
                           : type === 'blob'
                             ? { mode: 'dark' }
                             : {},
-                    }
+                    })
                   })
                 }
                 options={[
                   { value: 'none', label: t.noLocator },
-                  ...(types.data?.locators ?? []).map((l) => ({
-                    value: `${l.name}@${l.version}`,
-                    label: t.locatorNames[l.name as keyof typeof t.locatorNames] ?? l.name,
-                  })),
+                  ...(types.data?.locators ?? [])
+                    .filter(
+                      (l) =>
+                        // the newest version of each type is offered; an older one only while the job uses it
+                        l.version ===
+                          Math.max(
+                            ...(types.data?.locators ?? [])
+                              .filter((x) => x.name === l.name)
+                              .map((x) => x.version),
+                          ) ||
+                        (locator?.type === l.name && locator?.version === l.version),
+                    )
+                    .map((l) => ({
+                      value: `${l.name}@${l.version}`,
+                      label: t.locatorNames[l.name as keyof typeof t.locatorNames] ?? l.name,
+                    })),
                 ]}
               />
             )}
@@ -723,8 +746,10 @@ export function RegionsStep({
               schema={schema}
               level={level}
               value={locator.params ?? {}}
-              errors={prefixed(fields, 'job.geometry.locator.params')}
-              onChange={(params) => setGeometry((g) => (g.locator.params = params), false)}
+              errors={prefixed(fields, 'job.geometry.fixtures.0.locator.params')}
+              onChange={(params) =>
+                setGeometry((g) => (g.fixtures[0].locator.params = params), false)
+              }
             />
           ) : null}
         </>
@@ -834,7 +859,7 @@ export function ToolsStep({
   const [adding, setAdding] = useState('')
   const roiNames = [
     'frame',
-    ...(draft.job.geometry?.locator ? ['anchor'] : []),
+    ...((draft.job.geometry?.fixtures ?? []) as JobJson[]).map((f) => f.name as string),
     ...Object.keys(draft.job.geometry?.rois ?? {}),
   ]
   const setTools = (change: (list: JobJson[]) => void, history = true) =>
@@ -980,21 +1005,13 @@ export function ToolsStep({
                   ) : (
                     <p className="text-sm text-warn-text">{t.unknownType}</p>
                   )}
-                  <Field
+                  <BilingualField
                     label={t.reasonFail}
                     hint={t.reasonHint}
                     error={fields[`job.tools.${i}.reason_fail`]}
-                  >
-                    {(props) => (
-                      <Input
-                        {...props}
-                        value={tool.reason_fail ?? ''}
-                        onChange={(e) =>
-                          setTools((list) => (list[i]!.reason_fail = e.target.value), false)
-                        }
-                      />
-                    )}
-                  </Field>
+                    value={tool.reason_fail}
+                    onChange={(next) => setTools((list) => (list[i]!.reason_fail = next), false)}
+                  />
                 </div>
               ) : null}
             </li>
@@ -1037,7 +1054,7 @@ export function ToolsStep({
                       : type === 'detect'
                         ? { model: '' }
                         : {},
-                reason_fail: t.defaultReason,
+                reason_fail: withText(null, currentLocale(), t.defaultReason),
               }),
             )
             setOpen(tools.length)

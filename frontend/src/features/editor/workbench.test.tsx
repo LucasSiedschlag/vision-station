@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import { useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { Stepper } from '@/components/ui/stepper'
@@ -7,6 +8,8 @@ import type { Draft } from './draft'
 import { Filmstrip } from './Filmstrip'
 import { ResultBar } from './ResultBar'
 import { AnchorNotFound, CameraLost } from './StateBanners'
+import { BilingualField } from './BilingualField'
+import { RegionCanvas } from './RegionCanvas'
 
 mockApi()
 
@@ -214,5 +217,83 @@ describe('the step rail', () => {
     expect(second).toHaveAttribute('title', 'Amostras: Capture a referência')
     expect(screen.getByText('Amostras').parentElement).toHaveClass('sr-only') // read, not shown
     expect(second).toHaveTextContent('2')
+  })
+})
+
+describe('the anchor turned or out of range', () => {
+  it('says the object is out of the allowed range (E202) and that it is an error, not a failure', () => {
+    render(
+      <AnchorNotFound
+        code="E202"
+        reason="Objeto 'anchor' girado 28,0° (permitido -15° a 15°)"
+        onOpen={() => {}}
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Objeto fora da faixa permitida (E202)')
+    expect(screen.getByRole('alert')).toHaveTextContent('girado 28,0°')
+    expect(screen.getByRole('alert')).toHaveTextContent('É ERRO, não reprovação')
+  })
+
+  it('draws a turned fixture and a turned region as their outline, not as a rectangle', () => {
+    const image = { url: 'blob:x', width: 640, height: 480, source: 'live' as const }
+    const { container } = render(
+      <RegionCanvas
+        image={image}
+        selected={null}
+        onSelect={() => {}}
+        onChange={() => {}}
+        drawing={null}
+        emptyText=""
+        shapes={[
+          {
+            id: 'anchor',
+            label: 'âncora',
+            rect: [0.2, 0.2, 0.8, 0.8],
+            kind: 'anchor',
+            outline: [
+              [0.25, 0.2],
+              [0.8, 0.3],
+              [0.75, 0.8],
+              [0.2, 0.7],
+            ],
+          },
+          { id: 'result:t', label: 't', rect: [0.3, 0.3, 0.5, 0.5], kind: 'pass' },
+        ]}
+      />,
+    )
+    const polygon = container.querySelector('[data-shape="anchor"] polygon')
+    expect(polygon).toHaveAttribute('points', '0.25,0.2 0.8,0.3 0.75,0.8 0.2,0.7')
+    expect(container.querySelector('[data-shape="anchor"] rect')).toBeNull()
+    expect(container.querySelector('[data-shape="result:t"] rect')).not.toBeNull() // an upright one is still a rectangle
+  })
+})
+
+describe('a text of the job in both languages', () => {
+  it('has a field for each, writing one keeps the other, and says which is missing', async () => {
+    const seen: unknown[] = []
+    const Harness = () => {
+      const [value, setValue] = useState<unknown>({ 'pt-BR': 'Tampa ausente', en: '' })
+      return (
+        <BilingualField
+          label="Motivo da reprovação"
+          value={value}
+          onChange={(next) => (seen.push(next), setValue(next))}
+        />
+      )
+    }
+    render(<Harness />)
+    expect(screen.getByText(/Falta o texto em Inglês/)).toBeInTheDocument() // the job falls back to Portuguese until it is written
+    await userEvent.type(screen.getByLabelText('Inglês'), 'Cap missing')
+    expect(seen.at(-1)).toEqual({ 'pt-BR': 'Tampa ausente', en: 'Cap missing' })
+    expect(screen.queryByText(/Falta o texto/)).not.toBeInTheDocument()
+    await userEvent.clear(screen.getByLabelText('Português'))
+    expect(seen.at(-1)).toEqual({ 'pt-BR': '', en: 'Cap missing' })
+    expect(screen.getByText(/Falta o texto em Português/)).toBeInTheDocument()
+  })
+
+  it('reads a bare text as Portuguese', () => {
+    render(<BilingualField label="Texto" value="Aguardando peça" onChange={() => {}} />)
+    expect(screen.getByLabelText('Português')).toHaveValue('Aguardando peça')
+    expect(screen.getByLabelText('Inglês')).toHaveValue('')
   })
 })

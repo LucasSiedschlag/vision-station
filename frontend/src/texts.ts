@@ -818,6 +818,17 @@ export const text = {
     get powerLine() {
       return t`Rede elétrica`
     },
+    /** A text of the job written in both languages (FR-JOB-15). */
+    bilingual: {
+      get pt() {
+        return t`Português`
+      },
+      get en() {
+        return t`Inglês`
+      },
+      missing: (language: string) =>
+        t`Falta o texto em ${language}: o job usa o do outro idioma até você escrever.`,
+    },
     /** The strip of samples under the image (docs/frontend.md §10.1). */
     strip: {
       get label() {
@@ -896,6 +907,10 @@ export const text = {
     /** What the image area says when it cannot show the usual (docs/frontend.md §19.1). */
     states: {
       anchorNotFound: (code: string) => t`Âncora não encontrada (${code})`,
+      anchorOutOfRange: (code: string) => t`Objeto fora da faixa permitida (${code})`,
+      get rangeHint() {
+        return t`A peça está girada, num tamanho ou num lugar que o job não aceita; as ferramentas não rodaram. É ERRO, não reprovação.`
+      },
       get anchorHint() {
         return t`As ferramentas não rodaram. As amostras e a referência continuam abertas.`
       },

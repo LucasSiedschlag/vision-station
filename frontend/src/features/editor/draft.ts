@@ -187,3 +187,45 @@ export function newDraft(profile: JobJson | null): Draft {
     notes: '',
   }
 }
+
+/** The locator of the job's first fixture, the one the editor calls the anchor (docs/frontend.md §7.3); null when there is none. */
+export const locatorOf = (job: JobJson): JobJson | null =>
+  job.geometry?.fixtures?.[0]?.locator ?? null
+
+/** Sets the locator of the first fixture (named `anchor`), keeping its range and the fixtures after it; null removes the fixtures. */
+export function setLocator(geometry: JobJson, locator: JobJson | null) {
+  if (locator === null) {
+    geometry.fixtures = []
+    return
+  }
+  const [first, ...rest] = (geometry.fixtures ?? []) as JobJson[]
+  geometry.fixtures = [{ ...(first ?? { name: 'anchor' }), locator }, ...rest]
+}
+
+/** The text of a job in a language: `{pt-BR, en}`, or a bare text (Portuguese). An empty one falls back to the other language. */
+export function textIn(value: unknown, language: 'pt-BR' | 'en'): string {
+  if (typeof value === 'string') return value
+  const t = (value ?? {}) as Record<string, string>
+  const other = language === 'en' ? 'pt-BR' : 'en'
+  return t[language] || t[other] || ''
+}
+
+/** The text exactly as written in one language, with no fallback: what its own field shows. */
+export const writtenIn = (value: unknown, language: 'pt-BR' | 'en'): string =>
+  typeof value === 'string'
+    ? language === 'pt-BR'
+      ? value
+      : ''
+    : (((value ?? {}) as Record<string, string>)[language] ?? '')
+
+/** The text with one language changed; the other is kept. An empty text in both is `null` for an optional one. */
+export function withText(
+  value: unknown,
+  language: 'pt-BR' | 'en',
+  written: string,
+): { 'pt-BR': string; en: string } {
+  return {
+    'pt-BR': language === 'pt-BR' ? written : writtenIn(value, 'pt-BR'),
+    en: language === 'en' ? written : writtenIn(value, 'en'),
+  }
+}

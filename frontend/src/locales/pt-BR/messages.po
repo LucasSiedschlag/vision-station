@@ -241,6 +241,9 @@ msgstr "{label} ({count})"
 msgid "reprova"
 msgstr "reprova"
 
+msgid "Inglês"
+msgstr "Inglês"
+
 msgid "Perfil"
 msgstr "Perfil"
 
@@ -971,6 +974,9 @@ msgstr "Acha o objeto na imagem, para as regiões acompanharem quando ele muda d
 msgid "já existia"
 msgstr "já existia"
 
+msgid "Português"
+msgstr "Português"
+
 msgid "Supervisor"
 msgstr "Supervisor"
 
@@ -1334,6 +1340,9 @@ msgstr "Sair por inatividade após"
 msgid "Claro"
 msgstr "Claro"
 
+msgid "Objeto fora da faixa permitida ({code})"
+msgstr "Objeto fora da faixa permitida ({code})"
+
 msgid "Confira o nome e o que mudou, e salve como uma nova versão. Ativar é feito na página do job."
 msgstr "Confira o nome e o que mudou, e salve como uma nova versão. Ativar é feito na página do job."
 
@@ -1610,6 +1619,9 @@ msgstr "Saturação"
 msgid "Desenhar a posição do objeto"
 msgstr "Desenhar a posição do objeto"
 
+msgid "Falta o texto em {language}: o job usa o do outro idioma até você escrever."
+msgstr "Falta o texto em {language}: o job usa o do outro idioma até você escrever."
+
 msgid "Tipo da amostra {image}"
 msgstr "Tipo da amostra {image}"
 
@@ -1729,6 +1741,9 @@ msgstr "As mudanças não salvas são perdidas. A versão salva continua como es
 
 msgid "O sistema disse {said}. Qual era o resultado certo?"
 msgstr "O sistema disse {said}. Qual era o resultado certo?"
+
+msgid "A peça está girada, num tamanho ou num lugar que o job não aceita; as ferramentas não rodaram. É ERRO, não reprovação."
+msgstr "A peça está girada, num tamanho ou num lugar que o job não aceita; as ferramentas não rodaram. É ERRO, não reprovação."
 
 msgid "melhor: {peak}"
 msgstr "melhor: {peak}"

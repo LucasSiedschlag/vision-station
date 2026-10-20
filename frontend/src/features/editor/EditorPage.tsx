@@ -30,6 +30,7 @@ import { text } from '@/texts'
 import {
   draftFiles,
   forgetDraft,
+  locatorOf,
   newDraft,
   savedDraft,
   toRequest,
@@ -209,9 +210,8 @@ function Editor({
         level,
       ).length,
     hiddenChanged(
-      types.data?.locators.find((l) => l.name === draft.job.geometry?.locator?.type)
-        ?.params_schema ?? {},
-      draft.job.geometry?.locator?.params ?? {},
+      types.data?.locators.find((l) => l.name === locatorOf(draft.job)?.type)?.params_schema ?? {},
+      locatorOf(draft.job)?.params ?? {},
       level,
     ).length,
   )
@@ -327,6 +327,7 @@ function Editor({
             result: measurement.result,
             regions: measurement.regions,
             anchor: measurement.anchor,
+            fixtures: measurement.fixtures ?? [],
             tools: measurement.tools,
             timings: measurement.timings,
             width: measurement.width,
@@ -422,11 +423,16 @@ function Editor({
 
   // --- what is drawn over the image ------------------------------------------------------------------
   const geometry = draft.job.geometry ?? {}
-  const locator = geometry.locator
+  const locator = locatorOf(draft.job)
   const anchor: Rect | null =
     locator?.type === 'fixed'
       ? (locator.params?.rect ?? null)
       : ((test?.anchor as Rect | undefined) ?? null)
+  // an anchor found turned or at another size: its outline is drawn as it is, and the regions on it are not edited on the frame
+  const found = test?.fixtures?.[0]
+  const turned = !!found && (found.angle !== 0 || found.scale !== 1) && !!found.corners
+  const outline = (corners: number[][] | null | undefined): [number, number][] | undefined =>
+    corners && test ? corners.map(([x, y]) => [x! / test.width, y! / test.height]) : undefined
   const shapes = useMemo<Shape[]>(() => {
     const out: Shape[] = []
     const editAnchor = step === 'anchor'
@@ -459,12 +465,19 @@ function Editor({
         kind: 'locator',
         editable: editAnchor,
       })
-    else if (anchor) out.push({ id: 'anchor', label: t.anchorLabel, rect: anchor, kind: 'anchor' })
+    else if (anchor)
+      out.push({
+        id: 'anchor',
+        label: t.anchorLabel,
+        rect: anchor,
+        kind: 'anchor',
+        outline: turned ? outline(found?.corners) : undefined,
+      })
     if (step !== 'image')
       for (const [name, roi] of Object.entries(
         (geometry.rois ?? {}) as Record<string, { relative_to: string; rect: Rect }>,
       )) {
-        if (roi.relative_to === 'anchor' && !anchor) continue
+        if (roi.relative_to !== 'frame' && (!anchor || turned)) continue
         out.push({
           id: `roi:${name}`,
           label: name,
@@ -489,13 +502,15 @@ function Editor({
             r.rect[3]! / test.height,
           ],
           kind: r.passed ? 'pass' : 'fail',
+          outline: outline(r.corners),
         })
     return out
-  }, [draft, step, anchor, locator, geometry.rois, crop, test, sampleRect])
+  }, [draft, step, anchor, locator, geometry.rois, crop, test, sampleRect, turned, found]) // eslint-disable-line react-hooks/exhaustive-deps -- `outline` is made of `test`
   const hiddenAnchored =
     Object.values((geometry.rois ?? {}) as Record<string, { relative_to: string }>).some(
       (r) => r.relative_to === 'anchor',
-    ) && !anchor
+    ) &&
+    (!anchor || turned)
 
   const onShapeChange = (shapeId: string, rect: Rect, first: boolean) => {
     if (shapeId === 'crop') {
@@ -512,7 +527,10 @@ function Editor({
       if (shapeId === 'presence') d.job.trigger.presence_roi = rect
       else if (shapeId === 'autoexp') d.profile.exposure.auto_once.region = rect
       else if (shapeId === 'locator')
-        d.job.geometry.locator.params = { ...d.job.geometry.locator.params, rect }
+        d.job.geometry.fixtures[0].locator.params = {
+          ...d.job.geometry.fixtures[0].locator.params,
+          rect,
+        }
       else if (shapeId.startsWith('roi:')) {
         const roi = d.job.geometry.rois[shapeId.slice(4)]
         roi.rect = roi.relative_to === 'anchor' && anchor ? frameToAnchor(rect, anchor) : rect

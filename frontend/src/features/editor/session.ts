@@ -16,6 +16,8 @@ export type SessionResult = {
   result: components['schemas']['ResultOut']
   regions: components['schemas']['RegionOut'][]
   anchor: number[] | null
+  /** every fixture: its upright box, its pose and, when it is turned, its outline in pixels */
+  fixtures?: components['schemas']['FixtureShape'][]
   tools: Record<string, unknown>
   timings: Record<string, unknown>
 }

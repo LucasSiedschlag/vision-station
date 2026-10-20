@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 02 — Functional Requirements, Non-Functional Requirements and Use Cases |
-| Version | 0.7 — the job's acquisition block and the two layers, job and station (document 09 v0.3, TD-32): FR-TRG-8, FR-ACQ-10/11, FR-INT-17, FR-JOB-16 new; FR-PLT-3, FR-TRG-6/7, FR-INT-6, FR-UI-11 changed. 0.6 — trigger timing and remote I/O outputs from the market reference (document 09, TD-31): FR-TRG-6/7, FR-INT-14..16, FR-LOG-9 new; FR-INT-6 changed. 0.5 — interface in Portuguese and English (FR-UI-5, FR-INS-7 changed; FR-JOB-15 new; TD-30). 0.4 — interface requirements of document 05 v0.2 (FR-UI-9..14, FR-JOB-14, FR-ADM-8). 0.3 — robust core, machine connectors, minimum tool set, CPU-only PC tiers |
+| Version | 0.8 — no migrator while nothing is deployed (FR-JOB-13 suspended, FR-JOB-16 is format 3). 0.7 — the job's acquisition block and the two layers, job and station (document 09 v0.3, TD-32): FR-TRG-8, FR-ACQ-10/11, FR-INT-17, FR-JOB-16 new; FR-PLT-3, FR-TRG-6/7, FR-INT-6, FR-UI-11 changed. 0.6 — trigger timing and remote I/O outputs from the market reference (document 09, TD-31): FR-TRG-6/7, FR-INT-14..16, FR-LOG-9 new; FR-INT-6 changed. 0.5 — interface in Portuguese and English (FR-UI-5, FR-INS-7 changed; FR-JOB-15 new; TD-30). 0.4 — interface requirements of document 05 v0.2 (FR-UI-9..14, FR-JOB-14, FR-ADM-8). 0.3 — robust core, machine connectors, minimum tool set, CPU-only PC tiers |
 | Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform requirements (TD-19). New and changed items are marked **(new 0.3)** / **(changed 0.3)**. |
@@ -125,10 +125,10 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-JOB-10 | The system shall make an automatic backup on a schedule (proposed: daily) and every time a job changes, to a configurable folder (e.g. a network share or USB drive). It shall keep the last N backups (proposed: 30). | S |
 | FR-JOB-11 | A job created for one camera type shall be importable on the other camera type. Camera settings that do not apply shall be flagged for review rather than silently ignored. | C |
 | FR-JOB-12 | **(new 0.3)** Before a new version of an active job is activated, the Maintainer shall be able to replay it on recorded frames of the previous version and see which outcomes and scores would change. Replayed results are simulated and not recorded as inspections. | S (D) |
-| FR-JOB-13 | **(new 0.3)** Jobs in format 1 shall be migrated to format 2 on import or first load, as a new copy, giving the same results on their reference sets. | M (A) |
+| FR-JOB-13 | **(new 0.3, suspended 0.8)** Jobs in format 1 shall be migrated to format 2 on import or first load, as a new copy, giving the same results on their reference sets. *Suspended on 2026-10-20: nothing is deployed, so a format is forced and an older file is refused with a clear message; it comes back when a station is installed.* | M (A) |
 | FR-JOB-14 | **(new 0.4)** The Supervisor shall be able to change a job's tolerance limits only (parameters marked tunable), creating a new version that is verified before activation and recorded in the audit log. The server shall refuse any other change made through this path (document 05 §7.12). | S |
 | FR-JOB-15 | **(new 0.5)** Texts written in a job (failure reasons, waiting text, sample notes) shall hold both languages (job format 2). A missing translation falls back to the other language and is flagged when the job is validated; format-1 texts are read as Portuguese. | M (A) |
-| FR-JOB-16 | **(new 0.7)** The acquisition block of a job (trigger type with its parameters, image settings, calibration) shall be written in full in every saved version, and a job whose block lacks a parameter shall be refused. A change of a default in the software shall never change the behaviour of a saved version; a format migrator writes the behaviour the older software had (TD-32). | M |
+| FR-JOB-16 | **(new 0.7)** The acquisition block of a job (trigger type with its parameters, image settings, calibration) shall be written in full in every saved version, and a job whose block lacks a parameter shall be refused. A change of a default in the software shall never change the behaviour of a saved version; the block is job format 3 and is forced, with no migrator while nothing is deployed (TD-32). | M |
 
 ### 3.5 Operator screen (UI)
 
@@ -456,7 +456,7 @@ Covers: FR-JOB-6/7/10, NFR-USA-3.
 
 **Main flow**
 1. The user chooses "Importar" and selects the file.
-2. The system checks integrity and format version (FR-JOB-8); a format-1 job is migrated to a format-2 copy (FR-JOB-13).
+2. The system checks integrity and format version (FR-JOB-8); a job of an older format is refused with a clear message (FR-JOB-13 is suspended).
 3. The system lists what the file contains and what it will replace. The user confirms.
 4. The system stores the jobs. Existing versions are kept, not overwritten.
 5. For the job to be activated, the system runs verification (FR-JOB-9): apply settings, read back, capture, compare with reference, run tools on reference images.

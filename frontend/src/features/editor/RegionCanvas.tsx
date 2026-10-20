@@ -37,6 +37,8 @@ export interface Shape {
   rect: Rect // fractions of the frame
   kind: 'roi' | 'presence' | 'locator' | 'anchor' | 'pass' | 'fail'
   editable?: boolean
+  /** The outline of a shape that is turned, fractions of the frame: drawn instead of the rectangle. */
+  outline?: [number, number][]
   /** The layer it belongs to; `null`: a working aid (a crop, a sample being dragged) that no layer hides. */
   layer?: Layer | null
 }
@@ -352,22 +354,32 @@ export function RegionCanvas({
                       'outline-none',
                     )}
                   >
-                    <rect
-                      x={x0}
-                      y={y0}
-                      width={x1 - x0}
-                      height={y1 - y0}
-                      className={cn(
-                        'fill-transparent',
-                        colours[shape.kind],
-                        isSelected && 'fill-accent/10',
-                      )}
-                      strokeWidth={isSelected ? 3 : 2}
-                      strokeDasharray={
-                        shape.kind === 'presence' || shape.kind === 'anchor' ? '6 4' : undefined
-                      }
-                      vectorEffect="non-scaling-stroke"
-                    />
+                    {shape.outline ? (
+                      <polygon
+                        points={shape.outline.map(([px, py]) => `${px},${py}`).join(' ')}
+                        className={cn('fill-transparent', colours[shape.kind])}
+                        strokeWidth={2}
+                        strokeDasharray={shape.kind === 'anchor' ? '6 4' : undefined}
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    ) : (
+                      <rect
+                        x={x0}
+                        y={y0}
+                        width={x1 - x0}
+                        height={y1 - y0}
+                        className={cn(
+                          'fill-transparent',
+                          colours[shape.kind],
+                          isSelected && 'fill-accent/10',
+                        )}
+                        strokeWidth={isSelected ? 3 : 2}
+                        strokeDasharray={
+                          shape.kind === 'presence' || shape.kind === 'anchor' ? '6 4' : undefined
+                        }
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    )}
                     {isSelected && shape.editable
                       ? HANDLES.map((h) => {
                           const cx = h.includes('w') ? x0 : h.includes('e') ? x1 : (x0 + x1) / 2

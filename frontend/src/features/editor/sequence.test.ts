@@ -78,7 +78,7 @@ describe('the state of each step', () => {
       withReference(draft({}, { tools: [tool] })),
       {
         'job.quality.brightness.min': 'x',
-        'job.geometry.locator.params.rect': 'x',
+        'job.geometry.fixtures.0.locator.params.rect': 'x',
         'job.tools.0.params.min_fraction': 'x',
         'profile.exposure': 'x',
       },
@@ -90,7 +90,7 @@ describe('the state of each step', () => {
     expect(info.tools.state).toBe('attention')
     expect(info.image.state).toBe('attention')
     expect(info.outputs.state).toBe('todo')
-    expect(stepOfField('job.geometry.locator.type')).toBe('anchor')
+    expect(stepOfField('job.geometry.fixtures.0.locator.type')).toBe('anchor')
     expect(stepOfField('job.geometry.rois.cap.rect')).toBe('tools')
     expect(stepOfField('add_files')).toBe('samples')
     // the trigger is set with the image (TD-32), the quality gates are their own step

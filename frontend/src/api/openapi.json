@@ -1195,6 +1195,14 @@
             ],
             "title": "Anchor"
           },
+          "fixtures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FixtureShape"
+            },
+            "title": "Fixtures",
+            "type": "array"
+          },
           "height": {
             "title": "Height",
             "type": "integer"
@@ -1232,6 +1240,7 @@
           "result",
           "regions",
           "anchor",
+          "fixtures",
           "tools",
           "timings",
           "width",
@@ -1319,6 +1328,58 @@
         },
         "required": ["name", "x", "y", "score"],
         "title": "FixtureOut",
+        "type": "object"
+      },
+      "FixtureShape": {
+        "description": "A fixture as the editor draws it: its upright box, the pose and, when turned, the outline (architecture §14).",
+        "properties": {
+          "angle": {
+            "default": 0.0,
+            "title": "Angle",
+            "type": "number"
+          },
+          "corners": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corners"
+          },
+          "name": {
+            "default": "anchor",
+            "title": "Name",
+            "type": "string"
+          },
+          "rect": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Rect",
+            "type": "array"
+          },
+          "scale": {
+            "default": 1.0,
+            "title": "Scale",
+            "type": "number"
+          },
+          "score": {
+            "default": 1.0,
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": ["name", "rect", "angle", "scale", "score", "corners"],
+        "title": "FixtureShape",
         "type": "object"
       },
       "FolderCheckBody": {
@@ -2793,6 +2854,23 @@
             "title": "Affects Result",
             "type": "boolean"
           },
+          "corners": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corners"
+          },
           "passed": {
             "title": "Passed",
             "type": "boolean"
@@ -2813,7 +2891,7 @@
             "type": "string"
           }
         },
-        "required": ["tool", "roi", "rect", "passed", "affects_result"],
+        "required": ["tool", "roi", "rect", "passed", "affects_result", "corners"],
         "title": "RegionOut",
         "type": "object"
       },
@@ -7111,7 +7189,7 @@
     },
     "/api/jobs/{job_id}/versions/{version}/files/{path}": {
       "get": {
-        "description": "One file of a saved version (a reference image, a template), for the editor to show.",
+        "description": "One file of a saved version (a reference image, a template), for the editor to show. `width` reduces an image\n(the thumbnails of the filmstrip do not carry full frames).",
         "operationId": "job_file",
         "parameters": [
           {
@@ -7139,6 +7217,24 @@
             "schema": {
               "title": "Path",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 1920,
+                  "minimum": 32,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Width"
             }
           },
           {

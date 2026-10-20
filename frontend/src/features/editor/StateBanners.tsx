@@ -38,9 +38,9 @@ export function AnchorNotFound({
     >
       <TriangleAlert aria-hidden className="size-4 shrink-0" />
       <span className="flex min-w-0 flex-col">
-        <strong>{s.anchorNotFound(code)}</strong>
+        <strong>{code === 'E202' ? s.anchorOutOfRange(code) : s.anchorNotFound(code)}</strong>
         <span>{reason}</span>
-        <span>{s.anchorHint}</span>
+        <span>{code === 'E202' ? s.rangeHint : s.anchorHint}</span>
       </span>
       <Button variant="ghost" className="ml-auto" onClick={onOpen}>
         {s.openAnchor}

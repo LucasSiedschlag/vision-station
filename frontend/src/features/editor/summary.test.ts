@@ -68,7 +68,7 @@ describe('what changed, in words', () => {
       {
         geometry: {
           rois: { outra: { relative_to: 'frame', rect: [0, 0, 1, 1] } },
-          locator: { type: 'blob', version: 1, params: {} },
+          fixtures: [{ name: 'anchor', locator: { type: 'blob', version: 1, params: {} } }],
         },
         trigger: { mode: 'continuous' },
         ui: { waiting: 'Aguardando peça' },

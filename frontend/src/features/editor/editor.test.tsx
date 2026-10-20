@@ -1068,7 +1068,14 @@ describe('the job editor', () => {
     expect(created.profile.exposure.value_us).toBe(8000)
     expect(created.add_files['reference/reference.png']).toBe('AAAA')
     expect(created.job.tools).toEqual([
-      { id: 'code1', type: 'code', version: 1, roi: 'frame', params: {}, reason_fail: 'Falhou' },
+      {
+        id: 'code1',
+        type: 'code',
+        version: 1,
+        roi: 'frame',
+        params: {},
+        reason_fail: { 'pt-BR': 'Falhou', en: '' },
+      },
     ])
   })
 })

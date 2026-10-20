@@ -557,6 +557,8 @@ Then:
 - **Result on every sample:** a grid of thumbnails with the found pose drawn (`PoseMarker`) and the score. Not found is shown in amber with the reason.
 - **Fixture chains** (FR-INS-12) at Avançado: *Adicionar âncora dentro desta*.
 
+**As built (VIA-0070).** The anchor step still edits **one** locator, now the first fixture (`geometry.fixtures[0]`, named `anchor`) of format 2, and offers the newest version of each locator type (`blob` v2 for a part that may arrive turned). An anchor found turned or at another size is drawn as its outline, and the regions on it are not edited on the frame while it is turned; the result bar and the image banner say **E202** (turned, too large or small, or out of its area) as an ERROR, with its own words. Texts written in the job (*Motivo da reprovação*, *Texto de espera*) are two fields side by side, *Português* and *Inglês*, with a note when one is missing (the job uses the other until it is written). Not built here, and the work of VIA-0071: the allowed range (angle dial, scale, position box), the taught size, fixture chains, the result on every sample with the found pose.
+
 **4 · Ferramentas**
 
 The inspector is split vertically (§10.1):

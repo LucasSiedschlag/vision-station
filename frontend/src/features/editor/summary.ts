@@ -1,7 +1,7 @@
 import { formatNumber, formatPercent } from '@/lib/number'
 import { text } from '@/texts'
 import type { TypeInfo } from '@/api/queries/editor'
-import { type Draft, type JobJson } from './draft'
+import { locatorOf, type Draft, type JobJson } from './draft'
 import type { Schema } from './SchemaForm'
 
 const c = text.editor.change
@@ -95,12 +95,12 @@ export function summarizeChanges(
     )
   if (removed.length) out.push(c.samplesRemoved(removed.length))
 
-  const wasLocator = baseJob.geometry?.locator
-  const locator = job.geometry?.locator
+  const wasLocator = locatorOf(baseJob)
+  const locator = locatorOf(job)
   if (!same(wasLocator, locator))
     out.push(
       !wasLocator
-        ? c.anchorAdded(locator.type)
+        ? c.anchorAdded(locator!.type)
         : !locator
           ? c.anchorRemoved
           : c.anchorChanged(locator.type),
@@ -126,7 +126,7 @@ export function summarizeChanges(
     if (tool.roi !== was.roi) out.push(c.toolRegion(tool.id, was.roi, tool.roi))
     if ((tool.affects_result ?? true) !== (was.affects_result ?? true))
       out.push(tool.affects_result === false ? c.toolInformative(tool.id) : c.toolDecides(tool.id))
-    if ((tool.reason_fail ?? '') !== (was.reason_fail ?? '')) out.push(c.toolReason(tool.id))
+    if (!same(tool.reason_fail ?? '', was.reason_fail ?? '')) out.push(c.toolReason(tool.id))
   }
   for (const was of wasTools)
     if (!tools.some((x) => x.id === was.id)) out.push(c.toolRemoved(was.id))

@@ -1,5 +1,5 @@
 import { text } from '@/texts'
-import { draftFiles, type Draft, type JobJson } from './draft'
+import { draftFiles, locatorOf, type Draft, type JobJson } from './draft'
 
 /**
  * The order of work of the job editor and the state of each step (docs/frontend.md §4.3, FR-UI-11). The sequence guides
@@ -30,7 +30,7 @@ export interface StepInfo {
 export const STEP_FIELDS: Record<StepId, string[]> = {
   image: ['profile', 'job.trigger'],
   samples: ['add_files'],
-  anchor: ['job.geometry.locator'],
+  anchor: ['job.geometry.fixtures'],
   tools: ['job.tools', 'job.geometry'],
   quality: ['job.quality'],
   outputs: ['job.ui', 'job.decision'],
@@ -38,7 +38,7 @@ export const STEP_FIELDS: Record<StepId, string[]> = {
   save: ['job.job', 'job.format'],
 }
 
-/** The step a server field path belongs to: the most specific prefix wins (`job.geometry.locator` is not Ferramentas). */
+/** The step a server field path belongs to: the most specific prefix wins (`job.geometry.fixtures` is not Ferramentas). */
 export function stepOfField(path: string): StepId | null {
   let best: { step: StepId; length: number } | null = null
   for (const step of STEPS)
@@ -136,7 +136,7 @@ export function stepStates(
     'anchor',
     needsReference
       ? { state: 'blocked', reason: needsReference }
-      : draft.job.geometry?.locator || visited.has('anchor')
+      : locatorOf(draft.job) || visited.has('anchor')
         ? { state: 'done', reason: '' }
         : { state: 'todo', reason: '' },
   )

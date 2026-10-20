@@ -707,7 +707,7 @@ Status: **Has** = already in our documents; **Adopt** = proposed here, needs a d
 | 38 | **One acquisition block** in the job: trigger, image settings, calibration | `AcquireImage` | Image Optimization | `acquisition:` in job format 2 (architecture §4.1, document 08 §7) | **Decided** (TD-32 §2) |
 | 39 | **The trigger type carries its own timing** | `Delay` (by type) | Internal interval, External delay | Sub-block per type: `external {delay_ms, debounce_ms}`, `continuous {interval_ms}`, `image_presence {…}` | **Decided** (TD-32 §3). Two named fields instead of one overloaded `Delay`: deliberate difference |
 | 40 | **Trigger debounce** | `Trigger Debounce` in `AcquireImage` | IN1 edge on the sensor | `external.debounce_ms` in the job (FR-TRG-8); the edge in the station (FR-INT-17) | **Decided** (TD-32 §4) |
-| 41 | **Jobs written in full** | Every `AcquireImage` parameter is in every job | — | Format 2 refuses an incomplete block (FR-JOB-16) | **Decided** (TD-32 §5) |
+| 41 | **Jobs written in full** | Every `AcquireImage` parameter is in every job | — | Format 3 refuses an incomplete block (FR-JOB-16) | **Decided** (TD-32 §5) |
 | 42 | **Orientation** | `Orientation` 0 – 3 | — | `orientation` in the profile (FR-ACQ-10) | **Decided** (TD-32 §6) |
 | 43 | **Auto-exposure parameters** | Mode, Max Exposure, Target Brightness, Auto Expose Region | Auto brightness adjustment | For *Auto uma vez* only (FR-ACQ-11). Continuous auto exposure: **No** (principles 1 and 2) | **Decided** (TD-32 §6) |
 | 44 | **Input line settings in the station** | Discrete I/O Settings | I/O Settings: IN1 edge, IN2–IN6 roles | `machine.remote_io.inputs` `{line, function, edge}` (FR-INT-17) | **Decided** (TD-32 §8) |

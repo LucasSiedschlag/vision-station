@@ -624,7 +624,8 @@ export interface paths {
     }
     /**
      * Job File
-     * @description One file of a saved version (a reference image, a template), for the editor to show.
+     * @description One file of a saved version (a reference image, a template), for the editor to show. `width` reduces an image
+     *     (the thumbnails of the filmstrip do not carry full frames).
      */
     get: operations['job_file']
     put?: never
@@ -1641,6 +1642,11 @@ export interface components {
     DraftTestOut: {
       /** Anchor */
       anchor: number[] | null
+      /**
+       * Fixtures
+       * @default []
+       */
+      fixtures: components['schemas']['FixtureShape'][]
       /** Height */
       height: number
       /** Overlay */
@@ -1693,6 +1699,36 @@ export interface components {
       x: number
       /** Y */
       y: number
+    }
+    /**
+     * FixtureShape
+     * @description A fixture as the editor draws it: its upright box, the pose and, when turned, the outline (architecture §14).
+     */
+    FixtureShape: {
+      /**
+       * Angle
+       * @default 0
+       */
+      angle: number
+      /** Corners */
+      corners: number[][] | null
+      /**
+       * Name
+       * @default anchor
+       */
+      name: string
+      /** Rect */
+      rect: number[]
+      /**
+       * Scale
+       * @default 1
+       */
+      scale: number
+      /**
+       * Score
+       * @default 1
+       */
+      score: number
     }
     /** FolderCheckBody */
     FolderCheckBody: {
@@ -2272,6 +2308,8 @@ export interface components {
        * @default true
        */
       affects_result: boolean
+      /** Corners */
+      corners: number[][] | null
       /** Passed */
       passed: boolean
       /** Rect */
@@ -4988,7 +5026,9 @@ export interface operations {
   }
   job_file: {
     parameters: {
-      query?: never
+      query?: {
+        width?: number | null
+      }
       header?: {
         authorization?: string | null
       }

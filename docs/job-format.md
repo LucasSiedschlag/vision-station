@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 08 — Job file format (deliverable D8) |
-| Format | 1 (format 2 is described in §7, TD-32) |
+| Format | 2: fixtures with a pose and texts in both languages (TD-21). The `acquisition` block is format 3 (§7, TD-32), not written yet. Format 1 is refused, never migrated: nothing is deployed |
 | Date | 2026-10-18 |
 | Code | `src/vision_station/jobs/`, `src/vision_station/store/` |
 
@@ -52,10 +52,12 @@ models/*.onnx, *.card.yaml      detect tool models and their cards (docs/models.
 
 A file a tool or locator names in its parameters must be in the job: a job without it is refused on load.
 
+**A job holds data, never code** (FR-PLT-12). Files may only be in the folders above (`camera/`, `reference/`, `tests/`, `locator/`, `patterns/`, `models/`), and a file whose extension is one that can run (`.py`, `.dll`, `.so`, `.exe`, `.bat`, `.cmd`, `.ps1`, `.sh`, `.js`, `.jar`…) is refused, on import, on restore and on save (`store/bundle.py::check_data_only`). A `.onnx` model and its `.card.yaml` are data.
+
 ## 3. `job.yaml`
 
 ```yaml
-format: 1
+format: 2
 job:
   id: 3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10   # UUID, the same for every version
   name: Tampa azul — etiqueta de lote
@@ -75,16 +77,20 @@ trigger:
   diff_threshold: 25                         # gray levels that count as a change (1–255)
   min_area: 0.05                             # fraction of the area that must differ to count as present
   motion_area: 0.01                          # fraction that must change between frames to count as moving
-  interval_ms: 500                           # continuous only; transitional (VIA-0064), moves into the format-2 block (§7); written only when not 500
+  interval_ms: 500                           # continuous only; transitional (VIA-0064), moves into the format-3 block (§7); written only when not 500
 quality:
   brightness: {min: 15, max: 245}             # outside: ERROR
   sharpness_min_ratio: 0.5                   # vs. the reference image; below: ERROR
   similarity_min: 0.6                        # live view vs. reference, at activation
   anchor_tolerance: 0.05                     # allowed anchor shift at activation
 geometry:
-  locator: {type: template, version: 1, params: {template: locator/template.png, min_score: 0.6}}
+  fixtures:                                  # what to find, in this order; a later one may look inside an earlier one
+    - name: anchor                           # the first is the one the editor calls the anchor
+      locator: {type: blob, version: 2, params: {mode: dark, taught_size: [160, 90]}}
+      inside: null                           # or the name of an earlier fixture (a label on a part)
+      range: {angle: [-15, 15], scale: [0.9, 1.1], position: null}   # outside it: ERROR E202, never FAIL
   rois:
-    cap:   {relative_to: anchor, rect: [0.30, 0.00, 0.70, 0.20]}
+    cap:   {relative_to: anchor, rect: [0.30, 0.00, 0.70, 0.20]}   # fractions of the fixture's taught size, in its own axes
     label: {relative_to: frame,  rect: [0.10, 0.45, 0.90, 0.80]}
 tools:
   - id: tampa                                # unique in the job; the key of its score
@@ -92,19 +98,19 @@ tools:
     version: 1
     roi: cap                                 # a name of geometry.rois, or frame, or anchor
     params: {hue: [100, 130], s_min: 100, min_fraction: 0.4}
-    reason_fail: Tampa ausente ({fraction:.0%} azul)
+    reason_fail: {pt-BR: 'Tampa ausente ({fraction:.0%} azul)', en: 'Cap missing ({fraction:.0%} blue)'}
 decision: all_pass
 ui:
-  waiting: Aguardando peça                   # the operator screen's waiting text
+  waiting: {pt-BR: Aguardando peça, en: Waiting for part}   # the operator screen's waiting text
 ```
 
 Rules (checked on load, `jobs/job.py`):
 
-- Rectangles are `[x0, y0, x1, y1]`, fractions 0–1, `x0 < x1`, `y0 < y1`. A region relative to the anchor is a fraction of the anchor's rectangle.
-- `frame` and `anchor` are built-in region names; `anchor` and anchor-relative regions need a locator.
+- Rectangles are `[x0, y0, x1, y1]`, fractions 0–1, `x0 < x1`, `y0 < y1`. A region relative to a fixture is a fraction of its **taught** size, in its own axes: when the object is found turned, the region turns with it and the tool receives it upright (architecture §14.3).
+- `frame` is the built-in region name; a fixture's name is a region too (its whole box). Fixture names are unique and are not region names; `inside` names an earlier fixture; a region is relative to `frame` or to a fixture.
 - At least one tool; tool ids unique; every tool's region exists.
 - Each tool and locator `type` + `version` must be one this software runs, and its `params` must validate. The parameters of each type, with titles and limits, are served as JSON Schema by `GET /api/tools`; their meaning is in the module of each type (`tools/*.py`, `locators/*.py`). A version that is no longer supported refuses the job instead of running different logic.
-- `reason_fail` is Portuguese for the operator in format 1; from format 2 it holds both languages, `{pt-BR: …, en: …}` (TD-30, FR-JOB-15); `{field}` placeholders take the tool's values (listed in each tool's module). A wrong placeholder leaves the text as written.
+- `reason_fail` holds both languages, `{pt-BR: …, en: …}` (TD-30, FR-JOB-15); a bare text is read as Portuguese, an empty language falls back to the other and *Validar* says so; `{field}` placeholders take the tool's values (listed in each tool's module). A wrong placeholder leaves the text as written.
 - `affects_result` (optional, default `true`; FR-INS-13): `false` makes the tool **informative**: it runs, its values and verdict are recorded and shown, but it never decides the result. It does not make the result FAIL, its failure is not in the reason or the reason codes, and an informative tool that cannot run is noted on its own entry instead of turning the result into ERROR. A job needs at least one tool that decides. The field is written only when `false`, so a job that does not use it stays readable by programs older than 0.2.
 
 ## 4. `camera/profile.yaml`
@@ -156,12 +162,12 @@ jobs/<job-id>/v<n>.vjob
 
 Restoring checks the whole file first, stores the versions it does not have (an identical version is skipped; a version whose number is already used here with different content is stored as the next version, never overwritten), and activates nothing: the restored active version is shown to be verified and activated. Results and recorded images are not in backups.
 
-## 7. Format 2: the `acquisition` block (TD-32, written when R1 lands)
+## 7. Format 3: the `acquisition` block (TD-32, written by VIA-0084)
 
-Format 2 groups everything about **how and when the picture is taken** in one block, as Cognex does in `AcquireImage` and Keyence in *Image Optimization* (document 09 §20). It replaces `trigger` and `camera_profile`. The rest of `job.yaml` keeps its place (`quality`, `geometry`, `tools`, `decision`, `outputs`, `ui`).
+Format 3 groups everything about **how and when the picture is taken** in one block, as Cognex does in `AcquireImage` and Keyence in *Image Optimization* (document 09 §20). It replaces `trigger` and `camera_profile`. The rest of `job.yaml` keeps its place (`quality`, `geometry`, `tools`, `decision`, `outputs`, `ui`).
 
 ```yaml
-format: 2
+format: 3
 acquisition:
   trigger:
     type: continuous                  # image_presence | external | manual | continuous
@@ -175,10 +181,10 @@ acquisition:
     calibration: camera/calibration.yaml   # optional (FR-INS-15)
 ```
 
-`camera/profile.yaml` in format 2 adds (the other settings are those of section 4):
+`camera/profile.yaml` in format 3 adds (the other settings are those of section 4):
 
 ```yaml
-orientation: normal                   # already in format 1 (VIA-0083); written in full in format 2
+orientation: normal                   # already in format 1 (VIA-0083); written in full in format 3
 exposure:
   mode: manual                        # manual | auto (auto: the driver's own; manual is the rule of the editor)
   value_us: 33000
@@ -186,7 +192,7 @@ exposure:
 ```
 
 Rules:
-- **Written in full** (FR-JOB-16). The editor writes every parameter of the block, including the ones of the chosen trigger type; the loader refuses a format-2 block with a parameter missing. A change of a default in the software can then never change a saved version.
+- **Written in full** (FR-JOB-16). The editor writes every parameter of the block, including the ones of the chosen trigger type; the loader refuses a format-3 block with a parameter missing. A change of a default in the software can then never change a saved version.
 - **The type decides which sub-block is read.** A sub-block of another type may be present and is ignored (switching the type in the editor keeps what the person typed).
 - **A job never names a pin, an address or a protocol.** `external` says that the trigger comes from outside; which line, edge or protocol carries it is station configuration (`system.yaml › machine`, architecture §4.6).
-- **Migration from format 1:** `trigger.mode` becomes `type`; `trigger.presence_roi`, `still_ms`, `rearm`, `diff_threshold`, `min_area` and `motion_area` go under `image_presence`; `external` gets `delay_ms: 0` and `debounce_ms: 0`; `continuous` gets `interval_ms: 0`, the behaviour it had; `camera_profile` becomes `image.profile`; `calibration` moves under `image`. The migrator writes the file; the format-1 file is never changed (NFR-MAI-1).
+- **No migrator** (decision of 2026-10-20: nothing is deployed, formats are forced, old data is made again). The mapping the format-1 and format-2 jobs would have had, kept as the meaning of each field: `trigger.mode` becomes `type`; `trigger.presence_roi`, `still_ms`, `rearm`, `diff_threshold`, `min_area` and `motion_area` go under `image_presence`; `external` gets `delay_ms: 0` and `debounce_ms: 0`; `continuous` gets `interval_ms: 0`, the behaviour it had; `camera_profile` becomes `image.profile`; `calibration` moves under `image`. A job of an older format is refused with a clear message.

@@ -10,6 +10,7 @@ import { Input, Textarea } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { text } from '@/texts'
+import { BilingualField } from './BilingualField'
 import { draftFiles, toRequest, useDraft, type Draft, type JobJson } from './draft'
 import type { StepProps } from './steps'
 import { summarizeChanges } from './summary'
@@ -43,17 +44,18 @@ export function OutputsStep({ draft }: StepProps) {
           </li>
         ))}
       </ul>
-      <Field label={t.waiting} hint={t.waitingHint}>
-        {(props) => (
-          <Input
-            {...props}
-            value={draft.job.ui?.waiting ?? ''}
-            onChange={(e) =>
-              edit((d) => ((d.job.ui ??= {}).waiting = e.target.value || null), false)
-            }
-          />
-        )}
-      </Field>
+      <BilingualField
+        label={t.waiting}
+        hint={t.waitingHint}
+        value={draft.job.ui?.waiting}
+        onChange={(next) =>
+          edit(
+            (d) =>
+              ((d.job.ui ??= {}).waiting = next['pt-BR'].trim() || next.en.trim() ? next : null),
+            false,
+          )
+        }
+      />
       <p className="text-sm text-fg-muted">{t.machineOutputs}</p>
     </div>
   )
