@@ -535,8 +535,14 @@ msgstr "The object is"
 msgid "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo."
 msgstr "The object is the largest region of a colour, or darker or lighter than the background."
 
+msgid "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo; a âncora tem a posição, o ângulo e o tamanho dele."
+msgstr "The object is the largest region of a colour, or darker or lighter than the background; the anchor has its position, angle and size."
+
 msgid "O resultado deve ser PASS, FAIL ou ERROR"
 msgstr "The result must be PASS, FAIL or ERROR"
+
+msgid "O tamanho do objeto na imagem de referência. Com ele o programa sabe qual lado é o comprido e mede a escala; vazio: só o ângulo menor"
+msgstr "The size of the object in the reference image. With it the program knows which side is the long one and measures the scale; empty: only the smallest angle"
 
 msgid "Objeto fora da posição ou girado demais"
 msgstr "Object out of position or turned too far"
@@ -643,6 +649,9 @@ msgstr "Only the Maintainer can release a job that did not pass verification"
 
 msgid "Só os limites de tolerância podem mudar no ajuste fino"
 msgstr "Only tolerance limits can change in a fine-tune"
+
+msgid "Tamanho ensinado (largura, altura em px)"
+msgstr "Taught size (width, height in px)"
 
 msgid "Tentar girado"
 msgstr "Try rotated"
