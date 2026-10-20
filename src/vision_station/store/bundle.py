@@ -36,6 +36,27 @@ class JobBundle:
         return files
 
 
+# A job holds data, never code (FR-PLT-12): files only in the folders of data a job has, and never one that could run.
+DATA_FOLDERS = ("camera/", "reference/", "tests/", "locator/", "patterns/", "models/")
+CODE_EXTENSIONS = frozenset({
+    ".py", ".pyc", ".pyd", ".pyw", ".dll", ".so", ".dylib", ".exe", ".com", ".msi", ".bat", ".cmd", ".ps1", ".psm1", ".vbs", ".wsf",
+    ".sh", ".bash", ".js", ".mjs", ".jar", ".class", ".php", ".pl", ".rb", ".lua", ".scr", ".lnk", ".cpl", ".reg", ".jsx", ".ts",
+})
+
+
+def check_data_only(files: Mapping[str, bytes], profile_path: str) -> None:
+    """Refuse a job with a file that is not data: logic ships in the program, versioned per tool type (FR-PLT-12)."""
+    for name in files:
+        lower = name.lower()
+        if lower == JOB_FILE or name == profile_path:
+            continue
+        extension = "." + lower.rsplit(".", 1)[-1] if "." in lower.rsplit("/", 1)[-1] else ""
+        if extension in CODE_EXTENSIONS:
+            raise FormatError(f"a job holds data, not code: {name} is refused")
+        if not lower.startswith(DATA_FOLDERS):
+            raise FormatError(f"a job holds data in its own folders ({', '.join(DATA_FOLDERS)}): {name} is refused")
+
+
 def bundle_from_files(files: Mapping[str, bytes], check_tools: bool = True) -> JobBundle:
     """Validate the files of a job. Refuses what the software cannot run, instead of running it differently."""
     if JOB_FILE not in files:
@@ -51,6 +72,7 @@ def bundle_from_files(files: Mapping[str, bytes], check_tools: bool = True) -> J
         profile = CameraProfile.model_validate(yaml.safe_load(files[profile_path]))
     except (ValidationError, yaml.YAMLError) as exc:
         raise FormatError(f"{profile_path} is not valid: {exc}") from exc
+    check_data_only(files, profile_path)
     if check_tools:
         try:
             check_job_locator(job, files)

@@ -79,7 +79,7 @@ def test_pack_and_unpack_round_trip_and_are_deterministic():
     assert data == arc.pack("job", dict(reversed(files.items())), {"job_id": "j", "version": 1})
     out = arc.unpack(data, "job")
     assert out.files == files
-    assert out.manifest["format"] == 1 and out.manifest["kind"] == "job"
+    assert out.manifest["format"] == 2 and out.manifest["kind"] == "job"
     assert out.manifest["files"]["job.yaml"]["sha256"] == arc.sha256(b"a: 1\n")
 
 
@@ -91,8 +91,8 @@ def test_pack_and_unpack_round_trip_and_are_deterministic():
         (lambda e: e.update({"extra.txt": b"x"}), IntegrityError),  # file the manifest does not list
         (lambda e: e.pop("manifest.json"), FormatError),
         (lambda e: e.update({"manifest.json": b"{not json"}), FormatError),
-        (lambda e: e.update({"manifest.json": json.dumps({"format": 2, "kind": "job", "files": {}}).encode()}), FormatError),
-        (lambda e: e.update({"manifest.json": json.dumps({"format": 1, "kind": "backup", "files": {}}).encode()}), FormatError),
+        (lambda e: e.update({"manifest.json": json.dumps({"format": 3, "kind": "job", "files": {}}).encode()}), FormatError),
+        (lambda e: e.update({"manifest.json": json.dumps({"format": 2, "kind": "backup", "files": {}}).encode()}), FormatError),
     ],
 )
 def test_damaged_or_wrong_files_are_refused(tamper, error):
@@ -103,7 +103,7 @@ def test_damaged_or_wrong_files_are_refused(tamper, error):
 
 def test_newer_format_has_a_clear_message_and_garbage_is_refused():
     data = arc.pack("job", {"job.yaml": b"a: 1\n"}, {})
-    newer = rezip(data, lambda e: e.update({"manifest.json": json.dumps({"format": 2, "kind": "job", "files": {}}).encode()}))
+    newer = rezip(data, lambda e: e.update({"manifest.json": json.dumps({"format": 3, "kind": "job", "files": {}}).encode()}))
     with pytest.raises(FormatError, match="newer than this software"):
         arc.unpack(newer, "job")
     with pytest.raises(FormatError, match="not a valid"):
@@ -350,3 +350,33 @@ def test_bundle_from_files_reports_each_missing_piece():
         bundle_from_files({k: v for k, v in files.items() if k != "camera/profile.yaml"})
     with pytest.raises(FormatError, match="profile.yaml is not valid"):
         bundle_from_files({**files, "camera/profile.yaml": b"resolution: [0, 0]\n"})
+
+
+# --- a job is data, never code; and the first format is no longer read (FR-PLT-12, TD-21) --------------------------
+
+
+@pytest.mark.parametrize("name", ["hooks/run.py", "tools/extra.dll", "reference/payload.exe", "models/start.bat", "patterns/x.PS1", "script.sh", "locator/a.js"])
+def test_a_job_with_a_file_that_is_not_data_is_refused(store, name):
+    from vision_station.store.bundle import bundle_from_files
+
+    bundle = make_bundle(extra={"reference/reference.png": b"\x89PNG-fake", "tests/expected.yaml": b"images: []\n", name: b"print('hi')"})
+    with pytest.raises(FormatError, match="holds data"):
+        bundle_from_files(bundle.files())
+    with pytest.raises(FormatError):
+        store.save(bundle)  # a job cannot get in by the editor either
+
+
+def test_a_job_keeps_its_data_in_its_own_folders_and_models_are_data():
+    from vision_station.store.bundle import bundle_from_files
+
+    ok = {"reference/reference.png": b"x", "tests/expected.yaml": b"images: []\n", "tests/images/a.png": b"x", "locator/template.png": b"x", "patterns/p.png": b"x", "models/m.onnx": b"x", "models/m.card.yaml": b"x", "camera/raw/dump.bin": b"x"}
+    assert bundle_from_files(make_bundle(extra=ok).files(), check_tools=False).extra.keys() == ok.keys()
+    with pytest.raises(FormatError, match="own folders"):
+        bundle_from_files(make_bundle(extra={**ok, "notes/readme.txt": b"x"}).files(), check_tools=False)
+
+
+def test_a_file_of_the_first_format_is_refused_not_migrated(store):
+    data = arc.pack("job", {"job.yaml": b"a: 1\n"}, {})
+    first = rezip(data, lambda e: e.update({"manifest.json": json.dumps({"format": 1, "kind": "job", "files": {"job.yaml": {"sha256": arc.sha256(b"a: 1\n"), "size": 5}}}).encode()}))
+    with pytest.raises(FormatError, match="no longer supported"):
+        arc.unpack(first, "job")

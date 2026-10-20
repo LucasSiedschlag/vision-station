@@ -17,7 +17,7 @@ import yaml
 
 from vision_station.store.errors import FormatError, IntegrityError, StoreError
 
-FORMAT = 1
+FORMAT = 2  # 2: fixtures with a pose and texts in both languages (TD-21). Nothing of format 1 exists in the field: it is refused, not migrated
 MANIFEST = "manifest.json"
 MAX_FILE_BYTES = 256 * 1024 * 1024
 MAX_TOTAL_BYTES = 1024 * 1024 * 1024

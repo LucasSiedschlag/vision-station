@@ -504,7 +504,7 @@ def test_recent_results_are_the_last_ten_oldest_first_and_every_result_says_when
 def test_about_is_for_supervisors_and_lists_the_tools_this_software_can_run(env):
     assert env.client.get("/api/about").status_code == 401
     body = env.client.get("/api/about", headers=login(env)).json()
-    assert body["job_format"] == 1 and body["version"]
+    assert body["job_format"] == 2 and body["version"]
     assert {"name": "code", "version": 1} in body["tools"]
 
 
