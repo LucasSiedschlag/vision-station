@@ -114,7 +114,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         info = dict(data.get("job") or {})
         info.update(id=job_id, version=version, parent_version=parent, author=author, created_at=_now().isoformat(timespec="seconds"), notes=draft.notes, tuned=tuned)
         data["job"] = info
-        data.setdefault("format", 1)
+        data.setdefault("format", 2)
         data.setdefault("camera_profile", "camera/profile.yaml")
         fields: dict[str, str] = {}
         job = profile = None
@@ -402,6 +402,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             result=result_out(result, None),
             regions=[m.RegionOut(**r) for r in details.get("regions", [])],
             anchor=anchor["rect"] if anchor else None,
+            fixtures=[m.FixtureShape(**f) for f in details.get("fixtures", [])],
             tools=details.get("tools", {}),
             timings=details.get("timings", {}),
             width=image.shape[1],

@@ -69,10 +69,10 @@ def run_locator(name: str, version: int, frame: np.ndarray, params: Mapping[str,
 
 
 def check_job_locator(job: Job, files: Mapping[str, bytes] | None = None) -> None:
-    """Refuse a job whose locator this software cannot run, or (when the job's files are given) whose
-    locator needs a file that is not there."""
-    locator = job.geometry.locator
-    if locator is not None:
+    """Refuse a job whose locators this software cannot run, or (when the job's files are given) whose
+    locators need a file that is not there."""
+    for fixture in job.geometry.fixtures:
+        locator = fixture.locator
         params = validate_params(locator.type, locator.version, locator.params)
         if files is not None:
             try:

@@ -544,6 +544,18 @@ msgstr "The result must be PASS, FAIL or ERROR"
 msgid "O tamanho do objeto na imagem de referência. Com ele o programa sabe qual lado é o comprido e mede a escala; vazio: só o ângulo menor"
 msgstr "The size of the object in the reference image. With it the program knows which side is the long one and measures the scale; empty: only the smallest angle"
 
+#, python-brace-format
+msgid "Objeto '{name}' com tamanho {scale:.2f}× o ensinado (permitido {lo:g}× a {hi:g}×)"
+msgstr "Object '{name}' is {scale:.2f}× the taught size (allowed {lo:g}× to {hi:g}×)"
+
+#, python-brace-format
+msgid "Objeto '{name}' fora da área permitida"
+msgstr "Object '{name}' is outside the allowed area"
+
+#, python-brace-format
+msgid "Objeto '{name}' girado {angle:.1f}° (permitido {lo:g}° a {hi:g}°)"
+msgstr "Object '{name}' is turned {angle:.1f}° (allowed {lo:g}° to {hi:g}°)"
+
 msgid "Objeto fora da posição ou girado demais"
 msgstr "Object out of position or turned too far"
 
@@ -601,9 +613,6 @@ msgstr "Looks for a taught pattern (a logo, a mark, a detail) in a region and co
 
 msgid "Quanto a cor pode diferir da referência; 10 a 30 é comum"
 msgstr "How much the colour may differ from the reference; 10 to 30 is common"
-
-msgid "Região 'anchor' sem localizador"
-msgstr "Region 'anchor' without a locator"
 
 #, python-brace-format
 msgid "Região '{name}' depende do objeto, que não foi localizado"

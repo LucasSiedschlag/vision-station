@@ -32,7 +32,7 @@ DEFAULT_PROFILE = Path(__file__).parent.parent / "examples" / "c920-profile.yaml
 
 def build_job(profile: CameraProfile, still_ms: int, min_area: float) -> JobBundle:
     data = {
-        "format": 1,
+        "format": 2,
         "job": {"id": "00000000-0000-4000-8000-000000000001", "name": "Teste da estação", "version": 1, "author": "bancada", "created_at": "2026-10-14T00:00:00-03:00"},
         "camera_profile": "camera/profile.yaml",
         "trigger": {"mode": "image_presence", "presence_roi": [0.1, 0.1, 0.9, 0.9], "still_ms": still_ms, "min_area": min_area},

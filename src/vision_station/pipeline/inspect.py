@@ -8,6 +8,7 @@ outside the picture, a tool that breaks or a job the software cannot run are all
 
 import logging
 import time
+from dataclasses import replace
 from collections.abc import Mapping
 from typing import Any
 
@@ -15,13 +16,14 @@ import numpy as np
 
 from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
-from vision_station.core.i18n import tr
+from vision_station.core.i18n import join, tr
 from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.core.results import FixturePose, InspectionResult, Outcome, ReasonCode, ToolReport
-from vision_station.geometry.regions import PixelRect, RegionError, resolve_roi
+from vision_station.geometry.regions import RegionError, cut_region
+from vision_station.geometry.pose import PixelRect
 from vision_station.jobs import Job
-from vision_station.jobs.job import Tool
-from vision_station.geometry.pose import Fixture
+from vision_station.jobs.job import FixtureSpec, Tool
+from vision_station.geometry.pose import Cut, Fixture, RegionOutside, compose, cut
 from vision_station.locators import LocatorError, run_locator
 from vision_station.pipeline.quality import brightness_gate, sharp_enough
 from vision_station.pipeline.stop import Stop
@@ -39,17 +41,47 @@ def _error(code: ErrorCode, reason: str, started: float, timings: dict[str, Any]
 
 
 
-def _locate(job: Job, image: np.ndarray, files: JobFiles) -> Fixture | None:
-    locator = job.geometry.locator
-    if locator is None:
-        return None
-    try:
-        anchor = run_locator(locator.type, locator.version, image, locator.params, files)
-    except (LocatorError, JobFileError) as exc:
-        raise Stop(ErrorCode.LOCATOR_CANNOT_RUN, tr("Localizador não pode rodar: {exc}", exc=exc)) from exc
-    if anchor is None:
-        raise Stop(ErrorCode.NOT_FOUND)
-    return anchor
+def _within(spec: FixtureSpec, fixture: Fixture) -> None:
+    """The pose must be inside what the job allows: an object that is turned too far, too large, too small or somewhere else
+    is not something the job can judge, so it is ERROR, never FAIL (FR-INS-11)."""
+    allowed = spec.range
+    cx, cy = fixture.centre
+    lo, hi = allowed.angle
+    if not lo <= fixture.angle <= hi:
+        raise Stop(ErrorCode.OUT_OF_POSITION, tr("Objeto '{name}' girado {angle:.1f}° (permitido {lo:g}° a {hi:g}°)", name=spec.name, angle=fixture.angle, lo=lo, hi=hi))
+    lo, hi = allowed.scale
+    if not lo <= fixture.scale <= hi:
+        raise Stop(ErrorCode.OUT_OF_POSITION, tr("Objeto '{name}' com tamanho {scale:.2f}× o ensinado (permitido {lo:g}× a {hi:g}×)", name=spec.name, scale=fixture.scale, lo=lo, hi=hi))
+    if allowed.position is not None:
+        x0, y0, x1, y1 = allowed.position
+        if not (x0 <= cx <= x1 and y0 <= cy <= y1):
+            raise Stop(ErrorCode.OUT_OF_POSITION, tr("Objeto '{name}' fora da área permitida", name=spec.name))
+
+
+def _locate(job: Job, image: np.ndarray, files: JobFiles) -> dict[str, Fixture]:
+    """The fixtures of the job, in order; one that is searched inside another looks in that one's upright cut (FR-INS-12)."""
+    found: dict[str, Fixture] = {}
+    for spec in job.geometry.fixtures:
+        parent = found.get(spec.inside) if spec.inside else None
+        searched, inner = image, None
+        if parent is not None:
+            try:
+                inner = cut(image, (0.0, 0.0, 1.0, 1.0), parent)
+            except RegionOutside:
+                raise Stop(ErrorCode.REGION_OUTSIDE, tr("Região '{name}' fora da imagem", name=spec.inside)) from None
+            searched = inner.image
+        try:
+            fixture = run_locator(spec.locator.type, spec.locator.version, searched, spec.locator.params, files)
+        except (LocatorError, JobFileError) as exc:
+            raise Stop(ErrorCode.LOCATOR_CANNOT_RUN, tr("Localizador não pode rodar: {exc}", exc=exc)) from exc
+        if fixture is None:
+            raise Stop(ErrorCode.NOT_FOUND)
+        if inner is not None:
+            fixture = compose(inner, parent, fixture, image.shape)
+        fixture = replace(fixture, name=spec.name)
+        _within(spec, fixture)
+        found[spec.name] = fixture
+    return found
 
 
 def inspect_job(bundle: JobBundle, frame: Frame) -> InspectionResult:
@@ -78,7 +110,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
 
     t = time.perf_counter()
     try:
-        anchor = _locate(job, image, files)
+        fixtures = _locate(job, image, files)
     except Stop as stop:
         if stop.code is ErrorCode.NOT_FOUND and not sharp_enough(bundle, image):
             raise Stop(ErrorCode.NOT_FOUND_OR_BLURRED) from None
@@ -100,7 +132,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     reason_codes: list[ReasonCode] = []
     for tool in job.tools:
         try:
-            px, result, score, elapsed = _run(tool, job, anchor, image, files)
+            region, result, score, elapsed = _run(tool, job, fixtures, image, files)
         except Stop as stop:
             if tool.affects_result:
                 raise
@@ -110,47 +142,59 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         per_tool[tool.id] = elapsed
         scores[tool.id] = score
         tool_details[tool.id] = dict(result.details)
-        regions.append({"tool": tool.id, "roi": tool.roi, "rect": list(px), "passed": bool(result.passed), "affects_result": tool.affects_result})
-        report = _report(tool, result, score, _fractions(px, image.shape))
+        entry = {"tool": tool.id, "roi": tool.roi, "rect": list(region.px), "passed": bool(result.passed), "affects_result": tool.affects_result}
+        if not np.array_equal(region.to_frame[:, :2], np.eye(2)):  # turned: the outline, for the overlay
+            entry["corners"] = [[round(x, 1), round(y, 1)] for x, y in region.corners]
+        regions.append(entry)
+        report = _report(tool, result, score, _fractions(region.px, image.shape))
         reports.append(report)
         if not result.passed and tool.affects_result:
-            failures.append(result.reason(tool.reason_fail))
+            failures.append(tool.reason_fail.filled(result.values))
             reason_codes.extend(ReasonCode(tool.id, f"{tool.type}.{c.code}") for c in report.criteria if not c.passed)
     timings["tools"] = time.perf_counter() - t_tools
     timings["per_tool"] = per_tool
 
     total = time.perf_counter() - started
     timings["total"] = total
-    fixtures = () if anchor is None else (_pose(anchor),)
+    poses = tuple(_pose(f) for f in fixtures.values())
+    first = next(iter(fixtures.values()), None)
     details: Mapping[str, Any] = {
         "timings": timings,
-        "anchor": None if anchor is None else {"rect": list(anchor.rect), "score": anchor.score},
+        "anchor": None if first is None else _outline(first, image.shape),
+        "fixtures": [_outline(f, image.shape) | {"name": f.name} for f in fixtures.values()],
         "regions": regions,
         "tools": tool_details,
     }
     if failures:
         return InspectionResult(
-            Outcome.FAIL, "; ".join(failures), scores=scores, details=details, duration_s=total,
-            reason_codes=tuple(reason_codes), tools=tuple(reports), fixtures=fixtures,
+            Outcome.FAIL, join(failures), scores=scores, details=details, duration_s=total,
+            reason_codes=tuple(reason_codes), tools=tuple(reports), fixtures=poses,
         )
-    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports), fixtures=fixtures)
+    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports), fixtures=poses)
 
 
-def _pose(anchor: Fixture) -> FixturePose:
-    x0, y0, x1, y1 = anchor.rect
-    return FixturePose("anchor", (x0 + x1) / 2, (y0 + y1) / 2, angle=None, scale=None, score=float(anchor.score))
+def _pose(fixture: Fixture) -> FixturePose:
+    x, y = fixture.centre
+    return FixturePose(fixture.name, x, y, angle=fixture.angle, scale=fixture.scale, score=float(fixture.score))
 
 
-def _run(tool: Tool, job: Job, anchor: Fixture | None, image: np.ndarray, files: JobFiles) -> tuple[PixelRect, ToolResult, float, float]:
+def _outline(fixture: Fixture, shape: tuple[int, ...]) -> dict[str, Any]:
+    """What the API and the overlay get of a fixture: its upright box (the one the locator gave, when it is not turned), the pose, and the outline."""
+    out: dict[str, Any] = {"rect": list(fixture.bounds(shape)), "score": fixture.score, "angle": fixture.angle, "scale": fixture.scale}
+    if not fixture.upright:
+        out["corners"] = [[round(float(x), 1), round(float(y), 1)] for x, y in fixture.corners(shape)]
+    return out
+
+
+def _run(tool: Tool, job: Job, fixtures: dict[str, Fixture], image: np.ndarray, files: JobFiles) -> tuple[Cut, ToolResult, float, float]:
     """One tool on its region: the region, the result, the checked score and the time it took. Raises Stop."""
     try:
-        _, px = resolve_roi(job, tool.roi, anchor, image.shape)
+        region = cut_region(job, tool.roi, fixtures, image)
     except RegionError as exc:
         raise Stop(ErrorCode.REGION_OUTSIDE, exc.text) from None
-    x0, y0, x1, y1 = px
     t = time.perf_counter()
     try:
-        result = run_tool(tool.type, tool.version, image[y0:y1, x0:x1], tool.params, files)
+        result = run_tool(tool.type, tool.version, region.image, tool.params, files)
     except (ToolError, JobFileError) as exc:
         raise Stop(ErrorCode.TOOL_CANNOT_RUN, tr("Ferramenta '{tool}' não pode rodar: {exc}", tool=tool.id, exc=exc)) from exc
     except Exception as exc:
@@ -160,7 +204,7 @@ def _run(tool: Tool, job: Job, anchor: Fixture | None, image: np.ndarray, files:
     score = float(result.score)
     if not 0.0 <= score <= 1.0 or score != score:
         raise Stop(ErrorCode.INVALID_SCORE, tr("Ferramenta '{tool}' devolveu pontuação inválida", tool=tool.id))
-    return px, result, score, elapsed
+    return region, result, score, elapsed
 
 
 def _fractions(px: PixelRect, shape: tuple[int, ...]) -> tuple[float, float, float, float]:

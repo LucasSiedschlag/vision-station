@@ -36,7 +36,8 @@ def test_architecture_example_profile_is_valid():
 @pytest.mark.parametrize(
     "change",
     [
-        lambda d: d.update(format=2),
+        lambda d: d.update(format=1),  # the first format is no longer read (nothing is deployed, TD-21)
+        lambda d: d.update(format=3),
         lambda d: d.update(surprise=1),  # unknown fields are typos, not extensions
         lambda d: d["job"].update(parent_version=7),
         lambda d: d["trigger"].update(presence_roi=[0.9, 0.1, 0.1, 0.9]),
@@ -48,7 +49,7 @@ def test_architecture_example_profile_is_valid():
         lambda d: d.update(tools=[]),
         lambda d: d["trigger"].update(mode="image_presence", presence_roi=None),
         lambda d: d["trigger"].update(mode="sometimes"),
-        lambda d: d["geometry"].update(locator=None),  # ROIs and tools still refer to the anchor
+        lambda d: d["geometry"].update(fixtures=[]),  # ROIs and tools still refer to the anchor
     ],
 )
 def test_invalid_jobs_are_rejected(change):
@@ -83,7 +84,7 @@ def test_job_without_locator_works_on_the_frame():
         {"id": "read", "type": "code", "version": 1, "roi": "label", "reason_fail": "Código não lido"}
     ]
     job = Job.model_validate(data)
-    assert job.geometry.locator is None
+    assert job.geometry.fixtures == []
 
 
 def test_trigger_modes_that_need_no_presence_settings():
@@ -95,7 +96,7 @@ def test_trigger_modes_that_need_no_presence_settings():
 
 def test_screen_text_is_optional_and_comes_from_the_job():
     data = load_job_data()
-    assert Job.model_validate(data).ui.waiting == "Aguardando peça"
+    assert Job.model_validate(data).ui.waiting.get("pt-BR") == "Aguardando peça"
     del data["ui"]
     assert Job.model_validate(data).ui.waiting is None
 

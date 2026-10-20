@@ -51,7 +51,7 @@ CATALOG: dict[ErrorCode, ErrorInfo] = {
     ErrorCode.OUT_OF_FOCUS: ErrorInfo("image", tr("Imagem fora de foco, verificar a lente e a câmera")),
     ErrorCode.COLOR_DRIFT: ErrorInfo("image", tr("Cor de referência fora do limite, verificar iluminação"), planned="R5"),
     ErrorCode.NOT_FOUND: ErrorInfo("location", tr("Objeto não encontrado na posição esperada")),
-    ErrorCode.OUT_OF_POSITION: ErrorInfo("location", tr("Objeto fora da posição ou girado demais"), planned="R1"),
+    ErrorCode.OUT_OF_POSITION: ErrorInfo("location", tr("Objeto fora da posição ou girado demais")),
     ErrorCode.NOT_FOUND_OR_BLURRED: ErrorInfo("location", tr("Objeto não encontrado ou imagem fora de foco, verificar a estação e a câmera")),
     ErrorCode.LOCATOR_CANNOT_RUN: ErrorInfo("location", tr("Localizador não pode rodar")),
     ErrorCode.REGION_OUTSIDE: ErrorInfo("region", tr("Região fora da imagem")),

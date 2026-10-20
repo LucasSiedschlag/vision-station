@@ -143,7 +143,8 @@ async def run(ws: Any, env: SessionEnv) -> None:
             body = dict(
                 type="result", frame_id=frame_id, width=frame.image.shape[1], height=frame.image.shape[0], result=shown,
                 regions=[m.RegionOut(**r).model_dump(mode="json") for r in details.get("regions", [])],
-                anchor=anchor["rect"] if anchor else None, tools=details.get("tools", {}), timings=details.get("timings", {}),
+                anchor=anchor["rect"] if anchor else None, fixtures=[m.FixtureShape(**f).model_dump(mode="json") for f in details.get("fixtures", [])],
+                tools=details.get("tools", {}), timings=details.get("timings", {}),
             )
             measure.text = _message(**body)  # type: ignore[attr-defined]
             return env.encode(frame.image, deps.frame_width, deps.jpeg_quality)

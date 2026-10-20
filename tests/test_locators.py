@@ -145,7 +145,7 @@ def job_with_template_locator(reference):
     data = yaml.safe_load((FIXTURES / "job.yaml").read_text(encoding="utf-8"))
     data["quality"] = {"brightness": {"min": 30, "max": 250}, "sharpness_min_ratio": 0.5}
     data["geometry"] = {
-        "locator": {"type": "template", "version": 1, "params": {"template": "locator/template.png"}},
+        "fixtures": [{"name": "anchor", "locator": {"type": "template", "version": 1, "params": {"template": "locator/template.png"}}}],
         "rois": {"cap": {"relative_to": "anchor", "rect": [0.25, 0.0, 0.75, 0.25]}},
     }
     data["tools"] = [

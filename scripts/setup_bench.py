@@ -26,7 +26,7 @@ JOB_ID = "00000000-0000-4000-8000-000000000001"
 
 def bench_job(profile: CameraProfile) -> JobBundle:
     data = {
-        "format": 1,
+        "format": 2,
         "job": {"id": JOB_ID, "name": "Leitura de código (bancada)", "version": 1, "author": "bancada", "created_at": "2026-10-15T00:00:00-03:00"},
         "camera_profile": "camera/profile.yaml",
         "trigger": {"mode": "image_presence", "presence_roi": [0.1, 0.1, 0.9, 0.9], "still_ms": 800, "min_area": 0.05},

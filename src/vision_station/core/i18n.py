@@ -48,6 +48,23 @@ def _rebuild(msgid: str, params: dict[str, Any]) -> Msg:
     return Msg(msgid, **params)
 
 
+class Bilingual(Msg):
+    """A text a person wrote in both languages (a job's `reason_fail`): it shows in the language asked for, with no
+    catalog involved. As a `str` it is the Portuguese text, or the English one when that is all there is."""
+
+    english: str
+
+    def __new__(cls, pt: str, en: str) -> "Bilingual":
+        text = str.__new__(cls, pt or en)
+        text.msgid = pt or en
+        text.params = {}
+        text.english = en or pt
+        return text
+
+    def __reduce__(self) -> tuple[Any, ...]:
+        return (Bilingual, (str(self), self.english))
+
+
 def tr(msgid: str, **params: Any) -> Msg:
     """Mark a Portuguese text for translation; the parameters fill its `{names}`."""
     return Msg(msgid, **params)
@@ -80,6 +97,8 @@ def text_of(error: BaseException) -> str:
 def render(text: str, language: str | None = None) -> str:
     """The text in a language (default: the one of the current request, see `using`)."""
     language = language or current()
+    if isinstance(text, Bilingual):
+        return str(text) if language == SOURCE else text.english
     if language == SOURCE:
         if isinstance(text, Msg):
             return str(text)

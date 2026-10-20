@@ -491,12 +491,25 @@ class RegionOut(BaseModel):
     rect: list[int]  # x0, y0, x1, y1 in pixels of the frame
     passed: bool
     affects_result: bool = True
+    corners: list[list[float]] | None = None  # the outline in pixels, when the region is turned
+
+
+class FixtureShape(BaseModel):
+    """A fixture as the editor draws it: its upright box, the pose and, when turned, the outline (architecture §14)."""
+
+    name: str = "anchor"
+    rect: list[float]  # x0, y0, x1, y1 as fractions of the frame
+    angle: float = 0.0
+    scale: float = 1.0
+    score: float = 1.0
+    corners: list[list[float]] | None = None  # in pixels
 
 
 class DraftTestOut(BaseModel):
     result: ResultOut
     regions: list[RegionOut]
-    anchor: list[float] | None = None  # x0, y0, x1, y1 as fractions of the frame
+    anchor: list[float] | None = None  # x0, y0, x1, y1 as fractions of the frame: the first fixture's upright box
+    fixtures: list[FixtureShape] = []
     tools: dict[str, Any]  # each tool's details (measures, codes read, matches)
     timings: dict[str, Any]
     width: int

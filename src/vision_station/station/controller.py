@@ -254,8 +254,9 @@ class StationController:
             return tr("{outcome}: {reason}", outcome=r.outcome, reason=r.reason) if r.reason else str(r.outcome)
         if self._state is State.STARTING and self._bundle is None:
             return NO_JOB
-        if self._state in (State.READY, State.WAITING_STILL) and self._bundle and self._bundle.job.ui.waiting:
-            return self._bundle.job.ui.waiting
+        waiting = self._bundle.job.ui.waiting if self._bundle else None
+        if self._state in (State.READY, State.WAITING_STILL) and waiting and (waiting.pt_br or waiting.en):
+            return waiting.filled()
         return MESSAGES[self._state]
 
     # --- the loop -------------------------------------------------------------------

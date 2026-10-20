@@ -80,7 +80,7 @@ def test_fixed_locator_and_anchor_relative_roi():
     img = np.full((240, 640, 3), 255, np.uint8)
     img[:, 320:] = qr_scene("LOTE-1")
     job = bundle.job.model_dump(mode="json")
-    job["geometry"] = {"locator": {"type": "fixed", "version": 1, "params": {"rect": [0.5, 0, 1, 1]}},
+    job["geometry"] = {"fixtures": [{"name": "anchor", "locator": {"type": "fixed", "version": 1, "params": {"rect": [0.5, 0, 1, 1]}}}],
                        "rois": {"label": {"relative_to": "anchor", "rect": [0, 0, 1, 1]}}}
     b = JobBundle(Job.model_validate(job), bundle.profile, {})
     result = inspect_job(b, frame(img))
@@ -97,7 +97,7 @@ def test_locator_validation_and_not_found():
         run_locator("nope", 1, np.zeros((4, 4, 3), np.uint8), {})
     bundle = make_bundle()
     job = bundle.job.model_dump(mode="json")
-    job["geometry"]["locator"] = {"type": "fixed", "version": 9, "params": {}}
+    job["geometry"]["fixtures"] = [{"name": "anchor", "locator": {"type": "fixed", "version": 9, "params": {}}}]
     with pytest.raises(LocatorError):
         check_job_locator(Job.model_validate(job))
     r = inspect_job(JobBundle(Job.model_validate(job), bundle.profile, {}), frame(qr_scene("LOTE-1")))
@@ -148,7 +148,7 @@ def test_a_region_on_the_anchor_without_an_anchor_is_an_error_with_its_reason():
     tool = bundle.job.tools[0].model_copy(update={"roi": "anchor"})
     job = bundle.job.model_copy(update={"tools": [tool]})
     r = inspect_job(JobBundle(job, bundle.profile, {}), frame(qr_scene("LOTE-1")))
-    assert r.outcome is Outcome.ERROR and r.reason == "Região 'anchor' sem localizador"
+    assert r.outcome is Outcome.ERROR and r.reason == "Região 'anchor' depende do objeto, que não foi localizado"
 
 
 @pytest.mark.parametrize("seed", range(20))

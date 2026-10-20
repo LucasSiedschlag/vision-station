@@ -51,7 +51,7 @@ def test_types_with_their_parameter_schemas(env, mnt):
     for kind in body["tools"] + body["locators"]:  # shown in the editor: Portuguese, never the code's docstring (VIA-0048)
         assert kind["description"] and kind["description"] == kind["params_schema"].get("description"), kind["name"]
         assert " tool" not in kind["description"] and "Locator" not in kind["description"], kind["description"]
-    assert body["builtin_rois"] == ["anchor", "frame"]
+    assert body["builtin_rois"] == ["frame"]
 
 
 def test_verify_runs_the_draft_on_every_sample_like_activation_does(env, mnt):

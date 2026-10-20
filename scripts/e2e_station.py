@@ -94,7 +94,7 @@ class ControlledCamera(_SimulatedCamera):
 
 def demo_job(name: str = "Tampa azul — etiqueta de lote (demo)") -> JobBundle:
     data = {
-        "format": 1,
+        "format": 2,
         "job": {"id": "00000000-0000-4000-8000-0000000000d0", "name": name, "version": 1, "author": "demo", "created_at": "2026-10-14T00:00:00-03:00"},
         "camera_profile": "camera/profile.yaml",
         "trigger": {"mode": "image_presence", "presence_roi": [0.0, 0.0, 1.0, 1.0], "still_ms": 800, "min_area": 0.05},
