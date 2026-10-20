@@ -190,3 +190,41 @@ test('the workbench: zoom and pan the image, the markings menu, the strip of sam
   expect(await accessibilityProblems(page)).toEqual([])
   await page.goto('/')
 })
+
+test('the anchor step: kinds as cards, the allowed turn on a dial, the result on each picture, and the page stays accessible', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+
+  // the anchor needs the reference picture: take it from the camera
+  await page.getByRole('button', { name: /^Amostras/ }).click()
+  await page.getByRole('button', { name: /^Capturar a imagem de referência/ }).click()
+  await expect(page.getByRole('button', { name: /^Capturar de novo/ })).toBeVisible() // it was taken
+  await page.getByRole('button', { name: /^Âncora/ }).click()
+
+  const kinds = page.getByRole('radiogroup', { name: 'O que acha o objeto' })
+  await expect(kinds.getByRole('radio', { name: /^Sem âncora/ })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
+  await kinds.getByRole('radio', { name: /^Mancha de cor/ }).click()
+  // the dial has a handle for each end, and the numbers beside it say the same
+  const least = page.getByRole('slider', { name: 'Giro mínimo' })
+  await expect(least).toHaveAttribute('aria-valuenow', '-15')
+  await least.focus()
+  await page.keyboard.press('Shift+ArrowRight') // to the right is a smaller angle: -15° becomes -20°
+  await expect(least).toHaveAttribute('aria-valuenow', '-20')
+  await expect(page.getByRole('textbox', { name: 'Giro mínimo' })).toHaveValue(/-20/)
+  // the result on each picture comes from the server: the reference at least
+  await expect(page.getByRole('region', { name: 'Resultado em cada amostra' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Referência:/ })).toBeVisible()
+  expect(await accessibilityProblems(page)).toEqual([])
+  await page.goto('/')
+})

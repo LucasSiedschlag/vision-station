@@ -7,6 +7,8 @@ export type DraftTestOut = components['schemas']['DraftTestOut']
 export type CameraState = components['schemas']['CameraStateOut']
 export type VerifyOut = components['schemas']['VerifyOut']
 export type BatchOut = components['schemas']['BatchOut']
+export type LocateOut = components['schemas']['LocateOut']
+export type LocateSample = components['schemas']['LocateSampleOut']
 export type LimitProposal = components['schemas']['LimitProposalOut']
 export type TuneOut = components['schemas']['TuneOut']
 export type JobDraftBody = components['schemas']['JobDraft']
@@ -44,6 +46,7 @@ export const editorApi = {
   validate: (body: JobDraftBody) => call(api.POST('/api/jobs/validate', { body })),
   verify: (body: JobDraftBody) => call(api.POST('/api/jobs/verify', { body })),
   batch: (body: JobDraftBody) => call(api.POST('/api/editor/batch', { body })),
+  locate: (body: JobDraftBody) => call(api.POST('/api/editor/locate', { body })),
   suggestLimits: (draft: JobDraftBody, tool: string) =>
     call(api.POST('/api/editor/suggest/limits', { body: { draft, tool } })),
   suggestColour: (include: string[], exclude: string[]) =>

@@ -21,17 +21,9 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { BilingualField } from './BilingualField'
-import {
-  useDraft,
-  toRequest,
-  draftFiles,
-  locatorOf,
-  setLocator,
-  withText,
-  type Draft,
-  type JobJson,
-} from './draft'
+import { useDraft, toRequest, draftFiles, withText, type Draft, type JobJson } from './draft'
 import { type Rect } from './geometry'
+import { fixturesOf } from './fixtures'
 import { blobToBase64, cropPng, type EditorImage } from './image'
 import { useLevel } from '@/app/levels'
 import { currentLocale } from '@/app/locale'
@@ -40,6 +32,7 @@ import { SchemaForm } from './SchemaForm'
 import { ToolGauges } from './gauges'
 import type { Batch } from './batch'
 import type { CameraMetrics } from './session'
+import type { Locating } from './locate'
 import { FocusMeter } from '@/components/vision/FocusMeter'
 import { Histogram } from '@/components/vision/Histogram'
 import { Slider } from '@/components/ui/slider'
@@ -71,6 +64,8 @@ export interface StepProps {
   showSample: (path: string | null) => void
   /** The sharpness, histogram and clipping of the newest live frame; null while the session has none. */
   metrics: CameraMetrics | null
+  /** Where the fixtures of the draft are on its reference and samples (the anchor step shows it). */
+  locating: Locating
 }
 
 /** The exposure slider is logarithmic: 100 µs to 1 s over 1000 positions, so each stop of light moves it the same way. */
@@ -610,225 +605,92 @@ export function QualityStep({ draft }: StepProps) {
 
 // --- 4. anchor and regions ----------------------------------------------------------------------------
 
-export function RegionsStep({
-  draft,
-  image,
-  fields,
-  selected,
-  setSelected,
-  setDrawing,
-  drawing,
-  crop,
-  setCrop,
-  part,
-}: StepProps & { part: 'anchor' | 'regions' }) {
-  const types = useTypes()
-  const [level] = useLevel('editor')
+/** The regions of the job: drawn on the frame or on an anchor (docs/frontend.md §7.3, step 4). */
+export function RegionsStep({ draft, selected, setSelected, setDrawing, drawing }: StepProps) {
   const geometry = draft.job.geometry ?? { rois: {} }
-  const locator = locatorOf(draft.job)
+  const fixtures = fixturesOf(draft.job)
   const rois: Record<string, { relative_to: string; rect: Rect }> = geometry.rois ?? {}
   const [newName, setNewName] = useState('')
-  const schema = types.data?.locators.find((l) => l.name === locator?.type)?.params_schema
   const setGeometry = (change: (g: JobJson) => void, history = true) =>
     edit((d) => change((d.job.geometry ??= { rois: {} })), history)
   const names = Object.keys(rois)
   const nameError =
     newName &&
     (names.includes(newName) ||
-      ['frame', 'anchor'].includes(newName) ||
+      ['frame', ...fixtures.map((f) => f.name)].includes(newName) ||
       !/^[a-z0-9_-]+$/i.test(newName))
       ? t.badName
       : undefined
 
-  const applyCropAsTemplate = async () => {
-    if (!image || image.source !== 'reference' || !crop) return
-    const path = 'locator/template.png'
-    const png = await cropPng(image, crop)
-    edit((d) => {
-      d.addFiles[path] = png
-      d.removeFiles = d.removeFiles.filter((p) => p !== path)
-      setLocator(d.job.geometry, {
-        type: 'template',
-        version: 1,
-        params: { ...(locatorOf(d.job)?.params ?? {}), template: path },
-      })
-    })
-    setCrop(null)
-    setDrawing(null)
-    toast.success(t.templateSaved)
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      {part === 'anchor' ? (
-        <>
-          <Field label={t.locator} hint={t.locatorHint}>
-            {(props) => (
+      <h3 className="text-sm font-semibold">{t.regions}</h3>
+      {names.length === 0 ? <p className="text-sm text-fg-muted">{t.noRegions}</p> : null}
+      <ul className="flex flex-col gap-2">
+        {names.map((name) => {
+          const id = `roi:${name}`
+          return (
+            <li
+              key={name}
+              className={`flex flex-wrap items-center gap-2 rounded-control border p-2 ${selected === id ? 'border-accent' : 'border-line'}`}
+            >
+              <button type="button" className="font-mono text-sm" onClick={() => setSelected(id)}>
+                {name}
+              </button>
               <Select
-                {...props}
-                value={locator ? `${locator.type}@${locator.version}` : 'none'}
-                onValueChange={(v) =>
-                  setGeometry((g) => {
-                    if (v === 'none') {
-                      setLocator(g, null)
-                      for (const r of Object.values(g.rois ?? {}) as JobJson[])
-                        r.relative_to = 'frame'
-                      return
-                    }
-                    const [type, version] = v.split('@')
-                    setLocator(g, {
-                      type,
-                      version: Number(version),
-                      params:
-                        type === 'fixed'
-                          ? { rect: [0.25, 0.25, 0.75, 0.75] }
-                          : type === 'blob'
-                            ? { mode: 'dark' }
-                            : {},
-                    })
-                  })
-                }
+                aria-label={t.relativeTo(name)}
+                value={rois[name]!.relative_to}
+                onValueChange={(v) => setGeometry((g) => (g.rois[name].relative_to = v))}
                 options={[
-                  { value: 'none', label: t.noLocator },
-                  ...(types.data?.locators ?? [])
-                    .filter(
-                      (l) =>
-                        // the newest version of each type is offered; an older one only while the job uses it
-                        l.version ===
-                          Math.max(
-                            ...(types.data?.locators ?? [])
-                              .filter((x) => x.name === l.name)
-                              .map((x) => x.version),
-                          ) ||
-                        (locator?.type === l.name && locator?.version === l.version),
-                    )
-                    .map((l) => ({
-                      value: `${l.name}@${l.version}`,
-                      label: t.locatorNames[l.name as keyof typeof t.locatorNames] ?? l.name,
-                    })),
+                  { value: 'frame', label: t.relFrame },
+                  ...fixtures.map((f) => ({
+                    value: f.name as string,
+                    label: t.relFixture(f.name),
+                  })),
                 ]}
               />
-            )}
-          </Field>
-          {locator?.type === 'fixed' ? (
-            <Button
-              variant={drawing === 'locator' ? 'primary' : 'secondary'}
-              onClick={() => setDrawing(drawing === 'locator' ? null : 'locator')}
-            >
-              {drawing === 'locator' ? t.drawingNow : t.drawLocator}
-            </Button>
-          ) : null}
-          {locator?.type === 'template' ? (
-            <div className="flex flex-col gap-2 rounded-control border border-line p-3">
-              <p className="text-sm">
-                {image?.source === 'reference' ? t.cropHint : t.cropNeedsReference}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  disabled={image?.source !== 'reference'}
-                  variant={drawing === 'crop' ? 'primary' : 'secondary'}
-                  onClick={() => setDrawing(drawing === 'crop' ? null : 'crop')}
-                >
-                  <Crop aria-hidden className="size-4" />
-                  {t.drawCrop}
-                </Button>
-                <Button
-                  disabled={!crop || image?.source !== 'reference'}
-                  onClick={() => void applyCropAsTemplate()}
-                >
-                  {t.useCrop}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          {locator && schema && locator.type !== 'fixed' ? (
-            <SchemaForm
-              schema={schema}
-              level={level}
-              value={locator.params ?? {}}
-              errors={prefixed(fields, 'job.geometry.fixtures.0.locator.params')}
-              onChange={(params) =>
-                setGeometry((g) => (g.fixtures[0].locator.params = params), false)
-              }
-            />
-          ) : null}
-        </>
-      ) : (
-        <>
-          <h3 className="text-sm font-semibold">{t.regions}</h3>
-          {names.length === 0 ? <p className="text-sm text-fg-muted">{t.noRegions}</p> : null}
-          <ul className="flex flex-col gap-2">
-            {names.map((name) => {
-              const id = `roi:${name}`
-              return (
-                <li
-                  key={name}
-                  className={`flex flex-wrap items-center gap-2 rounded-control border p-2 ${selected === id ? 'border-accent' : 'border-line'}`}
-                >
-                  <button
-                    type="button"
-                    className="font-mono text-sm"
-                    onClick={() => setSelected(id)}
-                  >
-                    {name}
-                  </button>
-                  <Select
-                    aria-label={t.relativeTo(name)}
-                    value={rois[name]!.relative_to}
-                    onValueChange={(v) => setGeometry((g) => (g.rois[name].relative_to = v))}
-                    options={[
-                      { value: 'frame', label: t.relFrame },
-                      { value: 'anchor', label: t.relAnchor, disabled: !locator },
-                    ]}
-                  />
-                  <Button
-                    variant={drawing === id ? 'primary' : 'ghost'}
-                    onClick={() => setDrawing(drawing === id ? null : id)}
-                  >
-                    {drawing === id ? t.drawingNow : t.redraw}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    aria-label={t.removeRegion(name)}
-                    onClick={() => setGeometry((g) => delete g.rois[name])}
-                  >
-                    <Trash2 aria-hidden className="size-4" />
-                  </Button>
-                </li>
-              )
-            })}
-          </ul>
-          <div className="flex items-end gap-2">
-            <Field label={t.newRegion} error={nameError || undefined} hint={t.newRegionHint}>
-              {(props) => (
-                <Input
-                  {...props}
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value.trim())}
-                />
-              )}
-            </Field>
-            <Button
-              disabled={!newName || !!nameError}
-              onClick={() => {
-                setGeometry(
-                  (g) =>
-                    ((g.rois ??= {})[newName] = {
-                      relative_to: locator ? 'anchor' : 'frame',
-                      rect: [0.3, 0.3, 0.7, 0.7],
-                    }),
-                )
-                setSelected(`roi:${newName}`)
-                setDrawing(`roi:${newName}`)
-                setNewName('')
-              }}
-            >
-              <Plus aria-hidden className="size-4" />
-              {t.addRegion}
-            </Button>
-          </div>
-        </>
-      )}
+              <Button
+                variant={drawing === id ? 'primary' : 'ghost'}
+                onClick={() => setDrawing(drawing === id ? null : id)}
+              >
+                {drawing === id ? t.drawingNow : t.redraw}
+              </Button>
+              <Button
+                variant="ghost"
+                aria-label={t.removeRegion(name)}
+                onClick={() => setGeometry((g) => delete g.rois[name])}
+              >
+                <Trash2 aria-hidden className="size-4" />
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="flex items-end gap-2">
+        <Field label={t.newRegion} error={nameError || undefined} hint={t.newRegionHint}>
+          {(props) => (
+            <Input {...props} value={newName} onChange={(e) => setNewName(e.target.value.trim())} />
+          )}
+        </Field>
+        <Button
+          disabled={!newName || !!nameError}
+          onClick={() => {
+            setGeometry(
+              (g) =>
+                ((g.rois ??= {})[newName] = {
+                  relative_to: fixtures.length ? (fixtures[0]!.name as string) : 'frame',
+                  rect: [0.3, 0.3, 0.7, 0.7],
+                }),
+            )
+            setSelected(`roi:${newName}`)
+            setDrawing(`roi:${newName}`)
+            setNewName('')
+          }}
+        >
+          <Plus aria-hidden className="size-4" />
+          {t.addRegion}
+        </Button>
+      </div>
     </div>
   )
 }

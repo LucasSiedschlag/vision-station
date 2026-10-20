@@ -818,6 +818,130 @@ export const text = {
     get powerLine() {
       return t`Rede elétrica`
     },
+    /** The anchor step: what finds the object, how far from the taught pose it may be, and where it is on each sample (§7.3). */
+    anchor: {
+      get title() {
+        return t`Âncora`
+      },
+      get kindsLabel() {
+        return t`O que acha o objeto`
+      },
+      kinds: {
+        get none() {
+          return t`Sem âncora`
+        },
+        get fixed() {
+          return t`Posição fixa`
+        },
+        get template() {
+          return t`Modelo`
+        },
+        get blob() {
+          return t`Mancha de cor ou contraste`
+        },
+      },
+      uses: {
+        get none() {
+          return t`O objeto está sempre no mesmo lugar, na imagem toda.`
+        },
+        get fixed() {
+          return t`Um gabarito ou marca segura o objeto: a posição é um retângulo desenhado.`
+        },
+        get template() {
+          return t`Procura uma foto do objeto (ou de uma marca nele). Acha o deslocamento, não o giro.`
+        },
+        get blob() {
+          return t`Acha a maior mancha de uma cor, ou mais escura ou mais clara. Dá a posição, o giro e o tamanho.`
+        },
+      },
+      get fixtureName() {
+        return t`Nome da âncora`
+      },
+      get inside() {
+        return t`Procurar dentro de`
+      },
+      get insideFrame() {
+        return t`a imagem toda`
+      },
+      remove: (name: string) => t`Remover a âncora ${name}`,
+      get addInside() {
+        return t`Adicionar âncora dentro desta`
+      },
+      get addInsideHint() {
+        return t`Uma âncora procurada dentro de outra: uma etiqueta numa peça, uma tampa numa garrafa.`
+      },
+      get teachSize() {
+        return t`Ensinar o tamanho pela referência`
+      },
+      get teachSizeHint() {
+        return t`O tamanho que o objeto tem na imagem de referência. Com ele o programa sabe qual lado é o comprido e mede a escala.`
+      },
+      get teachNeedsReference() {
+        return t`Capture a imagem de referência e deixe a âncora achar o objeto nela.`
+      },
+      taught: (w: string, h: string) => t`Tamanho ensinado: ${w} × ${h} px.`,
+      get rangeTitle() {
+        return t`O que o job aceita`
+      },
+      get rangeHint() {
+        return t`Fora disto o resultado é ERRO, nunca reprovação: o objeto não está onde o job sabe julgar.`
+      },
+      get angle() {
+        return t`Giro permitido`
+      },
+      get angleMin() {
+        return t`Giro mínimo`
+      },
+      get angleMax() {
+        return t`Giro máximo`
+      },
+      get angleHint() {
+        return t`Em graus, no sentido anti-horário na imagem; 0° é como foi ensinado.`
+      },
+      found: (angle: string) => t`Agora: ${angle}°`,
+      get scale() {
+        return t`Tamanho permitido`
+      },
+      get scaleMin() {
+        return t`Tamanho mínimo (× o ensinado)`
+      },
+      get scaleMax() {
+        return t`Tamanho máximo (× o ensinado)`
+      },
+      get position() {
+        return t`Limitar a área do centro`
+      },
+      get positionHint() {
+        return t`O centro do objeto precisa ficar dentro desta área. Sem ela, vale a imagem toda.`
+      },
+      get drawPosition() {
+        return t`Desenhar a área do centro`
+      },
+      get positionLabel() {
+        return t`Área do centro`
+      },
+      get resultsTitle() {
+        return t`Resultado em cada amostra`
+      },
+      get resultsNone() {
+        return t`Capture a referência e algumas amostras para ver onde a âncora cai em cada uma.`
+      },
+      get resultsStale() {
+        return t`Medindo de novo…`
+      },
+      get notFound() {
+        return t`não achada`
+      },
+      get outOfRange() {
+        return t`fora do que o job aceita`
+      },
+      pose: (score: string, angle: string, scale: string) =>
+        t`semelhança ${score} · giro ${angle}° · tamanho ${scale}×`,
+      tile: (name: string, state: string) => t`${name}: ${state}`,
+      get shownOnImage() {
+        return t`mostrada na imagem`
+      },
+    },
     /** A text of the job written in both languages (FR-JOB-15). */
     bilingual: {
       get pt() {
@@ -1442,6 +1566,7 @@ export const text = {
     get noLocator() {
       return t`Nenhum (regiões fixas na imagem)`
     },
+    relFixture: (name: string) => (name === 'anchor' ? t`o objeto (âncora)` : t`a âncora ${name}`),
     locatorNames: {
       get fixed() {
         return t`Posição fixa`

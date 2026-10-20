@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { useState } from 'react'
@@ -261,7 +261,7 @@ const kind = (name: keyof typeof schemas) => ({
 })
 const types = {
   tools: [kind('color'), kind('code')],
-  locators: [kind('fixed')],
+  locators: [kind('fixed'), kind('template'), kind('blob'), { ...kind('blob'), version: 2 }],
   builtin_rois: ['anchor', 'frame'],
 }
 
@@ -1191,5 +1191,222 @@ describe('the fine-tune of tolerances (docs/frontend.md §7.12)', () => {
     await userEvent.type(within(dialog).getByLabelText('O que você ajustou e por quê'), 'x')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar…' }))
     expect(await screen.findByText(/Só os limites de tolerância podem mudar/)).toBeInTheDocument()
+  })
+})
+
+describe('the anchor step (docs/frontend.md §7.3, step 3)', () => {
+  const openAnchor = async (job?: (j: any) => void) => {
+    if (job)
+      server.use(
+        http.get(`*/api/jobs/${JOB}/versions/2`, () => {
+          const copy = structuredClone(version)
+          job(copy.job)
+          return HttpResponse.json(copy)
+        }),
+      )
+    await openEditor()
+    const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
+    await userEvent.click(rail.getByRole('button', { name: /^Âncora/ }))
+  }
+  const located = (over: Record<string, unknown> = {}) => ({
+    ok: true,
+    samples: [
+      {
+        image: 'reference/reference.png',
+        kind: 'reference',
+        width: 640,
+        height: 480,
+        found: true,
+        error_code: 0,
+        reason: '',
+        fixtures: [
+          {
+            name: 'anchor',
+            rect: [0.3, 0.3, 0.6, 0.6],
+            taught: [0.3, 0.3, 0.6, 0.6],
+            angle: 0,
+            scale: 1,
+            score: 0.97,
+            corners: null,
+          },
+        ],
+      },
+      {
+        image: 'tests/images/boa-1.png',
+        kind: 'good',
+        width: 640,
+        height: 480,
+        found: true,
+        error_code: 0,
+        reason: '',
+        fixtures: [
+          {
+            name: 'anchor',
+            rect: [0.28, 0.27, 0.64, 0.66],
+            taught: [0.3, 0.3, 0.6, 0.6],
+            angle: 12.4,
+            scale: 1.02,
+            score: 0.9,
+            corners: [
+              [200, 150],
+              [380, 130],
+              [390, 300],
+              [210, 320],
+            ],
+          },
+        ],
+      },
+      {
+        image: 'tests/images/ruim-1.png',
+        kind: 'bad',
+        width: 640,
+        height: 480,
+        found: false,
+        error_code: 202,
+        reason: "Objeto 'anchor' girado 28,0° (permitido -15° a 15°)",
+        fixtures: [
+          {
+            name: 'anchor',
+            rect: [0.2, 0.2, 0.7, 0.8],
+            taught: [0.3, 0.3, 0.6, 0.6],
+            angle: 28,
+            scale: 1,
+            score: 0.9,
+            corners: [
+              [100, 100],
+              [400, 80],
+              [420, 330],
+              [120, 350],
+            ],
+          },
+        ],
+      },
+    ],
+    ...over,
+  })
+  const withBlob = (j: any) => {
+    j.geometry.fixtures = [
+      {
+        name: 'anchor',
+        locator: { type: 'blob', version: 2, params: { mode: 'dark' } },
+        range: { angle: [-15, 15], scale: [0.9, 1.1], position: null },
+      },
+    ]
+    j.geometry.rois.cap.relative_to = 'anchor'
+  }
+
+  it('offers the kinds as cards, and choosing one makes the first anchor with the newest version of the locator', async () => {
+    await openAnchor()
+    const kinds = screen.getByRole('radiogroup', { name: 'O que acha o objeto' })
+    expect(within(kinds).getAllByRole('radio')).toHaveLength(4)
+    for (const name of [/^Sem âncora/, /^Posição fixa/, /^Modelo/, /^Mancha de cor/])
+      expect(within(kinds).getByRole('radio', { name })).toBeInTheDocument()
+    expect(within(kinds).getByRole('radio', { name: /Sem âncora/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    await userEvent.click(within(kinds).getByRole('radio', { name: /Mancha de cor/ }))
+    expect(useDraft.getState().draft?.job.geometry.fixtures).toEqual([
+      { name: 'anchor', locator: { type: 'blob', version: 2, params: { mode: 'dark' } } },
+    ])
+    // the arrows move the choice
+    within(screen.getByRole('radiogroup', { name: 'O que acha o objeto' }))
+      .getByRole('radio', { name: /Mancha de cor/ })
+      .focus()
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].locator.type).toBe('template')
+  })
+
+  it('the allowed turn is set on a dial and in numbers, and the scale at the Avançado level; the server holds the rest', async () => {
+    await openAnchor(withBlob)
+    const least = await screen.findByRole('slider', { name: 'Giro mínimo' })
+    expect(least).toHaveAttribute('aria-valuenow', '-15')
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Giro máximo' }), {
+      key: 'ArrowRight',
+      shiftKey: true,
+    })
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].range.angle).toEqual([-15, 10])
+    const number = screen.getAllByRole('textbox', { name: 'Giro mínimo' })[0]!
+    await userEvent.clear(number)
+    await userEvent.type(number, '-30')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].range.angle).toEqual([-30, 10])
+    expect(screen.queryByRole('textbox', { name: /Tamanho mínimo/ })).not.toBeInTheDocument() // Essencial
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    const scale = screen.getByRole('textbox', { name: /Tamanho máximo/ })
+    await userEvent.clear(scale)
+    await userEvent.type(scale, '1,3')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].range.scale).toEqual([0.9, 1.3])
+    await userEvent.click(screen.getByRole('switch', { name: 'Limitar a área do centro' }))
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].range.position).toEqual([
+      0.1, 0.1, 0.9, 0.9,
+    ])
+  })
+
+  it('shows where the anchor is on the reference and on each sample, and why not when it is not', async () => {
+    server.use(http.post('*/api/editor/locate', () => HttpResponse.json(located())))
+    await openAnchor(withBlob)
+    const results = await screen.findByRole('region', { name: 'Resultado em cada amostra' })
+    const reference = await within(results).findByRole('button', {
+      name: /^Referência: semelhança 97% · giro 0° · tamanho 1×/,
+    })
+    expect(reference).toBeInTheDocument()
+    expect(
+      within(results).getByRole('button', {
+        name: /^boa-1: semelhança 90% · giro 12,4° · tamanho 1,02×/,
+      }),
+    ).toBeInTheDocument()
+    const bad = within(results).getByRole('button', {
+      name: /^ruim-1: fora do que o job aceita\. Objeto 'anchor' girado 28,0°/,
+    })
+    expect(within(bad).getByText('E202')).toBeInTheDocument() // amber, with the code and the reason
+    expect(bad.className).toContain('border-warn-text')
+    // a tile shows its sample on the image
+    await userEvent.click(within(results).getByRole('button', { name: /^boa-1:/ }))
+    expect(await screen.findByText('Amostra: boa-1.png')).toBeInTheDocument()
+    // and the needle of the dial follows the picture on show
+    expect(screen.getByText(/Agora: 12,4°/)).toBeInTheDocument()
+  })
+
+  it('teaches the size from what was found on the reference', async () => {
+    server.use(http.post('*/api/editor/locate', () => HttpResponse.json(located())))
+    await openAnchor(withBlob)
+    await screen.findByRole('region', { name: 'Resultado em cada amostra' })
+    await userEvent.click(screen.getByRole('button', { name: 'Ensinar o tamanho pela referência' }))
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].locator.params.taught_size).toEqual([
+      192, 144,
+    ]) // 0,3 × 640 and 0,3 × 480
+  })
+
+  it('an anchor can be searched inside another (Avançado), and taking one out sends its regions back to the frame', async () => {
+    await openAnchor(withBlob)
+    expect(
+      screen.queryByRole('button', { name: 'Adicionar âncora dentro desta' }),
+    ).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar âncora dentro desta' }))
+    const fixtures = useDraft.getState().draft?.job.geometry.fixtures
+    expect(fixtures).toHaveLength(2)
+    expect(fixtures[1]).toMatchObject({
+      name: 'ancora',
+      inside: 'anchor',
+      locator: { type: 'blob', version: 2 },
+    })
+    useDraft.getState().edit((d) => (d.job.geometry.rois.cap.relative_to = 'ancora'))
+    await userEvent.click(screen.getByRole('button', { name: 'Remover a âncora ancora' }))
+    expect(useDraft.getState().draft?.job.geometry.fixtures).toHaveLength(1)
+    expect(useDraft.getState().draft?.job.geometry.rois.cap.relative_to).toBe('frame')
+  })
+
+  it('without an anchor chosen, taking the first away leaves the regions on the frame', async () => {
+    await openAnchor(withBlob)
+    await userEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'O que acha o objeto' })).getByRole('radio', {
+        name: /Sem âncora/,
+      }),
+    )
+    expect(useDraft.getState().draft?.job.geometry.fixtures).toEqual([])
+    expect(useDraft.getState().draft?.job.geometry.rois.cap.relative_to).toBe('frame')
   })
 })

@@ -265,6 +265,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/editor/locate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Editor Locate
+     * @description Only the locating step of the draft on its reference picture and on every sample: where each fixture is found, with its
+     *     pose, or why it is not (frontend.md §7.3, step 3). Nothing is saved or recorded.
+     */
+    post: operations['editor_locate']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/editor/suggest/colour': {
     parameters: {
       query?: never
@@ -1729,6 +1750,8 @@ export interface components {
        * @default 1
        */
       score: number
+      /** Taught */
+      taught: number[] | null
     }
     /** FolderCheckBody */
     FolderCheckBody: {
@@ -2060,6 +2083,56 @@ export interface components {
       | components['schemas']['StatusMessage']
       | components['schemas']['StateMessage']
       | components['schemas']['ResultMessage']
+    /** LocateOut */
+    LocateOut: {
+      /**
+       * Fields
+       * @default {}
+       */
+      fields: {
+        [key: string]: string
+      }
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+      /**
+       * Samples
+       * @default []
+       */
+      samples: components['schemas']['LocateSampleOut'][]
+    }
+    /**
+     * LocateSampleOut
+     * @description The fixtures of a draft on one picture of its reference set: where each was found, or why not (the anchor step).
+     */
+    LocateSampleOut: {
+      /**
+       * Error Code
+       * @default 0
+       */
+      error_code: number
+      /** Fixtures */
+      fixtures: components['schemas']['FixtureShape'][]
+      /** Found */
+      found: boolean
+      /** Height */
+      height: number
+      /** Image */
+      image: string
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'reference' | 'good' | 'bad' | 'error'
+      /**
+       * Reason
+       * @default
+       */
+      reason: string
+      /** Width */
+      width: number
+    }
     /** LoginBody */
     LoginBody: {
       /** Password */
@@ -3840,6 +3913,59 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BatchOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  editor_locate: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobDraft']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LocateOut']
         }
       }
       /** @description needs a login */

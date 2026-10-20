@@ -1376,9 +1376,23 @@
             "default": 1.0,
             "title": "Score",
             "type": "number"
+          },
+          "taught": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taught"
           }
         },
-        "required": ["name", "rect", "angle", "scale", "score", "corners"],
+        "required": ["name", "rect", "angle", "scale", "score", "taught", "corners"],
         "title": "FixtureShape",
         "type": "object"
       },
@@ -2216,6 +2230,99 @@
             "$ref": "#/components/schemas/ResultMessage"
           }
         ]
+      },
+      "LocateOut": {
+        "properties": {
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Fields",
+            "type": "object"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "samples": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LocateSampleOut"
+            },
+            "title": "Samples",
+            "type": "array"
+          }
+        },
+        "required": ["ok", "message", "fields", "samples"],
+        "title": "LocateOut",
+        "type": "object"
+      },
+      "LocateSampleOut": {
+        "description": "The fixtures of a draft on one picture of its reference set: where each was found, or why not (the anchor step).",
+        "properties": {
+          "error_code": {
+            "default": 0,
+            "title": "Error Code",
+            "type": "integer"
+          },
+          "fixtures": {
+            "items": {
+              "$ref": "#/components/schemas/FixtureShape"
+            },
+            "title": "Fixtures",
+            "type": "array"
+          },
+          "found": {
+            "title": "Found",
+            "type": "boolean"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "image": {
+            "title": "Image",
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["reference", "good", "bad", "error"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "image",
+          "kind",
+          "width",
+          "height",
+          "fixtures",
+          "found",
+          "error_code",
+          "reason"
+        ],
+        "title": "LocateSampleOut",
+        "type": "object"
       },
       "LoginBody": {
         "properties": {
@@ -5522,6 +5629,83 @@
           }
         },
         "summary": "Editor Batch"
+      }
+    },
+    "/api/editor/locate": {
+      "post": {
+        "description": "Only the locating step of the draft on its reference picture and on every sample: where each fixture is found, with its\npose, or why it is not (frontend.md §7.3, step 3). Nothing is saved or recorded.",
+        "operationId": "editor_locate",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editor Locate"
       }
     },
     "/api/editor/suggest/colour": {

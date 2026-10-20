@@ -70,6 +70,9 @@ msgstr "Adjust from the samples"
 msgid "onde a âncora foi achada"
 msgstr "where the anchor was found"
 
+msgid "Um gabarito ou marca segura o objeto: a posição é um retângulo desenhado."
+msgstr "A jig or a mark holds the object: the position is a drawn rectangle."
+
 msgid "Voltar ao vivo"
 msgstr "Back to live"
 
@@ -192,6 +195,9 @@ msgstr "Failed and error results always keep the image."
 
 msgid "Brilho-alvo do Auto uma vez"
 msgstr "Auto once target brightness"
+
+msgid "Tamanho máximo (× o ensinado)"
+msgstr "Maximum size (× the taught one)"
 
 msgid "sem nota"
 msgstr "no note"
@@ -371,6 +377,9 @@ msgstr "Validate"
 msgid "Não foi possível falar com o programa da estação."
 msgstr "Could not reach the station program."
 
+msgid "O centro do objeto precisa ficar dentro desta área. Sem ela, vale a imagem toda."
+msgstr "The centre of the object must stay inside this area. Without it, the whole image counts."
+
 msgid "Ainda não validado"
 msgstr "Not validated yet"
 
@@ -503,11 +512,17 @@ msgstr "No value this parameter accepts separates the samples."
 msgid "A descrição mudou"
 msgstr "The description changed"
 
+msgid "Giro máximo"
+msgstr "Maximum turn"
+
 msgid "orientação"
 msgstr "orientation"
 
 msgid "Mude os filtros ou o período."
 msgstr "Change the filters or the period."
+
+msgid "fora do que o job aceita"
+msgstr "outside what the job accepts"
 
 msgid "Qualquer matiz"
 msgstr "Any hue"
@@ -544,6 +559,9 @@ msgstr "maximum {value}"
 
 msgid "{n, plural, =0 {Nenhum resultado deixou de ser gravado} one {# resultado não gravado} other {# resultados não gravados}}"
 msgstr "{n, plural, =0 {No result left unrecorded} one {# result not recorded} other {# results not recorded}}"
+
+msgid "O que acha o objeto"
+msgstr "What finds the object"
 
 msgid "Proposta: limite mínimo {value}, no meio entre as ruins e as boas ({goodMargin} abaixo da pior boa, {badMargin} acima da ruim mais alta)."
 msgstr "Proposal: minimum limit {value}, midway between the bad ones and the good ones ({goodMargin} below the worst good one, {badMargin} above the highest bad one)."
@@ -695,6 +713,9 @@ msgstr "Calculating…"
 msgid "Duração"
 msgstr "Duration"
 
+msgid "a imagem toda"
+msgstr "the whole image"
+
 msgid "rascunho a partir da v{v}"
 msgstr "draft from v{v}"
 
@@ -733,6 +754,9 @@ msgstr "Activated, with warnings:"
 
 msgid "Entrou como {role}."
 msgstr "Logged in as {role}."
+
+msgid "a âncora {name}"
+msgstr "the {name} anchor"
 
 msgid "não salvo"
 msgstr "not saved"
@@ -811,6 +835,9 @@ msgstr "done"
 
 msgid "Auditoria"
 msgstr "Audit"
+
+msgid "Acha a maior mancha de uma cor, ou mais escura ou mais clara. Dá a posição, o giro e o tamanho."
+msgstr "Finds the largest spot of a colour, or darker or lighter. Gives the position, the turn and the size."
 
 msgid "Período"
 msgstr "Period"
@@ -896,6 +923,9 @@ msgstr "Inspects when a part enters the area and stays still"
 msgid "Pular para o conteúdo"
 msgstr "Skip to content"
 
+msgid "O objeto está sempre no mesmo lugar, na imagem toda."
+msgstr "The object is always in the same place, in the whole image."
+
 msgid "passo atual"
 msgstr "current step"
 
@@ -920,11 +950,20 @@ msgstr "Data folder: {path}"
 msgid "Sempre"
 msgstr "Always"
 
+msgid "Medindo de novo…"
+msgstr "Measuring again…"
+
+msgid "{name}: {state}"
+msgstr "{name}: {state}"
+
 msgid "Imagem"
 msgstr "Image"
 
 msgid "Modo de coleta"
 msgstr "Collection mode"
+
+msgid "O que o job aceita"
+msgstr "What the job accepts"
 
 msgid "Capturar como Boa"
 msgstr "Capture as Good"
@@ -962,6 +1001,9 @@ msgstr "Collapse menu"
 msgid "Quanto tempo o objeto precisa ficar parado antes da foto."
 msgstr "How long the part must stay still before the picture."
 
+msgid "mostrada na imagem"
+msgstr "shown on the image"
+
 msgid "Limite máximo"
 msgstr "Maximum limit"
 
@@ -991,6 +1033,9 @@ msgstr "Exposure measuring region"
 
 msgid "O sistema confere o job no conjunto de referência antes de ativar. A estação passa a usar esta versão e confere a câmera e a imagem de referência ao trocar."
 msgstr "The system checks the job on the reference set before activating. The station then uses this version and checks the camera and the reference image when it switches."
+
+msgid "Tamanho ensinado: {w} × {h} px."
+msgstr "Taught size: {w} × {h} px."
 
 msgid "corrigida: {label}"
 msgstr "corrected: {label}"
@@ -1045,6 +1090,12 @@ msgstr "Not used"
 
 msgid "Próxima página"
 msgstr "Next page"
+
+msgid "Giro permitido"
+msgstr "Allowed turn"
+
+msgid "Capture a imagem de referência e deixe a âncora achar o objeto nela."
+msgstr "Capture the reference image and let the anchor find the object in it."
 
 msgid "Tempo de exposição"
 msgstr "Exposure time"
@@ -1186,6 +1237,9 @@ msgstr "Best approximation: {value} µs with {share} % of the pixels saturated; 
 
 msgid "Ações"
 msgstr "Actions"
+
+msgid "Tamanho mínimo (× o ensinado)"
+msgstr "Minimum size (× the taught one)"
 
 msgid "{share} % da imagem preta"
 msgstr "{share} % of the image black"
@@ -1346,6 +1400,9 @@ msgstr "Object outside the allowed range ({code})"
 msgid "Confira o nome e o que mudou, e salve como uma nova versão. Ativar é feito na página do job."
 msgstr "Check the name and what changed, and save it as a new version. Activating is done on the job page."
 
+msgid "Mancha de cor ou contraste"
+msgstr "Colour or contrast spot"
+
 msgid "{id}: o texto de reprovação mudou"
 msgstr "{id}: the failure text changed"
 
@@ -1430,6 +1487,12 @@ msgstr "Drawing… (drag on the image)"
 msgid "a ruim mais baixa, {distance} acima"
 msgstr "the lowest bad one, {distance} above"
 
+msgid "Desenhar a área do centro"
+msgstr "Draw the centre area"
+
+msgid "Nome da âncora"
+msgstr "Anchor name"
+
 msgid "Máquina"
 msgstr "Machine"
 
@@ -1448,6 +1511,9 @@ msgstr "Image folder"
 msgid "presença"
 msgstr "presence"
 
+msgid "Procura uma foto do objeto (ou de uma marca nele). Acha o deslocamento, não o giro."
+msgstr "Looks for a picture of the object (or of a mark on it). Finds the shift, not the turn."
+
 msgid "{tools, plural, one {# ferramenta} other {# ferramentas}}"
 msgstr "{tools, plural, one {# tool} other {# tools}}"
 
@@ -1462,6 +1528,9 @@ msgstr "Test"
 
 msgid "{id} passou a decidir o resultado"
 msgstr "{id} now decides the result"
+
+msgid "semelhança {score} · giro {angle}° · tamanho {scale}×"
+msgstr "similarity {score} · turn {angle}° · size {scale}×"
 
 msgid "Atualizar imagem"
 msgstr "Refresh image"
@@ -1495,6 +1564,9 @@ msgstr "Drag on the image to draw"
 
 msgid "verificada"
 msgstr "verified"
+
+msgid "não achada"
+msgstr "not found"
 
 msgid "Amostra {name}: o rascunho diz {now}; esperado {expected}."
 msgstr "Sample {name}: the draft says {now}; expected {expected}."
@@ -1622,6 +1694,9 @@ msgstr "Draw the position of the part"
 msgid "Falta o texto em {language}: o job usa o do outro idioma até você escrever."
 msgstr "The {language} text is missing: the job uses the other language's until you write it."
 
+msgid "O tamanho que o objeto tem na imagem de referência. Com ele o programa sabe qual lado é o comprido e mede a escala."
+msgstr "The size the object has in the reference image. With it the program knows which side is the long one and measures the scale."
+
 msgid "Tipo da amostra {image}"
 msgstr "Type of sample {image}"
 
@@ -1681,6 +1756,9 @@ msgstr "Show the samples"
 
 msgid "fora da faixa"
 msgstr "out of range"
+
+msgid "Em graus, no sentido anti-horário na imagem; 0° é como foi ensinado."
+msgstr "In degrees, counter-clockwise on the image; 0° is as taught."
 
 msgid "não suportado"
 msgstr "not supported"
@@ -1751,6 +1829,9 @@ msgstr "best: {peak}"
 msgid "Medição ao vivo encerrada"
 msgstr "Live measuring ended"
 
+msgid "Modelo"
+msgstr "Template"
+
 msgid "O que a tela do operador mostra enquanto espera, ex.: Aguardando peça."
 msgstr "What the operator screen shows while waiting, e.g. Waiting for part."
 
@@ -1781,11 +1862,17 @@ msgstr "unknown"
 msgid "O que mudou"
 msgstr "What changed"
 
+msgid "Adicionar âncora dentro desta"
+msgstr "Add an anchor inside this one"
+
 msgid "{name} solto."
 msgstr "{name} dropped."
 
 msgid "Automático: a câmera decide (evite na estação)"
 msgstr "Automatic: the camera decides (avoid at the station)"
+
+msgid "Agora: {angle}°"
+msgstr "Now: {angle}°"
 
 msgid "Rede"
 msgstr "Network"
@@ -1825,6 +1912,9 @@ msgstr "Export"
 
 msgid "Área mínima com objeto"
 msgstr "Minimum area with a part"
+
+msgid "Procurar dentro de"
+msgstr "Search inside"
 
 msgid "O job mudou depois da validação; rode Validar de novo"
 msgstr "The job changed after validation; run Validate again"
@@ -1883,6 +1973,9 @@ msgstr "Region of {id}: failed"
 msgid "Algumas mudanças só valem depois de reiniciar o programa:"
 msgstr "Some changes take effect only after restarting the program:"
 
+msgid "Ensinar o tamanho pela referência"
+msgstr "Teach the size from the reference"
+
 msgid "Remover {id}"
 msgstr "Remove {id}"
 
@@ -1900,6 +1993,9 @@ msgstr "The settings go in the job and are written to the camera every time it o
 
 msgid "Remover"
 msgstr "Remove"
+
+msgid "Área do centro"
+msgstr "Centre area"
 
 msgid "Importação"
 msgstr "Import"
@@ -1933,6 +2029,9 @@ msgstr "{from}–{to} of {total}"
 
 msgid "Todos saem, inclusive você, e precisam entrar de novo."
 msgstr "Everyone is logged out, you included, and must log in again."
+
+msgid "Sem âncora"
+msgstr "No anchor"
 
 msgid "HH:MM separados por vírgula; os contadores recomeçam em cada um."
 msgstr "HH:MM separated by commas; the counters restart at each one."
@@ -2023,6 +2122,9 @@ msgstr "the pixels the colour range takes in"
 
 msgid "Conectando…"
 msgstr "Connecting…"
+
+msgid "Capture a referência e algumas amostras para ver onde a âncora cai em cada uma."
+msgstr "Capture the reference and a few samples to see where the anchor lands on each."
 
 msgid "Região nova: {name}"
 msgstr "New region: {name}"
@@ -2132,11 +2234,17 @@ msgstr "refused"
 msgid "Job novo {name}: {count}"
 msgstr "New job {name}: {count}"
 
+msgid "Giro mínimo"
+msgstr "Minimum turn"
+
 msgid "Não definida"
 msgstr "Not set"
 
 msgid "coletada"
 msgstr "collected"
+
+msgid "Tamanho permitido"
+msgstr "Allowed size"
 
 msgid "Saturação mínima"
 msgstr "Minimum saturation"
@@ -2207,11 +2315,17 @@ msgstr "Even at the maximum exposure ({value} µs) only {share} % of the pixels 
 msgid "Boa"
 msgstr "Good"
 
+msgid "Resultado em cada amostra"
+msgstr "Result on each sample"
+
 msgid "O que medir"
 msgstr "What to measure"
 
 msgid "Guardar a imagem de 1 aprovado a cada"
 msgstr "Keep the image of 1 pass in every"
+
+msgid "Remover a âncora {name}"
+msgstr "Remove the {name} anchor"
 
 msgid "Aplicar na câmera"
 msgstr "Apply to the camera"
@@ -2245,6 +2359,12 @@ msgstr "About"
 
 msgid "Amostra: {name}"
 msgstr "Sample: {name}"
+
+msgid "Fora disto o resultado é ERRO, nunca reprovação: o objeto não está onde o job sabe julgar."
+msgstr "Outside this the result is an ERROR, never a failure: the object is not where the job can judge."
+
+msgid "Limitar a área do centro"
+msgstr "Limit the centre area"
 
 msgid "Autor"
 msgstr "Author"
@@ -2341,6 +2461,9 @@ msgstr "View images"
 
 msgid "Job duplicado"
 msgstr "Job duplicated"
+
+msgid "Uma âncora procurada dentro de outra: uma etiqueta numa peça, uma tampa numa garrafa."
+msgstr "An anchor searched inside another: a label on a part, a cap on a bottle."
 
 msgid "Vale só para você, neste navegador. A tela do operador usa o idioma da estação."
 msgstr "Only for you, in this browser. The operator screen uses the station language."

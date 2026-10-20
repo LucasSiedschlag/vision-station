@@ -38,7 +38,7 @@ import {
   type Draft,
   type JobJson,
 } from './draft'
-import { anchorToFrame, frameToAnchor, fromCorners, type Rect } from './geometry'
+import { frameToAnchor, fromCorners, type Rect } from './geometry'
 import {
   base64ToBlob,
   cropPng,
@@ -55,6 +55,9 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { cn } from '@/lib/cn'
 import { captureSample } from './capture'
 import { Filmstrip } from './Filmstrip'
+import { AnchorStep } from './AnchorStep'
+import { fixturesOf, isUpright, regionOnPicture, type FixtureShape } from './fixtures'
+import { useLocate } from './locate'
 import { LayerMenu } from './LayerMenu'
 import { ResultBar } from './ResultBar'
 import { AnchorNotFound, CameraLost } from './StateBanners'
@@ -236,6 +239,7 @@ function Editor({
     ]),
   )
   const batch = useBatch(draft, step === 'tools' || step === 'validate', limitParams)
+  const locating = useLocate(draft, step === 'anchor' || step === 'tools')
   const showSample = (path: string | null) => {
     if (path === 'reference/reference.png') {
       setSource('reference')
@@ -423,16 +427,49 @@ function Editor({
 
   // --- what is drawn over the image ------------------------------------------------------------------
   const geometry = draft.job.geometry ?? {}
+  const fixtureSpecs = fixturesOf(draft.job)
   const locator = locatorOf(draft.job)
-  const anchor: Rect | null =
-    locator?.type === 'fixed'
-      ? (locator.params?.rect ?? null)
-      : ((test?.anchor as Rect | undefined) ?? null)
-  // an anchor found turned or at another size: its outline is drawn as it is, and the regions on it are not edited on the frame
-  const found = test?.fixtures?.[0]
-  const turned = !!found && (found.angle !== 0 || found.scale !== 1) && !!found.corners
+  // the fixtures of the picture on show, by name: the sample or the reference from the locating step, the live image from the session
+  const showing: FixtureShape[] | undefined = shownSample
+    ? locating.out?.samples.find((x) => x.image === shownSample)?.fixtures
+    : useReference
+      ? locating.out?.samples.find((x) => x.kind === 'reference')?.fixtures
+      : test?.fixtures
+  const picture = {
+    width: image?.width ?? test?.width ?? 1,
+    height: image?.height ?? test?.height ?? 1,
+  }
+  // a fixed anchor is known without a picture: its box is written in the job
+  const fixedBox: Rect | null =
+    locator?.type === 'fixed' && locator.params?.rect ? (locator.params.rect as Rect) : null
+  const fixtureNamed = (name: string): FixtureShape | undefined =>
+    fixedBox && name === fixtureSpecs[0]?.name
+      ? { name, rect: fixedBox, taught: fixedBox, angle: 0, scale: 1, score: 1, corners: null }
+      : showing?.find((f) => f.name === name)
   const outline = (corners: number[][] | null | undefined): [number, number][] | undefined =>
     corners && test ? corners.map(([x, y]) => [x! / test.width, y! / test.height]) : undefined
+  /** A region of a fixture on this picture: where it is, turned with the fixture, and whether it can be edited here. */
+  const roiShape = (
+    name: string,
+    roi: { relative_to: string; rect: Rect },
+    editable: boolean,
+  ): Shape | null => {
+    const placed = regionOnPicture(
+      roi.relative_to === 'frame' ? undefined : fixtureNamed(roi.relative_to),
+      roi,
+      picture,
+    )
+    return placed
+      ? {
+          id: `roi:${name}`,
+          label: name,
+          kind: 'roi',
+          rect: placed.rect,
+          outline: placed.outline,
+          editable: editable && !placed.outline,
+        }
+      : null
+  }
   const shapes = useMemo<Shape[]>(() => {
     const out: Shape[] = []
     const editAnchor = step === 'anchor'
@@ -457,34 +494,36 @@ function Editor({
         kind: 'presence',
         editable: true,
       })
-    if (locator?.type === 'fixed' && locator.params?.rect)
-      out.push({
-        id: 'locator',
-        label: t.anchorLabel,
-        rect: locator.params.rect,
-        kind: 'locator',
-        editable: editAnchor,
-      })
-    else if (anchor)
-      out.push({
-        id: 'anchor',
-        label: t.anchorLabel,
-        rect: anchor,
-        kind: 'anchor',
-        outline: turned ? outline(found?.corners) : undefined,
-      })
+    fixtureSpecs.forEach((spec, i) => {
+      const fx = fixtureNamed(spec.name as string)
+      const fixed = spec.locator?.type === 'fixed' && i === 0
+      if (fx) {
+        const turnedFx = !isUpright(fx) && !!fx.corners
+        out.push({
+          id: fixed ? 'locator:0' : i === 0 ? 'anchor' : `anchor:${spec.name}`,
+          label: i === 0 ? t.anchorLabel : `${t.anchorLabel}: ${spec.name}`,
+          rect: fx.rect as Rect,
+          kind: fixed ? 'locator' : 'anchor',
+          editable: fixed && editAnchor,
+          outline: turnedFx ? outline(fx.corners) : undefined,
+        })
+      }
+      // the box the centre must stay in: drawn at the anchor step, where it is set
+      if (editAnchor && spec.range?.position)
+        out.push({
+          id: `position:${i}`,
+          label: t.anchor.positionLabel,
+          rect: spec.range.position,
+          kind: 'presence',
+          editable: true,
+        })
+    })
     if (step !== 'image')
       for (const [name, roi] of Object.entries(
         (geometry.rois ?? {}) as Record<string, { relative_to: string; rect: Rect }>,
       )) {
-        if (roi.relative_to !== 'frame' && (!anchor || turned)) continue
-        out.push({
-          id: `roi:${name}`,
-          label: name,
-          rect: roi.relative_to === 'anchor' ? anchorToFrame(roi.rect, anchor!) : roi.rect,
-          kind: 'roi',
-          editable: editRegions,
-        })
+        const shape = roiShape(name, roi, editRegions)
+        if (shape) out.push(shape)
       }
     if (sampleRect)
       out.push({ id: 'sample', label: t.colour.sampleLabel, rect: sampleRect, kind: 'presence' })
@@ -505,12 +544,11 @@ function Editor({
           outline: outline(r.corners),
         })
     return out
-  }, [draft, step, anchor, locator, geometry.rois, crop, test, sampleRect, turned, found]) // eslint-disable-line react-hooks/exhaustive-deps -- `outline` is made of `test`
-  const hiddenAnchored =
-    Object.values((geometry.rois ?? {}) as Record<string, { relative_to: string }>).some(
-      (r) => r.relative_to === 'anchor',
-    ) &&
-    (!anchor || turned)
+  }, [draft, step, geometry.rois, crop, test, sampleRect, showing, picture.width, picture.height]) // eslint-disable-line react-hooks/exhaustive-deps -- the helpers are made of these
+  // a region on a fixture that this picture does not show: it cannot be drawn here
+  const hiddenAnchored = Object.values(
+    (geometry.rois ?? {}) as Record<string, { relative_to: string }>,
+  ).some((r) => r.relative_to !== 'frame' && !fixtureNamed(r.relative_to)?.taught)
 
   const onShapeChange = (shapeId: string, rect: Rect, first: boolean) => {
     if (shapeId === 'crop') {
@@ -524,16 +562,19 @@ function Editor({
     }
     const edit = useDraft.getState().edit
     edit((d) => {
+      const at = /^(locator|position):(\d+)$/.exec(shapeId)
       if (shapeId === 'presence') d.job.trigger.presence_roi = rect
       else if (shapeId === 'autoexp') d.profile.exposure.auto_once.region = rect
-      else if (shapeId === 'locator')
-        d.job.geometry.fixtures[0].locator.params = {
-          ...d.job.geometry.fixtures[0].locator.params,
-          rect,
-        }
-      else if (shapeId.startsWith('roi:')) {
+      else if (at?.[1] === 'locator') {
+        const f = d.job.geometry.fixtures[Number(at[2])]
+        f.locator.params = { ...f.locator.params, rect }
+      } else if (at?.[1] === 'position') {
+        const f = d.job.geometry.fixtures[Number(at[2])]
+        f.range = { angle: [-15, 15], scale: [0.9, 1.1], ...f.range, position: rect }
+      } else if (shapeId.startsWith('roi:')) {
         const roi = d.job.geometry.rois[shapeId.slice(4)]
-        roi.rect = roi.relative_to === 'anchor' && anchor ? frameToAnchor(rect, anchor) : rect
+        const fx = roi.relative_to === 'frame' ? undefined : fixtureNamed(roi.relative_to)
+        roi.rect = fx?.taught ? frameToAnchor(rect, fx.taught as Rect) : rect
       }
     }, first)
   }
@@ -650,6 +691,7 @@ function Editor({
     shownSample,
     showSample,
     metrics: live.metrics,
+    locating,
   }
   const info = stepStates(draft, problems, visited, validation)
   const steps = STEPS.map((s) => ({
@@ -902,10 +944,10 @@ function Editor({
                     </>
                   ) : null}
                   {step === 'samples' ? <ReferenceStep {...props} /> : null}
-                  {step === 'anchor' ? <RegionsStep {...props} part="anchor" /> : null}
+                  {step === 'anchor' ? <AnchorStep {...props} /> : null}
                   {step === 'tools' ? (
                     <>
-                      <RegionsStep {...props} part="regions" />
+                      <RegionsStep {...props} />
                       <ToolsStep {...props} />
                       <PatternCrop {...props} />
                     </>

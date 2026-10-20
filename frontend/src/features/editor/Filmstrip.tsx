@@ -1,11 +1,11 @@
 import { CheckCircle2, ChevronDown, ChevronUp, Radio, Star, XCircle } from 'lucide-react'
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useRef, type KeyboardEvent } from 'react'
 import type { BatchOut } from '@/api/queries/editor'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
 import { text } from '@/texts'
 import type { Draft } from './draft'
-import { base64ToBlob, fetchBlob } from './image'
+import { useThumbnail } from './thumbnail'
 
 const s = text.editor.strip
 export const REFERENCE = 'reference/reference.png'
@@ -152,45 +152,7 @@ function Tile({
   current: boolean
   onClick: () => void
 }) {
-  const box = useRef<HTMLButtonElement>(null)
-  const [near, setNear] = useState(typeof IntersectionObserver === 'undefined')
-  const [url, setUrl] = useState<string | null>(null)
-  useEffect(() => {
-    const el = box.current
-    if (near || !el) return
-    const watcher = new IntersectionObserver(
-      (entries) => entries.some((e) => e.isIntersecting) && setNear(true),
-      { rootMargin: '200px' },
-    )
-    watcher.observe(el)
-    return () => watcher.disconnect()
-  }, [near])
-  const added = item.path ? draft.addFiles[item.path] : undefined
-  const base = draft.base
-  useEffect(() => {
-    if (!near || !item.path) return
-    let alive = true
-    let made: string | null = null
-    const get = async () =>
-      added
-        ? base64ToBlob(added)
-        : await fetchBlob(
-            `/api/jobs/${base!.id}/versions/${base!.version}/files/${item.path}?width=160`,
-          )
-    get().then(
-      (blob) => {
-        if (!alive) return
-        made = URL.createObjectURL(blob)
-        setUrl(made)
-      },
-      () => {},
-    )
-    return () => {
-      alive = false
-      if (made) URL.revokeObjectURL(made)
-    }
-  }, [near, item.path, added, base])
-
+  const { ref: box, url } = useThumbnail<HTMLButtonElement>(draft, item.path)
   const name = item.path ? item.path.replace('tests/images/', '').replace(/\.png$/, '') : s.live
   const kindWord = { reference: s.reference, good: s.good, bad: s.bad, live: s.live }[item.kind]
   const verdict = item.agrees === undefined ? s.untested : item.agrees ? s.agrees : s.disagrees
