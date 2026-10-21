@@ -3359,6 +3359,59 @@
         "title": "SettingResult",
         "type": "object"
       },
+      "SetupCameraOut": {
+        "properties": {
+          "connection": {
+            "additionalProperties": true,
+            "title": "Connection",
+            "type": "object"
+          },
+          "driver": {
+            "title": "Driver",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "validated": {
+            "title": "Validated",
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "driver", "connection", "model", "validated"],
+        "title": "SetupCameraOut",
+        "type": "object"
+      },
+      "SetupCamerasOut": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/SetupCameraOut"
+            },
+            "title": "Cameras",
+            "type": "array"
+          }
+        },
+        "required": ["available", "cameras"],
+        "title": "SetupCamerasOut",
+        "type": "object"
+      },
       "SetupOpenOut": {
         "properties": {
           "open": {
@@ -8757,6 +8810,73 @@
           }
         },
         "summary": "Result Thumb"
+      }
+    },
+    "/api/setup/cameras": {
+      "get": {
+        "description": "The USB cameras connected to this PC, each with what to put in the system configuration to open it and\nwhether its model has been validated. `available` is false when this PC cannot list cameras at all.",
+        "operationId": "setup_cameras",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupCamerasOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Setup Cameras"
       }
     },
     "/api/setup/maintainer-password": {

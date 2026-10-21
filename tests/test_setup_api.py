@@ -166,3 +166,33 @@ def test_everyone_may_ask_whether_the_wizard_is_open_and_it_says_no_more_than_th
 def test_the_wizard_is_not_open_on_a_network_api_even_with_no_password(fresh, tmp_path):
     fresh.deps.system = SystemService(tmp_path / "data", SystemConfig.model_validate({"network": {"host": "0.0.0.0"}}))
     assert fresh.client.get("/api/setup/open").json() == {"open": False}  # the notice would lead nowhere: creating is refused
+
+
+# --- the cameras to choose from (S4) -----------------------------------------------------------------------------
+
+
+def test_the_cameras_found_come_with_how_to_open_them_and_whether_they_are_validated(env):
+    from vision_station.cameras.discovery import discover
+
+    env.deps.discover_cameras = lambda: discover(lambda: [("HD Pro Webcam C920", "p1"), ("Integrated Camera", "p2")])
+    r = env.client.get("/api/setup/cameras", headers=login(env, "maintainer"))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["available"] is True
+    assert body["cameras"] == [
+        {"name": "HD Pro Webcam C920", "driver": "uvc", "connection": {"device_name": "HD Pro Webcam C920"}, "model": "c920", "validated": True},
+        {"name": "Integrated Camera", "driver": "uvc", "connection": {"device_name": "Integrated Camera"}, "model": None, "validated": False},
+    ]
+
+
+def test_a_pc_that_cannot_list_cameras_says_so(env):
+    from vision_station.cameras.discovery import discover
+
+    env.deps.discover_cameras = lambda: discover(lambda: None)
+    body = env.client.get("/api/setup/cameras", headers=login(env, "maintainer")).json()
+    assert body == {"available": False, "cameras": []}
+
+
+def test_only_the_maintainer_lists_the_cameras(env):
+    assert env.client.get("/api/setup/cameras").status_code == 401
+    assert env.client.get("/api/setup/cameras", headers=login(env, "supervisor")).status_code == 403

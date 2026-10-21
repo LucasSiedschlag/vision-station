@@ -17,8 +17,9 @@ from vision_station.api.auth import AuthError, at_least
 from vision_station.core.i18n import render, tr
 
 
-def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], Problem: type) -> None:
-    """`role` is the app's dependency that gives the role behind the request's token, `Problem` its error."""
+def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], need: Callable[[str], Callable], Problem: type) -> None:
+    """`role` is the app's dependency that gives the role behind the request's token, `need(role)` the one that asks
+    for a role, `Problem` its error."""
 
     first_password = threading.Lock()  # two requests at once must not both find the password missing
 
@@ -98,3 +99,16 @@ def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], Proble
                 raise Problem(400, tr("Senha não aceita: {why}", why=exc), "bad_password") from exc
             deps.jobs.audit("password_set", by="setup", role="maintainer")
         return next(m.UserOut(**u) for u in deps.auth.users() if u["role"] == "maintainer")
+
+    @api.get("/setup/cameras", response_model=m.SetupCamerasOut, responses={401: {"model": m.Problem}, 403: {"model": m.Problem}})
+    def setup_cameras(_: str = Depends(need("maintainer"))) -> m.SetupCamerasOut:
+        """The USB cameras connected to this PC, each with what to put in the system configuration to open it and
+        whether its model has been validated. `available` is false when this PC cannot list cameras at all."""
+        found = deps.discover_cameras()
+        return m.SetupCamerasOut(
+            available=found.available,
+            cameras=[
+                m.SetupCameraOut(name=c.name, driver=c.driver, connection=c.connection, model=c.model, validated=c.model is not None)
+                for c in found.cameras
+            ],
+        )

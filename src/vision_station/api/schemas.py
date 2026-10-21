@@ -734,6 +734,19 @@ class SetupStatusOut(BaseModel):
     maintainer_password_missing: bool  # the wizard is open without a login while this is true
 
 
+class SetupCameraOut(BaseModel):
+    name: str  # as the PC lists it
+    driver: str
+    connection: dict[str, Any]  # goes into `camera.connection` of the system configuration
+    model: str | None  # the id of the validated model (it names the picture), None when not validated
+    validated: bool
+
+
+class SetupCamerasOut(BaseModel):
+    available: bool  # false: this PC cannot list cameras (not Windows, or the library is missing)
+    cameras: list[SetupCameraOut]
+
+
 class SetupOpenOut(BaseModel):
     open: bool  # the Maintainer has no password and the API listens on this PC only
 

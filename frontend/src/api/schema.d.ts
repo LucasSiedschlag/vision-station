@@ -876,6 +876,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/setup/cameras': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Setup Cameras
+     * @description The USB cameras connected to this PC, each with what to put in the system configuration to open it and
+     *     whether its model has been validated. `available` is false when this PC cannot list cameras at all.
+     */
+    get: operations['setup_cameras']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/setup/maintainer-password': {
     parameters: {
       query?: never
@@ -2627,6 +2648,28 @@ export interface components {
       detail: string
       /** Status */
       status: string
+    }
+    /** SetupCameraOut */
+    SetupCameraOut: {
+      /** Connection */
+      connection: {
+        [key: string]: unknown
+      }
+      /** Driver */
+      driver: string
+      /** Model */
+      model: string | null
+      /** Name */
+      name: string
+      /** Validated */
+      validated: boolean
+    }
+    /** SetupCamerasOut */
+    SetupCamerasOut: {
+      /** Available */
+      available: boolean
+      /** Cameras */
+      cameras: components['schemas']['SetupCameraOut'][]
     }
     /** SetupOpenOut */
     SetupOpenOut: {
@@ -6006,6 +6049,55 @@ export interface operations {
       }
       /** @description Not Found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  setup_cameras: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SetupCamerasOut']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Forbidden */
+      403: {
         headers: {
           [name: string]: unknown
         }

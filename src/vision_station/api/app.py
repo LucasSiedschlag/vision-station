@@ -41,6 +41,7 @@ from vision_station.api.inspections import InspectionRegistry, Requested
 from vision_station.api.editor_session import SessionEnv, run as run_editor_session
 from vision_station.api.manage import add_management_routes
 from vision_station.api.setup import add_setup_routes
+from vision_station.cameras.discovery import Discovery, discover
 from vision_station.cameras import DRIVERS
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
 from vision_station.station import Acquisition, StationController, StationEvent
@@ -98,6 +99,7 @@ class ApiDeps:
     cors_origins: tuple[str, ...] = ()  # web pages of other programs on this machine allowed to call the API
     result_image_width: int = 1920  # images of requested inspections are kept up to this width
     editor_fps: float = 4.0  # the editor's live session runs the draft on at most this many frames a second (document 05 §19.1)
+    discover_cameras: Callable[[], Discovery] = discover  # the cameras the wizard offers to choose from (VIA-0068)
     limit_margin: float = 0.20  # of the worst good value, for a proposed limit when there are no bad samples (document 02 §7)
 
 
@@ -766,7 +768,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
             return m.CheckOut(ok=False, message=render(tr("É a câmera em uso pela estação e ela não está mandando imagem") if not acq.last_error else tr("É a câmera em uso pela estação e ela não está mandando imagem: {why}", why=acq.last_error)))
         return _check_out(check_camera(CameraSettings.model_validate(body.model_dump())))
 
-    add_setup_routes(api, deps, role, Problem)
+    add_setup_routes(api, deps, role, need, Problem)
     build_draft = add_management_routes(api, deps, need, Problem, _result)
     session = SessionEnv(
         deps=deps, build=build_draft, result_out=_result, encode=encode_jpeg, origin_allowed=origin_allowed,
