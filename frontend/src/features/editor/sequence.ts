@@ -28,7 +28,7 @@ export interface StepInfo {
 
 /** Which server field paths belong to which step, to mark a step that has errors. */
 export const STEP_FIELDS: Record<StepId, string[]> = {
-  image: ['profile', 'job.trigger'],
+  image: ['profile', 'job.acquisition'],
   samples: ['add_files'],
   anchor: ['job.geometry.fixtures'],
   tools: ['job.tools', 'job.geometry'],

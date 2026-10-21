@@ -161,7 +161,7 @@ export function newDraft(profile: JobJson | null): Draft {
     key: 'new',
     base: null,
     job: {
-      format: 1,
+      format: 3,
       job: {
         name: text.jobs.newJob, // the default name of a new job, in the language on screen
         description: '',
@@ -170,8 +170,10 @@ export function newDraft(profile: JobJson | null): Draft {
         id: crypto.randomUUID(),
         version: 1,
       },
-      camera_profile: 'camera/profile.yaml',
-      trigger: { mode: 'manual' },
+      acquisition: {
+        trigger: { type: 'manual' },
+        image: { profile: 'camera/profile.yaml', calibration: null },
+      },
       quality: { brightness: { min: 15, max: 245 }, sharpness_min_ratio: 0.5 },
       geometry: { rois: {} },
       tools: [],

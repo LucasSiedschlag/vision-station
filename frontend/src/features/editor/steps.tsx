@@ -407,37 +407,52 @@ export function CameraStep({ draft, drawing, setDrawing, metrics }: StepProps) {
 
 // --- 2. trigger --------------------------------------------------------------------------------------
 
-/** The trigger mode, from the step or from the top bar: one place, so both always agree (docs/frontend.md §7.3). */
-export function setTriggerMode(mode: string) {
+/** What each trigger type writes the first time it is chosen: the job holds the block in full (FR-JOB-16). */
+const TRIGGER_DEFAULTS: Record<string, () => JobJson> = {
+  image_presence: () => ({
+    roi: [0.1, 0.1, 0.9, 0.9],
+    still_ms: 500,
+    rearm: 'object_absent',
+    diff_threshold: 25,
+    min_area: 0.05,
+    motion_area: 0.01,
+  }),
+  external: () => ({ delay_ms: 0, debounce_ms: 0 }),
+  continuous: () => ({ interval_ms: 500 }),
+}
+
+/** The trigger type, from the step or from the top bar: one place, so both always agree (docs/frontend.md §7.3). The
+ * blocks of the other types stay in the draft, so going back keeps what was typed. */
+export function setTriggerMode(type: string) {
   edit((d) => {
-    const tr = (d.job.trigger ??= {})
-    tr.mode = mode
-    if (mode === 'image_presence') {
-      tr.presence_roi ??= [0.1, 0.1, 0.9, 0.9]
-      tr.still_ms ??= 500
-    }
+    const tr = (d.job.acquisition.trigger ??= {})
+    tr.type = type
+    const make = TRIGGER_DEFAULTS[type]
+    if (make) tr[type] ??= make()
   })
 }
 
 export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
-  const trigger = draft.job.trigger ?? {}
-  const set = (change: (tr: JobJson) => void) => edit((d) => change((d.job.trigger ??= {})))
+  const trigger = draft.job.acquisition.trigger ?? {}
+  const presence = trigger.image_presence ?? {}
+  const set = (block: string, change: (tr: JobJson) => void) =>
+    edit((d) => change(((d.job.acquisition.trigger ??= {})[block] ??= {})))
   return (
     <div className="flex flex-col gap-4">
       <Field
         label={t.triggerMode}
-        hint={t.triggerModes[trigger.mode as keyof typeof t.triggerModes]?.[1]}
+        hint={t.triggerModes[trigger.type as keyof typeof t.triggerModes]?.[1]}
       >
         {(props) => (
           <Select
             {...props}
-            value={trigger.mode ?? 'image_presence'}
+            value={trigger.type ?? 'image_presence'}
             onValueChange={setTriggerMode}
             options={Object.entries(t.triggerModes).map(([value, [label]]) => ({ value, label }))}
           />
         )}
       </Field>
-      {trigger.mode === 'image_presence' ? (
+      {trigger.type === 'image_presence' ? (
         <>
           <Button
             variant={drawing === 'presence' ? 'primary' : 'secondary'}
@@ -449,8 +464,8 @@ export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
             {(props) => (
               <NumberField
                 {...props}
-                value={num(trigger.still_ms)}
-                onChange={(v) => set((tr) => (tr.still_ms = v))}
+                value={num(presence.still_ms)}
+                onChange={(v) => v !== null && set('image_presence', (tr) => (tr.still_ms = v))}
                 unit="ms"
                 min={1}
                 decimals={0}
@@ -461,10 +476,9 @@ export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
             {(props) => (
               <NumberField
                 {...props}
-                value={num(trigger.diff_threshold)}
-                placeholder={text.ui.defaultValue(formatNumber(25))}
+                value={num(presence.diff_threshold)}
                 onChange={(v) =>
-                  set((tr) => (v === null ? delete tr.diff_threshold : (tr.diff_threshold = v)))
+                  v !== null && set('image_presence', (tr) => (tr.diff_threshold = v))
                 }
                 min={1}
                 max={255}
@@ -476,9 +490,8 @@ export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
             {(props) => (
               <NumberField
                 {...props}
-                value={num(trigger.min_area)}
-                placeholder={text.ui.defaultValue(formatNumber(0.05))}
-                onChange={(v) => set((tr) => (v === null ? delete tr.min_area : (tr.min_area = v)))}
+                value={num(presence.min_area)}
+                onChange={(v) => v !== null && set('image_presence', (tr) => (tr.min_area = v))}
                 min={0}
                 max={1}
                 step={0.01}
@@ -487,16 +500,17 @@ export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
           </Field>
         </>
       ) : null}
-      {trigger.mode === 'continuous' ? (
-        <Field label={t.interval} hint={t.intervalHint} error={fields['job.trigger.interval_ms']}>
+      {trigger.type === 'continuous' ? (
+        <Field
+          label={t.interval}
+          hint={t.intervalHint}
+          error={fields['job.acquisition.trigger.continuous.interval_ms']}
+        >
           {(props) => (
             <NumberField
               {...props}
-              value={num(trigger.interval_ms)}
-              placeholder={text.ui.defaultValue(formatNumber(500))}
-              onChange={(v) =>
-                set((tr) => (v === null ? delete tr.interval_ms : (tr.interval_ms = v)))
-              }
+              value={num(trigger.continuous?.interval_ms)}
+              onChange={(v) => v !== null && set('continuous', (tr) => (tr.interval_ms = v))}
               unit="ms"
               min={0}
               max={10000}

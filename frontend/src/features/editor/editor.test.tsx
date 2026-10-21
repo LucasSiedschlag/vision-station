@@ -210,7 +210,7 @@ const version = {
   id: JOB,
   version: 2,
   job: {
-    format: 1,
+    format: 3,
     job: {
       id: JOB,
       name: 'Tampa azul',
@@ -221,8 +221,10 @@ const version = {
       description: '',
       notes: '',
     },
-    camera_profile: 'camera/profile.yaml',
-    trigger: { mode: 'manual' },
+    acquisition: {
+      trigger: { type: 'manual' },
+      image: { profile: 'camera/profile.yaml', calibration: null },
+    },
     quality: { brightness: { min: 15, max: 245 }, sharpness_min_ratio: 0.5 },
     geometry: { rois: { cap: { relative_to: 'frame', rect: [0.3, 0.1, 0.7, 0.3] } } },
     tools: [
@@ -739,7 +741,7 @@ describe('the job editor', () => {
     const bar = screen.getByRole('combobox', { name: 'Disparo' })
     await userEvent.click(bar)
     await userEvent.click(screen.getByRole('option', { name: 'Contínuo' }))
-    expect(useDraft.getState().draft?.job.trigger.mode).toBe('continuous')
+    expect(useDraft.getState().draft?.job.acquisition.trigger.type).toBe('continuous')
     await userEvent.click(
       within(screen.getByRole('navigation', { name: 'Passos do job' })).getByRole('button', {
         name: /^Imagem e disparo/,
@@ -748,10 +750,11 @@ describe('the job editor', () => {
     expect(screen.getByRole('combobox', { name: 'Modo de disparo' })).toHaveTextContent('Contínuo')
     // continuous waits at least this long between inspections (FR-TRG-7)
     const interval = screen.getByLabelText('Intervalo mínimo entre inspeções')
-    expect(interval).toHaveAttribute('placeholder', 'padrão: 500')
+    expect(interval).toHaveValue('500') // written in full the first time the type is chosen (FR-JOB-16)
+    await userEvent.clear(interval)
     await userEvent.type(interval, '1000')
     await userEvent.tab()
-    expect(useDraft.getState().draft?.job.trigger.interval_ms).toBe(1000)
+    expect(useDraft.getState().draft?.job.acquisition.trigger.continuous.interval_ms).toBe(1000)
   })
 
   it('the save dialog lists what changed in words, and the last step offers the way on', async () => {

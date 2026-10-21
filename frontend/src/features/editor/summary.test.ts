@@ -16,7 +16,7 @@ const tool = (params: Record<string, unknown>, over: Record<string, unknown> = {
 const job = (tools: unknown[], over: Record<string, unknown> = {}) => ({
   job: { name: 'Tampa azul', description: '' },
   geometry: { rois: { cap: { relative_to: 'frame', rect: [0.1, 0.1, 0.5, 0.5] } } },
-  trigger: { mode: 'manual' },
+  acquisition: { trigger: { type: 'manual' } },
   quality: { sharpness_min_ratio: 0.5 },
   ui: { waiting: null },
   decision: 'all_pass',
@@ -70,7 +70,7 @@ describe('what changed, in words', () => {
           rois: { outra: { relative_to: 'frame', rect: [0, 0, 1, 1] } },
           fixtures: [{ name: 'anchor', locator: { type: 'blob', version: 1, params: {} } }],
         },
-        trigger: { mode: 'continuous' },
+        acquisition: { trigger: { type: 'continuous' } },
         ui: { waiting: 'Aguardando peça' },
       },
     )

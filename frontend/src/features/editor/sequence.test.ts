@@ -94,7 +94,7 @@ describe('the state of each step', () => {
     expect(stepOfField('job.geometry.rois.cap.rect')).toBe('tools')
     expect(stepOfField('add_files')).toBe('samples')
     // the trigger is set with the image (TD-32), the quality gates are their own step
-    expect(stepOfField('job.trigger.interval_ms')).toBe('image')
+    expect(stepOfField('job.acquisition.trigger.continuous.interval_ms')).toBe('image')
     expect(stepOfField('job.quality.sharpness_min_ratio')).toBe('quality')
     expect(stepOfField('somewhere.else')).toBeNull()
   })

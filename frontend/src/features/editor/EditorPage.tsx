@@ -476,13 +476,13 @@ function Editor({
     const editRegions = step === 'tools'
     if (
       step === 'image' &&
-      draft.job.trigger?.mode === 'image_presence' &&
-      draft.job.trigger.presence_roi
+      draft.job.acquisition.trigger?.type === 'image_presence' &&
+      draft.job.acquisition.trigger.image_presence?.roi
     )
       out.push({
         id: 'presence',
         label: t.presenceArea,
-        rect: draft.job.trigger.presence_roi,
+        rect: draft.job.acquisition.trigger.image_presence.roi,
         kind: 'presence',
         editable: true,
       })
@@ -563,7 +563,7 @@ function Editor({
     const edit = useDraft.getState().edit
     edit((d) => {
       const at = /^(locator|position):(\d+)$/.exec(shapeId)
-      if (shapeId === 'presence') d.job.trigger.presence_roi = rect
+      if (shapeId === 'presence') d.job.acquisition.trigger.image_presence.roi = rect
       else if (shapeId === 'autoexp') d.profile.exposure.auto_once.region = rect
       else if (at?.[1] === 'locator') {
         const f = d.job.geometry.fixtures[Number(at[2])]
@@ -725,7 +725,7 @@ function Editor({
               </span>
               <Select
                 aria-labelledby="trigger-bar"
-                value={draft.job.trigger?.mode ?? 'image_presence'}
+                value={draft.job.acquisition.trigger?.type ?? 'manual'}
                 onValueChange={setTriggerMode}
                 options={Object.entries(t.triggerModes).map(([value, [label]]) => ({
                   value,

@@ -131,7 +131,7 @@ export function summarizeChanges(
   for (const was of wasTools)
     if (!tools.some((x) => x.id === was.id)) out.push(c.toolRemoved(was.id))
 
-  if (!same(job.trigger, baseJob.trigger)) out.push(c.trigger)
+  if (!same(job.acquisition?.trigger, baseJob.acquisition?.trigger)) out.push(c.trigger)
   if (!same(job.quality, baseJob.quality)) out.push(c.quality)
   if (!same(job.ui, baseJob.ui)) out.push(c.texts)
   if (!same(job.decision, baseJob.decision)) out.push(c.decision)
