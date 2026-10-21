@@ -14,7 +14,7 @@ from pathlib import Path
 
 import yaml
 
-from vision_station.jobs import CameraProfile, Job
+from vision_station.jobs import CameraProfile, Job, acquisition_block
 from vision_station.pipeline import inspect_job
 from vision_station.store import JobBundle, JobRef, JobStore
 from vision_station.system import load_config, save_config
@@ -26,10 +26,9 @@ JOB_ID = "00000000-0000-4000-8000-000000000001"
 
 def bench_job(profile: CameraProfile) -> JobBundle:
     data = {
-        "format": 2,
+        "format": 3,
         "job": {"id": JOB_ID, "name": "Leitura de código (bancada)", "version": 1, "author": "bancada", "created_at": "2026-10-15T00:00:00-03:00"},
-        "camera_profile": "camera/profile.yaml",
-        "trigger": {"mode": "image_presence", "presence_roi": [0.1, 0.1, 0.9, 0.9], "still_ms": 800, "min_area": 0.05},
+        "acquisition": acquisition_block("image_presence", image_presence={"roi": [0.1, 0.1, 0.9, 0.9], "still_ms": 800, "min_area": 0.05}),
         "quality": {"brightness": {"min": 15, "max": 245}, "sharpness_min_ratio": 0.5},
         "geometry": {"rois": {"all": {"relative_to": "frame", "rect": [0, 0, 1, 1]}}},
         "tools": [{"id": "codigo", "type": "code", "version": 1, "roi": "all", "reason_fail": "Código não lido"}],

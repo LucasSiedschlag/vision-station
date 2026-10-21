@@ -20,7 +20,7 @@ import cv2
 import yaml
 
 from vision_station.cameras import create_camera
-from vision_station.jobs import CameraProfile, Job
+from vision_station.jobs import CameraProfile, Job, acquisition_block
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import JobBundle
@@ -32,10 +32,9 @@ DEFAULT_PROFILE = Path(__file__).parent.parent / "examples" / "c920-profile.yaml
 
 def build_job(profile: CameraProfile, still_ms: int, min_area: float) -> JobBundle:
     data = {
-        "format": 2,
+        "format": 3,
         "job": {"id": "00000000-0000-4000-8000-000000000001", "name": "Teste da estação", "version": 1, "author": "bancada", "created_at": "2026-10-14T00:00:00-03:00"},
-        "camera_profile": "camera/profile.yaml",
-        "trigger": {"mode": "image_presence", "presence_roi": [0.1, 0.1, 0.9, 0.9], "still_ms": still_ms, "min_area": min_area},
+        "acquisition": acquisition_block("image_presence", image_presence={"roi": [0.1, 0.1, 0.9, 0.9], "still_ms": still_ms, "min_area": min_area}),
         "quality": {"brightness": {"min": 0, "max": 255}, "sharpness_min_ratio": 0.5},
         "geometry": {"rois": {"all": {"relative_to": "frame", "rect": [0, 0, 1, 1]}}},
         "tools": [{"id": "code", "type": "code", "version": 1, "roi": "all", "reason_fail": "Código não lido"}],

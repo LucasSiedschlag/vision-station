@@ -146,6 +146,6 @@ def test_texts_of_a_job_are_in_both_languages_and_fall_back_to_the_other():
 
 
 def test_a_job_of_the_first_format_is_refused_with_a_clear_message():
-    text = (FIXTURES / "job.yaml").read_text(encoding="utf-8").replace("format: 2", "format: 1")
+    text = (FIXTURES / "job.yaml").read_text(encoding="utf-8").replace("format: 3", "format: 1")
     with pytest.raises(ValueError, match="no longer supported"):
         parse_job(text)

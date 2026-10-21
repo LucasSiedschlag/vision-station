@@ -4,7 +4,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from vision_station.jobs import CameraProfile, Job, dump_job, parse_job
+from vision_station.jobs import CameraProfile, Job, acquisition_block, dump_job, parse_job
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -36,19 +36,24 @@ def test_architecture_example_profile_is_valid():
 @pytest.mark.parametrize(
     "change",
     [
-        lambda d: d.update(format=1),  # the first format is no longer read (nothing is deployed, TD-21)
-        lambda d: d.update(format=3),
+        lambda d: d.update(format=1),  # an older format is no longer read (nothing is deployed, TD-21)
+        lambda d: d.update(format=2),
+        lambda d: d.update(format=4),
         lambda d: d.update(surprise=1),  # unknown fields are typos, not extensions
         lambda d: d["job"].update(parent_version=7),
-        lambda d: d["trigger"].update(presence_roi=[0.9, 0.1, 0.1, 0.9]),
-        lambda d: d["trigger"].update(presence_roi=[0.1, 0.1, 1.5, 0.9]),
+        lambda d: d["acquisition"]["trigger"]["image_presence"].update(roi=[0.9, 0.1, 0.1, 0.9]),
+        lambda d: d["acquisition"]["trigger"]["image_presence"].update(roi=[0.1, 0.1, 1.5, 0.9]),
         lambda d: d["quality"]["brightness"].update(min=200),
         lambda d: d["geometry"]["rois"].update(anchor={"relative_to": "frame", "rect": [0, 0, 1, 1]}),
         lambda d: d["tools"][0].update(roi="nowhere"),
         lambda d: d["tools"][1].update(id="tampa"),
         lambda d: d.update(tools=[]),
-        lambda d: d["trigger"].update(mode="image_presence", presence_roi=None),
-        lambda d: d["trigger"].update(mode="sometimes"),
+        lambda d: d["acquisition"]["trigger"].pop("image_presence"),  # the type needs its block
+        lambda d: d["acquisition"]["trigger"]["image_presence"].pop("diff_threshold"),  # written in full (FR-JOB-16)
+        lambda d: d["acquisition"]["trigger"].update(type="sometimes"),
+        lambda d: d["acquisition"].pop("image"),
+        lambda d: d["acquisition"]["image"].update(profile=3),
+        lambda d: d.pop("acquisition"),
         lambda d: d["geometry"].update(fixtures=[]),  # ROIs and tools still refer to the anchor
     ],
 )
@@ -87,11 +92,19 @@ def test_job_without_locator_works_on_the_frame():
     assert job.geometry.fixtures == []
 
 
-def test_trigger_modes_that_need_no_presence_settings():
+def test_the_type_decides_which_block_of_the_trigger_is_needed_and_the_others_may_stay():
     data = load_job_data()
-    for mode in ("manual", "external", "continuous"):
-        data["trigger"] = {"mode": mode}
-        assert Job.model_validate(data).trigger.mode == mode
+    data["acquisition"]["trigger"] = {"type": "manual"}
+    assert Job.model_validate(data).acquisition.trigger.type == "manual"  # a manual trigger has nothing to write
+    for kind in ("external", "continuous"):
+        data["acquisition"] = acquisition_block(kind)
+        job = Job.model_validate(data)
+        assert job.acquisition.trigger.type == kind and getattr(job.acquisition.trigger, kind) is not None
+        data["acquisition"]["trigger"]["type"] = "manual"  # switching the type keeps what was typed, and ignores it
+        assert Job.model_validate(data).acquisition.trigger.type == "manual"
+    with pytest.raises(ValidationError):
+        data["acquisition"]["trigger"] = {"type": "external"}  # the type's own block is missing
+        Job.model_validate(data)
 
 
 def test_screen_text_is_optional_and_comes_from_the_job():
@@ -101,12 +114,18 @@ def test_screen_text_is_optional_and_comes_from_the_job():
     assert Job.model_validate(data).ui.waiting is None
 
 
-def test_the_continuous_interval_is_500_ms_unless_set_and_is_written_only_when_changed():
+def test_the_blocks_are_written_in_full_and_their_limits_are_checked():
+    """FR-JOB-16: what the job means is in the file, and the software has no defaults of its own to change it."""
     base = load_job_data()
+    base["acquisition"] = acquisition_block("continuous", external={"delay_ms": 20, "debounce_ms": 5})
     job = Job.model_validate(base)
-    assert job.trigger.interval_ms == 500 and "interval_ms" not in dump_job(job)  # still opens in a version without it
-    base["trigger"] = {**base["trigger"], "interval_ms": 0}
-    assert "interval_ms: 0" in dump_job(Job.model_validate(base))
-    for bad in (-1, 10_001):
+    text = dump_job(job)
+    assert "interval_ms: 500" in text and "delay_ms: 20" in text and "debounce_ms: 5" in text and "calibration: null" in text
+    assert parse_job(text) == job
+    for block, field, bad in (("continuous", "interval_ms", -1), ("continuous", "interval_ms", 10_001), ("external", "delay_ms", 1001), ("external", "debounce_ms", 66), ("external", "delay_ms", -1)):
+        broken = load_job_data()
+        broken["acquisition"] = acquisition_block("continuous", external={"delay_ms": 20, "debounce_ms": 5})
+        broken["acquisition"]["trigger"][block][field] = bad
         with pytest.raises(ValidationError):
-            Job.model_validate({**base, "trigger": {**base["trigger"], "interval_ms": bad}})
+            Job.model_validate(broken)
+    assert acquisition_block("manual")["trigger"] == {"type": "manual"}

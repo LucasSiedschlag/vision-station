@@ -27,7 +27,7 @@ from fastapi import HTTPException
 
 from vision_station.api import ApiDeps, AuthService, create_app, make_event_handler
 from vision_station.cameras import ApplyReport, Camera, Capabilities, Frame, Health, SettingStatus
-from vision_station.jobs import CameraProfile, Job
+from vision_station.jobs import CameraProfile, Job, acquisition_block
 from vision_station.records import ResultRecorder, ResultStore
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import Acquisition, StationController
@@ -94,10 +94,9 @@ class ControlledCamera(_SimulatedCamera):
 
 def demo_job(name: str = "Tampa azul — etiqueta de lote (demo)") -> JobBundle:
     data = {
-        "format": 2,
+        "format": 3,
         "job": {"id": "00000000-0000-4000-8000-0000000000d0", "name": name, "version": 1, "author": "demo", "created_at": "2026-10-14T00:00:00-03:00"},
-        "camera_profile": "camera/profile.yaml",
-        "trigger": {"mode": "image_presence", "presence_roi": [0.0, 0.0, 1.0, 1.0], "still_ms": 800, "min_area": 0.05},
+        "acquisition": acquisition_block("image_presence", image_presence={"roi": [0.0, 0.0, 1.0, 1.0], "still_ms": 800, "min_area": 0.05}),
         "quality": {"brightness": {"min": 0, "max": 255}, "sharpness_min_ratio": 0.5},
         "geometry": {"rois": {"all": {"relative_to": "frame", "rect": [0, 0, 1, 1]}}},
         "tools": [{"id": "code", "type": "code", "version": 1, "roi": "all", "reason_fail": "Código não lido"}],

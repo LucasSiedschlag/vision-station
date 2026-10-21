@@ -58,7 +58,7 @@ def test_anything_but_a_limit_is_refused_with_where(env, mnt):  # noqa: F811
         "geometry.rois.label.rect": lambda d: d["job"]["geometry"]["rois"]["label"].update(rect=[0, 0, 0.5, 0.5]),
         "quality.sharpness_min_ratio": lambda d: d["job"]["quality"].update(sharpness_min_ratio=0.1),
         "tools.0.reason_fail": lambda d: d["job"]["tools"][0].update(reason_fail="outro"),
-        "trigger.mode": lambda d: d["job"]["trigger"].update(mode="manual"),
+        "acquisition.trigger.type": lambda d: d["job"]["acquisition"]["trigger"].update(type="manual"),
         "profile": lambda d: d["profile"].update(power_line_hz=50),
         "tools": lambda d: d["job"]["tools"].append({**d["job"]["tools"][0], "id": "outra"}),
     }

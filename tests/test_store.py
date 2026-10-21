@@ -79,7 +79,7 @@ def test_pack_and_unpack_round_trip_and_are_deterministic():
     assert data == arc.pack("job", dict(reversed(files.items())), {"job_id": "j", "version": 1})
     out = arc.unpack(data, "job")
     assert out.files == files
-    assert out.manifest["format"] == 2 and out.manifest["kind"] == "job"
+    assert out.manifest["format"] == 3 and out.manifest["kind"] == "job"
     assert out.manifest["files"]["job.yaml"]["sha256"] == arc.sha256(b"a: 1\n")
 
 
@@ -91,8 +91,8 @@ def test_pack_and_unpack_round_trip_and_are_deterministic():
         (lambda e: e.update({"extra.txt": b"x"}), IntegrityError),  # file the manifest does not list
         (lambda e: e.pop("manifest.json"), FormatError),
         (lambda e: e.update({"manifest.json": b"{not json"}), FormatError),
-        (lambda e: e.update({"manifest.json": json.dumps({"format": 3, "kind": "job", "files": {}}).encode()}), FormatError),
-        (lambda e: e.update({"manifest.json": json.dumps({"format": 2, "kind": "backup", "files": {}}).encode()}), FormatError),
+        (lambda e: e.update({"manifest.json": json.dumps({"format": 4, "kind": "job", "files": {}}).encode()}), FormatError),
+        (lambda e: e.update({"manifest.json": json.dumps({"format": 3, "kind": "backup", "files": {}}).encode()}), FormatError),
     ],
 )
 def test_damaged_or_wrong_files_are_refused(tamper, error):
@@ -103,7 +103,7 @@ def test_damaged_or_wrong_files_are_refused(tamper, error):
 
 def test_newer_format_has_a_clear_message_and_garbage_is_refused():
     data = arc.pack("job", {"job.yaml": b"a: 1\n"}, {})
-    newer = rezip(data, lambda e: e.update({"manifest.json": json.dumps({"format": 3, "kind": "job", "files": {}}).encode()}))
+    newer = rezip(data, lambda e: e.update({"manifest.json": json.dumps({"format": 4, "kind": "job", "files": {}}).encode()}))
     with pytest.raises(FormatError, match="newer than this software"):
         arc.unpack(newer, "job")
     with pytest.raises(FormatError, match="not a valid"):

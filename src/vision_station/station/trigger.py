@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from vision_station.jobs.job import Trigger
+from vision_station.jobs.job import PresenceTrigger
 
 BACKGROUND_RATE = 0.05  # how fast the empty-scene background follows slow light changes
 
@@ -24,10 +24,8 @@ class Presence:
 
 
 class PresenceDetector:
-    def __init__(self, trigger: Trigger):
-        if trigger.presence_roi is None:
-            raise ValueError("presence detection needs presence_roi")
-        self._roi = trigger.presence_roi
+    def __init__(self, trigger: PresenceTrigger):
+        self._roi = trigger.roi
         self._diff = trigger.diff_threshold
         self._min_area = trigger.min_area
         self._motion_area = trigger.motion_area

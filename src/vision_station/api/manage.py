@@ -116,8 +116,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         info = dict(data.get("job") or {})
         info.update(id=job_id, version=version, parent_version=parent, author=author, created_at=_now().isoformat(timespec="seconds"), notes=draft.notes, tuned=tuned)
         data["job"] = info
-        data.setdefault("format", 2)
-        data.setdefault("camera_profile", "camera/profile.yaml")
+        data.setdefault("format", 3)
         fields: dict[str, str] = {}
         job = profile = None
         try:
@@ -440,7 +439,7 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         def text(v: int) -> list[str]:
             files = jobs.load(ref_of(job_id, v)).files()
             bundle = jobs.load(JobRef(job_id, v))
-            return (files[JOB_FILE].decode("utf-8") + "\n# camera profile\n" + files[bundle.job.camera_profile].decode("utf-8")).splitlines(keepends=True)
+            return (files[JOB_FILE].decode("utf-8") + "\n# camera profile\n" + files[bundle.job.acquisition.image.profile].decode("utf-8")).splitlines(keepends=True)
 
         diff = difflib.unified_diff(text(against), text(version), fromfile=f"v{against}", tofile=f"v{version}")
         return m.DiffOut(id=job_id, version=version, against=against, diff="".join(diff))

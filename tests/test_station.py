@@ -5,8 +5,8 @@ import pytest
 import yaml
 
 from vision_station.cameras import ApplyReport, Camera, CameraError, Capabilities, Frame, Health, SettingStatus
-from vision_station.jobs import CameraProfile, Job
-from vision_station.jobs.job import Trigger
+from vision_station.jobs import CameraProfile, Job, acquisition_block
+from vision_station.jobs.job import PresenceTrigger
 from vision_station.core.errors import ErrorCode
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.station import (
@@ -99,11 +99,12 @@ def make_bundle(mode="image_presence", presence=True, waiting=None, interval_ms=
     data = yaml.safe_load((FIXTURES / "job.yaml").read_text(encoding="utf-8"))
     data["geometry"] = {"rois": {"label": {"relative_to": "frame", "rect": [0.2, 0.2, 0.8, 0.5]}}}
     data["tools"] = [{"id": "lote", "type": "code", "version": 1, "roi": "label", "reason_fail": "Código não lido"}]
-    data["trigger"] = {"mode": mode, "still_ms": 400, "min_area": 0.05}
+    blocks = {"image_presence": {"roi": [0.0, 0.0, 1.0, 1.0], "still_ms": 400, "min_area": 0.05}}
     if interval_ms is not None:
-        data["trigger"]["interval_ms"] = interval_ms
-    if presence:
-        data["trigger"]["presence_roi"] = [0.0, 0.0, 1.0, 1.0]
+        blocks["continuous"] = {"interval_ms": interval_ms}
+    if not presence:
+        del blocks["image_presence"]  # the type that needs it is not given one below
+    data["acquisition"] = acquisition_block(mode, **blocks)
     if waiting:
         data["ui"] = {"waiting": waiting}
     elif "ui" in data:
@@ -299,7 +300,9 @@ def test_acquisition_thread_runs_and_stops():
 
 
 def trigger(**kw):
-    return Trigger.model_validate({"presence_roi": [0, 0, 1, 1], "still_ms": 400, **kw})
+    return PresenceTrigger.model_validate(
+        {"roi": [0, 0, 1, 1], "still_ms": 400, "rearm": "object_absent", "diff_threshold": 25, "min_area": 0.05, "motion_area": 0.01, **kw}
+    )
 
 
 def test_presence_motion_and_stillness():
@@ -318,7 +321,7 @@ def test_presence_motion_and_stillness():
 
 
 def test_presence_uses_only_the_region_and_follows_slow_light_changes():
-    det = PresenceDetector(trigger(presence_roi=[0.0, 0.0, 0.2, 1.0]))
+    det = PresenceDetector(trigger(roi=[0.0, 0.0, 0.2, 1.0]))
     det.update(empty_scene(), 0.0)
     assert not det.update(scene_with_object(100), 0.1).present  # the object is outside the region
     det2 = PresenceDetector(trigger())

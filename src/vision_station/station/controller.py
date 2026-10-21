@@ -323,8 +323,8 @@ class StationController:
         self._bundle = bundle
         info = bundle.job.job
         self._job_ref = ResultJob(str(info.id), info.name, info.version, content_hash=bundle.content_hash)
-        trigger = bundle.job.trigger
-        self._detector = PresenceDetector(trigger) if trigger.presence_roi is not None else None
+        trigger = bundle.job.acquisition.trigger
+        self._detector = PresenceDetector(trigger.image_presence) if trigger.type == "image_presence" and trigger.image_presence else None
         self._prepare()
 
     def _prepare(self) -> None:
@@ -363,12 +363,13 @@ class StationController:
         return frame
 
     def _ready(self) -> None:
-        mode = self._bundle.job.trigger.mode  # type: ignore[union-attr]
+        trigger = self._bundle.job.acquisition.trigger  # type: ignore[union-attr]
+        mode = trigger.type
         if self._trigger_requested:
             self._begin_inspection()
             return
         if mode == "continuous":
-            interval_s = self._bundle.job.trigger.interval_ms / 1000  # type: ignore[union-attr]
+            interval_s = trigger.continuous.interval_ms / 1000  # type: ignore[union-attr]
             if self._clock() - self._began_at >= interval_s and self._new_frame() is not None:
                 self._begin_inspection()
             return
@@ -388,7 +389,7 @@ class StationController:
         presence = self._detector.update(frame.image, frame.timestamp)
         if not presence.present:
             self._go(State.READY)  # the object left before it was still
-        elif presence.still_for_s * 1000 >= self._bundle.job.trigger.still_ms:  # type: ignore[union-attr,operator]
+        elif presence.still_for_s * 1000 >= self._bundle.job.acquisition.trigger.image_presence.still_ms:  # type: ignore[union-attr]
             self._begin_inspection()
 
     def _begin_inspection(self) -> None:
@@ -400,7 +401,12 @@ class StationController:
         self._trigger_requested = False
         with self._trigger_lock:
             self._trigger_taken = False
-        self._t0 = self._began_at = self._clock()
+        self._began_at = self._clock()
+        # an external signal is followed by the delay the job asks for, then the picture is taken: the frame must come after
+        # this moment (FR-TRG-6), the same rule that keeps a buffered frame out (FR-ACQ-6)
+        external = self._bundle.job.acquisition.trigger  # type: ignore[union-attr]
+        delay_s = external.external.delay_ms / 1000 if external.type == "external" and external.external and source.source != "image" else 0.0
+        self._t0 = self._began_at + delay_s
         self._go(State.INSPECTING)
 
     def _inspecting(self) -> None:
@@ -423,11 +429,11 @@ class StationController:
         self._finish(result, frame, started)
 
     def _showing_result(self) -> None:
-        mode = self._bundle.job.trigger.mode  # type: ignore[union-attr]
+        mode = self._bundle.job.acquisition.trigger.type  # type: ignore[union-attr]
         if mode == "continuous":
             self._go(State.READY)
             return
-        if self._detector is not None and self._bundle.job.trigger.presence_roi is not None:  # type: ignore[union-attr]
+        if self._detector is not None:
             frame = self._new_frame()
             if frame is not None and self._detector.update(frame.image, frame.timestamp).absent_for_s >= self._absent_s:
                 self._go(State.READY)  # the object is gone: re-armed (FR-TRG-4)

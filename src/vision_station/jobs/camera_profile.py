@@ -108,11 +108,9 @@ PROGRAM_SIDE = ("orientation",)
 
 
 def dump_profile(profile: CameraProfile) -> str:
-    """The profile as YAML. A normal orientation and an absent `auto_once` are left out: they are what a profile without
-    the key means, and a job that does not use them still opens in a version that does not know the fields (TD-32)."""
+    """The profile as YAML, written in full (FR-JOB-16): the orientation and how *Auto uma vez* measures are in the file
+    even when they are the usual ones, so a change of a default in the software never changes a saved version."""
     data: dict[str, Any] = profile.model_dump(mode="json")
-    if data["orientation"] == "normal":
-        del data["orientation"]
     if data["exposure"]["auto_once"] is None:
-        del data["exposure"]["auto_once"]
+        data["exposure"]["auto_once"] = AutoOnce().model_dump(mode="json")
     return yaml.safe_dump(data, sort_keys=False)

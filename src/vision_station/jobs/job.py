@@ -1,4 +1,4 @@
-"""The job definition (`job.yaml`, architecture §4.2, format 2)."""
+"""The job definition (`job.yaml`, architecture §4.2, format 3)."""
 
 from collections.abc import Mapping
 from datetime import datetime
@@ -86,36 +86,79 @@ class JobInfo(_Strict):
         return self
 
 
-DEFAULT_INTERVAL_MS = 500
+class PresenceTrigger(_Strict):
+    """`image_presence`: an object is present and still in `roi` (TD-19). Every parameter is written (FR-JOB-16)."""
 
-
-class Trigger(_Strict):
-    """When an inspection starts (TD-19).
-
-    image_presence: an object is present and still in `presence_roi`.
-    manual / external: started by the operator or by another system.
-    continuous: no trigger, every frame is inspected (for example reading codes), but not more often than
-    `interval_ms` (FR-TRG-7, TD-31).
-    """
-
-    mode: Literal["image_presence", "manual", "external", "continuous"] = "image_presence"
-    presence_roi: tuple[Fraction, Fraction, Fraction, Fraction] | None = None  # fractions of the frame
-    still_ms: Annotated[int, Field(gt=0)] | None = None
-    rearm: Literal["object_absent"] = "object_absent"
-    # continuous: the least time between two inspections; 0 = as fast as the PC allows. 500 ms leaves CPU on tier M
-    interval_ms: Annotated[int, Field(ge=0, le=10_000)] = DEFAULT_INTERVAL_MS
+    roi: tuple[Fraction, Fraction, Fraction, Fraction]  # fractions of the frame
+    still_ms: Annotated[int, Field(gt=0)]  # stillness before the picture
+    rearm: Literal["object_absent"]
     # how the image is compared with the empty scene (presence) and with the previous frame (motion)
-    diff_threshold: Annotated[int, Field(ge=1, le=255)] = 25  # gray levels that count as a change
-    min_area: Annotated[float, Field(gt=0, le=1)] = 0.05  # fraction of the region that must differ to count as present
-    motion_area: Annotated[float, Field(gt=0, le=1)] = 0.01  # fraction that must change between frames to count as moving
+    diff_threshold: Annotated[int, Field(ge=1, le=255)]  # gray levels that count as a change
+    min_area: Annotated[float, Field(gt=0, le=1)]  # fraction of the region that must differ to count as present
+    motion_area: Annotated[float, Field(gt=0, le=1)]  # fraction that must change between frames to count as moving
 
     @model_validator(mode="after")
-    def _presence_settings(self) -> Self:
-        if self.mode == "image_presence":
-            if self.presence_roi is None or self.still_ms is None:
-                raise ValueError("image_presence needs presence_roi and still_ms")
-            _check_rect(self.presence_roi)
+    def _roi_has_area(self) -> Self:
+        _check_rect(self.roi)
         return self
+
+
+class ExternalTrigger(_Strict):
+    """`external`: started from outside (the machine, the local API). Which line, edge or protocol carries it is the
+    station's, never the job's (architecture §4.6)."""
+
+    delay_ms: Annotated[int, Field(ge=0, le=1000)]  # wait this long after the signal before the picture (FR-TRG-6)
+    debounce_ms: Annotated[int, Field(ge=0, le=65)]  # the input filter against bounce (FR-TRG-8), applied where the line is read
+
+
+class ContinuousTrigger(_Strict):
+    """`continuous`: every frame is inspected, not more often than `interval_ms` (FR-TRG-7, TD-31)."""
+
+    interval_ms: Annotated[int, Field(ge=0, le=10_000)]  # 0: as fast as the PC allows
+
+
+class TriggerBlock(_Strict):
+    """When an inspection starts. The type decides which sub-block is read; one of another type may be present and is
+    ignored, so switching the type in the editor keeps what the person typed (docs/job-format.md §7)."""
+
+    type: Literal["image_presence", "external", "manual", "continuous"]
+    image_presence: PresenceTrigger | None = None
+    external: ExternalTrigger | None = None
+    continuous: ContinuousTrigger | None = None
+
+    @model_validator(mode="after")
+    def _written_in_full(self) -> Self:
+        if self.type != "manual" and getattr(self, self.type) is None:
+            raise ValueError(f"trigger type '{self.type}' needs its block '{self.type}' with every parameter written")
+        return self
+
+
+class ImageBlock(_Strict):
+    profile: str  # relative path inside the .vjob, e.g. camera/profile.yaml
+    calibration: str | None = None  # relative path of the calibration (FR-INS-15); None: the job is not calibrated
+
+
+class Acquisition(_Strict):
+    """How and when the picture is taken, in one block (TD-32, FR-JOB-16): the trigger and the image."""
+
+    trigger: TriggerBlock
+    image: ImageBlock
+
+
+def acquisition_block(type: str = "manual", profile: str = "camera/profile.yaml", **blocks: dict[str, Any]) -> dict[str, Any]:
+    """A block with every parameter written, as the editor writes it, for scripts and tests: the defaults of the editor,
+    with the parameters of `blocks` (by sub-block name) changed. The software has no defaults of its own: a saved block
+    always says what it means (FR-JOB-16)."""
+    full: dict[str, Any] = {
+        "image_presence": {"roi": [0.1, 0.1, 0.9, 0.9], "still_ms": 500, "rearm": "object_absent", "diff_threshold": 25, "min_area": 0.05, "motion_area": 0.01},
+        "external": {"delay_ms": 0, "debounce_ms": 0},
+        "continuous": {"interval_ms": 500},
+    }
+    trigger: dict[str, Any] = {"type": type}
+    for name, defaults in full.items():
+        if name == type or name in blocks:
+            trigger[name] = {**defaults, **blocks.get(name, {})}
+    return {"trigger": trigger, "image": {"profile": profile, "calibration": None}}
 
 
 class Range(_Strict):
@@ -218,10 +261,9 @@ class Tool(_Strict):
 
 
 class Job(_Strict):
-    format: Literal[2]
+    format: Literal[3]
     job: JobInfo
-    camera_profile: str  # relative path inside the .vjob, e.g. camera/profile.yaml
-    trigger: Trigger
+    acquisition: Acquisition
     quality: Quality
     geometry: Geometry
     tools: Annotated[list[Tool], Field(min_length=1)]
@@ -245,17 +287,14 @@ class Job(_Strict):
 def parse_job(text: str) -> Job:
     """Parse and validate the text of a `job.yaml`. A job of an older format is refused: nothing needs reading one (TD-21)."""
     data = yaml.safe_load(text)
-    if isinstance(data, dict) and isinstance(data.get("format"), int) and data["format"] < 2:
-        raise ValueError(f"job format {data['format']} is no longer supported: make the job again (format 2)")
+    if isinstance(data, dict) and isinstance(data.get("format"), int) and data["format"] < 3:
+        raise ValueError(f"job format {data['format']} is no longer supported: make the job again (format 3)")
     return Job.model_validate(data)
 
 
 def dump_job(job: Job) -> str:
     """Write a job as YAML, in the field order of the model."""
     data = job.model_dump(mode="json")
-    if data["trigger"]["interval_ms"] == DEFAULT_INTERVAL_MS:
-        # written only when changed, so a job that does not use it still opens in a version without the field
-        del data["trigger"]["interval_ms"]
     if not data["job"]["tuned"]:
         del data["job"]["tuned"]
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)

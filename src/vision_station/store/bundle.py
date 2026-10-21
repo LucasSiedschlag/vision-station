@@ -26,7 +26,7 @@ class JobBundle:
     def files(self) -> dict[str, bytes]:
         files = {
             JOB_FILE: dump_job(self.job).encode("utf-8"),
-            self.job.camera_profile: dump_profile(self.profile).encode("utf-8"),
+            self.job.acquisition.image.profile: dump_profile(self.profile).encode("utf-8"),
         }
         for name, data in self.extra.items():
             check_path(name)
@@ -65,9 +65,12 @@ def bundle_from_files(files: Mapping[str, bytes], check_tools: bool = True) -> J
         job = parse_job(files[JOB_FILE].decode("utf-8"))
     except (ValidationError, yaml.YAMLError, UnicodeDecodeError) as exc:
         raise FormatError(f"{JOB_FILE} is not valid: {exc}") from exc
-    profile_path = check_path(job.camera_profile)
+    profile_path = check_path(job.acquisition.image.profile)
     if profile_path == JOB_FILE or profile_path not in files:
-        raise FormatError(f"camera profile file is missing: {job.camera_profile}")
+        raise FormatError(f"camera profile file is missing: {job.acquisition.image.profile}")
+    calibration = job.acquisition.image.calibration
+    if calibration is not None and (check_path(calibration) not in files or calibration in (JOB_FILE, profile_path)):
+        raise FormatError(f"calibration file is missing: {calibration}")
     try:
         profile = CameraProfile.model_validate(yaml.safe_load(files[profile_path]))
     except (ValidationError, yaml.YAMLError) as exc:

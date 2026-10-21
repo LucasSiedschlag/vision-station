@@ -69,16 +69,16 @@ def test_it_is_not_a_camera_setting():
     assert "orientation" not in SETTINGS and "exposure" in SETTINGS  # a report lists what the camera is given
 
 
-def test_a_normal_orientation_is_not_written_so_an_older_version_still_opens_the_job():
+def test_the_orientation_is_always_written_so_a_default_never_changes_a_saved_version():
     profile = make_bundle().profile
-    assert "orientation" not in dump_profile(profile)
+    assert "orientation: normal" in dump_profile(profile)  # FR-JOB-16: written in full, normal included
     assert "orientation: mirror" in dump_profile(profile.model_copy(update={"orientation": "mirror"}))
     bundle = make_bundle()
     files = bundle.files()
-    assert b"orientation" not in files["camera/profile.yaml"]
+    assert b"orientation: normal" in files["camera/profile.yaml"]
     turned = JobBundle(bundle.job, bundle.profile.model_copy(update={"orientation": "rotate180"}), bundle.extra)
     assert load_bundle(turned.files()).profile.orientation == "rotate180"
-    assert load_bundle(files).profile.orientation == "normal"  # a profile without the key means normal
+    assert load_bundle(files).profile.orientation == "normal"
     with pytest.raises(ValueError):
         CameraProfile.model_validate({**yaml.safe_load(dump_profile(profile)), "orientation": "sideways"})
 
