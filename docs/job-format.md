@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 08 — Job file format (deliverable D8) |
-| Format | 2: fixtures with a pose and texts in both languages (TD-21). The `acquisition` block is format 3 (§7, TD-32), not written yet. Format 1 is refused, never migrated: nothing is deployed |
+| Format | 3: the `acquisition` block (§7, TD-32) on top of format 2 (fixtures with a pose and texts in both languages, TD-21). Formats 1 and 2 are refused, never migrated: nothing is deployed |
 | Date | 2026-10-18 |
 | Code | `src/vision_station/jobs/`, `src/vision_station/store/` |
 
@@ -57,7 +57,7 @@ A file a tool or locator names in its parameters must be in the job: a job witho
 ## 3. `job.yaml`
 
 ```yaml
-format: 2
+format: 3
 job:
   id: 3f1c9a2e-5b7d-4c1e-9a0f-2d6b8e4f7a10   # UUID, the same for every version
   name: Tampa azul — etiqueta de lote
@@ -68,16 +68,19 @@ job:
   description: ''
   notes: luz nova                            # what changed in this version
   tuned: true                                # only in a fine-tune of tolerances by the Supervisor (FR-JOB-14); left out otherwise
-camera_profile: camera/profile.yaml
-trigger:
-  mode: image_presence                       # image_presence | manual | external | continuous
-  presence_roi: [0.1, 0.1, 0.9, 0.9]          # fractions of the frame (image_presence)
-  still_ms: 500                              # stillness before the picture (image_presence)
-  rearm: object_absent
-  diff_threshold: 25                         # gray levels that count as a change (1–255)
-  min_area: 0.05                             # fraction of the area that must differ to count as present
-  motion_area: 0.01                          # fraction that must change between frames to count as moving
-  interval_ms: 500                           # continuous only; transitional (VIA-0064), moves into the format-3 block (§7); written only when not 500
+acquisition:                                 # how and when the picture is taken, written in full (§7)
+  trigger:
+    type: image_presence                     # image_presence | manual | external | continuous
+    image_presence:
+      roi: [0.1, 0.1, 0.9, 0.9]              # fractions of the frame
+      still_ms: 500                          # stillness before the picture
+      rearm: object_absent
+      diff_threshold: 25                     # gray levels that count as a change (1–255)
+      min_area: 0.05                         # fraction of the area that must differ to count as present
+      motion_area: 0.01                      # fraction that must change between frames to count as moving
+  image:
+    profile: camera/profile.yaml
+    calibration: null
 quality:
   brightness: {min: 15, max: 245}             # outside: ERROR
   sharpness_min_ratio: 0.5                   # vs. the reference image; below: ERROR
@@ -162,7 +165,7 @@ jobs/<job-id>/v<n>.vjob
 
 Restoring checks the whole file first, stores the versions it does not have (an identical version is skipped; a version whose number is already used here with different content is stored as the next version, never overwritten), and activates nothing: the restored active version is shown to be verified and activated. Results and recorded images are not in backups.
 
-## 7. Format 3: the `acquisition` block (TD-32, written by VIA-0084)
+## 7. Format 3: the `acquisition` block (TD-32, as built in VIA-0084)
 
 Format 3 groups everything about **how and when the picture is taken** in one block, as Cognex does in `AcquireImage` and Keyence in *Image Optimization* (document 09 §20). It replaces `trigger` and `camera_profile`. The rest of `job.yaml` keeps its place (`quality`, `geometry`, `tools`, `decision`, `outputs`, `ui`).
 
@@ -192,7 +195,7 @@ exposure:
 ```
 
 Rules:
-- **Written in full** (FR-JOB-16). The editor writes every parameter of the block, including the ones of the chosen trigger type; the loader refuses a format-3 block with a parameter missing. A change of a default in the software can then never change a saved version.
+- **Written in full** (FR-JOB-16). The editor writes every parameter of the block, including the ones of the chosen trigger type; the loader refuses a format-3 block with a parameter missing. The same holds for `acquisition`; `camera/profile.yaml` is written in full (`orientation` and `auto_once` always) but its loader stays lenient for the older settings of section 4, so a missing one there falls back to the software's default until that file gets the same rule. A change of a default in the software can then never change a saved version.
 - **The type decides which sub-block is read.** A sub-block of another type may be present and is ignored (switching the type in the editor keeps what the person typed).
 - **A job never names a pin, an address or a protocol.** `external` says that the trigger comes from outside; which line, edge or protocol carries it is station configuration (`system.yaml › machine`, architecture §4.6).
 - **No migrator** (decision of 2026-10-20: nothing is deployed, formats are forced, old data is made again). The mapping the format-1 and format-2 jobs would have had, kept as the meaning of each field: `trigger.mode` becomes `type`; `trigger.presence_roi`, `still_ms`, `rearm`, `diff_threshold`, `min_area` and `motion_area` go under `image_presence`; `external` gets `delay_ms: 0` and `debounce_ms: 0`; `continuous` gets `interval_ms: 0`, the behaviour it had; `camera_profile` becomes `image.profile`; `calibration` moves under `image`. A job of an older format is refused with a clear message.

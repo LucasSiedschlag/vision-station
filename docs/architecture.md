@@ -252,7 +252,7 @@ tampa-azul-etiqueta_v7.vjob
     └── images/*.png
 ```
 
-**Format 2** (R1, VIA-0070) changes the geometry (fixtures with a pose) and the texts (both languages); the optional parts and the `acquisition` block below are **format 3** (VIA-0084). Example `job.yaml`, shortened:
+**Format 2** (R1, VIA-0070) changes the geometry (fixtures with a pose) and the texts (both languages); the optional parts and the `acquisition` block below are **format 3** (VIA-0084, as built: `jobs/job.py` `Acquisition`, written in full, no migrator). Example `job.yaml`, shortened:
 
 ```yaml
 format: 2
