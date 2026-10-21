@@ -658,7 +658,7 @@ Models are added only where the classical tools can't separate good objects from
 ### TD-23 — Machine interface: one handshake, thin adapters (S7, Modbus TCP, remote I/O)
 
 **Context.**
-- Typical customers use, in order: Siemens S7 (S7-1200/1500), Modbus TCP, OPC UA, plain 24 V I/O.
+- Industrial customers use, in order: Siemens S7 (S7-1200/1500), Modbus TCP, OPC UA, plain 24 V I/O.
 - PLC programmers expect the smart-camera handshake (trigger enable/ready/ack, acquisition done, results valid, acknowledge, error and clear error, job number).
 - Requirement: never a false PASS at the PLC.
 

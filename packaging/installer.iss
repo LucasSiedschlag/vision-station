@@ -12,7 +12,7 @@
 AppId={{6F2B8E4A-3C1D-4E7A-9B0F-5A2D7C9E1B34}
 AppName=Vision Station
 AppVersion={#AppVersion}
-AppPublisher=Lucas Siedschlag
+AppPublisher=Vision Station
 DefaultDirName={autopf}\VisionSystem
 DisableProgramGroupPage=yes
 DisableDirPage=yes
