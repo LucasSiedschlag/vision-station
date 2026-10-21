@@ -32,3 +32,12 @@ export function useCreateMaintainerPassword() {
     onSettled: () => void client.invalidateQueries({ queryKey: ['setup'] }),
   })
 }
+
+export type SetupCamera = Awaited<ReturnType<typeof getCameras>>['cameras'][number]
+
+const getCameras = () => call(api.GET('/api/setup/cameras'))
+
+/** The USB cameras connected to this PC. Asked again with `refetch` when someone plugs one in. */
+export function useSetupCameras() {
+  return useQuery({ queryKey: ['setup', 'cameras'], queryFn: getCameras, staleTime: 0, gcTime: 0 })
+}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { describeError } from '@/api/mutations'
 import { useCreateMaintainerPassword, useSetupStatus, type SetupStep } from '@/api/queries/setup'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { CameraStep } from './CameraStep'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { Field } from '@/components/ui/field'
@@ -14,7 +15,6 @@ const t = text.setup
 
 /** Where each step is done today. The steps of the wizard that do it on this screen replace these links (VIA-0068). */
 const WHERE: Partial<Record<SetupStep['id'], string>> = {
-  camera: '/settings',
   supervisor_password: '/access',
   backup: '/settings',
   first_job: '/jobs',
@@ -84,6 +84,11 @@ export function SetupPage() {
           <CardContent className="flex flex-col gap-4">
             {current.id === 'maintainer_password' && maintainer_password_missing ? (
               <MaintainerPasswordForm />
+            ) : current.id === 'camera' && !maintainer_password_missing ? (
+              <>
+                {current.detail ? <p role="status">{current.detail}</p> : null}
+                <CameraStep done={current.state === 'done'} />
+              </>
             ) : (
               <StepBody step={current} locked={maintainer_password_missing} />
             )}

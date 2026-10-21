@@ -2261,6 +2261,47 @@ export const text = {
         return t`Primeiro job`
       },
     },
+    camera: {
+      get legend() {
+        return t`Câmeras ligadas a este PC`
+      },
+      get validated() {
+        return t`Validada`
+      },
+      get notValidated() {
+        return t`Não validada`
+      },
+      get notValidatedHelp() {
+        return t`Este modelo ainda não foi validado. Faça o ensaio de bancada antes de usá-lo em produção.`
+      },
+      get none() {
+        return t`Nenhuma câmera USB encontrada. Ligue a câmera e procure de novo.`
+      },
+      get cannotList() {
+        return t`Este PC não consegue listar as câmeras. Escolha a câmera em Configurações › Câmera.`
+      },
+      get search() {
+        return t`Procurar de novo`
+      },
+      get test() {
+        return t`Testar câmera`
+      },
+      get use() {
+        return t`Usar esta câmera`
+      },
+      get inUse() {
+        return t`É a câmera que a estação já usa.`
+      },
+      get liveTitle() {
+        return t`Imagem da câmera`
+      },
+      get savedRestart() {
+        return t`Câmera salva. Ela só vale depois de reiniciar o programa: no Windows, abra Serviços, escolha Vision Station e clique em Reiniciar (ou reinicie o PC). Este passo fica pronto quando a imagem chegar.`
+      },
+      get advanced() {
+        return t`Outras opções de câmera ficam em Configurações.`
+      },
+    },
     get createFirst() {
       return t`Crie primeiro a senha do Mantenedor`
     },

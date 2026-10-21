@@ -290,6 +290,9 @@ msgstr "Leave"
 msgid "Movimento cancelado. {name} voltou ao lugar."
 msgstr "Move cancelled. {name} is back in its place."
 
+msgid "Outras opções de câmera ficam em Configurações."
+msgstr "Other camera options are in Settings."
+
 msgid "Máscara"
 msgstr "Mask"
 
@@ -704,6 +707,9 @@ msgstr "The program turns every picture; the regions and results already use the
 msgid "Limpar amostras ({included} incluídas, {excluded} excluídas)"
 msgstr "Clear samples ({included} included, {excluded} excluded)"
 
+msgid "É a câmera que a estação já usa."
+msgstr "This is the camera the station already uses."
+
 msgid "Preparando…"
 msgstr "Preparing…"
 
@@ -739,6 +745,9 @@ msgstr "Duration"
 
 msgid "Quanto tempo o sinal precisa ficar ligado para valer (0 a 65 ms). Um pulso mais curto é ruído e é ignorado."
 msgstr "How long the signal must stay on to count (0 to 65 ms). A shorter pulse is noise and is ignored."
+
+msgid "Este modelo ainda não foi validado. Faça o ensaio de bancada antes de usá-lo em produção."
+msgstr "This model has not been validated yet. Do the bench trial before using it in production."
 
 msgid "a imagem toda"
 msgstr "the whole image"
@@ -1163,6 +1172,9 @@ msgstr "The image changed after the last validation; run Validate"
 msgid "O que incluir"
 msgstr "What to include"
 
+msgid "Validada"
+msgstr "Validated"
+
 msgid "Histograma de brilho da imagem ao vivo"
 msgstr "Brightness histogram of the live image"
 
@@ -1199,11 +1211,17 @@ msgstr "Letters, numbers, - and _."
 msgid "Largura"
 msgstr "Width"
 
+msgid "Câmera salva. Ela só vale depois de reiniciar o programa: no Windows, abra Serviços, escolha Vision Station e clique em Reiniciar (ou reinicie o PC). Este passo fica pronto quando a imagem chegar."
+msgstr "Camera saved. It only takes effect after the program restarts: in Windows, open Services, choose Vision Station and click Restart (or restart the PC). This step is done when the image arrives."
+
 msgid "padrão: {value}"
 msgstr "default: {value}"
 
 msgid "Excluir cor"
 msgstr "Exclude colour"
+
+msgid "Não validada"
+msgstr "Not validated"
 
 msgid "Mesmo quando a estação já está pronta para a próxima peça."
 msgstr "Even when the station is already ready for the next part."
@@ -1745,6 +1763,9 @@ msgstr "Anchor"
 msgid "Aqui só mudam os limites de tolerância e as amostras. Regiões, câmera e ferramentas são do Mantenedor."
 msgstr "Only tolerance limits and samples change here. Regions, camera and tools belong to the Maintainer."
 
+msgid "Imagem da câmera"
+msgstr "Camera image"
+
 msgid "Saturação"
 msgstr "Saturation"
 
@@ -1798,6 +1819,9 @@ msgstr "{n, plural, one {+ # more} other {+ # more}}"
 
 msgid "bloqueado"
 msgstr "blocked"
+
+msgid "Câmeras ligadas a este PC"
+msgstr "Cameras connected to this PC"
 
 msgid "O modelo é treinado fora da estação (docs/models.md) e vai dentro do job."
 msgstr "The model is trained away from the station (docs/models.md) and goes inside the job."
@@ -2333,11 +2357,17 @@ msgstr "collected"
 msgid "Tamanho permitido"
 msgstr "Allowed size"
 
+msgid "Nenhuma câmera USB encontrada. Ligue a câmera e procure de novo."
+msgstr "No USB camera found. Connect the camera and search again."
+
 msgid "Saturação mínima"
 msgstr "Minimum saturation"
 
 msgid "Região de {id}: passou"
 msgstr "Region of {id}: passed"
+
+msgid "Este PC não consegue listar as câmeras. Escolha a câmera em Configurações › Câmera."
+msgstr "This PC cannot list the cameras. Choose the camera in Settings › Camera."
 
 msgid "Erro"
 msgstr "Error"
@@ -2609,11 +2639,17 @@ msgstr "Fixed position"
 msgid "Faixa proposta: {summary}."
 msgstr "Proposed range: {summary}."
 
+msgid "Procurar de novo"
+msgstr "Search again"
+
 msgid "Nome da estação"
 msgstr "Station name"
 
 msgid "Menu"
 msgstr "Menu"
+
+msgid "Usar esta câmera"
+msgstr "Use this camera"
 
 msgid "Reconectando automaticamente."
 msgstr "Reconnecting automatically."
