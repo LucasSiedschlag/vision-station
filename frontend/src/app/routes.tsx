@@ -15,6 +15,7 @@ import type { Role } from '@/api/session'
 import { NotFoundPage } from '@/features/errors/NotFoundPage'
 import { RouteError } from '@/features/errors/RouteError'
 import { OperatorPage } from '@/features/operator/OperatorPage'
+import { SetupGuard } from '@/features/setup/SetupGuard'
 import { text } from '@/texts'
 import { RequireRole } from './guards'
 import { RootLayout } from './RootLayout'
@@ -47,6 +48,9 @@ const AccessPage = lazy(() =>
 )
 const SettingsPage = lazy(() =>
   import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+)
+const SetupPage = lazy(() =>
+  import('@/features/setup/SetupPage').then((m) => ({ default: m.SetupPage })),
 )
 const DesignPage = lazy(() =>
   import('@/features/design/DesignPage').then((m) => ({ default: m.DesignPage })),
@@ -210,6 +214,17 @@ export const routes: RouteObject[] = [
           </RequireRole>
         ),
       })),
+      {
+        // opens with no login while the Maintainer has no password (VIA-0068)
+        path: '/setup',
+        element: (
+          <SetupGuard>
+            <Suspense fallback={null}>
+              <SetupPage />
+            </Suspense>
+          </SetupGuard>
+        ),
+      },
       {
         path: '/design',
         element: (

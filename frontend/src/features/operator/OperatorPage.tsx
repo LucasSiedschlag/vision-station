@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
 import { Tooltip } from '@/components/ui/tooltip'
 import { useHideCursor } from '@/lib/cursor'
+import { SetupNotice } from '@/features/setup/SetupNotice'
 import { text } from '@/texts'
 import {
   canMarkWrong,
@@ -322,6 +323,7 @@ export function OperatorPage() {
       ) : (
         <h1 className="sr-only">{text.nav.station}</h1>
       )}
+      <SetupNotice />
 
       <main className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-6 pb-4 lg:grid-operator">
         <div className="relative min-h-64">

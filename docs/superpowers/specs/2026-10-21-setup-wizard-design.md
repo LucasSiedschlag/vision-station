@@ -25,7 +25,8 @@ Every box is checked only when its tests pass and `uv run pytest` and `npm test`
   - [x] short password refused (400, same rule as `set_password`)
   - [x] audit event; no session is created (the screen logs in afterwards)
   - [x] the failed attempts of both cases leave nothing changed
-- [ ] **S3 (2.5 h) Interface: route `/setup`**, the `Stepper`, access guard, banner on the operator screen while the Maintainer has no password, automatic opening after the Maintainer logs in when `needs_setup`, entry in *Configurações*.
+- [x] **S3 (2.5 h) Interface: route `/setup`**, the `Stepper`, access guard, banner on the operator screen while the Maintainer has no password, automatic opening after the Maintainer logs in when `needs_setup`, entry in *Configurações*.
+  - Added in S3: `GET /api/setup/open` (public, says only whether the wizard is open, for the notice) and the form of the first step (the Maintainer password), which signs the person in with it. The other steps show the server's state and a link to where each is done today; S4 to S6 bring them onto this screen.
 - [ ] **S4 (2 h) Camera step:** pick driver and device, *Testar câmera*, live image, the restart notice, and continue after the restart.
 - [ ] **S5 (1.5 h) Passwords and backup steps:** Supervisor password; folder, *Testar pasta*, frequency.
 - [ ] **S6 (1 h) First job step and the unavailable steps:** link to the editor, *Desempenho* and *Máquina* greyed with their reason.

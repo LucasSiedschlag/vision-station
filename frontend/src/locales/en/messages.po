@@ -82,6 +82,9 @@ msgstr "Region"
 msgid "Quando a tela do operador desenha as regiões das ferramentas sobre a imagem."
 msgstr "When the operator screen draws the tools' regions over the image."
 
+msgid "Assistente de instalação"
+msgstr "Installation wizard"
+
 msgid "Incluir cor"
 msgstr "Include colour"
 
@@ -255,6 +258,9 @@ msgstr "English"
 
 msgid "Perfil"
 msgstr "Profile"
+
+msgid "Primeiro job"
+msgstr "First job"
 
 msgid "ainda não medida"
 msgstr "not measured yet"
@@ -527,6 +533,9 @@ msgstr "Change the filters or the period."
 msgid "fora do que o job aceita"
 msgstr "outside what the job accepts"
 
+msgid "Passos da instalação"
+msgstr "Installation steps"
+
 msgid "Qualquer matiz"
 msgstr "Any hue"
 
@@ -611,6 +620,9 @@ msgstr "New samples: {good} Good and {bad} Bad"
 msgid "{n, plural, one {# alterado} other {# alterados}}"
 msgstr "{n, plural, one {# changed} other {# changed}}"
 
+msgid "Instalação da estação"
+msgstr "Station installation"
+
 msgid "Importando…"
 msgstr "Importing…"
 
@@ -677,6 +689,9 @@ msgstr "Check fields"
 msgid "Câmera, {setting}: {from} → {to}"
 msgstr "Camera, {setting}: {from} → {to}"
 
+msgid "É a senha de quem configura a estação. Pelo menos 8 caracteres. Ela não é mostrada de novo."
+msgstr "This is the password of the person who sets the station up. At least 8 characters. It is not shown again."
+
 msgid "Nome: {from} → {to}"
 msgstr "Name: {from} → {to}"
 
@@ -712,6 +727,9 @@ msgstr "Listen address"
 
 msgid "Encerrar todas as sessões"
 msgstr "End all sessions"
+
+msgid "Ir para a estação"
+msgstr "Go to the station"
 
 msgid "Calculando…"
 msgstr "Calculating…"
@@ -830,6 +848,9 @@ msgstr "Check the draft"
 msgid "Deixa {share} % do que você excluiu dentro da faixa."
 msgstr "Leaves {share} % of what you excluded inside the range."
 
+msgid "Esta instalação ainda não foi configurada."
+msgstr "This installation has not been set up yet."
+
 msgid "Muitas tentativas. Aguarde um pouco e tente de novo."
 msgstr "Too many attempts. Wait a little and try again."
 
@@ -916,6 +937,9 @@ msgstr "File imported"
 
 msgid "Região alterada: {name}"
 msgstr "Region changed: {name}"
+
+msgid "A senha do Mantenedor está definida."
+msgstr "The Maintainer's password is set."
 
 msgid "Nome do job novo"
 msgstr "Name of the new job"
@@ -1295,6 +1319,9 @@ msgstr "Every sample was as expected"
 msgid "Decide o resultado"
 msgstr "Decides the result"
 
+msgid "Reabre os passos de instalação: câmera, senhas, backup e primeiro job."
+msgstr "Reopens the installation steps: camera, passwords, backup and first job."
+
 msgid "ok"
 msgstr "ok"
 
@@ -1318,6 +1345,9 @@ msgstr "The draft can be saved."
 
 msgid "Proposta: limite máximo {value}, {goodMargin} acima da pior boa."
 msgstr "Proposal: maximum limit {value}, {goodMargin} above the worst good one."
+
+msgid "Lendo o estado da instalação…"
+msgstr "Reading the state of the installation…"
 
 msgid "Motivo da reprovação"
 msgstr "Failure reason"
@@ -1399,6 +1429,12 @@ msgstr "No range could be proposed from these samples."
 
 msgid "Restauração de backup"
 msgstr "Backup restored"
+
+msgid "Criar senha e continuar"
+msgstr "Create password and continue"
+
+msgid "Senha do Supervisor"
+msgstr "Supervisor's password"
 
 msgid "recorte"
 msgstr "crop"
@@ -1499,6 +1535,9 @@ msgstr "{n} s"
 msgid "Imagens de {name}"
 msgstr "Images of {name}"
 
+msgid "Repita a senha"
+msgstr "Repeat the password"
+
 msgid "Desenhando… (arraste na imagem)"
 msgstr "Drawing… (drag on the image)"
 
@@ -1588,6 +1627,9 @@ msgstr "not found"
 
 msgid "Amostra {name}: o rascunho diz {now}; esperado {expected}."
 msgstr "Sample {name}: the draft says {now}; expected {expected}."
+
+msgid "Siga os passos na ordem para deixar a estação pronta. O estado de cada passo vem do que já está feito."
+msgstr "Follow the steps in order to get the station ready. The state of each step comes from what is already done."
 
 msgid "Importar arquivo"
 msgstr "Import file"
@@ -1835,6 +1877,9 @@ msgstr "Job steps"
 msgid "Dataset {id}: {count} imagens em {folder}"
 msgstr "Dataset {id}: {count} images in {folder}"
 
+msgid "Configurar agora"
+msgstr "Set up now"
+
 msgid "As mudanças não salvas são perdidas. A versão salva continua como estava."
 msgstr "Unsaved changes are lost. The saved version stays as it was."
 
@@ -1922,6 +1967,9 @@ msgstr "{share} % of the image saturated"
 msgid "Ajustar à janela"
 msgstr "Fit to window"
 
+msgid "Instalação pronta. A estação já pode trabalhar."
+msgstr "Installation ready. The station can work now."
+
 msgid "Escolha o tipo"
 msgstr "Choose the type"
 
@@ -1963,6 +2011,12 @@ msgstr "exposure"
 
 msgid "A regra de decisão mudou"
 msgstr "The decision rule changed"
+
+msgid "Não foi possível ler o estado da instalação"
+msgstr "Could not read the state of the installation"
+
+msgid "Crie primeiro a senha do Mantenedor"
+msgstr "Create the Maintainer's password first"
 
 msgid "Detecção por modelo"
 msgstr "Detection by model"
@@ -2024,6 +2078,9 @@ msgstr "Import"
 msgid "Brilho mínimo"
 msgstr "Minimum brightness"
 
+msgid "Senha do Mantenedor"
+msgstr "Maintainer's password"
+
 msgid "As ferramentas não rodaram. As amostras e a referência continuam abertas."
 msgstr "The tools did not run. The samples and the reference are still open."
 
@@ -2053,6 +2110,9 @@ msgstr "Everyone is logged out, you included, and must log in again."
 
 msgid "Sem âncora"
 msgstr "No anchor"
+
+msgid "Desempenho do PC"
+msgstr "PC performance"
 
 msgid "HH:MM separados por vírgula; os contadores recomeçam em cada um."
 msgstr "HH:MM separated by commas; the counters restart at each one."
@@ -2089,6 +2149,9 @@ msgstr "The station is paused while the editor measures live; it comes back by i
 
 msgid "Sem imagem ao vivo: a câmera não está entregando quadros."
 msgstr "No live image: the camera is not delivering frames."
+
+msgid "Feito"
+msgstr "Done"
 
 msgid "Fração da área de presença (0 a 1)."
 msgstr "Fraction of the presence area (0 to 1)."

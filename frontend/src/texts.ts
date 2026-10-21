@@ -2228,6 +2228,94 @@ export const text = {
       return t`imagens`
     },
   },
+  setup: {
+    get title() {
+      return t`Instalação da estação`
+    },
+    get intro() {
+      return t`Siga os passos na ordem para deixar a estação pronta. O estado de cada passo vem do que já está feito.`
+    },
+    get stepsLabel() {
+      return t`Passos da instalação`
+    },
+    steps: {
+      get maintainer_password() {
+        return t`Senha do Mantenedor`
+      },
+      get camera() {
+        return t`Câmera`
+      },
+      get performance() {
+        return t`Desempenho do PC`
+      },
+      get supervisor_password() {
+        return t`Senha do Supervisor`
+      },
+      get machine() {
+        return t`Máquina`
+      },
+      get backup() {
+        return t`Backup`
+      },
+      get first_job() {
+        return t`Primeiro job`
+      },
+    },
+    get createFirst() {
+      return t`Crie primeiro a senha do Mantenedor`
+    },
+    get passwordHelp() {
+      return t`É a senha de quem configura a estação. Pelo menos 8 caracteres. Ela não é mostrada de novo.`
+    },
+    get password() {
+      return t`Senha do Mantenedor`
+    },
+    get again() {
+      return t`Repita a senha`
+    },
+    get tooShort() {
+      return t`Use pelo menos 8 caracteres.`
+    },
+    get mismatch() {
+      return t`As duas senhas não são iguais.`
+    },
+    get create() {
+      return t`Criar senha e continuar`
+    },
+    get passwordDone() {
+      return t`A senha do Mantenedor está definida.`
+    },
+    get openIn() {
+      return t`Abrir`
+    },
+    get loading() {
+      return t`Lendo o estado da instalação…`
+    },
+    get loadError() {
+      return t`Não foi possível ler o estado da instalação`
+    },
+    get allDone() {
+      return t`Instalação pronta. A estação já pode trabalhar.`
+    },
+    get goStation() {
+      return t`Ir para a estação`
+    },
+    get notice() {
+      return t`Esta instalação ainda não foi configurada.`
+    },
+    get noticeAction() {
+      return t`Configurar agora`
+    },
+    get reopen() {
+      return t`Assistente de instalação`
+    },
+    get reopenHelp() {
+      return t`Reabre os passos de instalação: câmera, senhas, backup e primeiro job.`
+    },
+    get done() {
+      return t`Feito`
+    },
+  },
   access: {
     get title() {
       return t`Acessos`

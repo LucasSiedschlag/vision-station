@@ -7,6 +7,7 @@ import { useSession } from '@/api/session'
 import { useLocaleSync } from './locale'
 import { useLoginDialog } from '@/api/auth'
 import { useIdle } from '@/lib/idle'
+import { SetupOffer } from '@/features/setup/SetupOffer'
 import { text } from '@/texts'
 
 // the menu shell and the login dialog are needed only after a login: they are loaded then, so the station screen stays light
@@ -53,6 +54,7 @@ export function RootLayout() {
           <AppShell />
         </Suspense>
       )}
+      <SetupOffer />
       {loginOpened ? (
         <Suspense fallback={null}>
           <LoginDialog />

@@ -10,7 +10,8 @@ import {
   type SystemConfig,
   type SystemOut,
 } from '@/api/queries/admin'
-import { Button } from '@/components/ui/button'
+import { Link } from 'react-router'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field } from '@/components/ui/field'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
@@ -136,6 +137,12 @@ function SettingsForm({ system }: { system: SystemOut }) {
         <h1 className="text-xl font-semibold">{t.title}</h1>
         <p className="text-sm text-fg-muted">{t.intro}</p>
         <p className="font-mono text-xs text-fg-muted">{t.dataRoot(system.data_root)}</p>
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <Link to="/setup" className={buttonVariants({ variant: 'ghost' })}>
+            {text.setup.reopen}
+          </Link>
+          <span className="text-xs text-fg-muted">{text.setup.reopenHelp}</span>
+        </div>
       </div>
       {restart.length ? (
         <p
