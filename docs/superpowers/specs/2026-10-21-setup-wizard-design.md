@@ -27,7 +27,8 @@ Every box is checked only when its tests pass and `uv run pytest` and `npm test`
   - [x] the failed attempts of both cases leave nothing changed
 - [x] **S3 (2.5 h) Interface: route `/setup`**, the `Stepper`, access guard, banner on the operator screen while the Maintainer has no password, automatic opening after the Maintainer logs in when `needs_setup`, entry in *Configurações*.
   - Added in S3: `GET /api/setup/open` (public, says only whether the wizard is open, for the notice) and the form of the first step (the Maintainer password), which signs the person in with it. The other steps show the server's state and a link to where each is done today; S4 to S6 bring them onto this screen.
-- [ ] **S4 (2 h) Camera step:** pick driver and device, *Testar câmera*, live image, the restart notice, and continue after the restart.
+- [x] **S4 (5 h) Camera step:** the USB cameras connected to this PC listed to choose from (driver and device come from the choice), each marked only *Validada* or *Não validada* with the picture of the validated model or a generic one, *Testar câmera*, live image, the restart notice, and continue after the restart (the step is derived, so it does).
+  - Built: `cameras/discovery.py` (the list of validated models, today only the C920, which grows only after the bench trial), `GET /api/setup/cameras`, `CameraStep`. A PC that cannot list cameras (not Windows) says so and sends the person to *Configurações*; the list itself is to be confirmed on the bench PC (VIA-0118).
 - [ ] **S5 (1.5 h) Passwords and backup steps:** Supervisor password; folder, *Testar pasta*, frequency.
 - [ ] **S6 (1 h) First job step and the unavailable steps:** link to the editor, *Desempenho* and *Máquina* greyed with their reason.
 - [ ] **S7 (2 h) Tests:** server, Vitest, Playwright from a clean install to the first job, in Portuguese and English, axe.
