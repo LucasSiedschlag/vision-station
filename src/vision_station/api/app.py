@@ -40,6 +40,7 @@ from vision_station.api.hub import EventHub
 from vision_station.api.inspections import InspectionRegistry, Requested
 from vision_station.api.editor_session import SessionEnv, run as run_editor_session
 from vision_station.api.manage import add_management_routes
+from vision_station.api.setup import add_setup_routes
 from vision_station.cameras import DRIVERS
 from vision_station.records import InspectionRecord, Query, ResultRecorder, ResultsError, ResultStore
 from vision_station.station import Acquisition, StationController, StationEvent
@@ -765,6 +766,7 @@ def create_app(deps: ApiDeps) -> FastAPI:
             return m.CheckOut(ok=False, message=render(tr("É a câmera em uso pela estação e ela não está mandando imagem") if not acq.last_error else tr("É a câmera em uso pela estação e ela não está mandando imagem: {why}", why=acq.last_error)))
         return _check_out(check_camera(CameraSettings.model_validate(body.model_dump())))
 
+    add_setup_routes(api, deps, role, Problem)
     build_draft = add_management_routes(api, deps, need, Problem, _result)
     session = SessionEnv(
         deps=deps, build=build_draft, result_out=_result, encode=encode_jpeg, origin_allowed=origin_allowed,

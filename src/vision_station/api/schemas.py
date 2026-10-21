@@ -722,6 +722,18 @@ class BackupsOut(BaseModel):
     backups: list[BackupItem]  # newest first
 
 
+class SetupStepOut(BaseModel):
+    id: Literal["maintainer_password", "camera", "performance", "supervisor_password", "machine", "backup", "first_job"]
+    state: Literal["done", "todo", "unavailable"]
+    detail: str | None = None  # why it is not done, or what is done; the reason for an unavailable step
+
+
+class SetupStatusOut(BaseModel):
+    steps: list[SetupStepOut]
+    needs_setup: bool  # the Maintainer has no password, the camera sends nothing, or there is no job
+    maintainer_password_missing: bool  # the wizard is open without a login while this is true
+
+
 class UserOut(BaseModel):
     role: Literal["supervisor", "maintainer"]
     has_password: bool

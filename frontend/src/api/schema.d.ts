@@ -876,6 +876,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/setup/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Setup Status
+     * @description The seven steps of the wizard and whether the installation still needs it. Open to everyone while the
+     *     Maintainer has no password (the first step creates it); the Maintainer's afterwards.
+     */
+    get: operations['setup_status']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/snapshot.jpg': {
     parameters: {
       query?: never
@@ -2564,6 +2585,37 @@ export interface components {
       detail: string
       /** Status */
       status: string
+    }
+    /** SetupStatusOut */
+    SetupStatusOut: {
+      /** Maintainer Password Missing */
+      maintainer_password_missing: boolean
+      /** Needs Setup */
+      needs_setup: boolean
+      /** Steps */
+      steps: components['schemas']['SetupStepOut'][]
+    }
+    /** SetupStepOut */
+    SetupStepOut: {
+      /** Detail */
+      detail: string | null
+      /**
+       * Id
+       * @enum {string}
+       */
+      id:
+        | 'maintainer_password'
+        | 'camera'
+        | 'performance'
+        | 'supervisor_password'
+        | 'machine'
+        | 'backup'
+        | 'first_job'
+      /**
+       * State
+       * @enum {string}
+       */
+      state: 'done' | 'todo' | 'unavailable'
     }
     /** StateMessage */
     StateMessage: {
@@ -5902,6 +5954,55 @@ export interface operations {
       }
       /** @description Not Found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  setup_status: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SetupStatusOut']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Forbidden */
+      403: {
         headers: {
           [name: string]: unknown
         }

@@ -62,12 +62,18 @@ msgstr "The system configuration is not available in this run"
 msgid "A câmera abriu, mas não mandou imagem"
 msgstr "The camera opened but sent no image"
 
+msgid "A câmera está mandando imagem"
+msgstr "The camera is sending an image"
+
 #, python-brace-format
 msgid "A câmera não abriu: {why}"
 msgstr "The camera did not open: {why}"
 
 msgid "A câmera não está conectada"
 msgstr "The camera is not connected"
+
+msgid "A câmera não está mandando imagem"
+msgstr "The camera is not sending an image"
 
 msgid "A câmera não pode mudar no ajuste fino"
 msgstr "The camera cannot change in a fine-tune"
@@ -91,6 +97,10 @@ msgstr "The inspection did not happen: {why}"
 
 msgid "A pasta devolveu um conteúdo diferente do gravado"
 msgstr "The folder returned content different from what was written"
+
+#, python-brace-format
+msgid "A pasta {folder} não existe ou não está ligada"
+msgstr "The folder {folder} does not exist or is not connected"
 
 msgid "A senha atual não confere"
 msgstr "The current password is wrong"
@@ -217,6 +227,9 @@ msgstr "Detection of a class that fails"
 
 msgid "Diga o que foi ajustado e por quê"
 msgstr "Say what was adjusted and why"
+
+msgid "Disponível quando o teste de desempenho do PC for feito (fase C)"
+msgstr "Available once the PC performance test exists (phase C)"
 
 msgid "Distância máxima (ΔE)"
 msgstr "Maximum distance (ΔE)"
@@ -362,6 +375,9 @@ msgstr "No image received from the camera"
 msgid "Inspecionando…"
 msgstr "Inspecting…"
 
+msgid "Interface com a máquina ainda não disponível (fase B)"
+msgstr "The machine interface is not available yet (phase B)"
+
 msgid "Job verificado"
 msgstr "Job verified"
 
@@ -472,11 +488,17 @@ msgstr "No active, verified job"
 msgid "Nenhum job ativo — ativar um job na tela Jobs"
 msgstr "No active job — activate a job in the Jobs screen"
 
+msgid "Nenhum job criado ainda"
+msgstr "No job has been created yet"
+
 msgid "Nenhuma imagem foi guardada para esse resultado"
 msgstr "No image was kept for this result"
 
 msgid "Nenhuma pasta de backup foi configurada"
 msgstr "No backup folder has been set up"
+
+msgid "Nenhuma pasta escolhida: os backups ficam só na pasta de dados"
+msgstr "No folder chosen: backups stay in the data folder only"
 
 msgid "No ajuste fino só mudam os limites de tolerância e as amostras"
 msgstr "A fine-tune changes only tolerance limits and samples"
@@ -504,6 +526,12 @@ msgstr "There are no collected images to export"
 
 msgid "Número de job desconhecido"
 msgstr "Unknown job number"
+
+msgid "O Mantenedor ainda não tem senha"
+msgstr "The Maintainer has no password yet"
+
+msgid "O Supervisor ainda não tem senha"
+msgstr "The Supervisor has no password yet"
 
 msgid "O Supervisor só troca a própria senha"
 msgstr "The Supervisor can only change their own password"
@@ -585,6 +613,10 @@ msgstr "Text pattern"
 
 msgid "Para abrir a API na rede é preciso ter senha de Supervisor ou Mantenedor"
 msgstr "To open the API to the network, a Supervisor or Maintainer password is required"
+
+#, python-brace-format
+msgid "Pasta de backup: {folder}"
+msgstr "Backup folder: {folder}"
 
 #, python-brace-format
 msgid "Pasta gravável, {free:.1f} GB livres"

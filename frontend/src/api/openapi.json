@@ -3359,6 +3359,64 @@
         "title": "SettingResult",
         "type": "object"
       },
+      "SetupStatusOut": {
+        "properties": {
+          "maintainer_password_missing": {
+            "title": "Maintainer Password Missing",
+            "type": "boolean"
+          },
+          "needs_setup": {
+            "title": "Needs Setup",
+            "type": "boolean"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/SetupStepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": ["steps", "needs_setup", "maintainer_password_missing"],
+        "title": "SetupStatusOut",
+        "type": "object"
+      },
+      "SetupStepOut": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "id": {
+            "enum": [
+              "maintainer_password",
+              "camera",
+              "performance",
+              "supervisor_password",
+              "machine",
+              "backup",
+              "first_job"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": ["done", "todo", "unavailable"],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": ["id", "state", "detail"],
+        "title": "SetupStepOut",
+        "type": "object"
+      },
       "StateMessage": {
         "properties": {
           "message": {
@@ -8677,6 +8735,73 @@
           }
         },
         "summary": "Result Thumb"
+      }
+    },
+    "/api/setup/status": {
+      "get": {
+        "description": "The seven steps of the wizard and whether the installation still needs it. Open to everyone while the\nMaintainer has no password (the first step creates it); the Maintainer's afterwards.",
+        "operationId": "setup_status",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Setup Status"
       }
     },
     "/api/snapshot.jpg": {
