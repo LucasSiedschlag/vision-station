@@ -876,6 +876,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/setup/maintainer-password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Create Maintainer Password
+     * @description The first password of the Maintainer, with no login: only while there is none, once, and only when the
+     *     API listens on this PC (anyone who can reach it from the network would otherwise take over the station).
+     *     No session is opened; the screen logs in afterwards. Everything after it asks for a login.
+     */
+    put: operations['create_maintainer_password']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/setup/status': {
     parameters: {
       query?: never
@@ -2585,6 +2607,11 @@ export interface components {
       detail: string
       /** Status */
       status: string
+    }
+    /** SetupPasswordBody */
+    SetupPasswordBody: {
+      /** Password */
+      password: string
     }
     /** SetupStatusOut */
     SetupStatusOut: {
@@ -5954,6 +5981,75 @@ export interface operations {
       }
       /** @description Not Found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_maintainer_password: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetupPasswordBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserOut']
+        }
+      }
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
         headers: {
           [name: string]: unknown
         }

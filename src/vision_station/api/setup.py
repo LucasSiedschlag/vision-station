@@ -5,6 +5,7 @@ there, a job that was saved. So a restart of the program (a camera change needs 
 screens agree. While the Maintainer has no password the wizard opens without a login, so the first step can create it.
 """
 
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -12,12 +13,14 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from vision_station.api import schemas as m
-from vision_station.api.auth import at_least
+from vision_station.api.auth import AuthError, at_least
 from vision_station.core.i18n import render, tr
 
 
 def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], Problem: type) -> None:
     """`role` is the app's dependency that gives the role behind the request's token, `Problem` its error."""
+
+    first_password = threading.Lock()  # two requests at once must not both find the password missing
 
     def maintainer_password_missing() -> bool:
         return not deps.auth.has_password("maintainer")
@@ -65,3 +68,25 @@ def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], Proble
             job,
         ]
         return m.SetupStatusOut(steps=steps, needs_setup=missing or camera.state != "done" or job.state != "done", maintainer_password_missing=missing)
+
+    @api.put(
+        "/setup/maintainer-password",
+        response_model=m.UserOut,
+        responses={400: {"model": m.Problem}, 403: {"model": m.Problem}, 409: {"model": m.Problem}},
+    )
+    def create_maintainer_password(body: m.SetupPasswordBody) -> m.UserOut:
+        """The first password of the Maintainer, with no login: only while there is none, once, and only when the
+        API listens on this PC (anyone who can reach it from the network would otherwise take over the station).
+        No session is opened; the screen logs in afterwards. Everything after it asks for a login."""
+        svc = deps.system
+        if svc is None or not svc.started_with.network.local_only:  # unknown counts as not local: fail safe
+            raise Problem(403, tr("A senha inicial só pode ser criada no próprio PC da estação"), "not_local")
+        with first_password:
+            if not maintainer_password_missing():
+                raise Problem(409, tr("O Mantenedor já tem senha; entre para continuar"), "conflict")
+            try:
+                deps.auth.set_password("maintainer", body.password)
+            except AuthError as exc:
+                raise Problem(400, tr("Senha não aceita: {why}", why=exc), "bad_password") from exc
+            deps.jobs.audit("password_set", by="setup", role="maintainer")
+        return next(m.UserOut(**u) for u in deps.auth.users() if u["role"] == "maintainer")

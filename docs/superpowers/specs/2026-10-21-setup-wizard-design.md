@@ -19,12 +19,12 @@ Every box is checked only when its tests pass and `uv run pytest` and `npm test`
   - [x] one state per step (`done`, `todo`, `unavailable` with its reason)
   - [x] texts in Portuguese and English (catalog)
   - [x] OpenAPI models and `npm run gen:api`
-- [ ] **S2 (2 h) Server: `PUT /api/setup/maintainer-password`**
-  - [ ] refused when the password already exists (409)
-  - [ ] refused when the API is not on loopback (403)
-  - [ ] short password refused (400, same rule as `set_password`)
-  - [ ] audit event; no session is created (the screen logs in afterwards)
-  - [ ] the failed attempts of both cases leave nothing changed
+- [x] **S2 (2 h) Server: `PUT /api/setup/maintainer-password`**
+  - [x] refused when the password already exists (409)
+  - [x] refused when the API is not on loopback (403)
+  - [x] short password refused (400, same rule as `set_password`)
+  - [x] audit event; no session is created (the screen logs in afterwards)
+  - [x] the failed attempts of both cases leave nothing changed
 - [ ] **S3 (2.5 h) Interface: route `/setup`**, the `Stepper`, access guard, banner on the operator screen while the Maintainer has no password, automatic opening after the Maintainer logs in when `needs_setup`, entry in *Configurações*.
 - [ ] **S4 (2 h) Camera step:** pick driver and device, *Testar câmera*, live image, the restart notice, and continue after the restart.
 - [ ] **S5 (1.5 h) Passwords and backup steps:** Supervisor password; folder, *Testar pasta*, frequency.

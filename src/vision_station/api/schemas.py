@@ -734,6 +734,10 @@ class SetupStatusOut(BaseModel):
     maintainer_password_missing: bool  # the wizard is open without a login while this is true
 
 
+class SetupPasswordBody(BaseModel):
+    password: str  # the length rule is the server's, so the refusal comes with a readable reason
+
+
 class UserOut(BaseModel):
     role: Literal["supervisor", "maintainer"]
     has_password: bool

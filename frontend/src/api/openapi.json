@@ -3359,6 +3359,17 @@
         "title": "SettingResult",
         "type": "object"
       },
+      "SetupPasswordBody": {
+        "properties": {
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": ["password"],
+        "title": "SetupPasswordBody",
+        "type": "object"
+      },
       "SetupStatusOut": {
         "properties": {
           "maintainer_password_missing": {
@@ -8735,6 +8746,85 @@
           }
         },
         "summary": "Result Thumb"
+      }
+    },
+    "/api/setup/maintainer-password": {
+      "put": {
+        "description": "The first password of the Maintainer, with no login: only while there is none, once, and only when the\nAPI listens on this PC (anyone who can reach it from the network would otherwise take over the station).\nNo session is opened; the screen logs in afterwards. Everything after it asks for a login.",
+        "operationId": "create_maintainer_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupPasswordBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Maintainer Password"
       }
     },
     "/api/setup/status": {

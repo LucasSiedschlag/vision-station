@@ -105,6 +105,9 @@ msgstr "The folder {folder} does not exist or is not connected"
 msgid "A senha atual não confere"
 msgstr "The current password is wrong"
 
+msgid "A senha inicial só pode ser criada no próprio PC da estação"
+msgstr "The first password can only be created on the station's own PC"
+
 #, python-brace-format
 msgid "A senha precisa ter pelo menos {n} caracteres"
 msgstr "The password needs at least {n} characters"
@@ -529,6 +532,9 @@ msgstr "Unknown job number"
 
 msgid "O Mantenedor ainda não tem senha"
 msgstr "The Maintainer has no password yet"
+
+msgid "O Mantenedor já tem senha; entre para continuar"
+msgstr "The Maintainer already has a password; log in to continue"
 
 msgid "O Supervisor ainda não tem senha"
 msgstr "The Supervisor has no password yet"
