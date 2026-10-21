@@ -205,6 +205,9 @@ msgstr "Auto once target brightness"
 msgid "Tamanho máximo (× o ensinado)"
 msgstr "Maximum size (× the taught one)"
 
+msgid "Pasta de backup: {folder}."
+msgstr "Backup folder: {folder}."
+
 msgid "sem nota"
 msgstr "no note"
 
@@ -305,6 +308,9 @@ msgstr "Result"
 msgid "A tela do operador fala este idioma. As outras telas também, até alguém escolher outro no menu da conta."
 msgstr "The operator screen speaks this language. So do the other screens, until someone picks another one in the account menu."
 
+msgid "É a senha de quem ajusta as tolerâncias e confere os resultados. Pelo menos 8 caracteres. Ela não é mostrada de novo."
+msgstr "This is the password of the person who adjusts tolerances and checks results. At least 8 characters. It is not shown again."
+
 msgid "Duplicar"
 msgstr "Duplicate"
 
@@ -334,6 +340,9 @@ msgstr "E.g. http://localhost:8800, separated by commas."
 
 msgid "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
 msgstr "Images to train models. They stay on this PC; training is done away from the station."
+
+msgid "Definir a senha do Supervisor"
+msgstr "Set the Supervisor's password"
 
 msgid "Esconder os ajustes alterados"
 msgstr "Hide the changed settings"
@@ -451,6 +460,9 @@ msgstr "Save the new job"
 
 msgid "Tipo de arquivo não aceito: {files}. Use {accept}."
 msgstr "File type not accepted: {files}. Use {accept}."
+
+msgid "Salvar a pasta de backup"
+msgstr "Save the backup folder"
 
 msgid "adicionada"
 msgstr "added"
@@ -716,6 +728,9 @@ msgstr "Preparing…"
 msgid "Reprovado"
 msgstr "Fail"
 
+msgid "Para trocar uma senha depois, use Acessos."
+msgstr "To change a password later, use Access."
+
 msgid "Cor ou contraste"
 msgstr "Colour or contrast"
 
@@ -772,6 +787,9 @@ msgstr "All jobs"
 
 msgid "Rótulos"
 msgstr "Labels"
+
+msgid "Pasta de backup salva."
+msgstr "Backup folder saved."
 
 msgid "Job criado"
 msgstr "Job created"
@@ -895,6 +913,9 @@ msgstr "Open the Anchor step"
 
 msgid "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
 msgstr "No regions. A tool can look at the whole image."
+
+msgid "Teste a pasta antes de salvar: o programa grava e lê um arquivo pequeno nela."
+msgstr "Test the folder before saving: the program writes and reads a small file in it."
 
 msgid "à imagem"
 msgstr "to the image"
@@ -1798,6 +1819,9 @@ msgstr "Account"
 
 msgid "Resultado e saídas"
 msgstr "Result and outputs"
+
+msgid "A senha do Supervisor está definida."
+msgstr "The Supervisor's password is set."
 
 msgid "Ir para…"
 msgstr "Go to…"

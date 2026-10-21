@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router'
 import { describeError } from '@/api/mutations'
 import { useCreateMaintainerPassword, useSetupStatus, type SetupStep } from '@/api/queries/setup'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { BackupStep } from './BackupStep'
 import { CameraStep } from './CameraStep'
+import { PasswordForm } from './PasswordForm'
+import { SupervisorStep } from './SupervisorStep'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
-import { Field } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { Stepper, type Step } from '@/components/ui/stepper'
 import { text } from '@/texts'
 
@@ -15,8 +16,6 @@ const t = text.setup
 
 /** Where each step is done today. The steps of the wizard that do it on this screen replace these links (VIA-0068). */
 const WHERE: Partial<Record<SetupStep['id'], string>> = {
-  supervisor_password: '/access',
-  backup: '/settings',
   first_job: '/jobs',
 }
 
@@ -89,6 +88,10 @@ export function SetupPage() {
                 {current.detail ? <p role="status">{current.detail}</p> : null}
                 <CameraStep done={current.state === 'done'} />
               </>
+            ) : current.id === 'supervisor_password' && !maintainer_password_missing ? (
+              <SupervisorStep step={current} />
+            ) : current.id === 'backup' && !maintainer_password_missing ? (
+              <BackupStep step={current} />
             ) : (
               <StepBody step={current} locked={maintainer_password_missing} />
             )}
@@ -136,59 +139,15 @@ function Finished() {
 
 /** The first step with no login: the Maintainer's password is created here and the session starts with it. */
 function MaintainerPasswordForm() {
-  const [password, setPassword] = useState('')
-  const [again, setAgain] = useState('')
-  const [tried, setTried] = useState(false)
   const create = useCreateMaintainerPassword()
-  const short = password.length < 8
-  const mismatch = again.length > 0 && again !== password
   return (
-    <form
-      className="flex flex-col gap-4"
-      onSubmit={(e) => {
-        e.preventDefault()
-        setTried(true)
-        if (short || again !== password) return
-        create.mutate(password)
-      }}
-    >
-      <p className="text-sm text-fg-muted">{t.passwordHelp}</p>
-      <Field label={t.password} required error={tried && short ? t.tooShort : undefined}>
-        {(p) => (
-          <Input
-            {...p}
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        )}
-      </Field>
-      <Field
-        label={t.again}
-        required
-        error={mismatch || (tried && again !== password) ? t.mismatch : undefined}
-      >
-        {(p) => (
-          <Input
-            {...p}
-            type="password"
-            autoComplete="new-password"
-            value={again}
-            onChange={(e) => setAgain(e.target.value)}
-          />
-        )}
-      </Field>
-      {create.isError ? (
-        <p role="alert" className="text-sm text-fail-text">
-          {describeError(create.error)}
-        </p>
-      ) : null}
-      <div>
-        <Button type="submit" variant="primary" loading={create.isPending}>
-          {t.create}
-        </Button>
-      </div>
-    </form>
+    <PasswordForm
+      label={t.password}
+      help={t.passwordHelp}
+      submitLabel={t.create}
+      pending={create.isPending}
+      error={create.isError ? describeError(create.error) : null}
+      onSubmit={(password) => create.mutate(password)}
+    />
   )
 }

@@ -205,6 +205,9 @@ msgstr "Brilho-alvo do Auto uma vez"
 msgid "Tamanho máximo (× o ensinado)"
 msgstr "Tamanho máximo (× o ensinado)"
 
+msgid "Pasta de backup: {folder}."
+msgstr "Pasta de backup: {folder}."
+
 msgid "sem nota"
 msgstr "sem nota"
 
@@ -305,6 +308,9 @@ msgstr "Resultado"
 msgid "A tela do operador fala este idioma. As outras telas também, até alguém escolher outro no menu da conta."
 msgstr "A tela do operador fala este idioma. As outras telas também, até alguém escolher outro no menu da conta."
 
+msgid "É a senha de quem ajusta as tolerâncias e confere os resultados. Pelo menos 8 caracteres. Ela não é mostrada de novo."
+msgstr "É a senha de quem ajusta as tolerâncias e confere os resultados. Pelo menos 8 caracteres. Ela não é mostrada de novo."
+
 msgid "Duplicar"
 msgstr "Duplicar"
 
@@ -334,6 +340,9 @@ msgstr "Ex.: http://localhost:8800, separadas por vírgula."
 
 msgid "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
 msgstr "Imagens para treinar modelos. Ficam neste PC; o treinamento é feito fora da estação."
+
+msgid "Definir a senha do Supervisor"
+msgstr "Definir a senha do Supervisor"
 
 msgid "Esconder os ajustes alterados"
 msgstr "Esconder os ajustes alterados"
@@ -451,6 +460,9 @@ msgstr "Salvar o job novo"
 
 msgid "Tipo de arquivo não aceito: {files}. Use {accept}."
 msgstr "Tipo de arquivo não aceito: {files}. Use {accept}."
+
+msgid "Salvar a pasta de backup"
+msgstr "Salvar a pasta de backup"
 
 msgid "adicionada"
 msgstr "adicionada"
@@ -716,6 +728,9 @@ msgstr "Preparando…"
 msgid "Reprovado"
 msgstr "Reprovado"
 
+msgid "Para trocar uma senha depois, use Acessos."
+msgstr "Para trocar uma senha depois, use Acessos."
+
 msgid "Cor ou contraste"
 msgstr "Cor ou contraste"
 
@@ -772,6 +787,9 @@ msgstr "Todos os jobs"
 
 msgid "Rótulos"
 msgstr "Rótulos"
+
+msgid "Pasta de backup salva."
+msgstr "Pasta de backup salva."
 
 msgid "Job criado"
 msgstr "Job criado"
@@ -895,6 +913,9 @@ msgstr "Abrir o passo Âncora"
 
 msgid "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
 msgstr "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
+
+msgid "Teste a pasta antes de salvar: o programa grava e lê um arquivo pequeno nela."
+msgstr "Teste a pasta antes de salvar: o programa grava e lê um arquivo pequeno nela."
 
 msgid "à imagem"
 msgstr "à imagem"
@@ -1798,6 +1819,9 @@ msgstr "Conta"
 
 msgid "Resultado e saídas"
 msgstr "Resultado e saídas"
+
+msgid "A senha do Supervisor está definida."
+msgstr "A senha do Supervisor está definida."
 
 msgid "Ir para…"
 msgstr "Ir para…"

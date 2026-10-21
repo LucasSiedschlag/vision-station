@@ -2302,6 +2302,31 @@ export const text = {
         return t`Outras opções de câmera ficam em Configurações.`
       },
     },
+    get supervisorPassword() {
+      return t`Senha do Supervisor`
+    },
+    get supervisorHelp() {
+      return t`É a senha de quem ajusta as tolerâncias e confere os resultados. Pelo menos 8 caracteres. Ela não é mostrada de novo.`
+    },
+    get supervisorSet() {
+      return t`Definir a senha do Supervisor`
+    },
+    get supervisorDone() {
+      return t`A senha do Supervisor está definida.`
+    },
+    get changeInAccess() {
+      return t`Para trocar uma senha depois, use Acessos.`
+    },
+    backupDone: (folder: string) => t`Pasta de backup: ${folder}.`,
+    get backupSave() {
+      return t`Salvar a pasta de backup`
+    },
+    get backupSaved() {
+      return t`Pasta de backup salva.`
+    },
+    get backupTestFirst() {
+      return t`Teste a pasta antes de salvar: o programa grava e lê um arquivo pequeno nela.`
+    },
     get createFirst() {
       return t`Crie primeiro a senha do Mantenedor`
     },

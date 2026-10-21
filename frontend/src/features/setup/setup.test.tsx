@@ -178,15 +178,11 @@ describe('the wizard of an installation with a password', () => {
 
   it('opens on the first step to do, with the state the server gave, and a way to do it', async () => {
     as('maintainer')
-    server.use(
-      http.get('*/api/setup/status', () =>
-        HttpResponse.json(status(['supervisor_password', 'first_job'])),
-      ),
-    )
+    server.use(http.get('*/api/setup/status', () => HttpResponse.json(status(['first_job']))))
     renderApp('/setup')
-    expect(await screen.findByRole('heading', { name: 'Senha do Supervisor' })).toBeInTheDocument()
-    expect(screen.getAllByText('falta: supervisor_password')).toHaveLength(2) // under the step and in its panel
-    expect(screen.getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', '/access')
+    expect(await screen.findByRole('heading', { name: 'Primeiro job' })).toBeInTheDocument()
+    expect(screen.getAllByText('falta: first_job')).toHaveLength(2) // under the step and in its panel
+    expect(screen.getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', '/jobs')
     expect(screen.getAllByText('performance ainda não existe').length).toBeGreaterThan(0) // an unavailable step says why
   })
 
@@ -200,6 +196,8 @@ describe('the wizard of an installation with a password', () => {
     await user.click(await screen.findByRole('button', { name: /Primeiro job/ }))
     expect(screen.getByRole('heading', { name: 'Primeiro job' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', '/jobs')
+    await user.click(screen.getByRole('button', { name: /Máquina/ }))
+    expect(screen.getByRole('heading', { name: 'Máquina' })).toBeInTheDocument() // an unavailable step can be read too
   })
 
   it('says it is ready when nothing is missing', async () => {
@@ -404,5 +402,153 @@ describe('the camera step', () => {
     )
     renderApp('/setup')
     expect(await screen.findByText(/não consegue listar as câmeras/)).toBeInTheDocument()
+  })
+})
+
+describe('the passwords and backup steps', () => {
+  const system = {
+    config: {
+      format: 1,
+      station: {
+        name: 'Linha 2',
+        shift_starts: ['06:00'],
+        idle_logout_min: 10,
+        fail_sound: false,
+        result_min_s: 2,
+      },
+      camera: {
+        driver: 'uvc',
+        connection: {},
+        keyring_entry: null,
+        settle_ms: 500,
+        dead_after_s: 2,
+      },
+      recording: {
+        pass_sample_every: 1,
+        unsampled_pass_hours: null,
+        retention_days: null,
+        min_free_gb: null,
+      },
+      backup: { folder: null, every_hours: 24, keep: 30, include: 'all' },
+      network: { host: '127.0.0.1', port: 8765, allowed_hosts: [], allowed_origins: [] },
+    },
+    data_root: 'C:/ProgramData/VisionSystem',
+    restart_pending: [],
+    camera_drivers: ['file', 'uvc'],
+    last_backup_error: null,
+  }
+
+  beforeEach(() => {
+    as('maintainer')
+    server.use(
+      http.get('*/api/setup/open', () => HttpResponse.json({ open: false })),
+      http.get('*/api/system', () => HttpResponse.json(system)),
+    )
+  })
+
+  it('sets the Supervisor password and the step becomes done', async () => {
+    let body: any
+    let set = false
+    server.use(
+      http.get('*/api/setup/status', () =>
+        HttpResponse.json(
+          set
+            ? status(['backup', 'first_job'])
+            : status(['supervisor_password', 'backup', 'first_job']),
+        ),
+      ),
+      http.put('*/api/users/supervisor/password', async ({ request }) => {
+        body = await request.json()
+        set = true
+        return HttpResponse.json({ role: 'supervisor', has_password: true, changed_at: null })
+      }),
+    )
+    renderApp('/setup')
+    const user = userEvent.setup()
+    expect(await screen.findByRole('heading', { name: 'Senha do Supervisor' })).toBeInTheDocument()
+    await user.type(screen.getByLabelText(/^Senha do Supervisor/), 'outra-senha-boa')
+    await user.type(screen.getByLabelText(/^Repita a senha/), 'outra-senha-boa')
+    await user.click(screen.getByRole('button', { name: 'Definir a senha do Supervisor' }))
+    await waitFor(() => expect(body?.password).toBe('outra-senha-boa'))
+    // the wizard moves on to the next step to do, as the server now reports it
+    expect(await screen.findByRole('heading', { name: 'Backup' })).toBeInTheDocument()
+  })
+
+  it('refuses two different Supervisor passwords before sending anything', async () => {
+    let sent = 0
+    server.use(
+      http.get('*/api/setup/status', () =>
+        HttpResponse.json(status(['supervisor_password', 'first_job'])),
+      ),
+      http.put('*/api/users/supervisor/password', () => {
+        sent++
+        return HttpResponse.json({})
+      }),
+    )
+    renderApp('/setup')
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText(/^Senha do Supervisor/), 'uma-senha-boa')
+    await user.type(screen.getByLabelText(/^Repita a senha/), 'uma-senha-diferente')
+    await user.click(screen.getByRole('button', { name: 'Definir a senha do Supervisor' }))
+    expect(await screen.findByText('As duas senhas não são iguais.')).toBeInTheDocument()
+    expect(sent).toBe(0)
+  })
+
+  it('says the Supervisor password is set when it is', async () => {
+    server.use(
+      http.get('*/api/setup/status', () => HttpResponse.json(status(['backup', 'first_job']))),
+    )
+    renderApp('/setup')
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /Senha do Supervisor/ }))
+    expect(
+      (await screen.findAllByText('A senha do Supervisor está definida.')).length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.getByRole('link', { name: 'Para trocar uma senha depois, use Acessos.' }),
+    ).toHaveAttribute('href', '/access')
+  })
+
+  it('tests the backup folder first and saves it with how often', async () => {
+    let put: any
+    server.use(
+      http.get('*/api/setup/status', () => HttpResponse.json(status(['backup', 'first_job']))),
+      http.post('*/api/system/test-folder', () =>
+        HttpResponse.json({ ok: true, message: 'Pasta gravável, 120,5 GB livres', free_gb: 120.5 }),
+      ),
+      http.put('*/api/system', async ({ request }) => {
+        put = await request.json()
+        return HttpResponse.json({ changed: ['backup'], restart_required: [] })
+      }),
+    )
+    renderApp('/setup')
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Pasta de backup'), 'E:/backups')
+    expect(screen.getByRole('button', { name: 'Salvar a pasta de backup' })).toBeDisabled() // not before the test
+    await user.click(screen.getByRole('button', { name: 'Testar pasta' }))
+    expect(await screen.findByText('Pasta gravável, 120,5 GB livres')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Salvar a pasta de backup' }))
+    await waitFor(() => expect(put?.backup.folder).toBe('E:/backups'))
+    expect(put.backup.every_hours).toBe(24)
+    expect(put.backup.keep).toBe(30) // what the step does not ask goes back as it was
+    expect(put.station.name).toBe('Linha 2')
+  })
+
+  it('does not let a folder that failed the test be saved', async () => {
+    server.use(
+      http.get('*/api/setup/status', () => HttpResponse.json(status(['backup', 'first_job']))),
+      http.post('*/api/system/test-folder', () =>
+        HttpResponse.json({
+          ok: false,
+          message: 'Não foi possível gravar na pasta: acesso negado',
+        }),
+      ),
+    )
+    renderApp('/setup')
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Pasta de backup'), 'Z:/rede')
+    await user.click(screen.getByRole('button', { name: 'Testar pasta' }))
+    expect(await screen.findByText(/acesso negado/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Salvar a pasta de backup' })).toBeDisabled()
   })
 })
