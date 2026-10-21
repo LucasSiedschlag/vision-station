@@ -51,6 +51,15 @@ def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], Proble
             return step("backup", False, todo=tr("A pasta {folder} não existe ou não está ligada", folder=folder))
         return step("backup", True, done_detail=tr("Pasta de backup: {folder}", folder=folder))
 
+    def on_this_pc() -> bool:
+        svc = deps.system
+        return svc is not None and svc.started_with.network.local_only  # unknown counts as not local: fail safe
+
+    @api.get("/setup/open", response_model=m.SetupOpenOut)
+    def setup_open() -> m.SetupOpenOut:
+        """Whether the first password can be created now: for the notice on the operator screen. Says nothing else."""
+        return m.SetupOpenOut(open=maintainer_password_missing() and on_this_pc())
+
     @api.get("/setup/status", response_model=m.SetupStatusOut, responses={401: {"model": m.Problem}, 403: {"model": m.Problem}})
     def setup_status(_: str = Depends(may_ask)) -> m.SetupStatusOut:
         """The seven steps of the wizard and whether the installation still needs it. Open to everyone while the
@@ -78,8 +87,7 @@ def add_setup_routes(api: APIRouter, deps: Any, role: Callable[..., str], Proble
         """The first password of the Maintainer, with no login: only while there is none, once, and only when the
         API listens on this PC (anyone who can reach it from the network would otherwise take over the station).
         No session is opened; the screen logs in afterwards. Everything after it asks for a login."""
-        svc = deps.system
-        if svc is None or not svc.started_with.network.local_only:  # unknown counts as not local: fail safe
+        if not on_this_pc():
             raise Problem(403, tr("A senha inicial só pode ser criada no próprio PC da estação"), "not_local")
         with first_password:
             if not maintainer_password_missing():

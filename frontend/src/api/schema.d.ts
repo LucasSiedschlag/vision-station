@@ -898,6 +898,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/setup/open': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Setup Open
+     * @description Whether the first password can be created now: for the notice on the operator screen. Says nothing else.
+     */
+    get: operations['setup_open']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/setup/status': {
     parameters: {
       query?: never
@@ -2607,6 +2627,11 @@ export interface components {
       detail: string
       /** Status */
       status: string
+    }
+    /** SetupOpenOut */
+    SetupOpenOut: {
+      /** Open */
+      open: boolean
     }
     /** SetupPasswordBody */
     SetupPasswordBody: {
@@ -6064,6 +6089,44 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  setup_open: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SetupOpenOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
         }
       }
     }

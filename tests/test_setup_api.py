@@ -151,3 +151,18 @@ def test_creating_it_is_audited(fresh):
     events = [e for e in fresh.jobs.read_audit() if e["kind"] == "password_set"]
     assert events and events[-1]["by"] == "setup" and events[-1]["role"] == "maintainer"
     assert "a-good-password" not in json.dumps(fresh.jobs.read_audit())
+
+
+# --- whether the wizard is open without a login (the operator screen's notice) ---------------------------------
+
+
+def test_everyone_may_ask_whether_the_wizard_is_open_and_it_says_no_more_than_that(fresh):
+    r = fresh.client.get("/api/setup/open")
+    assert r.status_code == 200 and r.json() == {"open": True}
+    create_password(fresh)
+    assert fresh.client.get("/api/setup/open").json() == {"open": False}
+
+
+def test_the_wizard_is_not_open_on_a_network_api_even_with_no_password(fresh, tmp_path):
+    fresh.deps.system = SystemService(tmp_path / "data", SystemConfig.model_validate({"network": {"host": "0.0.0.0"}}))
+    assert fresh.client.get("/api/setup/open").json() == {"open": False}  # the notice would lead nowhere: creating is refused

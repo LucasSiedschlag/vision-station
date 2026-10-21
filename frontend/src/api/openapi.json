@@ -3359,6 +3359,17 @@
         "title": "SettingResult",
         "type": "object"
       },
+      "SetupOpenOut": {
+        "properties": {
+          "open": {
+            "title": "Open",
+            "type": "boolean"
+          }
+        },
+        "required": ["open"],
+        "title": "SetupOpenOut",
+        "type": "object"
+      },
       "SetupPasswordBody": {
         "properties": {
           "password": {
@@ -8825,6 +8836,45 @@
           }
         },
         "summary": "Create Maintainer Password"
+      }
+    },
+    "/api/setup/open": {
+      "get": {
+        "description": "Whether the first password can be created now: for the notice on the operator screen. Says nothing else.",
+        "operationId": "setup_open",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupOpenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          }
+        },
+        "summary": "Setup Open"
       }
     },
     "/api/setup/status": {
