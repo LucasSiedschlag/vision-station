@@ -106,6 +106,9 @@ msgstr "Every inspected image also goes to the dataset."
 msgid "Corrigido: o certo era {o}."
 msgstr "Corrected: it was {o}."
 
+msgid "Entre o sinal da máquina e a foto (0 a 1000 ms), para quando o sinal vem antes da peça assentar."
+msgstr "Between the machine's signal and the picture (0 to 1000 ms), for when the signal comes before the part has settled."
+
 msgid "item que pode ser movido"
 msgstr "movable item"
 
@@ -548,6 +551,9 @@ msgstr "Draw the presence area"
 msgid "Orientação da imagem"
 msgstr "Image orientation"
 
+msgid "Atraso após o sinal"
+msgstr "Delay after the signal"
+
 msgid "o job concorda"
 msgstr "the job agrees"
 
@@ -713,6 +719,9 @@ msgstr "Calculating…"
 msgid "Duração"
 msgstr "Duration"
 
+msgid "Quanto tempo o sinal precisa ficar ligado para valer (0 a 65 ms). Um pulso mais curto é ruído e é ignorado."
+msgstr "How long the signal must stay on to count (0 to 65 ms). A shorter pulse is noise and is ignored."
+
 msgid "a imagem toda"
 msgstr "the whole image"
 
@@ -824,6 +833,9 @@ msgstr "Leaves {share} % of what you excluded inside the range."
 msgid "Muitas tentativas. Aguarde um pouco e tente de novo."
 msgstr "Too many attempts. Wait a little and try again."
 
+msgid "No sinal"
+msgstr "At the signal"
+
 msgid "Imagem ao vivo da câmera"
 msgstr "Live camera image"
 
@@ -866,6 +878,9 @@ msgstr "ERROR"
 msgid "Nenhum resultado neste período"
 msgstr "No results in this period"
 
+msgid "Precisa da imagem ao vivo da câmera."
+msgstr "Needs the camera's live image."
+
 msgid "Ativar mesmo assim"
 msgstr "Activate anyway"
 
@@ -907,6 +922,9 @@ msgstr "Name of the new job"
 
 msgid "{hint} (não usado)"
 msgstr "{hint} (not used)"
+
+msgid "Ver o quadro depois do atraso"
+msgstr "See the frame after the delay"
 
 msgid "Tipo"
 msgstr "Type"
@@ -1754,6 +1772,9 @@ msgstr "First mark the colour with Include colour."
 msgid "Mostrar as amostras"
 msgstr "Show the samples"
 
+msgid "Movimento"
+msgstr "Movement"
+
 msgid "fora da faixa"
 msgstr "out of range"
 
@@ -2153,6 +2174,9 @@ msgstr "It was OK"
 msgid "fora, {distance} além da borda"
 msgstr "outside, {distance} beyond the edge"
 
+msgid "Fração da área que muda entre duas imagens para contar como em movimento (0 a 1)."
+msgstr "Share of the area that changes between two images to count as moving (0 to 1)."
+
 msgid "Descrição"
 msgstr "Description"
 
@@ -2453,6 +2477,9 @@ msgstr "{hint} · separated by commas"
 msgid "Cancelar"
 msgstr "Cancel"
 
+msgid "Depois do atraso"
+msgstr "After the delay"
+
 msgid "Sem ligação com o sistema, o estado da máquina não é conhecido."
 msgstr "Without a link to the system, the machine state is not known."
 
@@ -2488,6 +2515,9 @@ msgstr "No tools yet. A job needs at least one."
 
 msgid "último quadro há {age} s"
 msgstr "last frame {age} s ago"
+
+msgid "Filtro do sinal"
+msgstr "Signal filter"
 
 msgid "Usar o limite mínimo"
 msgstr "Use the minimum limit"

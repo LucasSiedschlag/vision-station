@@ -181,7 +181,7 @@ def test_run_a_draft_on_an_image_or_the_live_frame(env, mnt):
 def test_camera_tuning_pauses_the_station_and_reports_each_setting(env, mnt):
     state = env.client.get("/api/camera/state", headers=mnt).json()
     assert state["connected"] and state["profile"] and not state["station_paused"]
-    profile = dict(state["profile"], exposure={"mode": "manual", "value_us": 12000})
+    profile = dict(state["profile"], exposure={"mode": "manual", "value_us": 12000, "auto_once": state["profile"]["exposure"]["auto_once"]})
     r = env.client.post("/api/camera/apply?wait_s=0", headers=mnt, json=profile)
     assert r.status_code == 200
     env.rig.tick(2)
@@ -201,7 +201,7 @@ def test_auto_exposure_measures_once_pauses_the_station_and_leaves_the_camera_on
     # the acquisition thread does not run in these tests: waiting for the camera runs the rig by hand
     monkeypatch.setattr(exposure, "time", SimpleNamespace(sleep=lambda s: env.rig.tick(1), monotonic=time.monotonic))
     profile = env.client.get("/api/camera/state", headers=mnt).json()["profile"]
-    profile["exposure"] = {"mode": "manual", "value_us": 8000, "auto_once": {"target_brightness": 5, "max_exposure_us": 50000}}
+    profile["exposure"] = {"mode": "manual", "value_us": 8000, "auto_once": {"target_brightness": 5, "max_exposure_us": 50000, "region": None}}
     r = env.client.post("/api/camera/auto-exposure", headers=mnt, json=profile)
     assert r.status_code == 200, r.text
     found = r.json()

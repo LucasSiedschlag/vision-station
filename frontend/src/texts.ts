@@ -1503,6 +1503,36 @@ export const text = {
     get drawPresence() {
       return t`Desenhar a área de presença`
     },
+    get externalDelay() {
+      return t`Atraso após o sinal`
+    },
+    get externalDelayHint() {
+      return t`Entre o sinal da máquina e a foto (0 a 1000 ms), para quando o sinal vem antes da peça assentar.`
+    },
+    get externalDebounce() {
+      return t`Filtro do sinal`
+    },
+    get externalDebounceHint() {
+      return t`Quanto tempo o sinal precisa ficar ligado para valer (0 a 65 ms). Um pulso mais curto é ruído e é ignorado.`
+    },
+    get delayPreview() {
+      return t`Ver o quadro depois do atraso`
+    },
+    get delayPreviewNeedsLive() {
+      return t`Precisa da imagem ao vivo da câmera.`
+    },
+    get delayPreviewAtSignal() {
+      return t`No sinal`
+    },
+    get delayPreviewAfter() {
+      return t`Depois do atraso`
+    },
+    get motionArea() {
+      return t`Movimento`
+    },
+    get motionHint() {
+      return t`Fração da área que muda entre duas imagens para contar como em movimento (0 a 1).`
+    },
     get stillMs() {
       return t`Tempo parado`
     },

@@ -95,13 +95,15 @@ def scene_with_object(x=40):
     return img
 
 
-def make_bundle(mode="image_presence", presence=True, waiting=None, interval_ms=None) -> JobBundle:
+def make_bundle(mode="image_presence", presence=True, waiting=None, interval_ms=None, external=None) -> JobBundle:
     data = yaml.safe_load((FIXTURES / "job.yaml").read_text(encoding="utf-8"))
     data["geometry"] = {"rois": {"label": {"relative_to": "frame", "rect": [0.2, 0.2, 0.8, 0.5]}}}
     data["tools"] = [{"id": "lote", "type": "code", "version": 1, "roi": "label", "reason_fail": "Código não lido"}]
     blocks = {"image_presence": {"roi": [0.0, 0.0, 1.0, 1.0], "still_ms": 400, "min_area": 0.05}}
     if interval_ms is not None:
         blocks["continuous"] = {"interval_ms": interval_ms}
+    if external is not None:
+        blocks["external"] = external
     if not presence:
         del blocks["image_presence"]  # the type that needs it is not given one below
     data["acquisition"] = acquisition_block(mode, **blocks)
@@ -116,7 +118,7 @@ def make_bundle(mode="image_presence", presence=True, waiting=None, interval_ms=
 class Rig:
     """Everything wired with a fake clock, advancing time in 0.1 s ticks."""
 
-    def __init__(self, mode="image_presence", presence=True, outcome=Outcome.PASS, settle_s=0.0, interval_ms=None, **controller_args):
+    def __init__(self, mode="image_presence", presence=True, outcome=Outcome.PASS, settle_s=0.0, interval_ms=None, external=None, **controller_args):
         self.clock = Clock()
         self.camera = FakeCamera(self.clock)
         self.acq = Acquisition(self.camera, {"device_name": "fake"}, clock=self.clock, retry_delays_s=(1.0, 2.0), settle_s=settle_s)
@@ -124,7 +126,7 @@ class Rig:
         self.outcome = outcome
         self.events = []
         self.controller = StationController(self.acq, self._inspect, clock=self.clock, on_event=self.events.append, **controller_args)
-        self.bundle = make_bundle(mode, presence, interval_ms=interval_ms)
+        self.bundle = make_bundle(mode, presence, interval_ms=interval_ms, external=external)
 
     def _inspect(self, bundle, frame):
         self.inspected.append(frame)
@@ -632,3 +634,58 @@ def test_a_pass_only_ever_comes_with_the_inspecting_to_showing_result_path():
     assert len(passes) == 2
     for i in passes:
         assert rig.events[i - 1].state is State.INSPECTING  # emitted right after entering from INSPECTING
+
+
+# --- the external trigger: the filter of the signal and the delay (FR-TRG-6/8) ---------------------------
+
+def external_rig(**external):
+    rig = Rig(mode="external", presence=False, external={"delay_ms": 0, "debounce_ms": 0, **external})
+    rig.boot()
+    return rig
+
+
+def test_a_pulse_shorter_than_the_debounce_is_bounce_and_starts_nothing():
+    rig = external_rig(debounce_ms=50)
+    rig.controller.set_line(True)
+    rig.tick(1, dt=0.02)
+    rig.controller.set_line(False)
+    rig.tick(5)
+    assert rig.inspected == []
+
+
+def test_a_signal_held_for_the_debounce_starts_one_inspection_and_needs_to_be_released_for_the_next():
+    rig = external_rig(debounce_ms=50)
+    rig.controller.set_line(True)
+    rig.tick(1, dt=0.02)
+    assert rig.inspected == []
+    rig.tick(4, dt=0.02)
+    assert len(rig.inspected) == 1 and rig.results()[0].trigger.source == "machine"
+    rig.tick(40)  # still held: it is the same signal
+    assert len(rig.inspected) == 1
+    rig.controller.set_line(False)
+    rig.tick(1)
+    rig.controller.set_line(True)
+    rig.tick(10)
+    assert len(rig.inspected) == 2
+
+
+def test_without_debounce_the_first_level_counts_and_other_types_ignore_the_line():
+    rig = external_rig()
+    rig.controller.set_line(True)
+    rig.tick(3)
+    assert len(rig.inspected) == 1
+    manual = Rig(mode="manual", presence=False)
+    manual.boot()
+    manual.controller.set_line(True)
+    manual.tick(10)
+    assert manual.inspected == []
+
+
+def test_the_delay_after_the_signal_decides_which_frame_is_inspected():
+    rig = external_rig(delay_ms=500)
+    rig.controller.set_line(True)
+    rig.tick(1)
+    signalled = rig.clock()
+    rig.tick(12)
+    assert len(rig.inspected) == 1
+    assert rig.inspected[0].timestamp >= signalled + 0.5 - 1e-9

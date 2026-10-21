@@ -105,10 +105,15 @@ def demo_job(name: str = "Tampa azul — etiqueta de lote (demo)") -> JobBundle:
     profile = CameraProfile.model_validate(
         {
             "resolution": [1920, 1080],
-            "exposure": {"mode": "manual", "value_us": 8000},
+            "pixel_format": None,
+            "exposure": {"mode": "manual", "value_us": 8000, "auto_once": {"target_brightness": 10, "max_exposure_us": 100000, "region": None}},
             "gain": {"mode": "manual", "value": 0},
             "white_balance": {"mode": "manual", "kelvin": 4500},
             "focus": {"mode": "manual", "value": 30},
+            "zoom": None,
+            "power_line_hz": 60,
+            "low_light_compensation": False,
+            "orientation": "normal",
         }
     )
     return JobBundle(job=Job.model_validate(data), profile=profile)

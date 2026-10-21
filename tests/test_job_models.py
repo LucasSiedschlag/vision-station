@@ -73,6 +73,12 @@ def test_invalid_jobs_are_rejected(change):
         lambda d: d.update(gain={"mode": "manual"}),
         lambda d: d.update(resolution=[0, 1080]),
         lambda d: d.update(power_line_hz=55),
+        lambda d: d.pop("orientation"),  # a profile is written in full (FR-JOB-16)
+        lambda d: d.pop("power_line_hz"),
+        lambda d: d.pop("low_light_compensation"),
+        lambda d: d.pop("zoom"),
+        lambda d: d["exposure"].pop("auto_once"),
+        lambda d: d["exposure"]["auto_once"].pop("region"),
     ],
 )
 def test_invalid_profiles_are_rejected(change):

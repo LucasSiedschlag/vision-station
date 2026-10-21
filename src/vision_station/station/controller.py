@@ -104,6 +104,7 @@ class _Command:
     bundle: JobBundle | None = None
     detail: str = ""
     trigger: TriggerInfo | None = None
+    active: bool = False  # on "line" commands: the level of the trigger input
 
 
 @dataclass
@@ -166,6 +167,8 @@ class StationController:
         self._shown_at = float("-inf")
         self._showing = False  # what the screens were last told about showing the verdict
         self._last_frame_ts = -1.0
+        self._line_active_since: float | None = None  # when the trigger input went active; None while it is not
+        self._line_counted = False  # this activation already caused its trigger
         self._stop = threading.Event()
 
     # --- commands (safe to call from other threads) ------------------------------
@@ -196,6 +199,12 @@ class StationController:
             self._trigger_taken = True
         self.request_trigger(reference, source, caller_reference)
         return True
+
+    def set_line(self, active: bool) -> None:
+        """The level of the trigger input, already in the job's sense (the station's input adapter applies the edge and the
+        polarity, FR-INT-17). The trigger counts once the input has stayed active for the job's `debounce_ms` (FR-TRG-8);
+        a pulse shorter than that is bounce and is ignored. A new trigger needs the input to go inactive first."""
+        self._commands.put(_Command("line", active=active))
 
     def pause(self) -> None:
         self._commands.put(_Command("pause"))
@@ -280,6 +289,7 @@ class StationController:
         state = self._state
         if state in (State.STARTING, State.FAULT, State.PAUSED):
             return
+        self._count_line()
         if state is not State.CAMERA_LOST and self._acq.stalled():
             self._camera_lost()
             return
@@ -305,6 +315,11 @@ class StationController:
             self._trigger_requested = True
             self._trigger_reference = command.detail
             self._pending_trigger = command.trigger
+        elif command.name == "line":
+            if not command.active:
+                self._line_active_since, self._line_counted = None, False
+            elif self._line_active_since is None:
+                self._line_active_since = self._clock()
         elif command.name == "pause" and self._state in (State.READY, State.WAITING_STILL, State.SHOWING_RESULT):
             self._go(State.PAUSED)
         elif command.name == "resume" and self._state is State.PAUSED:
@@ -338,6 +353,22 @@ class StationController:
         self._acq.configure(self._bundle.profile)
         self._detail = ""
         self._go(State.PREPARING)
+
+    def _count_line(self) -> None:
+        """The trigger input has stayed active long enough (FR-TRG-8): it becomes a trigger from the machine."""
+        if self._line_active_since is None or self._line_counted or self._bundle is None:
+            return
+        trigger = self._bundle.job.acquisition.trigger
+        if trigger.type != "external" or trigger.external is None or self._state not in (State.READY, State.WAITING_STILL):
+            return
+        if self._clock() - self._line_active_since < trigger.external.debounce_ms / 1000:
+            return
+        self._line_counted = True
+        if not self._trigger_requested:
+            with self._trigger_lock:
+                self._trigger_taken = True
+            self._trigger_requested = True
+            self._pending_trigger = TriggerInfo("machine")
 
     # --- state handlers -----------------------------------------------------------
 

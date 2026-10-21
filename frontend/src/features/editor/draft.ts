@@ -91,6 +91,7 @@ export const useDraft = create<DraftState>((set, get) => ({
     if (!current) return
     const next = structuredClone(current)
     change(next)
+    next.profile = completeProfile(next.profile)
     set((s) => ({
       draft: next,
       dirty: true,
@@ -144,16 +145,46 @@ export function toRequest(d: Draft) {
   }
 }
 
-export const DEFAULT_PROFILE = {
+/** A camera profile is written in full (FR-JOB-16): every setting is in the file, a setting not in use as `null`. The
+ * editor changes the profile in small steps that leave keys out; this fills them in after each edit, with the usual
+ * values, so what is sent and saved is always complete and the server never has a default of its own to apply. */
+export function completeProfile(p: JobJson): JobJson {
+  const exposure = p.exposure ?? { mode: 'auto' }
+  const once = exposure.auto_once ?? {}
+  const pair = (x: JobJson | undefined, field: string) => ({
+    ...(x ?? { mode: 'auto' }),
+    [field]: x?.[field] ?? null,
+  })
+  return {
+    ...p,
+    pixel_format: p.pixel_format ?? null,
+    exposure: {
+      ...exposure,
+      value_us: exposure.value_us ?? null,
+      auto_once: {
+        target_brightness: once.target_brightness ?? 10,
+        max_exposure_us: once.max_exposure_us ?? 100_000,
+        region: once.region ?? null,
+      },
+    },
+    gain: pair(p.gain, 'value'),
+    white_balance: pair(p.white_balance, 'kelvin'),
+    focus: pair(p.focus, 'value'),
+    zoom: p.zoom ?? null,
+    power_line_hz: p.power_line_hz ?? 60,
+    low_light_compensation: p.low_light_compensation ?? false,
+    orientation: p.orientation ?? 'normal',
+  }
+}
+
+export const DEFAULT_PROFILE = completeProfile({
   resolution: [1920, 1080],
   pixel_format: 'mjpeg',
   exposure: { mode: 'manual', value_us: 33000 },
   gain: { mode: 'manual', value: 0 },
   white_balance: { mode: 'manual', kelvin: 4500 },
   focus: { mode: 'manual', value: 30 },
-  power_line_hz: 60,
-  low_light_compensation: false,
-}
+})
 
 /** A job to start from: manual trigger, generous quality limits, no regions or tools yet. */
 export function newDraft(profile: JobJson | null): Draft {

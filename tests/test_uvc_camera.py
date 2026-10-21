@@ -251,7 +251,7 @@ def test_value_is_aligned_to_the_step(profile):
 
 
 def test_auto_modes(profile):
-    profile = profile.model_copy(update={"exposure": type(profile.exposure)(mode="auto")})
+    profile = profile.model_copy(update={"exposure": type(profile.exposure)(mode="auto", value_us=None, auto_once=profile.exposure.auto_once)})
     cam, controls, _ = make_camera()
     report = cam.apply(profile)
     assert report.status["exposure"] is SettingStatus.APPLIED

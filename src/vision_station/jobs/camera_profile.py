@@ -1,6 +1,6 @@
 """Driver-independent camera settings stored in a job (architecture §5.2)."""
 
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Literal, Self
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -14,7 +14,7 @@ class ManualOrAuto(_Strict):
     """A setting that is either automatic or fixed at a value (never both)."""
 
     mode: Literal["auto", "manual"]
-    value: float | None = None
+    value: float | None
 
     @model_validator(mode="after")
     def _manual_needs_value(self) -> Self:
@@ -35,9 +35,9 @@ class AutoOnce(_Strict):
     over `max_exposure_us`. The job then runs with the fixed value that was found; nothing follows the light of the
     moment (principles 1 and 2)."""
 
-    target_brightness: Annotated[float, Field(ge=0, le=100)] = 10.0  # percent of saturated pixels
-    max_exposure_us: Annotated[float, Field(ge=100)] = 100_000.0
-    region: tuple[Fraction, Fraction, Fraction, Fraction] | None = None  # x0, y0, x1, y1 of the frame; None: all of it
+    target_brightness: Annotated[float, Field(ge=0, le=100)]  # percent of saturated pixels
+    max_exposure_us: Annotated[float, Field(ge=100)]
+    region: tuple[Fraction, Fraction, Fraction, Fraction] | None  # x0, y0, x1, y1 of the frame; None: all of it
 
     @model_validator(mode="after")
     def _region_has_area(self) -> Self:
@@ -50,8 +50,8 @@ class AutoOnce(_Strict):
 
 class Exposure(_Strict):
     mode: Literal["auto", "manual"]
-    value_us: Annotated[float, Field(gt=0)] | None = None
-    auto_once: AutoOnce | None = None  # how *Auto uma vez* measures; written only when set
+    value_us: Annotated[float, Field(gt=0)] | None
+    auto_once: AutoOnce  # how *Auto uma vez* measures
 
     @model_validator(mode="after")
     def _manual_needs_value(self) -> Self:
@@ -64,7 +64,7 @@ class Exposure(_Strict):
 
 class WhiteBalance(_Strict):
     mode: Literal["auto", "manual"]
-    kelvin: Annotated[int, Field(gt=0)] | None = None
+    kelvin: Annotated[int, Field(gt=0)] | None
 
     @model_validator(mode="after")
     def _manual_needs_kelvin(self) -> Self:
@@ -90,16 +90,16 @@ class CameraProfile(_Strict):
     """
 
     resolution: tuple[Annotated[int, Field(gt=0)], Annotated[int, Field(gt=0)]]
-    pixel_format: Literal["mjpeg", "yuyv"] | None = None  # UVC only
+    pixel_format: Literal["mjpeg", "yuyv"] | None  # UVC only
     exposure: Exposure
     gain: ManualOrAuto
     white_balance: WhiteBalance
     focus: ManualOrAuto
-    zoom: Zoom | None = None  # motorized lens only
-    power_line_hz: Literal[50, 60] = 60
-    low_light_compensation: bool = False
+    zoom: Zoom | None  # motorized lens only
+    power_line_hz: Literal[50, 60]
+    low_light_compensation: bool
     # applied by the program to every frame, not written to the camera (FR-ACQ-10, TD-32); see PROGRAM_SIDE
-    orientation: Orientation = "normal"
+    orientation: Orientation
 
 
 # Profile fields the program applies to the frames itself: a driver neither writes nor reads them back, so they are
@@ -108,9 +108,6 @@ PROGRAM_SIDE = ("orientation",)
 
 
 def dump_profile(profile: CameraProfile) -> str:
-    """The profile as YAML, written in full (FR-JOB-16): the orientation and how *Auto uma vez* measures are in the file
-    even when they are the usual ones, so a change of a default in the software never changes a saved version."""
-    data: dict[str, Any] = profile.model_dump(mode="json")
-    if data["exposure"]["auto_once"] is None:
-        data["exposure"]["auto_once"] = AutoOnce().model_dump(mode="json")
-    return yaml.safe_dump(data, sort_keys=False)
+    """The profile as YAML, in full (FR-JOB-16): every setting is in the file, so a change of a default in the software
+    never changes a saved version, and the loader refuses a file with one missing."""
+    return yaml.safe_dump(profile.model_dump(mode="json"), sort_keys=False)

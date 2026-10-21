@@ -61,7 +61,7 @@ def rig(**camera_options):
 
 def test_the_search_stops_where_the_target_share_of_pixels_is_saturated():
     acq, camera, profile, pump = rig()
-    profile = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(target_brightness=20)})})
+    profile = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(target_brightness=20, max_exposure_us=100_000, region=None)})})
     found = measure_exposure(acq, profile, pump=pump, clock=acq._clock)
     assert found.reached and found.limit == "" and abs(found.saturated_percent - 20) <= 1.0
     assert 100 <= found.value_us <= 100_000 and 3 <= len(found.steps) <= 10
@@ -102,9 +102,9 @@ def test_a_scene_that_is_over_the_target_even_at_the_shortest_exposure_ends_ther
 
 def test_the_region_decides_what_is_measured():
     acq, camera, profile, pump = rig(right_only=True)
-    on_dark_half = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(region=(0, 0, 0.5, 1))})})
+    on_dark_half = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(target_brightness=10, max_exposure_us=100_000, region=(0, 0, 0.5, 1))})})
     assert measure_exposure(acq, on_dark_half, pump=pump, clock=acq._clock).limit == "max"
-    on_bright_half = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(region=(0.5, 0, 1, 1))})})
+    on_bright_half = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(target_brightness=10, max_exposure_us=100_000, region=(0.5, 0, 1, 1))})})
     assert measure_exposure(acq, on_bright_half, pump=pump, clock=acq._clock).reached
 
 
@@ -134,10 +134,12 @@ def test_the_saturated_share_of_a_region():
 def test_the_parameters_are_always_written_in_full_and_must_make_sense():
     profile = make_bundle().profile
     usual = yaml.safe_load(dump_profile(profile))["exposure"]["auto_once"]
-    assert usual == {"target_brightness": 10.0, "max_exposure_us": 100000.0, "region": None}  # FR-JOB-16: the usual ones are in the file too
-    set_up = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(target_brightness=5, region=(0.2, 0.2, 0.8, 0.8))})})
+    assert usual == {"target_brightness": 10, "max_exposure_us": 100000, "region": None}  # FR-JOB-16: all of it is in the file
+    set_up = profile.model_copy(update={"exposure": profile.exposure.model_copy(update={"auto_once": AutoOnce(target_brightness=5, max_exposure_us=100_000, region=(0.2, 0.2, 0.8, 0.8))})})
     text = dump_profile(set_up)
     assert "auto_once" in text and CameraProfile.model_validate(yaml.safe_load(text)).exposure.auto_once.target_brightness == 5
+    with pytest.raises(ValueError):  # a missing parameter is refused, no default fills it in
+        AutoOnce.model_validate({"target_brightness": 10})
     for bad in ({"region": [0.5, 0, 0.5, 1]}, {"target_brightness": 120}, {"max_exposure_us": 5}):
         with pytest.raises(ValueError):
             AutoOnce.model_validate(bad)

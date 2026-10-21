@@ -1,9 +1,15 @@
 # Starting point for the Logitech C920 (camera/profile.yaml of a job).
 resolution: [1920, 1080]
 pixel_format: mjpeg
-exposure: {mode: manual, value_us: 8000}   # DirectShow uses log2 steps: the nearest step is applied and reported
+# DirectShow uses log2 steps: the nearest step is applied and reported
+exposure:
+  mode: manual
+  value_us: 8000
+  auto_once: {target_brightness: 10, max_exposure_us: 100000, region: null}
 gain: {mode: manual, value: 0}
 white_balance: {mode: manual, kelvin: 4500}
 focus: {mode: manual, value: 30}
 power_line_hz: 60
 low_light_compensation: false
+orientation: normal
+zoom: null

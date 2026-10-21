@@ -106,6 +106,9 @@ msgstr "Toda imagem inspecionada também vai para o dataset."
 msgid "Corrigido: o certo era {o}."
 msgstr "Corrigido: o certo era {o}."
 
+msgid "Entre o sinal da máquina e a foto (0 a 1000 ms), para quando o sinal vem antes da peça assentar."
+msgstr "Entre o sinal da máquina e a foto (0 a 1000 ms), para quando o sinal vem antes da peça assentar."
+
 msgid "item que pode ser movido"
 msgstr "item que pode ser movido"
 
@@ -548,6 +551,9 @@ msgstr "Desenhar a área de presença"
 msgid "Orientação da imagem"
 msgstr "Orientação da imagem"
 
+msgid "Atraso após o sinal"
+msgstr "Atraso após o sinal"
+
 msgid "o job concorda"
 msgstr "o job concorda"
 
@@ -713,6 +719,9 @@ msgstr "Calculando…"
 msgid "Duração"
 msgstr "Duração"
 
+msgid "Quanto tempo o sinal precisa ficar ligado para valer (0 a 65 ms). Um pulso mais curto é ruído e é ignorado."
+msgstr "Quanto tempo o sinal precisa ficar ligado para valer (0 a 65 ms). Um pulso mais curto é ruído e é ignorado."
+
 msgid "a imagem toda"
 msgstr "a imagem toda"
 
@@ -824,6 +833,9 @@ msgstr "Deixa {share} % do que você excluiu dentro da faixa."
 msgid "Muitas tentativas. Aguarde um pouco e tente de novo."
 msgstr "Muitas tentativas. Aguarde um pouco e tente de novo."
 
+msgid "No sinal"
+msgstr "No sinal"
+
 msgid "Imagem ao vivo da câmera"
 msgstr "Imagem ao vivo da câmera"
 
@@ -866,6 +878,9 @@ msgstr "ERRO"
 msgid "Nenhum resultado neste período"
 msgstr "Nenhum resultado neste período"
 
+msgid "Precisa da imagem ao vivo da câmera."
+msgstr "Precisa da imagem ao vivo da câmera."
+
 msgid "Ativar mesmo assim"
 msgstr "Ativar mesmo assim"
 
@@ -907,6 +922,9 @@ msgstr "Nome do job novo"
 
 msgid "{hint} (não usado)"
 msgstr "{hint} (não usado)"
+
+msgid "Ver o quadro depois do atraso"
+msgstr "Ver o quadro depois do atraso"
 
 msgid "Tipo"
 msgstr "Tipo"
@@ -1754,6 +1772,9 @@ msgstr "Marque primeiro a cor com Incluir cor."
 msgid "Mostrar as amostras"
 msgstr "Mostrar as amostras"
 
+msgid "Movimento"
+msgstr "Movimento"
+
 msgid "fora da faixa"
 msgstr "fora da faixa"
 
@@ -2153,6 +2174,9 @@ msgstr "Estava OK"
 msgid "fora, {distance} além da borda"
 msgstr "fora, {distance} além da borda"
 
+msgid "Fração da área que muda entre duas imagens para contar como em movimento (0 a 1)."
+msgstr "Fração da área que muda entre duas imagens para contar como em movimento (0 a 1)."
+
 msgid "Descrição"
 msgstr "Descrição"
 
@@ -2453,6 +2477,9 @@ msgstr "{hint} · separados por vírgula"
 msgid "Cancelar"
 msgstr "Cancelar"
 
+msgid "Depois do atraso"
+msgstr "Depois do atraso"
+
 msgid "Sem ligação com o sistema, o estado da máquina não é conhecido."
 msgstr "Sem ligação com o sistema, o estado da máquina não é conhecido."
 
@@ -2488,6 +2515,9 @@ msgstr "Nenhuma ferramenta ainda. Um job precisa de pelo menos uma."
 
 msgid "último quadro há {age} s"
 msgstr "último quadro há {age} s"
+
+msgid "Filtro do sinal"
+msgstr "Filtro do sinal"
 
 msgid "Usar o limite mínimo"
 msgstr "Usar o limite mínimo"

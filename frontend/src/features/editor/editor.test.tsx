@@ -242,12 +242,19 @@ const version = {
   },
   profile: {
     resolution: [1920, 1080],
-    exposure: { mode: 'manual', value_us: 8000 },
+    pixel_format: null,
+    exposure: {
+      mode: 'manual',
+      value_us: 8000,
+      auto_once: { target_brightness: 10, max_exposure_us: 100000, region: null },
+    },
     gain: { mode: 'manual', value: 0 },
     white_balance: { mode: 'manual', kelvin: 4500 },
     focus: { mode: 'manual', value: 30 },
+    zoom: null,
     power_line_hz: 60,
     low_light_compensation: false,
+    orientation: 'normal',
   },
   files: [{ path: 'reference/reference.png', size: 10, sha256: 'x' }],
   reference: { brightness: 120, sharpness: 300 },
@@ -633,26 +640,28 @@ describe('the job editor', () => {
     // Avançado shows the parameters of the measurement
     await userEvent.click(screen.getByRole('radio', { name: 'Avançado' }))
     const target = screen.getByLabelText('Brilho-alvo do Auto uma vez')
-    expect(target).toHaveAttribute('placeholder', 'padrão: 10')
+    expect(target).toHaveValue('10') // the usual value is in the profile, written in full
+    await userEvent.clear(target)
     await userEvent.type(target, '5')
     await userEvent.tab()
-    expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual({ target_brightness: 5 })
+    const once = { target_brightness: 5, max_exposure_us: 100000, region: null }
+    expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual(once)
     await userEvent.click(screen.getByRole('button', { name: 'Auto uma vez' }))
     expect(
       await screen.findByText('Exposição ajustada para 4000 µs (9,6 % de pixels saturados).'),
     ).toBeInTheDocument()
-    expect(sent.exposure.auto_once).toEqual({ target_brightness: 5 })
+    expect(sent.exposure.auto_once).toEqual(once)
     expect(useDraft.getState().draft?.profile.exposure).toEqual({
       mode: 'manual',
       value_us: 4000,
-      auto_once: { target_brightness: 5 },
+      auto_once: once,
     })
     // typing another value, or going back to automatic, does not lose the parameters
     const value = screen.getByLabelText('Tempo de exposição')
     await userEvent.clear(value)
     await userEvent.type(value, '6000')
     await userEvent.tab()
-    expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual({ target_brightness: 5 })
+    expect(useDraft.getState().draft?.profile.exposure.auto_once).toEqual(once)
     expect(useDraft.getState().draft?.profile.exposure.value_us).toBe(6000)
   })
 
@@ -702,10 +711,10 @@ describe('the job editor', () => {
     ])
     expect(screen.getByRole('button', { name: 'Desenhar a região de medição' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('switch', { name: 'Medir só numa região' }))
-    expect(useDraft.getState().draft?.profile.exposure).not.toHaveProperty('auto_once')
+    expect(useDraft.getState().draft?.profile.exposure.auto_once.region).toBeNull() // written in full, not left out
   })
 
-  it('the orientation of the image is chosen with the camera, kept out of the profile when normal, and told in the summary', async () => {
+  it('the orientation of the image is chosen with the camera, written in full when normal, and told in the summary', async () => {
     await openEditor()
     const rail = within(screen.getByRole('navigation', { name: 'Passos do job' }))
     await userEvent.click(rail.getByRole('button', { name: /^Imagem e disparo/ }))
@@ -720,7 +729,7 @@ describe('the job editor', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
     await userEvent.click(screen.getByRole('combobox', { name: 'Orientação da imagem' }))
     await userEvent.click(screen.getByRole('option', { name: 'Normal' }))
-    expect(useDraft.getState().draft?.profile).not.toHaveProperty('orientation')
+    expect(useDraft.getState().draft?.profile.orientation).toBe('normal')
   })
 
   it('the trigger is set with the image, in the first step, and the quality gates are a step of their own (TD-32)', async () => {
@@ -755,6 +764,40 @@ describe('the job editor', () => {
     await userEvent.type(interval, '1000')
     await userEvent.tab()
     expect(useDraft.getState().draft?.job.acquisition.trigger.continuous.interval_ms).toBe(1000)
+  })
+
+  it('an external trigger has its delay and its signal filter, written in full, and the delay can be seen on the live image (FR-TRG-6/8)', async () => {
+    await openEditor()
+    await userEvent.click(screen.getByRole('combobox', { name: 'Disparo' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Sinal externo' }))
+    expect(useDraft.getState().draft?.job.acquisition.trigger.external).toEqual({
+      delay_ms: 0,
+      debounce_ms: 0,
+    })
+    await userEvent.click(
+      within(screen.getByRole('navigation', { name: 'Passos do job' })).getByRole('button', {
+        name: /^Imagem e disparo/,
+      }),
+    )
+    const delay = screen.getByLabelText('Atraso após o sinal')
+    await userEvent.clear(delay)
+    await userEvent.type(delay, '250')
+    await userEvent.tab()
+    const filter = screen.getByLabelText('Filtro do sinal')
+    await userEvent.clear(filter)
+    await userEvent.type(filter, '20')
+    await userEvent.tab()
+    expect(useDraft.getState().draft?.job.acquisition.trigger.external).toEqual({
+      delay_ms: 250,
+      debounce_ms: 20,
+    })
+    // the preview needs the live picture; the reference is not it, and it says so
+    await userEvent.click(screen.getByRole('button', { name: 'Ver o quadro depois do atraso' }))
+    expect(await screen.findByText('Precisa da imagem ao vivo da câmera.')).toBeInTheDocument()
+    // going to another type keeps what was typed
+    await userEvent.click(screen.getByRole('combobox', { name: 'Disparo' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Manual' }))
+    expect(useDraft.getState().draft?.job.acquisition.trigger.external.delay_ms).toBe(250)
   })
 
   it('the save dialog lists what changed in words, and the last step offers the way on', async () => {

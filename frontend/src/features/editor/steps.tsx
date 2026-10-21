@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Camera, Crop, Plus, Sun, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { describeError } from '@/api/mutations'
 import {
@@ -432,7 +432,70 @@ export function setTriggerMode(type: string) {
   })
 }
 
-export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
+/** The frame the delay of the external trigger would take, against the one at the signal: two pictures of the live
+ * image, the second `delayMs` after the first. Pictures of the live image are replaced as new ones arrive, so each is
+ * copied when it is taken. */
+function DelayPreview({ image, delayMs }: { image: EditorImage | null; delayMs: number }) {
+  const latest = useRef(image)
+  useEffect(() => {
+    latest.current = image
+  }, [image])
+  const [shots, setShots] = useState<[string, string] | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [problem, setProblem] = useState('')
+  const copy = async () => {
+    const live = latest.current
+    if (!live || live.source !== 'live') throw new Error(t.delayPreviewNeedsLive)
+    return URL.createObjectURL(await (await fetch(live.url)).blob())
+  }
+  const take = async () => {
+    setBusy(true)
+    setProblem('')
+    try {
+      const first = await copy()
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+      const second = await copy()
+      setShots((old) => {
+        old?.forEach((url) => URL.revokeObjectURL(url))
+        return [first, second]
+      })
+    } catch {
+      setProblem(t.delayPreviewNeedsLive)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <Button variant="secondary" loading={busy} onClick={() => void take()}>
+        {t.delayPreview}
+      </Button>
+      {problem ? (
+        <p role="alert" className="text-sm text-fail-text">
+          {problem}
+        </p>
+      ) : null}
+      {shots ? (
+        <div className="grid grid-cols-2 gap-2">
+          {[t.delayPreviewAtSignal, t.delayPreviewAfter].map((label, i) => (
+            <figure key={label} className="flex flex-col gap-1">
+              <img
+                src={shots[i]}
+                alt={label}
+                className="w-full rounded-control border border-line"
+              />
+              <figcaption className="text-xs text-fg-muted">
+                {i === 0 ? label : `${label} (${delayMs} ms)`}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function TriggerStep({ draft, image, fields, setDrawing, drawing }: StepProps) {
   const trigger = draft.job.acquisition.trigger ?? {}
   const presence = trigger.image_presence ?? {}
   const set = (block: string, change: (tr: JobJson) => void) =>
@@ -495,6 +558,57 @@ export function TriggerStep({ draft, fields, setDrawing, drawing }: StepProps) {
                 min={0}
                 max={1}
                 step={0.01}
+              />
+            )}
+          </Field>
+          <Field label={t.motionArea} hint={t.motionHint}>
+            {(props) => (
+              <NumberField
+                {...props}
+                value={num(presence.motion_area)}
+                onChange={(v) => v !== null && set('image_presence', (tr) => (tr.motion_area = v))}
+                min={0}
+                max={1}
+                step={0.01}
+              />
+            )}
+          </Field>
+        </>
+      ) : null}
+      {trigger.type === 'external' ? (
+        <>
+          <Field
+            label={t.externalDelay}
+            hint={t.externalDelayHint}
+            error={fields['job.acquisition.trigger.external.delay_ms']}
+          >
+            {(props) => (
+              <NumberField
+                {...props}
+                value={num(trigger.external?.delay_ms)}
+                onChange={(v) => v !== null && set('external', (tr) => (tr.delay_ms = v))}
+                unit="ms"
+                min={0}
+                max={1000}
+                decimals={0}
+              />
+            )}
+          </Field>
+          <DelayPreview image={image} delayMs={trigger.external?.delay_ms ?? 0} />
+          <Field
+            label={t.externalDebounce}
+            hint={t.externalDebounceHint}
+            error={fields['job.acquisition.trigger.external.debounce_ms']}
+          >
+            {(props) => (
+              <NumberField
+                {...props}
+                value={num(trigger.external?.debounce_ms)}
+                onChange={(v) => v !== null && set('external', (tr) => (tr.debounce_ms = v))}
+                unit="ms"
+                min={0}
+                max={65}
+                decimals={0}
               />
             )}
           </Field>
