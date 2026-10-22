@@ -139,3 +139,23 @@ def test_a_pattern_that_does_not_fit_in_the_picture_or_a_flat_template_is_refuse
     with pytest.raises(ValueError):
         build_model(np.zeros((6, 6), np.uint8))
     assert find_shapes(np.zeros((20, 20), np.uint8), MODEL) == []  # the pattern is larger than the picture
+
+
+@pytest.mark.parametrize('angle', [0, 90, 180, -90])
+@pytest.mark.parametrize('near_border', [False, True])
+def test_a_long_pattern_fits_a_narrow_region_and_can_touch_its_border(angle, near_border):
+    """VIA-0130: a long label needs its own width and height, not a square around its long side."""
+    label = np.full((36, 184), 210, np.uint8)
+    cv2.putText(label, 'PART-42', (5, 27), cv2.FONT_HERSHEY_SIMPLEX, 1, 40, 2)
+    model = build_model(label)
+    turns = {90: cv2.ROTATE_90_COUNTERCLOCKWISE, 180: cv2.ROTATE_180, -90: cv2.ROTATE_90_CLOCKWISE}
+    rotated = label if angle == 0 else cv2.rotate(label, turns[angle])
+    rh, rw = rotated.shape
+    image = np.full((rh + 32, rw + 48), 210, np.uint8)
+    x, y = (0, 0) if near_border else (24, 16)
+    image[y:y + rh, x:x + rw] = rotated
+    found = find_shapes(image, model, angles=(angle, angle), scales=(1, 1), min_score=0.8)
+    assert len(found) == 1
+    assert (found[0].x, found[0].y) == pytest.approx((x + (rw - 1) / 2, y + (rh - 1) / 2), abs=0.4)
+    assert (found[0].angle - angle + 180) % 360 - 180 == pytest.approx(0, abs=0.4)
+    assert found[0].score > 0.95

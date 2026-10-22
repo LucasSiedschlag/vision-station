@@ -274,20 +274,23 @@ def _candidates(
     for angle in angles:
         for scale in scales:
             points, dirs = _turned(level, angle, scale)
-            reach = int(math.ceil(float(np.abs(points).max()))) + 1
-            side = 2 * reach + 1
-            if side > min(width, height):
+            reach_x = int(math.ceil(float(np.abs(points[:, 0]).max()))) + 1
+            reach_y = int(math.ceil(float(np.abs(points[:, 1]).max()))) + 1
+            # A long model fits a narrow region and may lie beside its boundary (VIA-0130).
+            # The correlation origin must follow each axis of the rotated model independently.
+            tw, th = 2 * reach_x + 1, 2 * reach_y + 1
+            if tw > width or th > height:
                 continue
-            template = np.zeros((side, side, 2), np.float32)
-            ix = np.round(points[:, 0]).astype(int) + reach
-            iy = np.round(points[:, 1]).astype(int) + reach
+            template = np.zeros((th, tw, 2), np.float32)
+            ix = np.round(points[:, 0]).astype(int) + reach_x
+            iy = np.round(points[:, 1]).astype(int) + reach_y
             np.add.at(template[:, :, 0], (iy, ix), dirs[:, 0].astype(np.float32))
             np.add.at(template[:, :, 1], (iy, ix), dirs[:, 1].astype(np.float32))
             result = cv2.matchTemplate(fields, template, cv2.TM_CCORR) / len(points)
             magnitude = np.abs(result) if sign_free else result
             peaks = (magnitude >= threshold) & (magnitude >= cv2.dilate(magnitude, kernel))
             for y, x in zip(*np.nonzero(peaks), strict=True):
-                found.append(_Pose(float(x + reach), float(y + reach), angle, scale, float(magnitude[y, x])))
+                found.append(_Pose(float(x + reach_x), float(y + reach_y), angle, scale, float(magnitude[y, x])))
     found.sort(key=lambda p: (-p.score, p.y, p.x, p.angle, p.scale))
     kept: list[_Pose] = []
     near = max(3.0, 0.5 * level.radius)
