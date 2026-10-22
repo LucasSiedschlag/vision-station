@@ -3,9 +3,9 @@
 import cv2
 import numpy as np
 
-from vision_station.core.results import InspectionResult
+from vision_station.core.results import InspectionResult, Mark, ToolReport
 
-_GREEN, _RED, _YELLOW = (60, 190, 60), (50, 50, 230), (0, 200, 240)
+_GREEN, _RED, _YELLOW, _GRAY = (60, 190, 60), (50, 50, 230), (0, 200, 240), (160, 160, 160)
 
 
 def draw_overlay(image: np.ndarray, result: InspectionResult) -> np.ndarray:
@@ -28,4 +28,28 @@ def draw_overlay(image: np.ndarray, result: InspectionResult) -> np.ndarray:
         else:
             cv2.rectangle(out, (x0, y0), (x1 - 1, y1 - 1), color, thick)
         cv2.putText(out, region["tool"], (x0 + 4, y0 + 8 + 10 * thick), cv2.FONT_HERSHEY_SIMPLEX, 0.3 * thick, color, thick)
+    for tool in result.tools:
+        for mark in tool.marks:
+            _draw_mark(out, mark, tool, thick)
     return out
+
+
+def _draw_mark(out: np.ndarray, mark: Mark, tool: ToolReport, thick: int) -> None:
+    """One mark of a tool, whose points are fractions of the frame: the colour comes from its role, and what a tool found
+    takes the verdict of the tool (the same rule as the screen, docs/frontend.md §18)."""
+    h, w = out.shape[:2]
+    points = np.round(np.array([[x * w, y * h] for x, y in mark.points])).astype(np.int32)
+    failed = mark.role == "defect" or (mark.role == "found" and not tool.passed)
+    # an informative tool never decides, so what makes it fail is not drawn as the failure of the part (FR-INS-13)
+    color = _GRAY if mark.role == "expected" else (_RED if tool.affects_result else _YELLOW) if failed else _GREEN
+    if mark.kind == "rect":
+        cv2.rectangle(out, tuple(points[0]), tuple(points[1]), color, thick)
+    elif mark.kind == "poly":
+        cv2.polylines(out, [points], mark.closed, color, thick)
+    elif mark.kind == "point":
+        x, y = points[0]
+        arm = 3 * thick
+        cv2.line(out, (x - arm, y), (x + arm, y), color, thick)
+        cv2.line(out, (x, y - arm), (x, y + arm), color, thick)
+    else:
+        cv2.putText(out, mark.text, tuple(points[0]), cv2.FONT_HERSHEY_SIMPLEX, 0.3 * thick, color, thick)

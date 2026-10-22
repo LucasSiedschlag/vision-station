@@ -167,6 +167,10 @@ def test_run_a_draft_on_an_image_or_the_live_frame(env, mnt):
     assert body["tools"]["lote"]["codes"][0]["text"] == "LOTE-9" and "total" in body["timings"]
     overlay = cv2.imdecode(np.frombuffer(base64.b64decode(body["overlay"]), np.uint8), cv2.IMREAD_COLOR)
     assert overlay.shape == (240, 320, 3)
+    # what the tool measured reaches the editor with the result, passed results included (VIA-0124)
+    marks = body["result"]["tools"][0]["marks"]
+    assert [(m["kind"], m["role"]) for m in marks] == [("poly", "found"), ("text", "found")] and marks[1]["text"] == "LOTE-9"
+    assert all(0 <= v <= 1 for m in marks for p in m["points"] for v in p)
     fail = env.client.post("/api/jobs/test", headers=mnt, json={"draft": draft(), "image": b64(png(no_code_scene()))}).json()
     assert fail["result"]["outcome"] == "FAIL" and not fail["regions"][0]["passed"]
     live = env.client.post("/api/jobs/test", headers=mnt, json={"draft": draft()})

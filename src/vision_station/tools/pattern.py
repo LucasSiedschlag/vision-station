@@ -27,7 +27,7 @@ from vision_station.core.jobfiles import JobFiles
 from vision_station.core.i18n import tr
 from vision_station.core.schema_labels import labels, meta
 from vision_station.algorithms.measures import strip_profile
-from vision_station.core.results import Unit
+from vision_station.core.results import MAX_MARKS, Mark, Unit
 from vision_station.tools.base import CriterionSpec, ToolError, ToolResult, ToolType, count_at_most, judged, maximum, minimum, register
 
 Share = Annotated[float, Field(ge=0, le=1)]
@@ -143,7 +143,13 @@ def run(region: np.ndarray, params: PatternParams, files: JobFiles) -> ToolResul
             criteria.append(minimum("min_coverage", "coverage", coverage, params.min_coverage))
         if params.max_gap is not None:
             criteria.append(maximum("max_gap", "gap", gap, params.max_gap))
-    return judged(criteria, values=values, details=details, units=units)
+    height, width = region.shape[:2]
+    role = "defect" if any(c.code == "max_count" and not c.passed for c in criteria) else "found"  # more than allowed
+    marks = tuple(
+        Mark("rect", role, ((min(x / scale, width), min(y / scale, height)), (min((x + tw) / scale, width), min((y + th) / scale, height))))
+        for x, y, _ in matches[:MAX_MARKS]  # best first
+    )
+    return judged(criteria, values=values, details=details, units=units, marks=marks)
 
 
 PATTERN = register(ToolType(

@@ -23,7 +23,6 @@ TASK = re.compile(r"VIA-\d{4}")
 EXCEPTIONS: dict[tuple[str, str, int, str], str] = {
     ("locator", "blob", 1, "V4.rotation"): "VIA-0123",  # no pose: the v2 gives it
     ("locator", "template", 1, "V4.rotation"): "VIA-0123",
-    **{("tool", name, 1, "V7"): "VIA-0124" for name in ("code", "color", "detect", "pattern")},  # the overlay contract does not exist
     **{("tool", name, 1, "V10"): "VIA-0075" for name in ("code", "color", "detect", "pattern")},  # the tools reference (D13)
     ("tool", "detect", 1, "V8"): "VIA-0112",  # the latency is the model's, stated in its card (FR-MDL-6)
 }

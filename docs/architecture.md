@@ -683,6 +683,7 @@ One result structure is used by the pipeline, the records, the API, the machine 
 | `reason` | string, in the station language (pt-BR or en, TD-30) | For the operator, from the job's texts or the catalog; screens may re-render it in the viewer's language from `error_code` / `reason_codes` and the job's texts |
 | `reason_codes` | list of {tool, code} | Which tools failed and why, machine-readable |
 | `tools` | list of {id, type, version, passed, score, margin, values{name: number}, units{name: fraction / count / score}, criteria, affects_result} | Per-tool results. Each criterion is {code, kind: min / max / rule, measure, value, limit, passed, margin}; `margin` is how far the value is inside the limit in the value's unit (negative: outside). The tool's `margin` is the one of its decisive criterion: on a failure the lowest score, when all pass the one closest to its limit relative to the limit, so the near miss shows; a rule has none. The `sequence` is kept in the records' `meta` table each time a number is given, recorded or not, so a restart never gives a number again. Fractions are 0..1 |
+| `tools[].marks` | list of {kind: rect / poly / point / text, role: found / expected / defect, points, closed, text} | What the tool measured, as **fractions of the frame**, in `ToolReport.marks`, PASS results included so a past result can be redrawn (VIA-0124). `rect` has two corners (in a turned region it arrives as a closed `poly` of its four corners), `poly` the outline (`closed: false` for a line), `point` and `text` one point. At most 64 marks per tool and 64 points per poly, 4 decimals (`core/results.py`); an invalid mark is dropped and logged, never a reason to change the verdict (`pipeline/marks.py`) |
 | `fixtures` | list of {name, x, y, angle, scale, score} | Poses found; `x`, `y` are the centre as fractions of the frame. `angle` and `scale` are `null` until the locators measure them (R1): never reported as 0 and 1 |
 | `timings` | {stage: seconds} | Per stage and per tool |
 | `simulated` | bool | From a camera whose capabilities say its pictures are not the real station (the file camera), the editor, the A/B replay or the benchmark (FR-INT-12); never settable by a caller |
@@ -870,7 +871,7 @@ The research compared the tool lists of a vision sensor (Keyence IV3: Learning, 
 - It is deterministic: the same image and parameters give the same result on any PC (NFR-POR-5). Randomness (e.g. coreset sampling when teaching) uses a fixed seed stored in the taught data.
 - It never raises on bad images: an empty, flat or saturated region gives a result or a `ToolError` that the pipeline turns into ERROR E302/E303.
 - Algorithms live in `algorithms/`; the tool module holds only the parameter schema, the labels (pt-BR and en, TD-30), the criteria and the scores.
-- Its overlay drawing (matches, edges, blobs, defect areas) is part of the tool, so every FAIL can be explained on the image (FR-UI-2).
+- It names **marks** for what it measured (matches, code outlines, detection boxes, blobs, edges, defect areas) in `ToolResult.marks`, in the pixels of its own region, the best or largest first; it never draws pixels (FR-INS-4). The pipeline maps them to fractions of the frame with the region's `Cut.to_frame`, so a turned region is right for free (`pipeline/marks.py`), and the client and the saved picture draw them, so every FAIL can be explained on the image (FR-UI-2, VIA-0124). A tool that fails by *not finding* has no shape to draw: its case file says so (`Case.nothing_on_fail`); one that only measures the whole region says `Case.draws_nothing`.
 
 ### 15.3 Tool validation checklist (when a tool type is "validated", FR-PLT-11)
 
@@ -884,7 +885,7 @@ A tool type version is released only when all of this exists and runs in CI (NFR
 | V4 | Invariance | Same outcome under brightness ±15 %, Gaussian noise σ = 2 gray levels, shift within the fixture tolerance, rotation within the fixture range after the upright cut (NFR-ACC-5) |
 | V5 | Score semantics | `score < 1` exactly when failing; margin computed the same way as every other tool (§8) |
 | V6 | Reason codes and fields | Every criterion has a code; every value used by `reason_fail` is documented |
-| V7 | Overlay | Draws what it measured, in frame coordinates |
+| V7 | Marks | Gives valid marks (`valid_mark`: known kind and role, finite points inside the region, within the caps) and has some on its failing region, unless its case says why |
 | V8 | Benchmark | Time at standard region sizes (0.25, 1 and 4 MP) on tier M and tier R, recorded in the tool's documentation; budget per tool stated |
 | V9 | Determinism | Two runs, two processes, same results bit for bit (scores to 1e-9) |
 | V10 | Documentation | One section per tool in a tools document: what it measures, when to use it, limits, examples of `reason_fail` |
@@ -899,8 +900,8 @@ A tool type version is released only when all of this exists and runs in CI (NFR
 
 | Type | V1 | V2 | V3 | V4 | V5 | V6 | V7 | V8 | V9 | V10 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | VIA-0124 | ok | ok | VIA-0075 |
-| `detect` v1 | ok | ok | ok | ok | ok | ok | VIA-0124 | VIA-0112 (latency is the model's, in its card) | ok | VIA-0075 |
+| `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | VIA-0075 |
+| `detect` v1 | ok | ok | ok | ok | ok | ok | ok | VIA-0112 (latency is the model's, in its card) | ok | VIA-0075 |
 | locators `fixed` v1, `blob` v2 | ok | ok | ok | ok | n/a | n/a | n/a | ok | ok | n/a |
 | locators `template` v1, `blob` v1 | ok | ok | ok | no rotation: VIA-0123 | n/a | n/a | n/a | ok | ok | n/a |
 

@@ -25,6 +25,7 @@ from vision_station.jobs import Job
 from vision_station.jobs.job import FixtureSpec, Tool
 from vision_station.geometry.pose import Cut, Fixture, RegionOutside, compose, cut
 from vision_station.locators import LocatorError, run_locator
+from vision_station.pipeline.marks import to_frame_marks
 from vision_station.pipeline.quality import brightness_gate, sharp_enough
 from vision_station.pipeline.stop import Stop
 from vision_station.store.bundle import JobBundle
@@ -158,7 +159,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         if not np.array_equal(region.to_frame[:, :2], np.eye(2)):  # turned: the outline, for the overlay
             entry["corners"] = [[round(x, 1), round(y, 1)] for x, y in region.corners]
         regions.append(entry)
-        report = _report(tool, result, score, _fractions(region.px, image.shape))
+        report = _report(tool, result, score, region, image.shape)
         reports.append(report)
         if not result.passed and tool.affects_result:
             failures.append(tool.reason_fail.filled(result.values))
@@ -226,12 +227,12 @@ def _fractions(px: PixelRect, shape: tuple[int, ...]) -> tuple[float, float, flo
     return (x0 / width, y0 / height, x1 / width, y1 / height)
 
 
-def _report(tool: Tool, result: ToolResult, score: float, region: tuple[float, float, float, float]) -> ToolReport:
-    """The tool's part of the result contract: its numeric measures with units, and its criteria (TD-22)."""
+def _report(tool: Tool, result: ToolResult, score: float, region: Cut, shape: tuple[int, ...]) -> ToolReport:
+    """The tool's part of the result contract: its numeric measures with units, its criteria (TD-22), and its marks mapped to the frame."""
     values = {
         name: float(result.values[name])
         for name in result.units
         if isinstance(result.values.get(name), int | float) and not isinstance(result.values.get(name), bool)
     }
     units = {name: unit for name, unit in result.units.items() if name in values}
-    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result, region=region)
+    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result, region=_fractions(region.px, shape), marks=to_frame_marks(result.marks, region, shape))

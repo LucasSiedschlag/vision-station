@@ -7,6 +7,11 @@ from vision_station.locators import run_locator
 from vision_station.tools import run_tool
 
 
+def _box(mark):
+    xs, ys = [p[0] for p in mark.points], [p[1] for p in mark.points]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
 @pytest.mark.parametrize("kind,name,version", entries("V2"))
 def test_the_known_answers_are_given(kind, name, version):
     case = case_for(kind, name, version)
@@ -21,6 +26,11 @@ def test_the_known_answers_are_given(kind, name, version):
                     assert result.values[key] == expected, f"{g.id}: {key}"
                 else:
                     assert result.values[key] == pytest.approx(expected, abs=g.tolerance), f"{g.id}: {key}"
+            if g.marks is not None:
+                got = [(m.kind, m.role, _box(m)) for m in result.marks]
+                assert [(k, r) for k, r, _ in got] == [(k, r) for k, r, _ in g.marks], f"{g.id}: marks {got}"
+                for (_, _, box), (_, _, want) in zip(got, g.marks, strict=True):
+                    assert box == pytest.approx(want, abs=g.mark_tolerance), f"{g.id}: mark box"
         else:
             fixture = run_locator(name, version, g.image, params, files)
             if g.rect is None:

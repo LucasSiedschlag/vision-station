@@ -427,3 +427,15 @@ def test_the_dataset_lists_the_images_of_a_job_with_their_labels(store):
     path = store.dataset_file(JOB["job_id"], items[0]["id"])
     assert path is not None and path.suffix == ".jpg"
     assert store.dataset_file("other", items[0]["id"]) is None  # an id of another job is not its image
+
+
+def test_the_marks_of_a_pass_are_recorded_and_read_back(tmp_path, clock):
+    """VIA-0124: a past result can be redrawn, so a PASS keeps what its tools measured."""
+    from vision_station.core.results import Mark, ToolReport
+
+    mark = Mark("poly", "found", ((0.1, 0.2), (0.3, 0.2), (0.3, 0.4)), closed=False)
+    tool = ToolReport("tampa", "color", 1, True, 1.0, marks=(mark, Mark("text", "found", ((0.1, 0.2),), text="A1")))
+    with ResultStore(tmp_path, clock=clock) as store:
+        r = store.get(store.record(res(Outcome.PASS, tools=(tool,)), None, **JOB).id)
+    assert r.tools[0]["marks"][0] == {"kind": "poly", "role": "found", "points": [[0.1, 0.2], [0.3, 0.2], [0.3, 0.4]], "closed": False, "text": ""}
+    assert r.tools[0]["marks"][1]["text"] == "A1"

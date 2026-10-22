@@ -63,6 +63,7 @@ import { ResultBar } from './ResultBar'
 import { AnchorNotFound, CameraLost } from './StateBanners'
 import { useNarrow } from './use-narrow'
 import { drawn, useLayers } from './layers'
+import { toolMarks } from '@/components/domain/MarkShapes'
 import { RegionCanvas, type Shape } from './RegionCanvas'
 import { hiddenChanged } from './SchemaForm'
 import {
@@ -892,6 +893,13 @@ function Editor({
                       }
                       onGestureEnd={onGestureEnd}
                       layers={layers}
+                      marks={
+                        test && (step === 'tools' || step === 'validate' || step === 'save')
+                          ? toolMarks(
+                              (test.result.tools ?? []).map((t) => ({ ...t, informative: !t.affects_result })),
+                            )
+                          : undefined
+                      }
                       caption={
                         shownSample
                           ? t.sampleShown(shownSample.replace('tests/images/', ''))

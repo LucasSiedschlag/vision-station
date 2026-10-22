@@ -32,7 +32,7 @@ from vision_station.api import ApiDeps, AuthService, create_app, make_event_hand
 from vision_station.cameras import ApplyReport, Camera, Capabilities, Frame, Health, SettingStatus
 from vision_station.jobs import CameraProfile, Job, acquisition_block
 from vision_station.records import ResultRecorder, ResultStore
-from vision_station.core.results import InspectionResult, Outcome
+from vision_station.core.results import InspectionResult, Mark, Outcome, ToolReport
 from vision_station.station import Acquisition, StationController
 from vision_station.store import JobBundle, JobStore
 from vision_station.system import SystemConfig, SystemService
@@ -135,7 +135,12 @@ def main() -> int:
         if outcome["next"] is Outcome.PASS:
             return InspectionResult(Outcome.PASS, scores={"tampa": 0.97}, duration_s=0.3)
         if outcome["next"] is Outcome.FAIL:
-            return InspectionResult(Outcome.FAIL, "Tampa fora da cor em 40% da área", scores={"tampa": 0.58}, duration_s=0.3)
+            # the cap, with the part of it that is not the colour drawn as a defect (VIA-0124)
+            cap = ToolReport(
+                "tampa", "color", 1, False, 0.58, {"fraction": 0.6}, {"fraction": "fraction"}, region=(0.4, 0.2, 0.7, 0.5),
+                marks=(Mark("poly", "defect", ((0.45, 0.25), (0.65, 0.25), (0.55, 0.45))), Mark("text", "defect", ((0.45, 0.25),), text="fora da cor")),
+            )
+            return InspectionResult(Outcome.FAIL, "Tampa fora da cor em 40% da área", scores={"tampa": 0.58}, duration_s=0.3, tools=(cap,))
         return InspectionResult(Outcome.ERROR, "Imagem fora do padrão", duration_s=0.3)
 
     data = Path(tempfile.mkdtemp(prefix="vision-station-e2e-"))

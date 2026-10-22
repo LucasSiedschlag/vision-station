@@ -15,6 +15,26 @@ class Outcome(StrEnum):
 # what a measured value is: a fraction 0..1 (shown as %), a count, or a score of the tool's own scale
 Unit = Literal["fraction", "count", "score"]
 
+MarkKind = Literal["rect", "poly", "point", "text"]
+MarkRole = Literal["found", "expected", "defect"]  # what the tool found, where it should have been, what makes it fail
+# Format limits of the result contract, not project values: a result row stays small (VIA-0124).
+MAX_MARKS = 64  # per tool run
+MAX_MARK_POINTS = 64  # per poly; a longer outline is simplified by the tool, never cut
+MAX_MARK_TEXT = 40
+
+
+@dataclass(frozen=True)
+class Mark:
+    """A shape a tool measured, for the screen and the saved picture to draw (FR-PLT-10). A tool gives its marks in the pixels
+    of its own region; in a `ToolReport` they are fractions of the frame (pipeline/marks.py). `rect` has two corners, `poly`
+    a closed or open outline (a line is an open poly of two points), `point` and `text` one point."""
+
+    kind: MarkKind
+    role: MarkRole
+    points: tuple[tuple[float, float], ...]
+    closed: bool = True  # poly only
+    text: str = ""  # text only
+
 
 @dataclass(frozen=True)
 class Criterion:
@@ -52,6 +72,7 @@ class ToolReport:
     error: str = ""  # an informative tool that could not run: why (a deciding one makes the result ERROR instead)
     error_code: int = 0  # and its code of the catalog (E301..E304)
     region: tuple[float, float, float, float] | None = None  # x0, y0, x1, y1 as fractions of the frame: where it looked
+    marks: tuple[Mark, ...] = ()  # what it measured, as fractions of the frame, passed results included (VIA-0124)
 
     @property
     def decisive(self) -> Criterion | None:
@@ -138,12 +159,17 @@ def _criterion(c: Criterion) -> dict[str, Any]:
     return {"code": c.code, "kind": c.kind, "measure": c.measure, "value": c.value, "limit": c.limit, "passed": c.passed, "score": c.score, "margin": c.margin}
 
 
+def _mark(m: Mark) -> dict[str, Any]:
+    return {"kind": m.kind, "role": m.role, "points": [list(p) for p in m.points], "closed": m.closed, "text": m.text}
+
+
 def tool_dict(t: ToolReport) -> dict[str, Any]:
     return {
         "id": t.id, "type": t.type, "version": t.version, "passed": t.passed, "score": t.score, "margin": t.margin,
         "values": dict(t.values), "units": dict(t.units), "criteria": [_criterion(c) for c in t.criteria],
         "affects_result": t.affects_result, "error": t.error, "error_code": t.error_code,
         "region": None if t.region is None else list(t.region),
+        "marks": [_mark(m) for m in t.marks],
     }
 
 

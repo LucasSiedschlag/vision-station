@@ -2685,6 +2685,44 @@
         "title": "LoginOut",
         "type": "object"
       },
+      "MarkOut": {
+        "description": "A shape the tool measured, in fractions of the frame (architecture §10.3, VIA-0124).",
+        "properties": {
+          "closed": {
+            "default": true,
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": ["rect", "poly", "point", "text"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "role": {
+            "enum": ["found", "expected", "defect"],
+            "title": "Role",
+            "type": "string"
+          },
+          "text": {
+            "default": "",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": ["kind", "role", "points"],
+        "title": "MarkOut",
+        "type": "object"
+      },
       "NetworkSettings": {
         "additionalProperties": false,
         "properties": {
@@ -4452,6 +4490,14 @@
             ],
             "default": null,
             "title": "Margin"
+          },
+          "marks": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/MarkOut"
+            },
+            "title": "Marks",
+            "type": "array"
           },
           "passed": {
             "title": "Passed",

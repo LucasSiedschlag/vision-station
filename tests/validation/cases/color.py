@@ -30,9 +30,11 @@ TOOLS = {1: Case(
     ),
     passing=patch(BLUE),
     failing=patch(RED),
+    nothing_on_fail="it fails by not finding the colour: there is no shape to draw",
     goldens=(
-        Golden("30 % of the area, inside 25..35 %", _30, {"min_fraction": 0.25, "max_fraction": 0.35}, passed=True, values={"fraction": 0.30}),
-        Golden("30 % of the area, 50 % asked", _30, {"min_fraction": 0.5}, passed=False, values={"fraction": 0.30}),
+        Golden("30 % of the area, inside 25..35 %", _30, {"min_fraction": 0.25, "max_fraction": 0.35}, passed=True, values={"fraction": 0.30}, marks=(("poly", "found", (0, 0, 29, 99)),)),
+        Golden("30 % of the area, 50 % asked", _30, {"min_fraction": 0.5}, passed=False, values={"fraction": 0.30}, marks=(("poly", "found", (0, 0, 29, 99)),)),
+        Golden("the colour where none is wanted is the defect", _30, {"min_fraction": 0.0, "max_fraction": 0.1}, passed=False, values={"fraction": 0.30}, marks=(("poly", "defect", (0, 0, 29, 99)),)),
         Golden("a 40 % gap in the middle", stripes((0, 20), (60, 100)), {"min_fraction": 0.1, "axis": "x", "max_gap": 0.3}, passed=False, values={"coverage": 0.6, "gap": 0.4}),
     ),
 )}

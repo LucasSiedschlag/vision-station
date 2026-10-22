@@ -2440,6 +2440,34 @@ export interface components {
       /** Token */
       token: string
     }
+    /**
+     * MarkOut
+     * @description A shape the tool measured, in fractions of the frame (architecture §10.3, VIA-0124).
+     */
+    MarkOut: {
+      /**
+       * Closed
+       * @default true
+       */
+      closed: boolean
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'rect' | 'poly' | 'point' | 'text'
+      /** Points */
+      points: number[][]
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: 'found' | 'expected' | 'defect'
+      /**
+       * Text
+       * @default
+       */
+      text: string
+    }
     /** NetworkSettings */
     NetworkSettings: {
       /**
@@ -3304,6 +3332,11 @@ export interface components {
        * @default null
        */
       margin: number | null
+      /**
+       * Marks
+       * @default []
+       */
+      marks: components['schemas']['MarkOut'][]
       /** Passed */
       passed: boolean
       /**

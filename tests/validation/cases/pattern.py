@@ -32,8 +32,12 @@ TOOLS = {1: Case(
     ),
     passing=texture(),
     failing=np.full((120, 160), 128, np.uint8),
+    nothing_on_fail="it fails by not finding the pattern: there is no box to draw",
     goldens=(
-        Golden("the mark three times, three asked", canvas(20, 110, 200), {"min_count": 3, "max_count": 3}, passed=True, values={"count": 3, "best": 1.0}, tolerance=0.02),
+        Golden("the mark three times, three asked", canvas(20, 110, 200), {"min_count": 3, "max_count": 3}, passed=True, values={"count": 3, "best": 1.0}, tolerance=0.02,
+               marks=(("rect", "found", (20, 40, 70, 80)), ("rect", "found", (110, 40, 160, 80)), ("rect", "found", (200, 40, 250, 80)))),
+        Golden("the mark three times, two at most: the boxes are the defect", canvas(20, 110, 200), {"min_count": 1, "max_count": 2}, passed=False, values={"count": 3},
+               marks=(("rect", "defect", (20, 40, 70, 80)), ("rect", "defect", (110, 40, 160, 80)), ("rect", "defect", (200, 40, 250, 80)))),
         Golden("the mark twice, three asked", canvas(20, 200), {"min_count": 3}, passed=False, values={"count": 2}, tolerance=0),
         Golden("no mark", canvas(), {"min_count": 1}, passed=False, values={"count": 0}, tolerance=0),
     ),

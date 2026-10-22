@@ -3,15 +3,16 @@ import { persist } from 'zustand/middleware'
 
 /**
  * The image overlays, *Marcações* (docs/frontend.md §18, FR-UI-9): what is drawn over the image, one switch per layer
- * and a master switch. They are drawn by the client from what the server measured, so turning one off asks for nothing.
+ * and a master switch (*Medições*: what each tool measured, VIA-0124). They are drawn by the client from what the server measured, so turning one off asks for nothing.
  * Remembered in this browser.
  */
-export const LAYERS = ['regions', 'anchors', 'labels', 'mask', 'presence', 'grid'] as const
+export const LAYERS = ['regions', 'measures', 'anchors', 'labels', 'mask', 'presence', 'grid'] as const
 export type Layer = (typeof LAYERS)[number]
 
 /** The editor's defaults (§18): everything on but the pixel grid. The mask only shows while a colour range is being edited. */
 export const DEFAULT_LAYERS: Record<Layer, boolean> = {
   regions: true,
+  measures: true,
   anchors: true,
   labels: true,
   mask: true,
@@ -34,7 +35,15 @@ export const useLayers = create<LayerState>()(
       setMaster: (master) => set({ master }),
       toggle: (layer, on) => set((s) => ({ on: { ...s.on, [layer]: on } })),
     }),
-    { name: 'vision-station-layers', version: 1 },
+    {
+      name: 'vision-station-layers',
+      version: 2,
+      // a layer added after the choice was saved starts as the default says
+      migrate: (saved) => {
+        const s = (saved ?? {}) as Partial<LayerState>
+        return { ...s, on: { ...DEFAULT_LAYERS, ...s.on } } as LayerState
+      },
+    },
   ),
 )
 

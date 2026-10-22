@@ -653,6 +653,9 @@ msgstr "None (regions fixed on the image)"
 msgid "A qualidade da imagem mudou"
 msgstr "The image quality changed"
 
+msgid "o que cada ferramenta mediu: contornos, achados e defeitos"
+msgstr "what each tool measured: outlines, finds and defects"
+
 msgid "{id}: região {from} → {to}"
 msgstr "{id}: region {from} → {to}"
 
@@ -1291,6 +1294,9 @@ msgstr "The samples overlap; the measurement does not tell good from bad."
 
 msgid "Vazio: só quando pedido."
 msgstr "Empty: only when asked."
+
+msgid "Medições"
+msgstr "Measurements"
 
 msgid "Separados por vírgula"
 msgstr "Separated by commas"

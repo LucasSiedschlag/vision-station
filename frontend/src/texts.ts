@@ -1083,6 +1083,9 @@ export const text = {
         get regions() {
           return t`Regiões`
         },
+        get measures() {
+          return t`Medições`
+        },
         get anchors() {
           return t`Âncoras`
         },
@@ -1102,6 +1105,9 @@ export const text = {
       layerHints: {
         get regions() {
           return t`a região de cada ferramenta e o resultado dela`
+        },
+        get measures() {
+          return t`o que cada ferramenta mediu: contornos, achados e defeitos`
         },
         get anchors() {
           return t`onde a âncora foi achada`

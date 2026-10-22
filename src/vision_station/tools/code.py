@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.i18n import tr
+from vision_station.core.results import MAX_MARK_TEXT, MAX_MARKS, Mark
 from vision_station.core.schema_labels import labels, meta
 from vision_station.tools.base import CriterionSpec, ToolResult, ToolType, count_at_most, judged, minimum, register
 
@@ -120,7 +121,15 @@ def run(region: np.ndarray, params: CodeParams, files: JobFiles) -> ToolResult:
         "expected": params.expect if params.expect is not None else params.pattern,
         "texts": ", ".join(c["text"] for c in codes),
     }
-    return judged(criteria, values=values, details={"codes": codes}, units={"found": "count", "matching": "count"})
+    height, width = region.shape[:2]
+    marks: list[Mark] = []
+    for c in codes:  # the outline of each code and its text; a code that is not accepted is the defect
+        role = "found" if c["accepted"] else "defect"
+        points = tuple((min(max(float(x), 0.0), width), min(max(float(y), 0.0), height)) for x, y in c["position"])
+        marks.append(Mark("poly", role, points))
+        if c["text"]:
+            marks.append(Mark("text", role, points[:1], text=c["text"][:MAX_MARK_TEXT]))
+    return judged(criteria, values=values, details={"codes": codes}, units={"found": "count", "matching": "count"}, marks=tuple(marks[:MAX_MARKS]))
 
 
 CODE = register(ToolType(

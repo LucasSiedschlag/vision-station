@@ -279,7 +279,7 @@ export function OperatorPage() {
     markingsOn(status?.markings ?? 'on_fail', status?.operator_markings ?? true, chosen, shown)
       ? (shown.tools ?? []).flatMap((t) =>
           t.region
-            ? [{ id: t.id, rect: t.region, passed: t.passed, informative: !t.affects_result }]
+            ? [{ id: t.id, rect: t.region, passed: t.passed, informative: !t.affects_result, marks: t.marks }]
             : [],
         )
       : []

@@ -653,6 +653,9 @@ msgstr "Nenhum (regiões fixas na imagem)"
 msgid "A qualidade da imagem mudou"
 msgstr "A qualidade da imagem mudou"
 
+msgid "o que cada ferramenta mediu: contornos, achados e defeitos"
+msgstr "o que cada ferramenta mediu: contornos, achados e defeitos"
+
 msgid "{id}: região {from} → {to}"
 msgstr "{id}: região {from} → {to}"
 
@@ -1291,6 +1294,9 @@ msgstr "As amostras se sobrepõem; a medição não separa boas de ruins."
 
 msgid "Vazio: só quando pedido."
 msgstr "Vazio: só quando pedido."
+
+msgid "Medições"
+msgstr "Medições"
 
 msgid "Separados por vírgula"
 msgstr "Separados por vírgula"

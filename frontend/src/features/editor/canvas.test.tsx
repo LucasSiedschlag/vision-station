@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mockApi } from '@/test/render'
 import { LayerMenu } from './LayerMenu'
 import { DEFAULT_LAYERS, drawn, useLayers } from './layers'
+import type { ToolMarks } from '@/components/domain/MarkShapes'
 import { RegionCanvas, layerOf, type Shape } from './RegionCanvas'
 
 mockApi()
@@ -14,6 +15,18 @@ const shapes: Shape[] = [
   { id: 'anchor', label: 'âncora', rect: [0.5, 0.5, 0.9, 0.9], kind: 'anchor' },
   { id: 'presence', label: 'presença', rect: [0.2, 0.2, 0.8, 0.8], kind: 'presence' },
   { id: 'crop', label: 'recorte', rect: [0.3, 0.3, 0.4, 0.4], kind: 'presence', layer: null },
+]
+
+const measured: ToolMarks[] = [
+  {
+    id: 'tampa',
+    passed: false,
+    marks: [
+      { kind: 'poly', role: 'defect', points: [[0.1, 0.1], [0.3, 0.1], [0.2, 0.3]], closed: true, text: '' },
+      { kind: 'rect', role: 'expected', points: [[0.1, 0.1], [0.4, 0.4]], closed: true, text: '' },
+      { kind: 'text', role: 'found', points: [[0.1, 0.1]], closed: true, text: 'LOTE-1' },
+    ],
+  },
 ]
 
 const canvas = (layers = drawn({ master: true, on: DEFAULT_LAYERS })) =>
@@ -27,6 +40,7 @@ const canvas = (layers = drawn({ master: true, on: DEFAULT_LAYERS })) =>
       drawing={null}
       emptyText="sem imagem"
       layers={layers}
+      marks={measured}
       caption="Ao vivo"
     />,
   )
@@ -59,18 +73,71 @@ describe('the layers of the image (docs/frontend.md §18)', () => {
   })
 })
 
+describe('Medições: what the tools measured (VIA-0124)', () => {
+  const shapesOf = (root: HTMLElement) =>
+    [...root.querySelectorAll('[data-mark]')].map((e) => `${e.getAttribute('data-mark')}:${e.getAttribute('data-role')}`)
+
+  it('draws a shape per mark, the text apart, and a defect is never in the colour of a pass', () => {
+    const { container } = canvas()
+    expect(shapesOf(container)).toEqual(['poly:defect', 'rect:expected'])
+    expect(screen.getByText('LOTE-1')).toBeInTheDocument()
+    expect(container.querySelector('[data-role="defect"] path.stroke-fail')).not.toBeNull()
+    expect(container.querySelector('[data-role="expected"] path.stroke-fg-muted')).not.toBeNull()
+  })
+
+  it('what an informative tool found is a warning, not the failure of the part (FR-INS-13)', () => {
+    const informative = measured.map((t) => ({ ...t, informative: true }))
+    const { container } = render(
+      <RegionCanvas
+        image={image}
+        shapes={[]}
+        selected={null}
+        onSelect={() => {}}
+        onChange={() => {}}
+        drawing={null}
+        emptyText="sem imagem"
+        marks={informative}
+      />,
+    )
+    expect(container.querySelector('[data-role="defect"] path.stroke-warn')).not.toBeNull()
+    expect(container.querySelector('path.stroke-fail')).toBeNull()
+    expect(screen.getByText('LOTE-1')).toHaveClass('text-warn-text')
+  })
+
+  it('is its own layer: off hides the marks and keeps the regions, and the master switch hides it too', () => {
+    const off = canvas(drawn({ master: true, on: { ...DEFAULT_LAYERS, measures: false } }))
+    expect(shapesOf(off.container)).toEqual([])
+    expect(screen.queryByText('LOTE-1')).toBeNull()
+    expect(drawnShapes(off.container)).toContain('roi:tampa')
+    off.unmount()
+    const none = canvas(drawn({ master: false, on: DEFAULT_LAYERS }))
+    expect(shapesOf(none.container)).toEqual([])
+  })
+
+  it('a choice saved before the layer existed gets it on', async () => {
+    const { measures, ...before } = DEFAULT_LAYERS
+    void measures
+    localStorage.setItem(
+      'vision-station-layers',
+      JSON.stringify({ state: { master: true, on: { ...before, grid: true } }, version: 1 }),
+    )
+    await useLayers.persist.rehydrate()
+    expect(useLayers.getState().on).toEqual({ ...DEFAULT_LAYERS, grid: true })
+  })
+})
+
 describe('Marcações: the split button and its menu', () => {
   it('the button turns everything off and on, the menu has a check per layer, and the choice is kept', async () => {
     render(<LayerMenu />)
-    const button = screen.getByRole('button', { name: 'Marcações · 5/6' })
+    const button = screen.getByRole('button', { name: 'Marcações · 6/7' })
     expect(button).toHaveAttribute('aria-pressed', 'true')
     await userEvent.click(button)
     expect(useLayers.getState().master).toBe(false)
-    expect(screen.getByRole('button', { name: 'Marcações · 0/6' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Marcações · 0/7' })).toHaveAttribute(
       'aria-pressed',
       'false',
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Marcações · 0/6' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Marcações · 0/7' }))
     await userEvent.click(screen.getByRole('button', { name: 'Escolher as marcações' }))
     const grid = await screen.findByRole('menuitemcheckbox', { name: /Grade de pixels/ })
     expect(grid).toHaveAttribute('aria-checked', 'false')

@@ -70,6 +70,16 @@ class CriterionOut(BaseModel):
     margin: float | None = None  # how far inside the limit, in the measure's unit (negative: outside); None for a rule
 
 
+class MarkOut(BaseModel):
+    """A shape the tool measured, in fractions of the frame (architecture §10.3, VIA-0124)."""
+
+    kind: Literal["rect", "poly", "point", "text"]  # a rect of a turned region arrives as a closed poly
+    role: Literal["found", "expected", "defect"]
+    points: list[list[float]]  # rect: two corners; poly: the outline; point and text: one point
+    closed: bool = True  # poly only
+    text: str = ""  # text only
+
+
 class ToolResultOut(BaseModel):
     id: str
     type: str
@@ -84,6 +94,7 @@ class ToolResultOut(BaseModel):
     error: str = ""  # an informative tool that could not run
     error_code: int = 0  # and its code (E301..E304)
     region: list[float] | None = None  # where the tool looked: x0, y0, x1, y1 as fractions of the frame
+    marks: list[MarkOut] = []  # what it measured, passed results included (VIA-0124)
 
 
 class ReasonCodeOut(BaseModel):

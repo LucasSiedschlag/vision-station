@@ -102,6 +102,27 @@ describe('the markings', () => {
     expect(screen.getByLabelText('Região de lote: passou')).toBeInTheDocument()
   })
 
+  it('draws what the failing tool measured with its region, and a pass keeps its marks for when they are turned on (VIA-0124)', async () => {
+    const marks = [
+      { kind: 'poly', role: 'defect', points: [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2]], closed: true, text: '' },
+      { kind: 'text', role: 'defect', points: [[0.1, 0.1]], closed: true, text: 'LOTE-2' },
+    ]
+    showing('FAIL', [tool('lote', false, { marks })])
+    const { container } = renderApp('/')
+    expect(await screen.findByText('LOTE-2')).toBeInTheDocument()
+    expect(container.querySelectorAll('[data-mark="poly"][data-role="defect"]')).toHaveLength(1)
+  })
+
+  it('an informative tool that fails is drawn as a warning, not as the failure of the part', async () => {
+    const marks = [{ kind: 'poly', role: 'defect', points: [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2]], closed: true, text: '' }]
+    showing('PASS', [tool('lote', false, { affects_result: false, marks })])
+    const { container } = renderApp('/')
+    await userEvent.click(screen.getByRole('button', { name: 'Marcações' }))
+    await screen.findByLabelText('Região de lote: reprovou')
+    expect(container.querySelector('[data-role="defect"] path.stroke-warn')).not.toBeNull()
+    expect(container.querySelector('[data-role="defect"] path.stroke-fail')).toBeNull()
+  })
+
   it('a pass is not, until the operator turns the markings on; the verdict stays whatever they choose', async () => {
     showing('PASS', [tool('lote', true)])
     renderApp('/')

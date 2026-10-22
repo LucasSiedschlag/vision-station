@@ -24,6 +24,9 @@ class Golden:
     values: Mapping[str, float | str] = field(default_factory=dict)  # a tool: the measures, a number to `tolerance` or a text
     rect: tuple[float, float, float, float] | None = None  # a locator: the object, fractions of the frame
     tolerance: float = 0.01
+    #: a tool: the marks it must draw, (kind, role, box of its points in the region's pixels), in order; None: not checked
+    marks: tuple[tuple[str, str, tuple[float, float, float, float]], ...] | None = None
+    mark_tolerance: float = 2.0  # pixels, on each side of the box
 
 
 @dataclass(frozen=True)
@@ -44,3 +47,5 @@ class Case:
     failing: np.ndarray | None = None  # a tool: a region that fails with `params`
     scene: Scene | None = None  # a locator: a frame that it must find the object in
     goldens: tuple[Golden, ...] = ()  # pictures with known answers
+    draws_nothing: str = ""  # a tool that gives no marks says why (V7): the region outline is its drawing
+    nothing_on_fail: str = ""  # the `failing` region has nothing to draw (the tool failed by not finding): why (V7)

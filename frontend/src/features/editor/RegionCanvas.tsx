@@ -13,6 +13,7 @@ import {
   type Rect,
 } from './geometry'
 import { pixelAt, type EditorImage } from './image'
+import { MarkShapes, textMarks, type ToolMarks } from '@/components/domain/MarkShapes'
 import type { Layer } from './layers'
 import {
   FIT,
@@ -96,6 +97,7 @@ export function RegionCanvas({
   onGestureEnd,
   layers,
   caption,
+  marks,
 }: {
   image: EditorImage | null
   shapes: Shape[]
@@ -117,6 +119,8 @@ export function RegionCanvas({
   layers?: Record<Layer, boolean>
   /** What the image is, over its top-left corner: *Ao vivo*, *Referência*, *Amostra 4 (Ruim)*, *Resultado 14:32:07* (§10.2). */
   caption?: string
+  /** What the tools of the last result measured (*Medições*, §18). */
+  marks?: readonly ToolMarks[]
 }) {
   const on = (layer: Layer | null) => layer === null || (layers?.[layer] ?? true)
   const box = useRef<HTMLDivElement>(null)
@@ -405,6 +409,9 @@ export function RegionCanvas({
                 )
               })}
           </svg>
+          {marks && marks.length > 0 && on('measures') ? (
+            <MeasuresLayer marks={marks} image={image} zoom={fitted.z} />
+          ) : null}
           {on('labels')
             ? shapes
                 .filter(
@@ -558,5 +565,47 @@ function MaskLayer({ mask }: { mask: { cells: Uint8Array; width: number; height:
   }, [mask])
   return (
     <canvas ref={canvas} aria-hidden className="pointer-events-none absolute inset-0 size-full" />
+  )
+}
+
+/** What the tools measured: shapes in an SVG over the picture, texts that keep their size when it is magnified. */
+function MeasuresLayer({
+  marks,
+  image,
+  zoom,
+}: {
+  marks: readonly ToolMarks[]
+  image: { width: number; height: number }
+  zoom: number
+}) {
+  return (
+    <>
+      <svg
+        role="group"
+        aria-label={text.editor.view.layers.measures}
+        className="pointer-events-none absolute inset-0 size-full"
+        viewBox={`0 0 ${image.width} ${image.height}`}
+        preserveAspectRatio="none"
+      >
+        <MarkShapes tools={marks} width={image.width} height={image.height} />
+      </svg>
+      {textMarks(marks).map((m) => (
+        <span
+          key={m.key}
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute origin-bottom-left rounded-control bg-surface-1/80 px-1 text-xs',
+            m.fail ? (m.informative ? 'text-warn-text' : 'text-fail-text') : 'text-ok-text',
+          )}
+          style={{
+            left: `${m.x * 100}%`,
+            top: `${m.y * 100}%`,
+            transform: `translateY(-100%) scale(${1 / zoom})`,
+          }}
+        >
+          {m.text}
+        </span>
+      ))}
+    </>
   )
 }

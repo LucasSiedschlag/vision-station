@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 from vision_station.algorithms.measures import at_least, at_most
 from vision_station.core.i18n import Msg
 from vision_station.core.jobfiles import JobFiles
-from vision_station.core.results import Criterion, Unit
+from vision_station.core.results import Criterion, Mark, Unit
 
 
 class ToolError(Exception):
@@ -33,6 +33,7 @@ class ToolResult:
     details: Mapping[str, Any] = field(default_factory=dict)  # for the screen and the log
     criteria: tuple[Criterion, ...] = ()  # each check, so a failure has a reason code (FR-INS-14)
     units: Mapping[str, Unit] = field(default_factory=dict)  # the keys of `values` that are measures, and their unit
+    marks: tuple[Mark, ...] = ()  # the shapes it measured, in the pixels of its region; the pipeline maps them to the frame (VIA-0124)
 
     def reason(self, template: str) -> str:
         """The job's `reason_fail` text with this result's values filled in."""

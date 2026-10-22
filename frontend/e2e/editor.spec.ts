@@ -178,10 +178,10 @@ test('the workbench: zoom and pan the image, the markings menu, the strip of sam
   await page.getByRole('button', { name: 'Escolher as marcações' }).click()
   await expect(page.getByRole('menuitemcheckbox', { name: /Grade de pixels/ })).not.toBeChecked()
   await page.keyboard.press('Escape')
-  const markings = page.getByRole('button', { name: /^Marcações · \d\/6$/ })
+  const markings = page.getByRole('button', { name: /^Marcações · \d\/7$/ })
   await expect(markings).toHaveAttribute('aria-pressed', 'true')
   await page.keyboard.press('m')
-  await expect(page.getByRole('button', { name: 'Marcações · 0/6' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Marcações · 0/7' })).toHaveAttribute(
     'aria-pressed',
     'false',
   )

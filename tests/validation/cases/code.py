@@ -17,8 +17,12 @@ TOOLS = {1: Case(
     passing=qr("LOTE-1"),
     failing=qr("LOTE-2"),
     goldens=(
-        Golden("one code, the expected one", qr("LOTE-1"), passed=True, values={"found": 1, "matching": 1}, tolerance=0),
-        Golden("two codes, one of them expected", _SIDE, {"max_count": 1}, passed=True, values={"found": 2, "matching": 1}, tolerance=0),
-        Golden("no code", np.full((100, 100), 255, np.uint8), passed=False, values={"found": 0, "matching": 0}, tolerance=0),
+        Golden("one code, the expected one", qr("LOTE-1"), passed=True, values={"found": 1, "matching": 1}, tolerance=0,
+               marks=(("poly", "found", (36, 36, 121, 121)), ("text", "found", (36, 36, 36, 36)))),
+        Golden("two codes, one of them expected", _SIDE, {"max_count": 1}, passed=True, values={"found": 2, "matching": 1}, tolerance=0,
+               marks=(("poly", "found", (36, 36, 121, 121)), ("text", "found", (36, 36, 36, 36)), ("poly", "defect", (192, 36, 277, 121)), ("text", "defect", (192, 36, 192, 36)))),
+        Golden("a code that is not the expected one is the defect", qr("LOTE-2"), passed=False, values={"found": 1, "matching": 0}, tolerance=0,
+               marks=(("poly", "defect", (36, 36, 121, 121)), ("text", "defect", (36, 36, 36, 36)))),
+        Golden("no code", np.full((100, 100), 255, np.uint8), passed=False, values={"found": 0, "matching": 0}, tolerance=0, marks=()),
     ),
 )}

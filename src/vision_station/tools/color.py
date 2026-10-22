@@ -24,7 +24,8 @@ from vision_station.core.i18n import tr
 from vision_station.core.schema_labels import COLOR_META, COLOR_RANGE, labels, meta
 from vision_station.core.jobfiles import JobFiles
 from vision_station.algorithms.measures import strip_profile
-from vision_station.core.results import Criterion, Unit
+from vision_station.algorithms.outlines import mask_outlines
+from vision_station.core.results import Criterion, Mark, Unit
 from vision_station.tools.base import CriterionSpec, ToolResult, ToolType, judged, maximum, minimum, register
 
 Share = Annotated[float, Field(ge=0, le=1)]
@@ -103,7 +104,10 @@ def run(region: np.ndarray, params: ColorParams, files: JobFiles) -> ToolResult:
             criteria.append(minimum("min_coverage", "coverage", coverage, params.min_coverage))
         if params.max_gap is not None:
             criteria.append(maximum("max_gap", "gap", gap, params.max_gap))
-    return judged(criteria, values=values, details=details, units=units)
+    # the area of the colour; where the colour is not wanted (max_fraction) it is the defect
+    unwanted = any(c.code == "max_fraction" and not c.passed for c in criteria)
+    marks = tuple(Mark("poly", "defect" if unwanted else "found", points) for points in mask_outlines(mask))
+    return judged(criteria, values=values, details=details, units=units, marks=marks)
 
 
 COLOR = register(ToolType(

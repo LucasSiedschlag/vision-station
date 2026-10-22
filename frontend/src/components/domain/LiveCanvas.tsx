@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { text } from '@/texts'
+import { MarkShapes, textMarks, toolMarks, type MarkOut } from './MarkShapes'
 
 /**
  * Draws the newest camera frame (a JPEG blob from the live socket), fitted into its box. With no frame it says so,
@@ -15,6 +16,8 @@ export interface Marking {
   rect: readonly number[]
   passed: boolean
   informative: boolean
+  /** What the tool measured (VIA-0124): drawn with its region, as fractions of the frame. */
+  marks?: readonly MarkOut[]
 }
 
 export function LiveCanvas({
@@ -108,6 +111,24 @@ export function LiveCanvas({
           {regions.map((r) => (
             <RegionMark key={r.id} region={r} width={size.width} height={size.height} />
           ))}
+          <MarkShapes tools={toolMarks(regions)} width={size.width} height={size.height} />
+          {textMarks(toolMarks(regions)).map((m) => (
+            <text
+              key={m.key}
+              x={m.x * size.width}
+              y={m.y * size.height}
+              fontSize={Math.max(14, size.height * 0.03)}
+              fontWeight={600}
+              className={cn(
+                'stroke-surface-0',
+                m.fail ? (m.informative ? 'fill-warn' : 'fill-fail') : 'fill-ok',
+              )}
+              strokeWidth={3}
+              paintOrder="stroke"
+            >
+              {m.text}
+            </text>
+          ))}
         </svg>
       ) : null}
       {frame ? null : (
@@ -130,7 +151,7 @@ function RegionMark({ region, width, height }: { region: Marking; width: number;
   const cross = Math.min(w, h, width * 0.06) // the ✕ in the corner of a failed region
   const line = { vectorEffect: 'non-scaling-stroke' as const, fill: 'none' }
   return (
-    <g aria-label={text.operator.regionLabel(region.id, region.passed)}>
+    <g role="img" aria-label={text.operator.regionLabel(region.id, region.passed)}>
       <rect
         x={x}
         y={y}

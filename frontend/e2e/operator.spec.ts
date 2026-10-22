@@ -48,6 +48,24 @@ test('a failure is REPROVADO with its reason', async ({ page, station }) => {
   await expect(verdict(page)).toContainText('Tampa fora da cor em 40% da área')
 })
 
+test('a failure draws what the tool measured over the picture, and a pass draws nothing (VIA-0124)', async ({
+  page,
+  station,
+}) => {
+  await page.goto('/')
+  await station.outcome('FAIL')
+  await station.object('on')
+  await expect(verdict(page)).toContainText('REPROVADO', { timeout: 15_000 })
+  await expect(page.locator('[data-mark="poly"][data-role="defect"]')).toHaveCount(1)
+  await expect(page.getByText('fora da cor', { exact: true })).toBeVisible()
+  await station.object('off')
+  await expect.poll(async () => (await station.state()).state, { timeout: 15_000 }).toBe('Ready')
+  await station.outcome('PASS')
+  await station.object('on')
+  await expect(verdict(page)).toContainText('APROVADO', { timeout: 15_000 })
+  await expect(page.locator('[data-mark]')).toHaveCount(0)
+})
+
 test('an error is ERRO and never shown as a pass', async ({ page, station }) => {
   await page.goto('/')
   await station.outcome('ERROR')

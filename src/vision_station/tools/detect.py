@@ -23,7 +23,7 @@ from vision_station.core.jobfiles import JobFileError, JobFiles
 from vision_station.models import ModelError, parse_card, predict
 from vision_station.core.schema_labels import labels, meta
 from vision_station.algorithms.measures import at_most
-from vision_station.core.results import Criterion, Unit
+from vision_station.core.results import MAX_MARK_TEXT, MAX_MARKS, Criterion, Mark, Unit
 from vision_station.tools.base import CriterionSpec, ToolError, ToolResult, ToolType, count_at_most, judged, minimum, register, rule
 
 
@@ -89,6 +89,8 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
     details: dict = {"task": card.task, "model": card.name or params.model}
     criteria: list[Criterion] = []
     units: dict[str, Unit] = {}
+    marks: list[Mark] = []
+    height, width = region.shape[:2]
 
     if card.task == "classifier":
         label, conf = prediction.label or "", prediction.confidence
@@ -98,11 +100,17 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
         criteria.append(rule("class", 0.0 if bad else 1.0))
         criteria.append(minimum("min_confidence", "confidence", conf, params.min_confidence))  # unsure is a failure
         units["confidence"] = "fraction"
+        marks.append(Mark("text", "defect" if bad or conf < params.min_confidence else "found", ((2.0, min(12.0, float(height))),), text=f"{label} {conf:.0%}"[:MAX_MARK_TEXT]))
 
     elif card.task == "detector":
         found = prediction.detections
         classes = sorted({d.label for d in found})
         values["classes"] = ", ".join(classes)
+        for d in sorted(found, key=lambda d: -d.confidence)[: MAX_MARKS // 2]:  # a box and its label, the surest first
+            role = "defect" if d.label in params.fail_classes else "found"
+            x0, y0, x1, y1 = d.box[0] * width, d.box[1] * height, d.box[2] * width, d.box[3] * height
+            marks.append(Mark("rect", role, ((x0, y0), (x1, y1))))
+            marks.append(Mark("text", role, ((x0, y0),), text=f"{d.label} {d.confidence:.0%}"[:MAX_MARK_TEXT]))
         details["detections"] = [{"label": d.label, "confidence": d.confidence, "box": list(d.box)} for d in found]
         failing = [d for d in found if d.label in params.fail_classes]
         if params.fail_classes:
@@ -131,8 +139,10 @@ def run(region: np.ndarray, params: DetectParams, files: JobFiles) -> ToolResult
         units["score"] = "score"
         part = 1.0 if score <= threshold else max(0.0, at_most(score / (threshold * 2 or 1), 0.5))
         criteria.append(Criterion("max_score", "max", part >= 1.0, part, "score", score, float(threshold)))
+        if part < 1.0:  # the model says the part is not normal, not where: the whole region is flagged
+            marks.append(Mark("rect", "defect", ((0.0, 0.0), (float(width), float(height)))))
 
-    return judged(criteria, values=values, details=details, units=units)
+    return judged(criteria, values=values, details=details, units=units, marks=tuple(marks))
 
 
 DETECT = register(ToolType(
