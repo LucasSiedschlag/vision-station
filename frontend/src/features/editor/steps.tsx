@@ -1043,11 +1043,13 @@ export function ToolsStep({
                       ? { min_mean: 80 }
                       : type === 'blob'
                         ? { mode: 'dark', min_count: 1 }
-                        : type === 'pattern'
-                          ? { template: '' }
-                          : type === 'detect'
-                            ? { model: '' }
-                            : {},
+                        : type === 'edge'
+                          ? { mode: 'presence', min_count: 1 }
+                          : type === 'pattern'
+                            ? { template: '' }
+                            : type === 'detect'
+                              ? { model: '' }
+                              : {},
                 reason_fail: withText(null, currentLocale(), t.defaultReason),
               }),
             )

@@ -724,6 +724,13 @@ Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`), so 
 | `blob.min_area_mm2` | Área das manchas (mm²) abaixo do mínimo |
 | `blob.max_area_mm2` | Área das manchas (mm²) acima do máximo |
 | `blob.max_largest_mm2` | Mancha (mm²) maior que o máximo |
+| `edge.found` | Bordas necessárias não encontradas |
+| `edge.min_count` | Menos bordas que o mínimo |
+| `edge.max_count` | Mais bordas que o máximo |
+| `edge.min_distance` | Distância entre bordas abaixo do mínimo |
+| `edge.max_distance` | Distância entre bordas acima do máximo |
+| `edge.min_distance_mm` | Distância entre bordas (mm) abaixo do mínimo |
+| `edge.max_distance_mm` | Distância entre bordas (mm) acima do máximo |
 | `brightness.min_mean` | Brilho médio abaixo do mínimo |
 | `brightness.max_mean` | Brilho médio acima do máximo |
 | `brightness.max_std` | Variação do brilho acima do máximo |
@@ -848,6 +855,8 @@ For a region in a rotated fixture, the geometry component builds the affine tran
 
 **As built (VIA-0075, C1).** `core/calibration.py` is the file (`Calibration`, `Scale(x, y)` in mm per px, `CALIBRATION_FILE`); `algorithms/calibration.py::calibrate_known_dimension(pixels, millimetres)` gives the scale and the worst miss from one or several known dimensions (a line through the origin). Tools get the scale from `JobFiles.scale()`, so `run(region, params, files)` did not change; it raises `JobFileError` in a job with no calibration. A parameter whose `x-unit` is `mm` or `mm2` (`core/schema_labels.meta`) and that is given makes `check_job_tools` refuse a job with no calibration (`tools.base.uses_millimetres`), at load (`bundle_from_files`) and so at verification; `bundle_from_files` also checks the file is valid and that `acquisition.image.calibration` and the file agree. The pixels of a region cut are the pixels of the frame whatever the scale of the fixture (the map to the frame is a rotation and a shift), so the scale needs no correction (a test keeps it). The screen that draws the known dimension is VIA-0076; the units `px`, `mm` and `mm2` of the result contract come with the first tool that reports them.
 
+**As built (VIA-0075, E3).** The `edges` locator (`locators/edges.py`) finds the corner of two straight edges: a window per edge (`vertical` scans in x, `horizontal` in y), each cut in `bands` slices that give one point of the edge by the calipers (`algorithms/calipers.py`), a line fitted through them with the outliers dropped, and the corner where the lines meet. The pose is the angle of the edges (the mean of the two) and the taught box placed at the corner, turned as the edges are, so rotation passes V4 (angle within 0.5°, centre within 2 px on the bench). It is not found when an edge has no line or the two edges are more than 5° from a right angle. The windows must lie along the edges and be shorter than them, so that a turned part stays inside; the anchor step of the editor has no screen for it yet (VIA-0076), it is set through the parameter form.
+
 ### 14.5 As built (VIA-0070)
 
 - **`geometry/pose.py`:** `Fixture(rect, angle, scale, score, name)` keeps the box the locator gave (fractions of the frame, **before** angle and scale), so a fixture placed as taught is cut with the old expression; `cut(image, rect, fixture)` returns an upright picture, its bounding box, its corners and the map from the picture to the frame; `compose` takes a fixture found in the cut of another to the frame. Angles are degrees, counter-clockwise on the screen. A turned region that leaves the picture (half a pixel of rounding is allowed) is E301.
@@ -917,7 +926,7 @@ A tool type version is released only when all of this exists and runs in CI (NFR
 |---|---|---|---|---|---|---|---|---|---|---|
 | `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | VIA-0075 |
 | `detect` v1 | ok | ok | ok | ok | ok | ok | ok | VIA-0112 (latency is the model's, in its card) | ok | VIA-0075 |
-| locators `fixed` v1, `blob` v2 | ok | ok | ok | ok | n/a | n/a | n/a | ok | ok | n/a |
+| locators `fixed` v1, `blob` v2, `edges` v1 | ok | ok | ok | ok | n/a | n/a | n/a | ok | ok | n/a |
 | locators `template` v1, `blob` v1 | ok | ok | ok | no rotation: VIA-0123 | n/a | n/a | n/a | ok | ok | n/a |
 
 V3 found two defects that are fixed: `pattern` raised an OpenCV error on an empty region and the `template` locator divided by zero on an empty frame. V1 found an untranslated description leaking from a class docstring into the schema of the `blob` locator (`schema_labels.labels`).

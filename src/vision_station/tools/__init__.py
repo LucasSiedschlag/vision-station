@@ -7,7 +7,8 @@ from vision_station.core.jobfiles import JobFileError, check_files
 from vision_station.jobs import Job
 from vision_station.tools import blob as _blob  # noqa: F401  (registers the tool)
 from vision_station.tools import brightness as _brightness  # noqa: F401
-from vision_station.tools import code as _code  # noqa: F401  (registers the tool)
+from vision_station.tools import code as _code
+from vision_station.tools import edge as _edge  # noqa: F401  # noqa: F401  (registers the tool)
 from vision_station.tools import color as _color  # noqa: F401
 from vision_station.tools import detect as _detect  # noqa: F401
 from vision_station.tools import pattern as _pattern  # noqa: F401

@@ -68,3 +68,41 @@ How to read a section:
 - `Cola demais: {area:.0f} px² (máximo {max_area:.0f})`
 
 **Benchmark.** 60 ms (tier M) and 25 ms (tier R) at 1 MP, proposed until B-1.
+
+## `edge`
+
+**Measures.** Where the gray level steps along a line, to a fraction of a pixel. The region is a strip; the tool averages it across the direction of the scan (`direction`: `x` scans left to right and finds vertical edges, `y` scans top to bottom) into a profile, smooths it (`sigma`, default 1 px) and takes the peaks of its gradient with a Gaussian fit (calipers, `algorithms/calipers.py`). `min_contrast` is the height of the step in gray levels (default 20); `polarity` is `rising` (dark to light in the direction of the scan), `falling`, or `any`. Distances are from the start of the strip, in pixels and, in a calibrated job, in millimetres.
+
+**Modes.**
+
+- `presence`: how many edges there are.
+- `position`: the distance from the start of the strip to the first edge.
+- `width`: from the first edge to the next one of the opposite polarity: a bar, a gap, the diameter of a part seen from the side.
+- `pitch`: between consecutive edges of the polarity of the first one (the teeth of a comb, a thread). The minimum limit is checked on the **smallest gap** and the maximum on the **largest**, so a tooth missing fails even though the mean is inside.
+- `diameter`: the diameter of a round feature (a hole, a pin, a cap). `rays` lines (default 36) leave the centre of the region, the strongest edge of the `polarity` on each one between `ring_min` and `ring_max` of the reach of the region (the distance from the centre to the nearest side; default 0.1 to 1) is taken, and a circle is fitted through them; a false edge far from the circle is dropped. `rising` here is dark to light going **outwards** (a dark hole in a light plate is rising, a light disc on a dark background falling). The feature does not have to be at the centre, only around it. It is **not found** when fewer than 70 % of the rays find an edge on the circle or when the edges are not round (their RMS distance to the circle, `{roundness}`, over a tenth of its radius). `direction` does not matter.
+
+**Use it to** gauge a width or a gap, the diameter of a hole or a pin, check that a part is where it should be along a line, or count the teeth of a row.
+
+**Criteria.**
+
+| Parameter | Reason code | Fails when |
+|---|---|---|
+| (the mode needs edges) | `edge.found` | there is no first edge, no pair, or fewer than two for a pitch: a distance is never made up, so a part with no feature **fails** and is not passed by a limit that only says "at most" |
+| `min_count`, `max_count` | `edge.min_count`, `edge.max_count` | fewer or more edges than this (any mode) |
+| `min_distance`, `max_distance` (px) | `edge.min_distance`, `edge.max_distance` | the measure of the mode is outside |
+| `min_distance_mm`, `max_distance_mm` | `edge.min_distance_mm`, `edge.max_distance_mm` | the same, in mm (calibrated job) |
+
+**Fields.** `{count}`, `{distance}` and `{distance_mm}` (empty when it could not be measured), `{distance_min}`, `{distance_max}`, `{distance_min_mm}`, `{distance_max_mm}` (the smallest and the largest gap of a pitch), `{roundness}` (diameter: how far the edges are from a perfect circle, px RMS), `{contrast}` (the smallest contrast of the edges used), the limits `{min_count}`, `{max_count}`, `{min_distance}`, `{max_distance}`, `{min_distance_mm}`, `{max_distance_mm}`.
+
+**Limits.** Positions are exact for a sharp step to about 0.05 px and for a blurred one (sigma up to 2) to 0.2 px; the contrast is the height of the step to 6 % for `sigma` of 1 or more (it is only approximate below one pixel). Edges within 3 sigma of either end of the strip are not seen. The strip is cut upright from the fixture, so it follows a turned part; with non-square pixels and a turned fixture the millimetres use the scale of the axis of the strip (the mean of both for a diameter) and are only approximate. An empty region is an error (E302).
+
+**Marks.** A line across the strip at each edge used (`found`, or `defect` when a limit from above failed) and, for a width or pitch, the distance written between the first two; for a diameter the fitted circle, its centre and the diameter written.
+
+**Examples of `reason_fail`.**
+
+- `Largura {distance:.1f} px (entre {min_distance:.0f} e {max_distance:.0f})`
+- `Falta um dente: maior intervalo {distance_max:.1f} px`
+- `Furo fora da medida: {distance_mm:.2f} mm`
+- `Pino torto: diâmetro {distance:.1f} px, desvio {roundness:.1f} px`
+
+**Benchmark.** 30 ms (tier M) and 12 ms (tier R) at 1 MP, proposed until B-1.

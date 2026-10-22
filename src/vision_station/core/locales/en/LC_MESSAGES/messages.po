@@ -124,6 +124,9 @@ msgstr "The first password can only be created on the station's own PC"
 msgid "A senha precisa ter pelo menos {n} caracteres"
 msgstr "The password needs at least {n} characters"
 
+msgid "Acha as bordas (degraus de brilho) ao longo de uma linha, com precisão de fração de pixel, e mede onde estão, a largura ou o passo."
+msgstr "Finds the edges (brightness steps) along a line, to a fraction of a pixel, and measures where they are, the width or the pitch."
+
 msgid "Acha na imagem uma foto ensinada do objeto (ou de uma marca nele)."
 msgstr "Finds a taught picture of the object (or of a mark on it) in the image."
 
@@ -135,6 +138,9 @@ msgstr "There is no result yet"
 
 msgid "Ajustes de câmera inválidos"
 msgstr "Invalid camera settings"
+
+msgid "Altura do degrau em níveis de cinza (0 a 255)"
+msgstr "Height of the step in gray levels (0 to 255)"
 
 msgid "Anomalia"
 msgstr "Anomaly"
@@ -154,6 +160,18 @@ msgstr "File refused: {why}"
 
 msgid "As manchas são"
 msgstr "The blobs are"
+
+msgid "Borda horizontal"
+msgstr "Horizontal edge"
+
+msgid "Borda vertical"
+msgstr "Vertical edge"
+
+msgid "Bordas"
+msgstr "Edges"
+
+msgid "Bordas necessárias não encontradas"
+msgstr "Required edges not found"
 
 msgid "Brilho máximo"
 msgstr "Maximum brightness"
@@ -175,6 +193,12 @@ msgstr "Minimum mean brightness"
 
 msgid "Brilho mínimo"
 msgstr "Minimum brightness"
+
+msgid "Caixa ensinada (x0, y0, x1, y1)"
+msgstr "Taught box (x0, y0, x1, y1)"
+
+msgid "Canto ensinado (x, y)"
+msgstr "Taught corner (x, y)"
 
 msgid "Cartão do modelo"
 msgstr "Model card"
@@ -212,6 +236,9 @@ msgstr "Minimum coverage"
 msgid "Comando desconhecido"
 msgstr "Unknown command"
 
+msgid "Começo da busca"
+msgstr "Start of the search"
+
 msgid "Confiança do modelo"
 msgstr "Model confidence"
 
@@ -223,6 +250,9 @@ msgstr "Minimum confidence"
 
 msgid "Conta e mede as manchas (partes ligadas) de uma região que se destacam por cor ou por brilho."
 msgstr "Counts and measures the blobs (connected parts) of a region that stand out by colour or brightness."
+
+msgid "Contraste mínimo"
+msgstr "Minimum contrast"
 
 msgid "Cor das manchas"
 msgstr "Colour of the blobs"
@@ -273,8 +303,47 @@ msgstr "Say what was adjusted and why"
 msgid "Disponível quando o teste de desempenho do PC for feito (fase C)"
 msgstr "Available once the PC performance test exists (phase C)"
 
+msgid "Distância entre bordas"
+msgstr "Distance between edges"
+
+msgid "Distância entre bordas (mm)"
+msgstr "Distance between edges (mm)"
+
+msgid "Distância entre bordas (mm) abaixo do mínimo"
+msgstr "Distance between edges (mm) below the minimum"
+
+msgid "Distância entre bordas (mm) acima do máximo"
+msgstr "Distance between edges (mm) above the maximum"
+
+msgid "Distância entre bordas abaixo do mínimo"
+msgstr "Distance between edges below the minimum"
+
+msgid "Distância entre bordas acima do máximo"
+msgstr "Distance between edges above the maximum"
+
+msgid "Distância máxima (mm)"
+msgstr "Maximum distance (mm)"
+
+msgid "Distância máxima (px)"
+msgstr "Maximum distance (px)"
+
 msgid "Distância máxima (ΔE)"
 msgstr "Maximum distance (ΔE)"
+
+msgid "Distância mínima (mm)"
+msgstr "Minimum distance (mm)"
+
+msgid "Distância mínima (px)"
+msgstr "Minimum distance (px)"
+
+msgid "Diâmetro: fração do alcance (do centro à borda da região) onde a busca começa"
+msgstr "Diameter: the fraction of the reach (from the centre to the edge of the region) where the search starts"
+
+msgid "Diâmetro: fração do alcance onde a busca termina"
+msgstr "Diameter: the fraction of the reach where the search ends"
+
+msgid "Diâmetro: quantas linhas saem do centro da região para achar a borda"
+msgstr "Diameter: how many lines leave the centre of the region to find the edge"
 
 msgid "Em manutenção"
 msgstr "In maintenance"
@@ -329,6 +398,9 @@ msgstr "Regular expression; e.g. L\\d{6}"
 msgid "Faixa de matiz, saturação e valor, ou distância a uma cor de referência"
 msgstr "Range of hue, saturation and value, or distance to a reference colour"
 
+msgid "Faixas"
+msgstr "Slices"
+
 msgid "Falha interna na inspeção, chamar a manutenção"
 msgstr "Internal failure in the inspection, call maintenance"
 
@@ -359,6 +431,9 @@ msgstr "Tool failed"
 msgid "Ferramenta não pode rodar"
 msgstr "Tool cannot run"
 
+msgid "Fim da busca"
+msgstr "End of the search"
+
 msgid "Formatos"
 msgstr "Formats"
 
@@ -382,6 +457,9 @@ msgstr "Minimum fraction of the area"
 
 msgid "Frações da imagem"
 msgstr "Fractions of the image"
+
+msgid "Frações da imagem; ao longo da borda e mais curta que ela"
+msgstr "Fractions of the picture; along the edge and shorter than it"
 
 msgid "Frações da imagem; desenhe na imagem"
 msgstr "Fractions of the image; draw it on the image"
@@ -426,6 +504,9 @@ msgstr "Inspecting…"
 msgid "Interface com a máquina ainda não disponível (fase B)"
 msgstr "The machine interface is not available yet (phase B)"
 
+msgid "Janela (x0, y0, x1, y1)"
+msgstr "Window (x0, y0, x1, y1)"
+
 msgid "Job verificado"
 msgstr "Job verified"
 
@@ -450,6 +531,9 @@ msgstr "Locator cannot run: {exc}"
 
 msgid "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região."
 msgstr "Reads bar codes (1D) and 2D codes (QR, Data Matrix...) in a region."
+
+msgid "Maior intervalo (passo)"
+msgstr "Largest gap (pitch)"
 
 msgid "Maior lado para comparar (px)"
 msgstr "Longest side to compare (px)"
@@ -480,6 +564,9 @@ msgstr "Longest stretch without the colour above the maximum"
 
 msgid "Maior trecho sem o padrão acima do máximo"
 msgstr "Longest stretch without the pattern above the maximum"
+
+msgid "Mais bordas que o máximo"
+msgstr "More edges than the maximum"
 
 msgid "Mais códigos aceitos que o máximo"
 msgstr "More codes accepted than the maximum"
@@ -520,14 +607,23 @@ msgstr "Measures the brightness (gray level) of a region."
 msgid "Mede quanto de uma região tem uma cor."
 msgstr "Measures how much of a region has a colour."
 
+msgid "Medir"
+msgstr "Measure"
+
 msgid "Medir ao longo de"
 msgstr "Measure along"
+
+msgid "Menor intervalo (passo)"
+msgstr "Smallest gap (pitch)"
 
 msgid "Menor mancha que conta (mm²)"
 msgstr "Smallest blob that counts (mm²)"
 
 msgid "Menor mancha que conta (px²)"
 msgstr "Smallest blob that counts (px²)"
+
+msgid "Menos bordas que o mínimo"
+msgstr "Fewer edges than the minimum"
 
 msgid "Menos códigos aceitos que o mínimo"
 msgstr "Fewer codes accepted than the minimum"
@@ -566,6 +662,9 @@ msgstr "Maximum above the level"
 msgid "Máximo da classe contada"
 msgstr "Maximum of the counted class"
 
+msgid "Máximo de bordas"
+msgstr "Maximum number of edges"
+
 msgid "Máximo de códigos"
 msgstr "Maximum codes"
 
@@ -577,6 +676,9 @@ msgstr "Maximum occurrences"
 
 msgid "Mínimo da classe contada"
 msgstr "Minimum of the counted class"
+
+msgid "Mínimo de bordas"
+msgstr "Minimum number of edges"
 
 msgid "Mínimo de códigos"
 msgstr "Minimum codes"
@@ -613,6 +715,9 @@ msgstr "A fine-tune changes only tolerance limits and samples"
 
 msgid "No ajuste fino só se acrescentam amostras"
 msgstr "A fine-tune only adds samples"
+
+msgid "No passo vale para o maior intervalo"
+msgstr "In a pitch it applies to the largest gap"
 
 #, python-brace-format
 msgid "Não foi possível gravar na pasta: {why}"
@@ -680,6 +785,9 @@ msgstr "The object is the largest region of a colour, or darker or lighter than 
 msgid "O objeto é a maior região de uma cor, ou mais escura ou mais clara que o fundo; a âncora tem a posição, o ângulo e o tamanho dele."
 msgstr "The object is the largest region of a colour, or darker or lighter than the background; the anchor has its position, angle and size."
 
+msgid "O objeto é o canto de duas bordas retas; a âncora tem a posição e o ângulo dele."
+msgstr "The object is the corner of two straight edges; the anchor has its position and angle."
+
 msgid "O resultado deve ser PASS, FAIL ou ERROR"
 msgstr "The result must be PASS, FAIL or ERROR"
 
@@ -719,6 +827,12 @@ msgstr "Occurrences of the counted class"
 msgid "Ocorrências do padrão"
 msgstr "Occurrences of the pattern"
 
+msgid "Onde o canto das duas bordas está na imagem de referência, em frações da imagem"
+msgstr "Where the corner of the two edges is in the reference picture, in fractions of the picture"
+
+msgid "Onde o objeto está na imagem de referência, em frações da imagem"
+msgstr "Where the object is in the reference picture, in fractions of the picture"
+
 msgid "Origem não permitida"
 msgstr "Origin not allowed"
 
@@ -754,6 +868,9 @@ msgstr "Writable folder, {free:.1f} GB free"
 msgid "Pause a estação antes de medir o desempenho"
 msgstr "Pause the station before measuring performance"
 
+msgid "Pelo menos 0,5"
+msgstr "At least 0.5"
+
 msgid "Perfil ou senha incorretos"
 msgstr "Wrong role or password"
 
@@ -762,6 +879,9 @@ msgstr "Anomaly score above the limit"
 
 msgid "Posição do objeto (x0, y0, x1, y1)"
 msgstr "Object position (x0, y0, x1, y1)"
+
+msgid "Posição, largura ou passo, conforme o modo; no passo vale para o menor intervalo"
+msgstr "Position, width or pitch, by the mode; in a pitch it applies to the smallest gap"
 
 msgid "Poucos pixels para propor uma cor: arraste sobre uma área maior"
 msgstr "Too few pixels to propose a colour: drag over a larger area"
@@ -781,11 +901,20 @@ msgstr "Preparing…"
 msgid "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece."
 msgstr "Looks for a taught pattern (a logo, a mark, a detail) in a region and counts how many times it appears."
 
+msgid "Quantas faixas dão um ponto da borda cada uma"
+msgstr "How many slices each give one point of the edge"
+
 msgid "Quantas precisam existir"
 msgstr "How many there must be"
 
 msgid "Quanto a cor pode diferir da referência; 10 a 30 é comum"
 msgstr "How much the colour may differ from the reference; 10 to 30 is common"
+
+msgid "Quanto o perfil é suavizado antes de achar as bordas; pelo menos 0,5"
+msgstr "How much the profile is smoothed before the edges are found; at least 0.5"
+
+msgid "Raios"
+msgstr "Rays"
 
 #, python-brace-format
 msgid "Região '{name}' depende do objeto, que não foi localizado"
@@ -829,6 +958,15 @@ msgstr "Password not accepted: {why}"
 msgid "Soma das manchas que contam"
 msgstr "Sum of the blobs that count"
 
+msgid "Suavização (px)"
+msgstr "Smoothing (px)"
+
+msgid "Subida: do escuro para o claro da esquerda para a direita (borda vertical) ou de cima para baixo (borda horizontal)"
+msgstr "Rising: dark to light from left to right (vertical edge) or from top to bottom (horizontal edge)"
+
+msgid "Subida: do escuro para o claro na direção da varredura"
+msgstr "Rising: dark to light in the direction of the scan"
+
 msgid "Só o Mantenedor pode liberar um job que não passou na verificação"
 msgstr "Only the Maintainer can release a job that did not pass verification"
 
@@ -853,6 +991,9 @@ msgstr "Challenge test pending or failed"
 msgid "Texto esperado"
 msgstr "Expected text"
 
+msgid "Tipo de borda"
+msgstr "Type of edge"
+
 msgid "Troca de job durante a inspeção"
 msgstr "Job switched during the inspection"
 
@@ -868,6 +1009,9 @@ msgstr "A sample of the job cannot change or leave in a fine-tune"
 msgid "Uma amostra nova é Boa ou Ruim"
 msgstr "A new sample is Good or Bad"
 
+msgid "Uma janela sobre uma borda, dividida em faixas; cada faixa acha um ponto da borda."
+msgstr "A window over an edge, cut in slices; each slice finds one point of the edge."
+
 msgid "Uma mancha maior que isso reprova (ex.: uma rebarba)"
 msgstr "A blob larger than this fails (e.g. a burr)"
 
@@ -879,6 +1023,15 @@ msgstr "Brightness variation above the maximum"
 
 msgid "Variação máxima"
 msgstr "Maximum variation"
+
+msgid "Varre da esquerda para a direita"
+msgstr "Scans from left to right"
+
+msgid "Varre de cima para baixo"
+msgstr "Scans from top to bottom"
+
+msgid "Varrer na direção"
+msgstr "Scan in the direction"
 
 msgid "Vazio: o do cartão do modelo"
 msgstr "Empty: the one on the model card"
@@ -909,6 +1062,12 @@ msgstr "the camera stopped sending pictures"
 
 msgid "a imagem não está em base64"
 msgstr "the image is not base64"
+
+msgid "a largura (entre duas bordas)"
+msgstr "the width (between two edges)"
+
+msgid "a posição da primeira borda"
+msgstr "the position of the first edge"
 
 #, python-brace-format
 msgid "ajuste não aplicado ({detail})"
@@ -947,6 +1106,9 @@ msgstr "the camera did not respond in {seconds:g} s"
 
 msgid "de uma cor"
 msgstr "of a colour"
+
+msgid "descida (claro→escuro)"
+msgstr "falling (light→dark)"
 
 msgid "faixa (HSV)"
 msgstr "range (HSV)"
@@ -1011,9 +1173,15 @@ msgstr "not supported"
 msgid "o arquivo não é uma imagem"
 msgstr "the file is not an image"
 
+msgid "o diâmetro de uma peça redonda"
+msgstr "the diameter of a round part"
+
 #, python-brace-format
 msgid "o modelo dá {got} classes e o cartão nomeia {named}"
 msgstr "the model gives {got} classes and its card names {named}"
+
+msgid "o passo (entre bordas repetidas)"
+msgstr "the pitch (between repeated edges)"
 
 msgid "objeto de referência não encontrado na imagem"
 msgstr "reference object not found in the image"
@@ -1030,6 +1198,12 @@ msgstr "position shifted {shift:.1%} of the image (maximum {maximum:.1%})"
 
 msgid "probabilidades"
 msgstr "probabilities"
+
+msgid "qualquer"
+msgstr "any"
+
+msgid "quantas bordas"
+msgstr "how many edges"
 
 msgid "recusado"
 msgstr "refused"
@@ -1053,8 +1227,14 @@ msgstr "no image from the camera"
 msgid "semelhança {value:.0%}"
 msgstr "similarity {value:.0%}"
 
+msgid "subida (escuro→claro)"
+msgstr "rising (dark→light)"
+
 msgid "vertical (y)"
 msgstr "vertical (y)"
+
+msgid "x: da esquerda para a direita (acha bordas verticais); y: de cima para baixo"
+msgstr "x: left to right (finds vertical edges); y: top to bottom"
 
 #, python-brace-format
 msgid "{image}: erro ao inspecionar ({kind}: {exc})"

@@ -82,6 +82,13 @@ def _blob_tool(mp: float) -> Workload:
     return Workload(image, {"mode": "light", "min_count": 1, "max_count": 10, "max_largest": rows * cols})
 
 
+def _edge(mp: float) -> Workload:
+    image = np.full(_size(mp), 40, np.uint8)
+    cols = image.shape[1]
+    image[:, cols // 5 : cols // 5 * 3] = 200  # a bar across the whole picture
+    return Workload(image, {"mode": "width", "min_distance": cols // 10, "max_distance": cols})
+
+
 def _pattern(mp: float) -> Workload:
     image = _textured(mp)
     return Workload(image, {"template": "t.png", "min_score": 0.7}, _template_of(image))
@@ -107,6 +114,17 @@ def _dark_part(mp: float) -> Workload:
     return Workload(image, {"mode": "dark"})
 
 
+def _corner(mp: float) -> Workload:
+    """A dark part with its top-left corner at a third of the frame; a caliper window along each of its two edges."""
+    image = np.full((*_size(mp), 3), (205, 205, 200), np.uint8)
+    rows, cols = image.shape[:2]
+    image[rows // 3 : rows // 2, cols // 3 : cols // 2] = (70, 70, 75)
+    third, half = 1 / 3, 1 / 2
+    vertical = {"rect": [third - 0.05, third + 0.02, third + 0.05, half - 0.02], "polarity": "falling"}
+    horizontal = {"rect": [third + 0.02, third - 0.05, half - 0.02, third + 0.05], "polarity": "falling"}
+    return Workload(image, {"vertical": vertical, "horizontal": horizontal, "taught_rect": [third, third, half, half], "taught_corner": [third, third]})
+
+
 def _fixed(mp: float) -> Workload:
     return Workload(np.zeros((*_size(mp), 3), np.uint8), {"rect": [0.2, 0.2, 0.8, 0.8]})
 
@@ -115,8 +133,10 @@ WORKLOADS: dict[str, Callable[[float], Workload]] = {
     key("tool", "blob", 1): _blob_tool,
     key("tool", "brightness", 1): _brightness,
     key("tool", "color", 1): _color,
+    key("tool", "edge", 1): _edge,
     key("tool", "pattern", 1): _pattern,
     key("tool", "code", 1): _code,
+    key("locator", "edges", 1): _corner,
     key("locator", "fixed", 1): _fixed,
     key("locator", "template", 1): _locate_template,
     key("locator", "blob", 1): _dark_part,
