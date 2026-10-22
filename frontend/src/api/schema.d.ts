@@ -1503,6 +1503,8 @@ export interface components {
        *         "locator:blob:2": 60,
        *         "locator:fixed:1": 1,
        *         "locator:template:1": 120,
+       *         "tool:blob:1": 60,
+       *         "tool:brightness:1": 30,
        *         "tool:code:1": 250,
        *         "tool:color:1": 60,
        *         "tool:pattern:1": 120
@@ -1512,6 +1514,8 @@ export interface components {
        *         "locator:blob:2": 25,
        *         "locator:fixed:1": 1,
        *         "locator:template:1": 50,
+       *         "tool:blob:1": 25,
+       *         "tool:brightness:1": 12,
        *         "tool:code:1": 100,
        *         "tool:color:1": 25,
        *         "tool:pattern:1": 50
@@ -1844,7 +1848,7 @@ export interface components {
        * Unit
        * @enum {string}
        */
-      unit: 'fraction' | 'count' | 'score'
+      unit: 'fraction' | 'count' | 'score' | 'px' | 'px2' | 'mm' | 'mm2'
       /** Value */
       value: string
     }
@@ -2341,7 +2345,7 @@ export interface components {
        * Unit
        * @enum {string}
        */
-      unit: 'fraction' | 'count' | 'score'
+      unit: 'fraction' | 'count' | 'score' | 'px' | 'px2' | 'mm' | 'mm2'
       /** Worst Good */
       worst_good: number | null
     }
@@ -3191,6 +3195,8 @@ export interface components {
        *           "locator:blob:2": 60,
        *           "locator:fixed:1": 1,
        *           "locator:template:1": 120,
+       *           "tool:blob:1": 60,
+       *           "tool:brightness:1": 30,
        *           "tool:code:1": 250,
        *           "tool:color:1": 60,
        *           "tool:pattern:1": 120
@@ -3200,6 +3206,8 @@ export interface components {
        *           "locator:blob:2": 25,
        *           "locator:fixed:1": 1,
        *           "locator:template:1": 50,
+       *           "tool:blob:1": 25,
+       *           "tool:brightness:1": 12,
        *           "tool:code:1": 100,
        *           "tool:color:1": 25,
        *           "tool:pattern:1": 50
@@ -3353,7 +3361,7 @@ export interface components {
        * @default {}
        */
       units: {
-        [key: string]: 'fraction' | 'count' | 'score'
+        [key: string]: 'fraction' | 'count' | 'score' | 'px' | 'px2' | 'mm' | 'mm2'
       }
       /**
        * Values

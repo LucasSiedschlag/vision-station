@@ -5,7 +5,7 @@ import { text } from '@/texts'
  * What a tolerance gauge computes from its numbers (docs/frontend.md §19.3): the scale, whether a sample is on the
  * right side of the limit, the margin in words and in the unit of the measure, and the count of samples on each side.
  */
-export type Unit = 'fraction' | 'count' | 'score'
+export type Unit = 'fraction' | 'count' | 'score' | 'px' | 'px2' | 'mm' | 'mm2'
 export type Side = 'min' | 'max'
 
 export interface Dot {
@@ -32,7 +32,7 @@ export function domainOf(
   const top = range[1]
   if (top !== null && top !== undefined) return [low, top]
   const largest = Math.max(0, ...values.filter((v): v is number => v !== null))
-  const nice = unit === 'count' ? 5 : 1
+  const nice = unit === 'count' ? 5 : unit === 'px2' ? 100 : 1
   return [low, Math.max(nice, Math.ceil((largest * 1.25) / nice) * nice)]
 }
 
@@ -49,17 +49,26 @@ export function wrongSide(dot: Dot, limits: Limits): boolean {
   return dot.kind === 'good' ? !allowed(dot.value, limits) : allowed(dot.value, limits)
 }
 
+/** Decimals of a measure: whole for what is counted (a count, an area of pixels), one for a physical size, two otherwise. */
+export const decimalsOf = (unit: Unit | undefined) =>
+  unit === 'count' || unit === 'px2' ? 0 : unit === 'px' || unit === 'mm' || unit === 'mm2' ? 1 : 2
+
+/** The suffix a number is written with: the physical units; a fraction is a percentage and the others have none. */
+export const suffixOf = (unit: string | undefined) =>
+  ({ px: 'px', px2: 'px²', mm: 'mm', mm2: 'mm²', ΔE: 'ΔE' })[unit ?? ''] ?? undefined
+
 export function formatValue(value: number, unit: Unit): string {
-  return unit === 'fraction'
-    ? formatPercent(value, 1)
-    : formatNumber(value, unit === 'count' ? 0 : 2)
+  const text = unit === 'fraction' ? formatPercent(value, 1) : formatNumber(value, decimalsOf(unit))
+  const suffix = suffixOf(unit)
+  return suffix ? `${text} ${suffix}` : text
 }
 
 /** A distance between two values in the unit of the measure: percentage points, never "0,15". */
 export function formatDistance(distance: number, unit: Unit): string {
   const d = Math.abs(distance)
   if (unit === 'fraction') return text.editor.gauge.points(formatNumber(d * 100, 1))
-  return formatNumber(d, unit === 'count' ? 0 : 2)
+  const suffix = suffixOf(unit)
+  return `${formatNumber(d, decimalsOf(unit))}${suffix ? ` ${suffix}` : ''}`
 }
 
 const known = (dots: Dot[], kind: Dot['kind']) =>

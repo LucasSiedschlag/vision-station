@@ -1,3 +1,4 @@
+import { suffixOf } from '@/components/vision/gauge-model'
 import { formatNumber, formatPercent } from '@/lib/number'
 import { text } from '@/texts'
 import type { TypeInfo } from '@/api/queries/editor'
@@ -11,7 +12,9 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stri
 function show(value: unknown, unit?: string): string {
   if (value === null || value === undefined || value === '') return c.nothing
   if (typeof value === 'number')
-    return unit === 'fraction' ? formatPercent(value) : formatNumber(value)
+    return unit === 'fraction'
+      ? formatPercent(value)
+      : `${formatNumber(value)}${suffixOf(unit) ? ` ${suffixOf(unit)}` : ''}`
   if (typeof value === 'boolean') return value ? c.on : c.off
   if (Array.isArray(value)) return value.map((v) => show(v)).join(', ')
   if (typeof value === 'object')

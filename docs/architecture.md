@@ -716,6 +716,19 @@ Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`), so 
 
 | Reason code | Meaning |
 |---|---|
+| `blob.min_count` | Menos manchas que o mínimo |
+| `blob.max_count` | Mais manchas que o máximo |
+| `blob.min_area` | Área das manchas abaixo do mínimo |
+| `blob.max_area` | Área das manchas acima do máximo |
+| `blob.max_largest` | Mancha maior que o máximo |
+| `blob.min_area_mm2` | Área das manchas (mm²) abaixo do mínimo |
+| `blob.max_area_mm2` | Área das manchas (mm²) acima do máximo |
+| `blob.max_largest_mm2` | Mancha (mm²) maior que o máximo |
+| `brightness.min_mean` | Brilho médio abaixo do mínimo |
+| `brightness.max_mean` | Brilho médio acima do máximo |
+| `brightness.max_std` | Variação do brilho acima do máximo |
+| `brightness.max_above` | Parte da região acima do nível passa do máximo |
+| `brightness.max_below` | Parte da região abaixo do nível passa do máximo |
 | `code.min_count` | Menos códigos aceitos que o mínimo |
 | `code.max_count` | Mais códigos aceitos que o máximo |
 | `color.min_fraction` | Fração da região com a cor abaixo do mínimo |
@@ -832,6 +845,8 @@ For a region in a rotated fixture, the geometry component builds the affine tran
 ### 14.4 Calibration (FR-INS-15)
 
 `camera/calibration.yaml` holds `mm_per_px` (one value, or x and y), the method (`known_dimension` or `checkerboard`), the date and the residual error. Measurement tools (`edge`, `blob`, later `measure`) report both pixels and millimetres when the job is calibrated; a threshold in millimetres in a job without calibration refuses the job on load. The scale is per job because zoom and focus are per job (Hikvision motorized lens). Lens distortion correction (camera matrix + coefficients from OpenCV's calibration) is optional and applied to region cuts only, not to the whole frame, to keep the cost low.
+
+**As built (VIA-0075, C1).** `core/calibration.py` is the file (`Calibration`, `Scale(x, y)` in mm per px, `CALIBRATION_FILE`); `algorithms/calibration.py::calibrate_known_dimension(pixels, millimetres)` gives the scale and the worst miss from one or several known dimensions (a line through the origin). Tools get the scale from `JobFiles.scale()`, so `run(region, params, files)` did not change; it raises `JobFileError` in a job with no calibration. A parameter whose `x-unit` is `mm` or `mm2` (`core/schema_labels.meta`) and that is given makes `check_job_tools` refuse a job with no calibration (`tools.base.uses_millimetres`), at load (`bundle_from_files`) and so at verification; `bundle_from_files` also checks the file is valid and that `acquisition.image.calibration` and the file agree. The pixels of a region cut are the pixels of the frame whatever the scale of the fixture (the map to the frame is a rotation and a shift), so the scale needs no correction (a test keeps it). The screen that draws the known dimension is VIA-0076; the units `px`, `mm` and `mm2` of the result contract come with the first tool that reports them.
 
 ### 14.5 As built (VIA-0070)
 

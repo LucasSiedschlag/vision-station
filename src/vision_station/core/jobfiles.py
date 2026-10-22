@@ -10,6 +10,10 @@ from functools import lru_cache
 
 import cv2
 import numpy as np
+import yaml
+from pydantic import ValidationError
+
+from vision_station.core.calibration import CALIBRATION_FILE, Calibration, Scale
 
 
 class JobFileError(Exception):
@@ -41,6 +45,23 @@ class JobFiles:
         if image is None:
             raise JobFileError(f"not an image: {path}")
         return image
+
+    @property
+    def calibrated(self) -> bool:
+        return CALIBRATION_FILE in self._files
+
+    def scale(self) -> Scale:
+        """Millimetres per pixel of this job (FR-INS-15). A tool that measures in millimetres asks for it here."""
+        if CALIBRATION_FILE not in self._files:
+            raise JobFileError(f"the job has no calibration ({CALIBRATION_FILE}): a measure in millimetres needs one")
+        return parse_calibration(self._files[CALIBRATION_FILE]).scale
+
+
+def parse_calibration(data: bytes) -> Calibration:
+    try:
+        return Calibration.model_validate(yaml.safe_load(data))
+    except (ValidationError, yaml.YAMLError) as exc:
+        raise JobFileError(f"{CALIBRATION_FILE} is not a valid calibration: {exc}") from exc
 
 
 def check_files(owner: str, needed: list[str], files: Mapping[str, bytes]) -> None:

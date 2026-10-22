@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 import yaml
 from pydantic import ValidationError
 
+from vision_station.core.calibration import CALIBRATION_FILE
+from vision_station.core.jobfiles import JobFileError, parse_calibration
 from vision_station.jobs import CameraProfile, Job, dump_job, dump_profile, parse_job
 from vision_station.store.archive import MANIFEST, check_path
 from vision_station.store.errors import FormatError
@@ -71,6 +73,14 @@ def bundle_from_files(files: Mapping[str, bytes], check_tools: bool = True) -> J
     calibration = job.acquisition.image.calibration
     if calibration is not None and (check_path(calibration) not in files or calibration in (JOB_FILE, profile_path)):
         raise FormatError(f"calibration file is missing: {calibration}")
+    if (calibration is not None and calibration != CALIBRATION_FILE) or (calibration is None and CALIBRATION_FILE in files):
+        # the tools read it by this name (JobFiles.scale), so the job's block must say the same
+        raise FormatError(f"the calibration of a job is {CALIBRATION_FILE}, named in acquisition.image.calibration")
+    if calibration is not None:
+        try:
+            parse_calibration(files[calibration])
+        except JobFileError as exc:
+            raise FormatError(f"calibration file is not valid: {exc}") from exc
     try:
         profile = CameraProfile.model_validate(yaml.safe_load(files[profile_path]))
     except (ValidationError, yaml.YAMLError) as exc:

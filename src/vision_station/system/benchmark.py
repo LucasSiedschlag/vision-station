@@ -70,6 +70,18 @@ def _color(mp: float) -> Workload:
     return Workload(image, {"hue": [100, 130], "s_min": 60, "min_fraction": 0.1, "axis": "x", "max_gap": 0.6})
 
 
+def _brightness(mp: float) -> Workload:
+    return Workload(_textured(mp), {"min_mean": 20, "max_mean": 230, "max_std": 100, "max_above": 0.9})
+
+
+def _blob_tool(mp: float) -> Workload:
+    image = np.zeros(_size(mp), np.uint8)
+    rows, cols = image.shape
+    for i in range(1, 6):  # five parts of a twentieth of the width
+        image[rows // 4 : rows // 2, i * cols // 7 : i * cols // 7 + cols // 20] = 255
+    return Workload(image, {"mode": "light", "min_count": 1, "max_count": 10, "max_largest": rows * cols})
+
+
 def _pattern(mp: float) -> Workload:
     image = _textured(mp)
     return Workload(image, {"template": "t.png", "min_score": 0.7}, _template_of(image))
@@ -100,6 +112,8 @@ def _fixed(mp: float) -> Workload:
 
 
 WORKLOADS: dict[str, Callable[[float], Workload]] = {
+    key("tool", "blob", 1): _blob_tool,
+    key("tool", "brightness", 1): _brightness,
     key("tool", "color", 1): _color,
     key("tool", "pattern", 1): _pattern,
     key("tool", "code", 1): _code,

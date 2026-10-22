@@ -10,6 +10,7 @@ running different logic.
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from functools import cache
 from typing import Any
 
 import numpy as np
@@ -57,9 +58,9 @@ def minimum(code: str, measure: str, value: float, limit: float) -> Criterion:
     return Criterion(code, "min", score >= 1.0, score, measure, float(value), float(limit))
 
 
-def maximum(code: str, measure: str, value: float, limit: float) -> Criterion:
-    """A fraction `value` at most `limit` (algorithms.measures.at_most)."""
-    score = at_most(value, limit)
+def maximum(code: str, measure: str, value: float, limit: float, top: float = 1.0) -> Criterion:
+    """`value` at most `limit`; a fraction by default, or a measure whose largest value is `top` (algorithms.measures.at_most)."""
+    score = at_most(value, limit, top)
     return Criterion(code, "max", score >= 1.0, score, measure, float(value), float(limit))
 
 
@@ -104,6 +105,20 @@ class ToolType:
 
 
 _REGISTRY: dict[tuple[str, int], ToolType] = {}
+
+
+MILLIMETRE_UNITS = ("mm", "mm2")  # the `x-unit` of a parameter that is a physical size (core/schema_labels.meta)
+
+
+@cache
+def _millimetre_fields(params: type[BaseModel]) -> tuple[str, ...]:
+    properties = params.model_json_schema().get("properties", {})
+    return tuple(name for name, spec in properties.items() if spec.get("x-unit") in MILLIMETRE_UNITS)
+
+
+def uses_millimetres(tool: ToolType, params: BaseModel) -> bool:
+    """The job gives a limit or a size in millimetres: it only means something in a calibrated job (FR-INS-15)."""
+    return any(getattr(params, name, None) is not None for name in _millimetre_fields(tool.params))
 
 
 def register(tool: ToolType) -> ToolType:

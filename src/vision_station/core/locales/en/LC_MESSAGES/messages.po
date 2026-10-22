@@ -14,6 +14,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+msgid "0 (preto) a 255 (branco)"
+msgstr "0 (black) to 255 (white)"
+
 msgid "0 a 1"
 msgstr "0 to 1"
 
@@ -28,6 +31,12 @@ msgstr "0 to 1: the colour must fill at least this much of the region"
 
 msgid "0 a 1: para conferir que uma cor não está lá"
 msgstr "0 to 1: to check that a colour is not there"
+
+msgid "0 a 1: parte da região mais clara que o nível (ex.: sem reflexo)"
+msgstr "0 to 1: the part of the region brighter than the level (e.g. no glare)"
+
+msgid "0 a 1: parte da região mais escura que o nível (ex.: sem buraco preto)"
+msgstr "0 to 1: the part of the region darker than the level (e.g. no black hole)"
 
 msgid "0 a 1: parte de cada coluna com a cor para ela contar como coberta"
 msgstr "0 to 1: the part of each column with the colour for it to count as covered"
@@ -52,6 +61,9 @@ msgstr "0 to 255. Use about 60 or more with a hue range: grey and white have hue
 
 msgid "0 a 255. Vazio: automático"
 msgstr "0 to 255. Empty: automatic"
+
+msgid "0 a 255: a referência de 'acima do nível' e 'abaixo do nível'"
+msgstr "0 to 255: the reference for 'above the level' and 'below the level'"
 
 msgid "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está"
 msgstr "1: the pattern must be there; 0: with a maximum of 0, checks that it is not"
@@ -140,8 +152,26 @@ msgstr "Invalid file in the job"
 msgid "Arquivo recusado: {why}"
 msgstr "File refused: {why}"
 
+msgid "As manchas são"
+msgstr "The blobs are"
+
 msgid "Brilho máximo"
 msgstr "Maximum brightness"
+
+msgid "Brilho médio"
+msgstr "Mean brightness"
+
+msgid "Brilho médio abaixo do mínimo"
+msgstr "Mean brightness below the minimum"
+
+msgid "Brilho médio acima do máximo"
+msgstr "Mean brightness above the maximum"
+
+msgid "Brilho médio máximo"
+msgstr "Maximum mean brightness"
+
+msgid "Brilho médio mínimo"
+msgstr "Minimum mean brightness"
 
 msgid "Brilho mínimo"
 msgstr "Minimum brightness"
@@ -191,6 +221,12 @@ msgstr "Model confidence below the minimum"
 msgid "Confiança mínima"
 msgstr "Minimum confidence"
 
+msgid "Conta e mede as manchas (partes ligadas) de uma região que se destacam por cor ou por brilho."
+msgstr "Counts and measures the blobs (connected parts) of a region that stand out by colour or brightness."
+
+msgid "Cor das manchas"
+msgstr "Colour of the blobs"
+
 msgid "Cor de referência (R, G, B)"
 msgstr "Reference colour (R, G, B)"
 
@@ -224,6 +260,9 @@ msgstr "Codes accepted to pass"
 
 msgid "Dados inválidos"
 msgstr "Invalid data"
+
+msgid "Desvio padrão do brilho: baixo é uniforme, alto tem mancha ou degradê"
+msgstr "Standard deviation of the brightness: low is even, high has a stain or a gradient"
 
 msgid "Detecção de uma classe que reprova"
 msgstr "Detection of a class that fails"
@@ -295,6 +334,9 @@ msgstr "Internal failure in the inspection, call maintenance"
 
 msgid "Falha na verificação — chamar manutenção"
 msgstr "Verification failed — call maintenance"
+
+msgid "Fecha furos pequenos e remove pontinhos; 0: mede a máscara como ela é"
+msgstr "Closes small holes and removes specks; 0: measures the mask as it is"
 
 #, python-brace-format
 msgid "Ferramenta '{tool}' devolveu pontuação inválida"
@@ -412,6 +454,24 @@ msgstr "Reads bar codes (1D) and 2D codes (QR, Data Matrix...) in a region."
 msgid "Maior lado para comparar (px)"
 msgstr "Longest side to compare (px)"
 
+msgid "Maior mancha"
+msgstr "Largest blob"
+
+msgid "Maior mancha (mm²)"
+msgstr "Largest blob (mm²)"
+
+msgid "Maior mancha que conta (mm²)"
+msgstr "Largest blob that counts (mm²)"
+
+msgid "Maior mancha que conta (px²)"
+msgstr "Largest blob that counts (px²)"
+
+msgid "Maior mancha, no máximo (mm²)"
+msgstr "Largest blob, at most (mm²)"
+
+msgid "Maior mancha, no máximo (px²)"
+msgstr "Largest blob, at most (px²)"
+
 msgid "Maior trecho faltando"
 msgstr "Longest missing stretch"
 
@@ -427,14 +487,35 @@ msgstr "More codes accepted than the maximum"
 msgid "Mais detecções da classe contada que o máximo"
 msgstr "More detections of the counted class than the maximum"
 
+msgid "Mais manchas que o máximo"
+msgstr "More blobs than the maximum"
+
 msgid "Mais ocorrências do padrão que o máximo"
 msgstr "More occurrences of the pattern than the maximum"
+
+msgid "Mais que isso reprova"
+msgstr "More than this fails"
 
 msgid "Mais que isso reprova (ex.: etiqueta colada duas vezes)"
 msgstr "More than this fails (e.g. a label stuck on twice)"
 
+msgid "Mancha (mm²) maior que o máximo"
+msgstr "Blob (mm²) larger than the maximum"
+
+msgid "Mancha maior que o máximo"
+msgstr "Blob larger than the maximum"
+
+msgid "Manchas"
+msgstr "Blobs"
+
+msgid "Manchas menores que isso são ignoradas"
+msgstr "Blobs smaller than this are ignored"
+
 msgid "Matiz (de, até)"
 msgstr "Hue (from, to)"
+
+msgid "Mede o brilho (nível de cinza) de uma região."
+msgstr "Measures the brightness (gray level) of a region."
 
 msgid "Mede quanto de uma região tem uma cor."
 msgstr "Measures how much of a region has a colour."
@@ -442,11 +523,20 @@ msgstr "Measures how much of a region has a colour."
 msgid "Medir ao longo de"
 msgstr "Measure along"
 
+msgid "Menor mancha que conta (mm²)"
+msgstr "Smallest blob that counts (mm²)"
+
+msgid "Menor mancha que conta (px²)"
+msgstr "Smallest blob that counts (px²)"
+
 msgid "Menos códigos aceitos que o mínimo"
 msgstr "Fewer codes accepted than the minimum"
 
 msgid "Menos detecções da classe contada que o mínimo"
 msgstr "Fewer detections of the counted class than the minimum"
+
+msgid "Menos manchas que o mínimo"
+msgstr "Fewer blobs than the minimum"
 
 msgid "Menos ocorrências do padrão que o mínimo"
 msgstr "Fewer occurrences of the pattern than the minimum"
@@ -467,11 +557,20 @@ msgstr "Too many attempts; wait and try again"
 msgid "Máquina sem sinal de vida"
 msgstr "Machine without a heartbeat"
 
+msgid "Máximo abaixo do nível"
+msgstr "Maximum below the level"
+
+msgid "Máximo acima do nível"
+msgstr "Maximum above the level"
+
 msgid "Máximo da classe contada"
 msgstr "Maximum of the counted class"
 
 msgid "Máximo de códigos"
 msgstr "Maximum codes"
+
+msgid "Máximo de manchas"
+msgstr "Maximum number of blobs"
 
 msgid "Máximo de ocorrências"
 msgstr "Maximum occurrences"
@@ -481,6 +580,9 @@ msgstr "Minimum of the counted class"
 
 msgid "Mínimo de códigos"
 msgstr "Minimum codes"
+
+msgid "Mínimo de manchas"
+msgstr "Minimum number of blobs"
 
 msgid "Mínimo de ocorrências"
 msgstr "Minimum occurrences"
@@ -529,6 +631,9 @@ msgstr "There are no samples to validate: capture Good and Bad samples"
 
 msgid "Não há imagens coletadas para exportar"
 msgstr "There are no collected images to export"
+
+msgid "Nível de comparação"
+msgstr "Comparison level"
 
 msgid "Número de job desconhecido"
 msgstr "Unknown job number"
@@ -626,6 +731,18 @@ msgstr "Text pattern"
 msgid "Para abrir a API na rede é preciso ter senha de Supervisor ou Mantenedor"
 msgstr "To open the API to the network, a Supervisor or Maintainer password is required"
 
+msgid "Parte abaixo do nível"
+msgstr "Part below the level"
+
+msgid "Parte acima do nível"
+msgstr "Part above the level"
+
+msgid "Parte da região abaixo do nível passa do máximo"
+msgstr "Part of the region below the level is over the maximum"
+
+msgid "Parte da região acima do nível passa do máximo"
+msgstr "Part of the region above the level is over the maximum"
+
 #, python-brace-format
 msgid "Pasta de backup: {folder}"
 msgstr "Backup folder: {folder}"
@@ -649,6 +766,9 @@ msgstr "Object position (x0, y0, x1, y1)"
 msgid "Poucos pixels para propor uma cor: arraste sobre uma área maior"
 msgstr "Too few pixels to propose a colour: drag over a larger area"
 
+msgid "Precisa da calibração do job"
+msgstr "Needs the job's calibration"
+
 msgid "Precisa do modelo de um job: a latência está no cartão do modelo"
 msgstr "Needs the model of a job: the latency is in the model card"
 
@@ -660,6 +780,9 @@ msgstr "Preparing…"
 
 msgid "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece."
 msgstr "Looks for a taught pattern (a logo, a mark, a detail) in a region and counts how many times it appears."
+
+msgid "Quantas precisam existir"
+msgstr "How many there must be"
 
 msgid "Quanto a cor pode diferir da referência; 10 a 30 é comum"
 msgstr "How much the colour may differ from the reference; 10 to 30 is common"
@@ -703,6 +826,9 @@ msgstr "Minimum similarity"
 msgid "Senha não aceita: {why}"
 msgstr "Password not accepted: {why}"
 
+msgid "Soma das manchas que contam"
+msgstr "Sum of the blobs that count"
+
 msgid "Só o Mantenedor pode liberar um job que não passou na verificação"
 msgstr "Only the Maintainer can release a job that did not pass verification"
 
@@ -742,6 +868,18 @@ msgstr "A sample of the job cannot change or leave in a fine-tune"
 msgid "Uma amostra nova é Boa ou Ruim"
 msgstr "A new sample is Good or Bad"
 
+msgid "Uma mancha maior que isso reprova (ex.: uma rebarba)"
+msgstr "A blob larger than this fails (e.g. a burr)"
+
+msgid "Variação do brilho"
+msgstr "Brightness variation"
+
+msgid "Variação do brilho acima do máximo"
+msgstr "Brightness variation above the maximum"
+
+msgid "Variação máxima"
+msgstr "Maximum variation"
+
 msgid "Vazio: o do cartão do modelo"
 msgstr "Empty: the one on the model card"
 
@@ -753,6 +891,9 @@ msgstr "Empty: any class that does not fail"
 
 msgid "Vazio: sem limite"
 msgstr "Empty: no limit"
+
+msgid "Vazio: sem limite; manchas maiores que isso são ignoradas"
+msgstr "Empty: no limit; blobs larger than this are ignored"
 
 msgid "Verificação do job falhou"
 msgstr "Job verification failed"
@@ -832,8 +973,14 @@ msgstr "job without a reference set: decision logic not checked"
 msgid "job sem imagem de referência: nitidez, semelhança e posição não conferidas"
 msgstr "job without a reference image: sharpness, similarity and position not checked"
 
+msgid "mais claras que o fundo"
+msgstr "lighter than the background"
+
 msgid "mais claro que o fundo"
 msgstr "lighter than the background"
+
+msgid "mais escuras que o fundo"
+msgstr "darker than the background"
 
 msgid "mais escuro que o fundo"
 msgstr "darker than the background"
@@ -933,6 +1080,24 @@ msgstr "{outcome}: {reason}"
 msgid "{setting}: {detail}"
 msgstr "{setting}: {detail}"
 
+msgid "Área das manchas"
+msgstr "Area of the blobs"
+
+msgid "Área das manchas (mm²)"
+msgstr "Area of the blobs (mm²)"
+
+msgid "Área das manchas (mm²) abaixo do mínimo"
+msgstr "Area of the blobs (mm²) below the minimum"
+
+msgid "Área das manchas (mm²) acima do máximo"
+msgstr "Area of the blobs (mm²) above the maximum"
+
+msgid "Área das manchas abaixo do mínimo"
+msgstr "Area of the blobs below the minimum"
+
+msgid "Área das manchas acima do máximo"
+msgstr "Area of the blobs above the maximum"
+
 msgid "Área de busca (x0, y0, x1, y1)"
 msgstr "Search area (x0, y0, x1, y1)"
 
@@ -944,6 +1109,18 @@ msgstr "Minimum area"
 
 msgid "Área toda, ou a cobertura ao longo de uma faixa horizontal (x) ou vertical (y)"
 msgstr "The whole area, or the coverage along a horizontal (x) or vertical (y) strip"
+
+msgid "Área total máxima (mm²)"
+msgstr "Maximum total area (mm²)"
+
+msgid "Área total máxima (px²)"
+msgstr "Maximum total area (px²)"
+
+msgid "Área total mínima (mm²)"
+msgstr "Minimum total area (mm²)"
+
+msgid "Área total mínima (px²)"
+msgstr "Minimum total area (px²)"
 
 msgid "É a câmera em uso pela estação e ela não está mandando imagem"
 msgstr "This is the camera the station is using and it is not sending an image"

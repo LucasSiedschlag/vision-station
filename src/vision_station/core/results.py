@@ -12,8 +12,9 @@ class Outcome(StrEnum):
     ERROR = "ERROR"  # the system could not inspect; never shown as PASS (FR-INS-6)
 
 
-# what a measured value is: a fraction 0..1 (shown as %), a count, or a score of the tool's own scale
-Unit = Literal["fraction", "count", "score"]
+# what a measured value is: a fraction 0..1 (shown as %), a count, a score or a level of the tool's own scale, or a physical
+# size: a length in pixels or millimetres (`px`, `mm`), an area (`px2`, `mm2`); the millimetres need a calibrated job (FR-INS-15)
+Unit = Literal["fraction", "count", "score", "px", "px2", "mm", "mm2"]
 
 MarkKind = Literal["rect", "poly", "point", "text"]
 MarkRole = Literal["found", "expected", "defect"]  # what the tool found, where it should have been, what makes it fail

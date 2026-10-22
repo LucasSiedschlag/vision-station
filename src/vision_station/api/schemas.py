@@ -54,7 +54,7 @@ class CameraOut(BaseModel):
     last_error: str | None = None
 
 
-Unit = Literal["fraction", "count", "score"]
+Unit = Literal["fraction", "count", "score", "px", "px2", "mm", "mm2"]
 
 
 class CriterionOut(BaseModel):
@@ -450,7 +450,7 @@ class CriterionSpecOut(BaseModel):
 
     value: str  # the key of the result's values
     label: str
-    unit: Literal["fraction", "count", "score"]
+    unit: Unit
     range: list[float | None]  # [low, high]; a high of None: no natural top, the gauge takes it from the data
     limits: dict[Literal["min", "max"], str]  # the tool's parameters holding the limits
     direction: Literal["at_least", "at_most", "between"]
@@ -692,7 +692,7 @@ class LimitProposalOut(BaseModel):
     label: str
     param: str  # the tool parameter that holds the limit
     side: Literal["min", "max"]
-    unit: Literal["fraction", "count", "score"]
+    unit: Unit
     current: float | None
     proposed: float | None  # None: nothing is proposed, `reason` says why
     reason: Literal["", "few_good", "overlap", "bounds"]

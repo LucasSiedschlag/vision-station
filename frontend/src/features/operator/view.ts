@@ -1,5 +1,6 @@
 import { currentLocale } from '@/app/locale'
 import type { ResultOut, StateOut } from '@/api/live'
+import { decimalsOf, suffixOf } from '@/components/vision/gauge-model'
 import { formatNumber, formatPercent } from '@/lib/number'
 import { text } from '@/texts'
 
@@ -183,7 +184,7 @@ function valueOf(tool: Tool): string {
   if (!criterion?.measure || criterion.value === null || criterion.value === undefined) return ''
   const unit = tool.units[criterion.measure]
   if (unit === 'fraction') return formatPercent(criterion.value, 0)
-  return formatNumber(criterion.value, unit === 'count' ? 0 : 2)
+  return `${formatNumber(criterion.value, decimalsOf(unit))}${suffixOf(unit) ? ` ${suffixOf(unit)}` : ''}`
 }
 
 /** At most this many tools are listed; the rest are counted (docs/frontend.md §7.1). */

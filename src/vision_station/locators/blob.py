@@ -20,7 +20,8 @@ import cv2
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from vision_station.algorithms.color import ColorRange, color_mask
+from vision_station.algorithms.blobs import binary_mask, clean_mask, components
+from vision_station.algorithms.color import ColorRange
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.schema_labels import labels, meta
 from vision_station.geometry.pose import Fixture
@@ -73,18 +74,6 @@ class BlobParams(BaseModel):
         return self
 
 
-def _mask(area: np.ndarray, params: BlobParams) -> np.ndarray:
-    if params.mode == "color":
-        return color_mask(area, params.color).astype(np.uint8) * 255  # type: ignore[arg-type]
-    gray = cv2.cvtColor(area, cv2.COLOR_BGR2GRAY) if area.ndim == 3 else area
-    kind = cv2.THRESH_BINARY_INV if params.mode == "dark" else cv2.THRESH_BINARY
-    if params.threshold is None:
-        _, mask = cv2.threshold(gray, 0, 255, kind | cv2.THRESH_OTSU)
-    else:
-        _, mask = cv2.threshold(gray, params.threshold, 255, kind)
-    return mask
-
-
 class _Found:
     """The largest region in range: its box and area at work size, and what maps work size back to the frame."""
 
@@ -101,11 +90,8 @@ def _search(frame: np.ndarray, params: BlobParams) -> "_Found | None":
     scale = min(1.0, params.work_width / width)
     if scale < 1.0:
         area = cv2.resize(area, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-    mask = _mask(area, params)
-    if params.clean_px:
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (params.clean_px, params.clean_px))
-        mask = cv2.morphologyEx(cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel), cv2.MORPH_CLOSE, kernel)
-    count, labels_, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    mask = clean_mask(binary_mask(area, params.mode, params.color, params.threshold), params.clean_px)
+    count, labels_, stats = components(mask)
     total = mask.shape[0] * mask.shape[1]
     best = None
     for i in range(1, count):

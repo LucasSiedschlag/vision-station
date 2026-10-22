@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+import { suffixOf } from '@/components/vision/gauge-model'
 import { Badge } from '@/components/ui/badge'
 import { Field } from '@/components/ui/field'
 import { Input, Textarea } from '@/components/ui/input'
@@ -352,7 +353,7 @@ function Control({
             step={s.type === 'integer' ? 1 : 0.01}
             decimals={s.type === 'integer' ? 0 : 4}
             percent={percent}
-            unit={unit === 'px' || unit === 'ΔE' ? unit : undefined}
+            unit={suffixOf(unit)}
             placeholder={placeholder}
           />
         )}

@@ -1039,11 +1039,15 @@ export function ToolsStep({
                 params:
                   type === 'color'
                     ? { min_fraction: 0.5 }
-                    : type === 'pattern'
-                      ? { template: '' }
-                      : type === 'detect'
-                        ? { model: '' }
-                        : {},
+                    : type === 'brightness'
+                      ? { min_mean: 80 }
+                      : type === 'blob'
+                        ? { mode: 'dark', min_count: 1 }
+                        : type === 'pattern'
+                          ? { template: '' }
+                          : type === 'detect'
+                            ? { model: '' }
+                            : {},
                 reason_fail: withText(null, currentLocale(), t.defaultReason),
               }),
             )

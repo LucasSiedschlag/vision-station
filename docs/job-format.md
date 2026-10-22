@@ -181,8 +181,19 @@ acquisition:
     #                  diff_threshold: 25, min_area: 0.05, motion_area: 0.01}
   image:
     profile: camera/profile.yaml      # section 4 below, plus orientation and the parameters of Auto uma vez
-    calibration: camera/calibration.yaml   # optional (FR-INS-15)
+    calibration: camera/calibration.yaml   # optional (FR-INS-15); this name only, or null
 ```
+
+`camera/calibration.yaml` (VIA-0075, FR-INS-15), present only in a calibrated job, and then named in `acquisition.image.calibration`; the job is refused when one says it and the other does not, or when the file is not valid:
+
+```yaml
+method: known_dimension               # the only method; `checkerboard` (lens distortion) is not built
+mm_per_px: 0.25                       # one value, or [x, y] when the pixels are not square; greater than 0
+date: 2026-10-22                      # when it was made
+residual_mm: 0.04                     # optional: the worst miss of the known dimensions used (>= 0)
+```
+
+A tool parameter whose schema unit is `mm` or `mm2` and that has a value needs this file: the job is refused when it is loaded, and also at verification, which loads the same way. The scale is the same whatever the scale of a fixture, because a region is cut in the pixels of the frame.
 
 `camera/profile.yaml` in format 3 adds (the other settings are those of section 4):
 

@@ -73,6 +73,19 @@ CATALOG: dict[ErrorCode, ErrorInfo] = {
 # Reason codes of a failing tool, `<tool type>.<criterion>` (FR-INS-14): stable like the error codes, so a
 # failure can be counted by cause across jobs. A tool's new criterion adds a code here and in architecture §10.3.
 REASON_CODES: dict[str, str] = {
+    "blob.min_count": tr("Menos manchas que o mínimo"),
+    "blob.max_count": tr("Mais manchas que o máximo"),
+    "blob.min_area": tr("Área das manchas abaixo do mínimo"),
+    "blob.max_area": tr("Área das manchas acima do máximo"),
+    "blob.max_largest": tr("Mancha maior que o máximo"),
+    "blob.min_area_mm2": tr("Área das manchas (mm²) abaixo do mínimo"),
+    "blob.max_area_mm2": tr("Área das manchas (mm²) acima do máximo"),
+    "blob.max_largest_mm2": tr("Mancha (mm²) maior que o máximo"),
+    "brightness.min_mean": tr("Brilho médio abaixo do mínimo"),
+    "brightness.max_mean": tr("Brilho médio acima do máximo"),
+    "brightness.max_std": tr("Variação do brilho acima do máximo"),
+    "brightness.max_above": tr("Parte da região acima do nível passa do máximo"),
+    "brightness.max_below": tr("Parte da região abaixo do nível passa do máximo"),
     "code.min_count": tr("Menos códigos aceitos que o mínimo"),
     "code.max_count": tr("Mais códigos aceitos que o máximo"),
     "color.min_fraction": tr("Fração da região com a cor abaixo do mínimo"),

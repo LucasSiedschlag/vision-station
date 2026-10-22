@@ -2,7 +2,16 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ToolToleranceGauge, type GaugeProposal } from './ToolToleranceGauge'
-import { domainOf, marginText, tally, wrongSide, type Dot } from './gauge-model'
+import {
+  domainOf,
+  formatDistance,
+  formatValue,
+  marginText,
+  suffixOf,
+  tally,
+  wrongSide,
+  type Dot,
+} from './gauge-model'
 
 const dots: Dot[] = [
   { id: 'reference', kind: 'reference', name: 'Referência', value: 0.95 },
@@ -177,5 +186,17 @@ describe('the gauge', () => {
     expect(screen.queryByRole('button', { name: 'Aplicar' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Descartar' }))
     expect(props.onDiscard).toHaveBeenCalled()
+  })
+})
+
+describe('the physical units of a measure (VIA-0075)', () => {
+  it('an area of pixels is whole, a size in millimetres has one decimal, and both are written with their unit', () => {
+    expect(formatValue(1200, 'px2')).toBe('1200 px²')
+    expect(formatValue(12.34, 'mm')).toBe('12,3 mm')
+    expect(formatValue(300, 'mm2')).toBe('300 mm²')
+    expect(formatValue(4, 'count')).toBe('4')
+    expect(formatDistance(-25.5, 'mm2')).toBe('25,5 mm²')
+    expect(suffixOf('px2')).toBe('px²')
+    expect(suffixOf('fraction')).toBeUndefined()
   })
 })

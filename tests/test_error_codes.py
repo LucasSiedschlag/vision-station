@@ -80,4 +80,4 @@ def test_the_reason_codes_are_the_ones_of_architecture_10_3():
     text = (ROOT / "docs" / "architecture.md").read_text(encoding="utf-8")
     section = text[text.index("### 10.3 Result contract") :]
     section = section[: section.index("\n---")]
-    assert set(re.findall(r"^\| `([a-z]+\.[a-z_]+)` \|", section, re.M)) == set(REASON_CODES)
+    assert set(re.findall(r"^\| `([a-z]+\.[a-z_0-9]+)` \|", section, re.M)) == set(REASON_CODES)

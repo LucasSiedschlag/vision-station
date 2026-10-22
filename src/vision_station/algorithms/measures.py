@@ -11,10 +11,11 @@ def at_least(value: float, limit: float) -> float:
     return 1.0 if value >= limit else (value / limit if limit > 0 else 1.0)
 
 
-def at_most(value: float, limit: float) -> float:
-    if value <= limit or limit >= 1:
+def at_most(value: float, limit: float, top: float = 1.0) -> float:
+    """1.0 within `limit`, falling to 0 at `top`, the largest value the measure can have (1 for a fraction, 255 for a gray level)."""
+    if value <= limit or limit >= top:
         return 1.0
-    return max(0.0, (1 - value) / (1 - limit))
+    return max(0.0, (top - value) / (top - limit))
 
 
 def longest_run(flags: np.ndarray) -> tuple[int, int]:
