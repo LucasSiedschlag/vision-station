@@ -385,7 +385,46 @@ describe('settings', () => {
     restart_pending: ['camera'],
     camera_drivers: ['file', 'uvc'],
     last_backup_error: null,
+    default_backup_folder: 'C:/ProgramData/VisionSystem/backups',
+    can_pick_folder: true,
   }
+
+  it('fills a folder from the PC chooser, the same one for the backup and for the images of the file camera', async () => {
+    let put: any = null
+    const asked: any[] = []
+    server.use(
+      http.get('*/api/system', () =>
+        HttpResponse.json({
+          ...system,
+          config: {
+            ...system.config,
+            camera: { driver: 'file', connection: { path: 'D:/imagens' } },
+          },
+        }),
+      ),
+      http.post('*/api/system/pick-folder', async ({ request }) => {
+        const body: any = await request.json()
+        asked.push(body.initial)
+        return HttpResponse.json({ path: asked.length === 1 ? 'F:/fotos' : 'E:/backups' })
+      }),
+      http.put('*/api/system', async ({ request }) => {
+        put = await request.json()
+        return HttpResponse.json({ changed: ['camera', 'backup'], restart_required: ['camera'] })
+      }),
+    )
+    as('maintainer')
+    renderApp('/settings')
+    const choose = await screen.findAllByRole('button', { name: 'Escolher pasta…' })
+    expect(choose).toHaveLength(2) // the images of the file camera, and the backup
+    await userEvent.click(choose[0]!)
+    await waitFor(() => expect(screen.getByLabelText('Pasta das imagens')).toHaveValue('F:/fotos'))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Escolher pasta…' })[1]!)
+    await waitFor(() => expect(screen.getByLabelText('Pasta de backup')).toHaveValue('E:/backups'))
+    expect(asked).toEqual(['D:/imagens', null]) // each opens on what the field holds
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar configurações' }))
+    await waitFor(() => expect(put?.backup.folder).toBe('E:/backups'))
+    expect(put.camera.connection.path).toBe('F:/fotos')
+  })
 
   it('shows what needs a restart, saves the changes and tests a folder', async () => {
     let put: any = null

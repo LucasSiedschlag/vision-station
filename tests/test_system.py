@@ -288,6 +288,41 @@ def test_system_api(station, tmp_path):
     assert not other["ok"] and other["message"].startswith("A câmera não abriu")
 
 
+def test_the_backup_folder_starts_from_the_data_folder_and_one_that_cannot_be_written_is_refused(station, tmp_path):
+    client = TestClient(create_app(station.deps))
+    mnt = login(client, "maintainer")
+    body = client.get("/api/system", headers=mnt).json()
+    assert body["default_backup_folder"] == str(station.root / "backups")  # what the wizard fills in
+    config = body["config"]
+    taken = tmp_path / "a-file"
+    taken.write_text("not a folder", encoding="utf-8")
+    config["backup"]["folder"] = str(taken / "bk")  # a folder under a file cannot be made
+    refused = client.put("/api/system", headers=mnt, json=config)
+    assert refused.status_code == 400 and refused.json()["code"] == "folder_not_writable"
+    assert "Não foi possível gravar na pasta" in refused.json()["detail"]
+    assert client.get("/api/system", headers=mnt).json()["config"]["backup"]["folder"] is None  # nothing was saved
+    config["backup"]["folder"] = body["default_backup_folder"]
+    assert client.put("/api/system", headers=mnt, json=config).status_code == 200
+
+
+def test_the_folder_chooser_is_for_the_station_pc_only(station, monkeypatch):
+    from vision_station.system import folder_picker
+
+    client = TestClient(create_app(station.deps))
+    mnt = login(client, "maintainer")
+    assert client.post("/api/system/pick-folder", headers={}, json={}).status_code == 401
+    monkeypatch.setattr(folder_picker, "available", lambda: False)
+    assert client.get("/api/system", headers=mnt).json()["can_pick_folder"] is False
+    refused = client.post("/api/system/pick-folder", headers=mnt, json={})
+    assert refused.status_code == 409 and refused.json()["code"] == "not_available"
+    asked = []
+    monkeypatch.setattr(folder_picker, "available", lambda: True)
+    monkeypatch.setattr(folder_picker, "pick_folder", lambda initial=None: asked.append(initial) or "D:\\Backups")
+    assert client.get("/api/system", headers=mnt).json()["can_pick_folder"] is True
+    assert client.post("/api/system/pick-folder", headers=mnt, json={"initial": "C:\\x"}).json() == {"path": "D:\\Backups"}
+    assert asked == ["C:\\x"]
+
+
 def test_main_refuses_a_bad_config_and_an_open_network_without_passwords(tmp_path, capsys):
     root = tmp_path / "data"
     root.joinpath("system").mkdir(parents=True)

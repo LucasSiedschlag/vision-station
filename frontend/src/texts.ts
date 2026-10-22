@@ -2139,6 +2139,12 @@ export const text = {
     get backupFolderHint() {
       return t`Pasta de rede ou pen drive. Vazio: dentro da pasta de dados.`
     },
+    get chooseFolder() {
+      return t`Escolher pasta…`
+    },
+    get chooseFolderOpen() {
+      return t`A janela de escolher pasta está aberta no PC da estação.`
+    },
     get testFolder() {
       return t`Testar pasta`
     },
@@ -2324,8 +2330,8 @@ export const text = {
     get backupSaved() {
       return t`Pasta de backup salva.`
     },
-    get backupTestFirst() {
-      return t`Teste a pasta antes de salvar: o programa grava e lê um arquivo pequeno nela.`
+    get backupHelp() {
+      return t`Por padrão os backups ficam na pasta de dados do programa. Para proteger contra uma falha do disco, escolha um pen drive ou uma pasta de rede.`
     },
     get createFirst() {
       return t`Crie primeiro a senha do Mantenedor`

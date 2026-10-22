@@ -301,11 +301,21 @@ class SystemOut(BaseModel):
     restart_pending: list[str]  # sections saved but not in effect until the program restarts
     camera_drivers: list[str]
     last_backup_error: str | None = None
+    default_backup_folder: str = ""  # where backups go when no folder is chosen: the screen starts from it
+    can_pick_folder: bool = False  # this PC can open its own folder chooser (Windows, API on this PC)
 
 
 class SystemSaved(BaseModel):
     changed: list[str]
     restart_required: list[str]
+
+
+class FolderPickBody(BaseModel):
+    initial: str | None = None  # the folder the chooser opens on
+
+
+class FolderPickOut(BaseModel):
+    path: str | None  # None: the person cancelled
 
 
 class FolderCheckBody(BaseModel):

@@ -53,12 +53,30 @@ interface DraftState {
 
 const storageKey = (key: string) => `vision-station-draft:${key}`
 
+/** A draft the editor can open: job format 3 with its blocks. One kept by an older version of the editor is not. */
+function usable(draft: Draft | null): draft is Draft {
+  const job = draft?.job
+  return (
+    !!job &&
+    job.format === 3 &&
+    !!job.acquisition &&
+    !!job.geometry?.rois &&
+    Array.isArray(job.tools) &&
+    !!draft.profile
+  )
+}
+
+/** The draft this browser kept for `key`; one that cannot be opened any more is forgotten, never shown as a crash. */
 export function savedDraft(key: string): Draft | null {
+  let draft: Draft | null = null
   try {
-    return JSON.parse(localStorage.getItem(storageKey(key)) ?? 'null') as Draft | null
+    draft = JSON.parse(localStorage.getItem(storageKey(key)) ?? 'null') as Draft | null
   } catch {
     return null
   }
+  if (draft === null || usable(draft)) return draft
+  forgetDraft(key)
+  return null
 }
 
 export function forgetDraft(key: string) {

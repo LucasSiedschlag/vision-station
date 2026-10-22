@@ -110,6 +110,9 @@ export const systemChecks = {
   folder: (path: string) => call(api.POST('/api/system/test-folder', { body: { path } })),
   camera: (camera: SystemConfig['camera']) =>
     call(api.POST('/api/system/test-camera', { body: camera })),
+  /** The PC's own folder chooser, opened on the station PC; `path` is null when the person cancelled. */
+  pickFolder: (initial: string | null) =>
+    call(api.POST('/api/system/pick-folder', { body: { initial } })),
 }
 
 export function useUsers() {

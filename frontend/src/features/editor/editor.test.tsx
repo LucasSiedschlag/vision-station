@@ -1067,6 +1067,24 @@ describe('the job editor', () => {
     expect(localStorage.getItem(`vision-station-draft:${JOB}`)).toBeNull()
   })
 
+  it('a draft left by an older editor is forgotten and the new job opens', async () => {
+    // before job format 3 a job had no acquisition block: opening it used to fail on `acquisition.trigger`
+    localStorage.setItem(
+      'vision-station-draft:new',
+      JSON.stringify({
+        key: 'new',
+        base: null,
+        job: { format: 2, job: { name: 'Antigo' }, tools: [] },
+      }),
+    )
+    renderApp('/jobs/new/edit')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Novo job' })).toBeInTheDocument()
+    expect(screen.queryByText('Rascunho recuperado deste navegador.')).not.toBeInTheDocument()
+    expect(
+      JSON.parse(localStorage.getItem('vision-station-draft:new') ?? 'null')?.job?.format,
+    ).not.toBe(2)
+  })
+
   it('a new job starts from the camera profile and is created on save', async () => {
     let created: any = null
     server.use(

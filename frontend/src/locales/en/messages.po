@@ -247,6 +247,9 @@ msgstr "It was {o}"
 msgid "imagem de referência"
 msgstr "reference image"
 
+msgid "Por padrão os backups ficam na pasta de dados do programa. Para proteger contra uma falha do disco, escolha um pen drive ou uma pasta de rede."
+msgstr "By default backups stay in the program's data folder. To protect against a disk failure, choose a USB drive or a network folder."
+
 msgid "Resultado das {time}"
 msgstr "Result of {time}"
 
@@ -917,9 +920,6 @@ msgstr "Open the Anchor step"
 msgid "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
 msgstr "No regions. A tool can look at the whole image."
 
-msgid "Teste a pasta antes de salvar: o programa grava e lê um arquivo pequeno nela."
-msgstr "Test the folder before saving: the program writes and reads a small file in it."
-
 msgid "à imagem"
 msgstr "to the image"
 
@@ -1444,6 +1444,9 @@ msgstr "anchor"
 
 msgid "Aplicar"
 msgstr "Apply"
+
+msgid "A janela de escolher pasta está aberta no PC da estação."
+msgstr "The folder chooser is open on the station PC."
 
 msgid "Nome da amostra"
 msgstr "Sample name"
@@ -2023,6 +2026,9 @@ msgstr "Fit to window"
 
 msgid "Instalação pronta. A estação já pode trabalhar."
 msgstr "Installation ready. The station can work now."
+
+msgid "Escolher pasta…"
+msgstr "Choose folder…"
 
 msgid "Escolha o tipo"
 msgstr "Choose the type"

@@ -1033,6 +1033,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/system/pick-folder': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Pick Folder
+     * @description Open the PC's own folder chooser and return what was chosen (None if cancelled). Only on the station PC:
+     *     a dialog that opens on a PC nobody is sitting at would hang the request.
+     */
+    post: operations['pick_folder']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/system/test-camera': {
     parameters: {
       query?: never
@@ -1841,6 +1862,16 @@ export interface components {
     FolderCheckBody: {
       /** Path */
       path: string
+    }
+    /** FolderPickBody */
+    FolderPickBody: {
+      /** Initial */
+      initial?: string | null
+    }
+    /** FolderPickOut */
+    FolderPickOut: {
+      /** Path */
+      path: string | null
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -3004,9 +3035,19 @@ export interface components {
     SystemOut: {
       /** Camera Drivers */
       camera_drivers: string[]
+      /**
+       * Can Pick Folder
+       * @default false
+       */
+      can_pick_folder: boolean
       config: components['schemas']['SystemConfig']
       /** Data Root */
       data_root: string
+      /**
+       * Default Backup Folder
+       * @default
+       */
+      default_backup_folder: string
       /** Last Backup Error */
       last_backup_error: string | null
       /** Restart Pending */
@@ -6543,6 +6584,68 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  pick_folder: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FolderPickBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FolderPickOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }

@@ -1,24 +1,24 @@
-import { CheckCircle2, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { describeError } from '@/api/mutations'
-import { systemChecks, useSaveSystem, useSystem } from '@/api/queries/admin'
+import { useSaveSystem, useSystem } from '@/api/queries/admin'
 import type { SetupStep } from '@/api/queries/setup'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
+import { FolderField } from '@/components/domain/FolderField'
 import { Skeleton } from '@/components/ui/feedback'
-import { Input } from '@/components/ui/input'
 import { NumberField } from '@/components/ui/number-field'
-import { cn } from '@/lib/cn'
 import { text } from '@/texts'
 
 const t = text.setup
 const settings = text.settings
 
-type Check = { ok: boolean; message: string } | null
-
-/** The backup folder and how often, tested before it is saved (docs/frontend.md §7.11). The rest of the backup settings stay in Configurações. */
+/**
+ * The backup folder and how often (docs/frontend.md §7.11). The folder starts as the data folder of the program; the
+ * person may choose another with the PC's own chooser, and never has to type or test a path: the server refuses a
+ * folder it cannot write to when it is saved. The rest of the backup settings stay in Configurações.
+ */
 export function BackupStep({ step }: { step: SetupStep }) {
   const system = useSystem()
   if (system.isPending) return <Skeleton className="h-40 w-full" />
@@ -34,6 +34,7 @@ export function BackupStep({ step }: { step: SetupStep }) {
     <BackupForm
       key={`${backup.folder}|${backup.every_hours}`}
       config={system.data.config}
+      fallback={system.data.default_backup_folder}
       done={step.state === 'done'}
     />
   )
@@ -41,29 +42,17 @@ export function BackupStep({ step }: { step: SetupStep }) {
 
 function BackupForm({
   config,
+  fallback,
   done,
 }: {
   config: NonNullable<ReturnType<typeof useSystem>['data']>['config']
+  fallback: string
   done: boolean
 }) {
   const client = useQueryClient()
   const save = useSaveSystem()
-  const [folder, setFolder] = useState(config.backup.folder ?? '')
+  const [folder, setFolder] = useState(config.backup.folder ?? fallback)
   const [every, setEvery] = useState<number | null>(config.backup.every_hours ?? null)
-  const [check, setCheck] = useState<Check>(null)
-  const [testing, setTesting] = useState(false)
-
-  const test = async () => {
-    setTesting(true)
-    try {
-      const out = await systemChecks.folder(folder)
-      setCheck({ ok: out.ok, message: out.message })
-    } catch (error) {
-      setCheck({ ok: false, message: describeError(error) })
-    } finally {
-      setTesting(false)
-    }
-  }
   const submit = () =>
     save.mutate(
       { ...config, backup: { ...config.backup, folder: folder || null, every_hours: every } },
@@ -79,18 +68,12 @@ function BackupForm({
   return (
     <div className="flex flex-col gap-4">
       {done ? <p role="status">{t.backupDone(config.backup.folder ?? '')}</p> : null}
-      <Field label={settings.backupFolder} hint={settings.backupFolderHint}>
-        {(p) => (
-          <Input
-            {...p}
-            value={folder}
-            onChange={(e) => {
-              setFolder(e.target.value)
-              setCheck(null)
-            }}
-          />
-        )}
-      </Field>
+      <FolderField
+        label={settings.backupFolder}
+        hint={t.backupHelp}
+        value={folder}
+        onChange={setFolder}
+      />
       <Field label={settings.every} hint={settings.everyHint}>
         {(p) => (
           <NumberField
@@ -104,35 +87,10 @@ function BackupForm({
         )}
       </Field>
       <div className="flex flex-wrap items-center gap-2">
-        <Button disabled={!folder} loading={testing} onClick={() => void test()}>
-          {settings.testFolder}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={!folder || !check?.ok}
-          loading={save.isPending}
-          onClick={submit}
-        >
+        <Button variant="primary" disabled={!folder} loading={save.isPending} onClick={submit}>
           {t.backupSave}
         </Button>
       </div>
-      {!check?.ok && folder ? <p className="text-xs text-fg-muted">{t.backupTestFirst}</p> : null}
-      {check ? (
-        <p
-          role="status"
-          className={cn(
-            'flex items-center gap-2 text-sm',
-            check.ok ? 'text-ok-text' : 'text-fail-text',
-          )}
-        >
-          {check.ok ? (
-            <CheckCircle2 aria-hidden className="size-4" />
-          ) : (
-            <XCircle aria-hidden className="size-4" />
-          )}
-          {check.message}
-        </p>
-      ) : null}
     </div>
   )
 }

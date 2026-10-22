@@ -452,6 +452,8 @@ describe('the passwords and backup steps', () => {
     restart_pending: [],
     camera_drivers: ['file', 'uvc'],
     last_backup_error: null,
+    default_backup_folder: 'C:/ProgramData/VisionSystem/backups',
+    can_pick_folder: true,
   }
 
   beforeEach(() => {
@@ -525,13 +527,15 @@ describe('the passwords and backup steps', () => {
     ).toHaveAttribute('href', '/access')
   })
 
-  it('tests the backup folder first and saves it with how often', async () => {
+  it('starts from the data folder, lets the PC chooser pick another and saves it with how often', async () => {
     let put: any
+    let asked: any
     server.use(
       http.get('*/api/setup/status', () => HttpResponse.json(status(['backup', 'first_job']))),
-      http.post('*/api/system/test-folder', () =>
-        HttpResponse.json({ ok: true, message: 'Pasta gravável, 120,5 GB livres', free_gb: 120.5 }),
-      ),
+      http.post('*/api/system/pick-folder', async ({ request }) => {
+        asked = await request.json()
+        return HttpResponse.json({ path: 'E:\\Backups' })
+      }),
       http.put('*/api/system', async ({ request }) => {
         put = await request.json()
         return HttpResponse.json({ changed: ['backup'], restart_required: [] })
@@ -539,32 +543,60 @@ describe('the passwords and backup steps', () => {
     )
     renderApp('/setup')
     const user = userEvent.setup()
-    await user.type(await screen.findByLabelText('Pasta de backup'), 'E:/backups')
-    expect(screen.getByRole('button', { name: 'Salvar a pasta de backup' })).toBeDisabled() // not before the test
-    await user.click(screen.getByRole('button', { name: 'Testar pasta' }))
-    expect(await screen.findByText('Pasta gravável, 120,5 GB livres')).toBeInTheDocument()
+    const folder = await screen.findByLabelText('Pasta de backup')
+    expect(folder).toHaveValue('C:/ProgramData/VisionSystem/backups') // nothing to type, nothing to test
+    expect(screen.queryByRole('button', { name: 'Testar pasta' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Escolher pasta…' }))
+    await waitFor(() => expect(folder).toHaveValue('E:\\Backups'))
+    expect(asked).toEqual({ initial: 'C:/ProgramData/VisionSystem/backups' }) // the chooser opens where it is now
     await user.click(screen.getByRole('button', { name: 'Salvar a pasta de backup' }))
-    await waitFor(() => expect(put?.backup.folder).toBe('E:/backups'))
+    await waitFor(() => expect(put?.backup.folder).toBe('E:\\Backups'))
     expect(put.backup.every_hours).toBe(24)
     expect(put.backup.keep).toBe(30) // what the step does not ask goes back as it was
     expect(put.station.name).toBe('Linha 2')
   })
 
-  it('does not let a folder that failed the test be saved', async () => {
+  it('keeps the folder when the chooser is cancelled, and saves the data folder as it is', async () => {
+    let put: any
     server.use(
       http.get('*/api/setup/status', () => HttpResponse.json(status(['backup', 'first_job']))),
-      http.post('*/api/system/test-folder', () =>
-        HttpResponse.json({
-          ok: false,
-          message: 'Não foi possível gravar na pasta: acesso negado',
-        }),
+      http.post('*/api/system/pick-folder', () => HttpResponse.json({ path: null })),
+      http.put('*/api/system', async ({ request }) => {
+        put = await request.json()
+        return HttpResponse.json({ changed: ['backup'], restart_required: [] })
+      }),
+    )
+    renderApp('/setup')
+    const user = userEvent.setup()
+    const folder = await screen.findByLabelText('Pasta de backup')
+    await user.click(screen.getByRole('button', { name: 'Escolher pasta…' }))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Escolher pasta…' })).toBeEnabled(),
+    )
+    expect(folder).toHaveValue('C:/ProgramData/VisionSystem/backups')
+    await user.click(screen.getByRole('button', { name: 'Salvar a pasta de backup' }))
+    await waitFor(() => expect(put?.backup.folder).toBe('C:/ProgramData/VisionSystem/backups'))
+  })
+
+  it('says why a folder was refused, and shows no chooser where the PC cannot open one', async () => {
+    server.use(
+      http.get('*/api/setup/status', () => HttpResponse.json(status(['backup', 'first_job']))),
+      http.get('*/api/system', () => HttpResponse.json({ ...system, can_pick_folder: false })),
+      http.put('*/api/system', () =>
+        HttpResponse.json(
+          {
+            detail: 'Não foi possível gravar na pasta: acesso negado',
+            code: 'folder_not_writable',
+          },
+          { status: 400 },
+        ),
       ),
     )
     renderApp('/setup')
     const user = userEvent.setup()
-    await user.type(await screen.findByLabelText('Pasta de backup'), 'Z:/rede')
-    await user.click(screen.getByRole('button', { name: 'Testar pasta' }))
-    expect(await screen.findByText(/acesso negado/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Salvar a pasta de backup' })).toBeDisabled()
+    await screen.findByLabelText('Pasta de backup')
+    expect(screen.queryByRole('button', { name: 'Escolher pasta…' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Salvar a pasta de backup' }))
+    expect((await screen.findAllByText(/acesso negado/)).length).toBeGreaterThan(0)
   })
 })

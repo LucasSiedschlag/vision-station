@@ -48,6 +48,7 @@ from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import FormatError, JobRef, JobStore, StoreError
 from vision_station.store.archive import FORMAT, kind_of
 from vision_station.system import Maintenance, SystemConfig, SystemService, check_camera, check_folder, dump_config
+from vision_station.system import folder_picker
 from vision_station.system.config import CameraSettings
 from vision_station.tools import tool_types
 from vision_station.verification import VerificationFailed, activate, verify_stored_job
@@ -731,6 +732,8 @@ def create_app(deps: ApiDeps) -> FastAPI:
             restart_pending=svc.restart_pending,
             camera_drivers=sorted(DRIVERS),
             last_backup_error=getattr(deps.maintenance, "last_backup_error", None),
+            default_backup_folder=str(svc.root / "backups"),
+            can_pick_folder=folder_picker.available() and svc.started_with.network.local_only,
         )
 
     @api.get("/system", response_model=m.SystemOut, responses={503: {"model": m.Problem}})
@@ -744,10 +747,22 @@ def create_app(deps: ApiDeps) -> FastAPI:
         svc = system()
         if not body.network.local_only and not (deps.auth.has_password("supervisor") or deps.auth.has_password("maintainer")):
             raise Problem(400, "Para abrir a API na rede é preciso ter senha de Supervisor ou Mantenedor", "password_required")
+        if body.backup.folder and body.backup.folder != svc.config.backup.folder:  # a folder that cannot be written is refused here, with its reason
+            report = check_folder(body.backup.folder)
+            if not report.ok:
+                raise Problem(400, render(report.message), "folder_not_writable")
         changed = svc.update(body)
         if changed:
             deps.jobs.audit("settings", by=current, changed=changed)
         return m.SystemSaved(changed=changed, restart_required=[s for s in changed if s in svc.restart_pending])
+
+    @api.post("/system/pick-folder", response_model=m.FolderPickOut, responses={403: {"model": m.Problem}, 409: {"model": m.Problem}})
+    def pick_folder(body: m.FolderPickBody, _: str = Depends(need("maintainer"))) -> m.FolderPickOut:
+        """Open the PC's own folder chooser and return what was chosen (None if cancelled). Only on the station PC:
+        a dialog that opens on a PC nobody is sitting at would hang the request."""
+        if not (folder_picker.available() and system().started_with.network.local_only):
+            raise Problem(409, tr("Este PC não consegue abrir a janela de escolher pasta"), "not_available")
+        return m.FolderPickOut(path=folder_picker.pick_folder(body.initial))
 
     @api.post("/system/test-folder", response_model=m.CheckOut)
     def test_folder(body: m.FolderCheckBody, _: str = Depends(need("maintainer"))) -> m.CheckOut:

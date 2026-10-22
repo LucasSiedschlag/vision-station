@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
 import { describeError } from '@/api/mutations'
+import { FolderField } from '@/components/domain/FolderField'
 import {
   systemChecks,
   useSaveSystem,
@@ -288,15 +289,11 @@ function SettingsForm({ system }: { system: SystemOut }) {
           </>
         ) : config.camera.driver === 'file' ? (
           <>
-            <Field label={t.folder}>
-              {(p) => (
-                <Input
-                  {...p}
-                  value={String(conn.path ?? '')}
-                  onChange={(e) => setConn('path', e.target.value)}
-                />
-              )}
-            </Field>
+            <FolderField
+              label={t.folder}
+              value={String(conn.path ?? '')}
+              onChange={(path) => setConn('path', path)}
+            />
             <Switch
               checked={Boolean(conn.loop)}
               onCheckedChange={(c) => setConn('loop', c || null)}
@@ -407,15 +404,12 @@ function SettingsForm({ system }: { system: SystemOut }) {
       </Section>
 
       <Section title={t.backup}>
-        <Field label={t.backupFolder} hint={t.backupFolderHint}>
-          {(p) => (
-            <Input
-              {...p}
-              value={config.backup.folder ?? ''}
-              onChange={(e) => set('backup', { folder: e.target.value || null })}
-            />
-          )}
-        </Field>
+        <FolderField
+          label={t.backupFolder}
+          hint={t.backupFolderHint}
+          value={config.backup.folder ?? ''}
+          onChange={(path) => set('backup', { folder: path || null })}
+        />
         <Button
           disabled={!config.backup.folder}
           loading={busy === 'folder'}

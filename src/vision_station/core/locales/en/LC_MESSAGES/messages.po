@@ -271,6 +271,9 @@ msgstr "This role has no password"
 msgid "Esse resultado não existe"
 msgstr "This result does not exist"
 
+msgid "Este PC não consegue abrir a janela de escolher pasta"
+msgstr "This PC cannot open the folder chooser"
+
 msgid "Este perfil não tem permissão para isso"
 msgstr "This role is not allowed to do that"
 

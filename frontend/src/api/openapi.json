@@ -1408,6 +1408,41 @@
         "title": "FolderCheckBody",
         "type": "object"
       },
+      "FolderPickBody": {
+        "properties": {
+          "initial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial"
+          }
+        },
+        "title": "FolderPickBody",
+        "type": "object"
+      },
+      "FolderPickOut": {
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          }
+        },
+        "required": ["path"],
+        "title": "FolderPickOut",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -3969,11 +4004,21 @@
             "title": "Camera Drivers",
             "type": "array"
           },
+          "can_pick_folder": {
+            "default": false,
+            "title": "Can Pick Folder",
+            "type": "boolean"
+          },
           "config": {
             "$ref": "#/components/schemas/SystemConfig"
           },
           "data_root": {
             "title": "Data Root",
+            "type": "string"
+          },
+          "default_backup_folder": {
+            "default": "",
+            "title": "Default Backup Folder",
             "type": "string"
           },
           "last_backup_error": {
@@ -4000,7 +4045,9 @@
           "data_root",
           "restart_pending",
           "camera_drivers",
-          "last_backup_error"
+          "last_backup_error",
+          "default_backup_folder",
+          "can_pick_folder"
         ],
         "title": "SystemOut",
         "type": "object"
@@ -9403,6 +9450,93 @@
           }
         },
         "summary": "Put System"
+      }
+    },
+    "/api/system/pick-folder": {
+      "post": {
+        "description": "Open the PC's own folder chooser and return what was chosen (None if cancelled). Only on the station PC:\na dialog that opens on a PC nobody is sitting at would hang the request.",
+        "operationId": "pick_folder",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderPickBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderPickOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pick Folder"
       }
     },
     "/api/system/test-camera": {

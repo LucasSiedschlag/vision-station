@@ -1,4 +1,3 @@
-import os from 'node:os'
 import { accessibilityProblems, expect, test, watchTheBrowser } from './fixtures'
 
 // The commissioning wizard (docs/frontend.md §7.11) on a clean installation: no passwords, no job, a camera that sends
@@ -48,10 +47,9 @@ test('from a clean installation to the first job, without ever logging in first'
   await page.getByLabel('Repita a senha').fill('supervisor-pass')
   await page.getByRole('button', { name: 'Definir a senha do Supervisor' }).click()
 
-  // backup: the folder is tested before it can be saved
+  // backup: the data folder is already filled in, so there is nothing to type and nothing to test
   await expect(page.getByRole('heading', { name: 'Backup' })).toBeVisible()
-  await page.getByLabel('Pasta de backup').fill(os.tmpdir())
-  await page.getByRole('button', { name: 'Testar pasta' }).click()
+  await expect(page.getByLabel('Pasta de backup')).not.toHaveValue('')
   await page.getByRole('button', { name: 'Salvar a pasta de backup' }).click()
 
   // the first job, made in the editor; the step comes first, the later phases stay readable and unavailable
