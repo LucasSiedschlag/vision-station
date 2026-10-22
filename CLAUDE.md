@@ -67,3 +67,17 @@ Python 3.12 · OpenCV headless + NumPy · duvc-ctl + DirectShow/MJPG (C920) · `
 - Interface text is **Portuguese and English** (TD-30): Lingui catalogs in `frontend/` (source pt-BR), PO catalogs on the server; the operator screen uses the station language. Jobs supply their own texts in both languages (format 2). Docs, code and identifiers are English.
 - Reference requirement/decision IDs in code comments and commits (`TD-04`, `FR-ACQ-4`).
 - Project values (time to result, accuracy, retention…) are configuration, never constants in code (document 02 §7).
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`gh` CLI); PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the root, created lazily when terms or decisions are settled. See `docs/agents/domain.md`.
