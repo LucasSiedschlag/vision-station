@@ -213,7 +213,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-PLT-1 | **(changed 0.3)** The system shall offer inspection tools by type, each with its own parameters and a user-drawn region. Today: `color`, `pattern`, `code`, `detect`. Minimum set (tier 1, FR-PLT-9) adds `brightness`, `blob`, `edge`, `pattern` v2 and `compare`. | M (`color`, `pattern`, `code`), S (`detect`) |
+| FR-PLT-1 | **(changed 0.3)** The system shall offer inspection tools by type, each with its own parameters and a user-drawn region. Today: `color`, `pattern` (v1 and v2), `code`, `detect`, `brightness`, `blob`, `edge`, `compare` (VIA-0075). Minimum set (tier 1, FR-PLT-9) adds `brightness`, `blob`, `edge`, `pattern` v2 and `compare`. | M (`color`, `pattern`, `code`), S (`detect`) |
 | FR-PLT-2 | A new tool type shall be added without changing the job manager, the station controller, the API or the screen. | M |
 | FR-PLT-3 | **(changed 0.7)** A job shall choose its trigger type in its acquisition block (`acquisition.trigger.type`): `image_presence`, `manual`, `external` or `continuous`. The parameters of each type are written next to it (FR-TRG-1, -5, -6, -7, -8). Which line or protocol delivers an `external` trigger is not in the job: it is station configuration (FR-INT-6, FR-INT-17). | M (`continuous` built when a project needs it) |
 | FR-PLT-4 | A job shall work without a locator, with regions relative to the frame. | M |
@@ -741,7 +741,7 @@ Each project that uses the platform sets these for its jobs and its own acceptan
 | Acknowledge mode and result-buffer depth | FR-INT-9 | acknowledge, 8 |
 | Heartbeat period / timeout | NFR-REL-8 | 500 ms / 1.5 s |
 | Benchmark: PC is tier R / tier M when the tools' sum at 1 MP is at most | FR-ADM-5, TD-28 | 120 ms / 400 ms (proposed until B-1) |
-| Benchmark: budget of a tool at 1 MP, tier M / tier R | FR-ADM-5, V8 | `blob` tool 60 / 25 ms, `brightness` 30 / 12 ms, `color` 60 / 25 ms, `edge` 30 / 12 ms, `pattern` 120 / 50 ms (v1 and v2), `code` 250 / 100 ms; locators `edges` 30 / 12 ms, `shape` 120 / 50 ms, `template` 120 / 50 ms, `blob` 60 / 25 ms (proposed until B-1) |
+| Benchmark: budget of a tool at 1 MP, tier M / tier R | FR-ADM-5, V8 | `blob` tool 60 / 25 ms, `brightness` 30 / 12 ms, `color` 60 / 25 ms, `compare` 60 / 25 ms, `edge` 30 / 12 ms, `pattern` 120 / 50 ms (v1 and v2), `code` 250 / 100 ms; locators `edges` 30 / 12 ms, `shape` 120 / 50 ms, `template` 120 / 50 ms, `blob` 60 / 25 ms (proposed until B-1) |
 | Benchmark: thread cap, tier M / tier R | FR-ADM-5 | 2 / 4 |
 | Benchmark: sizes and repeats | FR-ADM-5, V8 | 0.25, 1 and 4 MP; median of 5 runs |
 | Job numbers and products | FR-INT-8 | none |

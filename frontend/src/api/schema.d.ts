@@ -1501,24 +1501,34 @@ export interface components {
        *       "M": {
        *         "locator:blob:1": 60,
        *         "locator:blob:2": 60,
+       *         "locator:edges:1": 30,
        *         "locator:fixed:1": 1,
+       *         "locator:shape:1": 120,
        *         "locator:template:1": 120,
        *         "tool:blob:1": 60,
        *         "tool:brightness:1": 30,
        *         "tool:code:1": 250,
        *         "tool:color:1": 60,
-       *         "tool:pattern:1": 120
+       *         "tool:compare:1": 60,
+       *         "tool:edge:1": 30,
+       *         "tool:pattern:1": 120,
+       *         "tool:pattern:2": 120
        *       },
        *       "R": {
        *         "locator:blob:1": 25,
        *         "locator:blob:2": 25,
+       *         "locator:edges:1": 12,
        *         "locator:fixed:1": 1,
+       *         "locator:shape:1": 50,
        *         "locator:template:1": 50,
        *         "tool:blob:1": 25,
        *         "tool:brightness:1": 12,
        *         "tool:code:1": 100,
        *         "tool:color:1": 25,
-       *         "tool:pattern:1": 50
+       *         "tool:compare:1": 25,
+       *         "tool:edge:1": 12,
+       *         "tool:pattern:1": 50,
+       *         "tool:pattern:2": 50
        *       }
        *     }
        */
@@ -3193,24 +3203,34 @@ export interface components {
        *         "M": {
        *           "locator:blob:1": 60,
        *           "locator:blob:2": 60,
+       *           "locator:edges:1": 30,
        *           "locator:fixed:1": 1,
+       *           "locator:shape:1": 120,
        *           "locator:template:1": 120,
        *           "tool:blob:1": 60,
        *           "tool:brightness:1": 30,
        *           "tool:code:1": 250,
        *           "tool:color:1": 60,
-       *           "tool:pattern:1": 120
+       *           "tool:compare:1": 60,
+       *           "tool:edge:1": 30,
+       *           "tool:pattern:1": 120,
+       *           "tool:pattern:2": 120
        *         },
        *         "R": {
        *           "locator:blob:1": 25,
        *           "locator:blob:2": 25,
+       *           "locator:edges:1": 12,
        *           "locator:fixed:1": 1,
+       *           "locator:shape:1": 50,
        *           "locator:template:1": 50,
        *           "tool:blob:1": 25,
        *           "tool:brightness:1": 12,
        *           "tool:code:1": 100,
        *           "tool:color:1": 25,
-       *           "tool:pattern:1": 50
+       *           "tool:compare:1": 25,
+       *           "tool:edge:1": 12,
+       *           "tool:pattern:1": 50,
+       *           "tool:pattern:2": 50
        *         }
        *       },
        *       "megapixels": [

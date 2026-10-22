@@ -94,6 +94,19 @@ def _pattern_v2(mp: float) -> Workload:
     return Workload(image, {"template": "t.png", "angles": [-20, 20], "scales": [0.9, 1.1]}, _template_of(image))
 
 
+def _compare(mp: float) -> Workload:
+    """A textured region and a model taught from five noisy copies of it, shifted by a pixel: the model is built here, not timed."""
+    from vision_station.algorithms.variation import teach
+
+    base = _textured(mp)
+    rng = np.random.default_rng(7)
+    good = []
+    for i in range(5):
+        shifted = np.roll(base, (i % 2, i // 2 % 2), axis=(0, 1))
+        good.append(np.clip(shifted.astype(np.float32) + rng.normal(0, 2, base.shape), 0, 255).astype(np.uint8))
+    return Workload(base, {"model": "models/m.var", "max_area": float(base.shape[0] * base.shape[1])}, {"models/m.var": teach(good)})
+
+
 def _pattern(mp: float) -> Workload:
     image = _textured(mp)
     return Workload(image, {"template": "t.png", "min_score": 0.7}, _template_of(image))
@@ -143,6 +156,7 @@ WORKLOADS: dict[str, Callable[[float], Workload]] = {
     key("tool", "blob", 1): _blob_tool,
     key("tool", "brightness", 1): _brightness,
     key("tool", "color", 1): _color,
+    key("tool", "compare", 1): _compare,
     key("tool", "edge", 1): _edge,
     key("tool", "pattern", 1): _pattern,
     key("tool", "pattern", 2): _pattern_v2,

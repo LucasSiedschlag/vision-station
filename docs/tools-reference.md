@@ -9,6 +9,8 @@ How to read a section:
 - **Reason codes.** `<tool>.<criterion>`, the same list as architecture §10.3; a failing tool names the criteria that failed.
 - **Marks.** What the tool draws over the picture (the *Medições* layer, VIA-0124), or why it draws nothing.
 
+Index: [`brightness`](#brightness), [`blob`](#blob), [`edge`](#edge), [`pattern`](#pattern), [`compare`](#compare), [`color`](#color), [`code`](#code), [`detect`](#detect). The locators (`fixed`, `template`, `blob`, `edges`, `shape`) are described in `docs/architecture.md` §14.
+
 ## `brightness`
 
 **Measures.** The gray level of the region, 0 (black) to 255 (white): the mean, the standard deviation, the minimum and the maximum, and the share of pixels above and below a level.
@@ -137,3 +139,122 @@ Two versions are saved in jobs: **v1**, which correlates gray levels (a pattern 
 - `Trecho sem marca de {gap:.0%} da emenda (máximo {max_gap:.0%})`
 
 **Benchmark.** v1 and v2: 120 ms (tier M) and 50 ms (tier R) at 1 MP, proposed until B-1.
+
+## `compare`
+
+**Measures.** Where the part differs from what good parts look like. The tool is taught with pictures of good parts (**15 or more are advised**, 3 are the least): the mean and the standard deviation of every pixel of the region, kept in a file of the job (`models/<name>.var`). Each part is then moved to the model (registration by phase correlation, up to `max_shift_px`, default 6), its light divided by one gain per channel, and a pixel is a **defect** when it differs from the mean by more than `max(abs_threshold, k * sigma + edge_px * the change to its neighbours)` (defaults 15 gray levels, 3 deviations, 1 px). The defects are the connected parts of those pixels, cleaned (`clean_px`, default 0) and with the ones smaller than `filter_min` (default 10 px²) dropped. It reports the **count**, the **total area** and the **largest area**, in pixels of the region and, in a calibrated job, in square millimetres.
+
+**Use it to** find what you cannot name beforehand: a scratch, a stain, a missing or extra piece, a print that is off, on a part that is always the same. For a defect you can describe, `blob`, `color` or `brightness` is simpler and needs no teaching.
+
+**Teaching.** `scripts/teach_compare.py JOB.vjob TOOL_ID FOLDER --out m.var` takes frames of good parts, locates the fixtures of the job and cuts the region of the tool upright as an inspection does, lists every picture it could not use with the reason, and writes the model, the file `models/<name>.var` that the `model` parameter of the tool names. **There is no screen to add that file to a job yet**: the upload of the editor takes the model of a `detect` tool only. Teaching from the station, which writes the model into the job, is VIA-0126. With fewer than about 15 pictures the floors (`abs_threshold` and the allowance at edges) hold the tolerance, not what the good parts showed. The file holds the mean and deviation as 16-bit floats and the SHA-256 of them; a damaged file is refused, it never gives a wrong answer.
+
+**Criteria** (give at least one):
+
+| Parameter | Reason code | Fails when |
+|---|---|---|
+| `max_count` | `compare.max_count` | more defects than this |
+| `max_area` (px²) | `compare.max_area` | the total area of the defects that count is above this (0: not one pixel) |
+| `max_largest` (px²) | `compare.max_largest` | the largest defect is above this |
+| `max_area_mm2`, `max_largest_mm2` | `compare.max_area_mm2`, `compare.max_largest_mm2` | the same, in mm² (calibrated job) |
+
+**Fields.** `{count}`, `{area}`, `{largest}` (pixels of the region), `{area_mm2}` and `{largest_mm2}` (calibrated job only), `{gain}` (the gain of the light, 1 is as taught), the limits `{max_count}`, `{max_area}`, `{max_largest}`, `{max_area_mm2}`, `{max_largest_mm2}` and the filter `{filter_min}`.
+
+**Limits.**
+
+- Registration corrects a **shift**, not a rotation or a change of size: the fixture does that, so the part needs a locator (`shape`, `edges`, `blob` v2) when it can arrive turned. A region cut from a fixture of another scale is resized to the taught size, up to a quarter; beyond that the tool is refused (the pipeline already makes a pose out of the range of the fixture an error).
+- The light is corrected by a **gain** between 0.8 and 1.25, with no offset. A part 15 % darker is the same part; one 40 % darker is not, and what the gain cannot take is shown as defects. Weaker light needs a new teaching.
+- A pixel on an edge of the part is allowed to be a pixel off; a defect that only changes pixels on an edge, by less than that, is not seen.
+- The comparison is made on 8 bits and on the picture reduced to 256 pixels for registration and the gain; a model of a megapixel in colour is about 6 MB in the job (the gray one a third).
+- An empty region, a region of another size than the model, a model that is missing or damaged, is an error (E302), never a pass.
+
+**Marks.** The outline of each defect that counts, the largest first (at most 64): `defect` when a limit failed, `found` when the defects are within the limits.
+
+**Examples of `reason_fail`.**
+
+- `Mancha na peça: {count} defeito(s), {area:.0f} px²`
+- `Defeito de {largest_mm2:.1f} mm² (máximo {max_largest_mm2:.1f})`
+- `Luz fora do ensinado (ganho {gain:.2f})`
+
+**Benchmark.** 60 ms (tier M) and 25 ms (tier R) at 1 MP, proposed until B-1; measured next to `color` it costs 1.3 to 1.8 times as much (about 13 ms at 1 MP in colour on a PC of tier R).
+
+## `color`
+
+**Measures.** How much of the region has a colour, and, along an axis, how much of its length. The colour is a range in HSV (`hue`, with `lo > hi` wrapping through red, and limits of saturation `s_min`, `s_max` and value `v_min`, `v_max`; a hue range needs a saturation floor, since grays and whites have hue 0, which is red) or a reference colour and a distance (`mode: reference`, ΔE in CIELAB). It reports `fraction`, the share of the pixels in the colour, and with `axis` (`x` or `y`, the region being a strip) a column or row counts as covered when at least `line_min` (default 30 %) of it has the colour, giving `coverage` of the length and `gap`, the longest stretch uncovered, ends included.
+
+**Use it to** confirm a coloured part is there (a cap, a tape), that a colour is *not* there (no red where there should be none), or that a band runs the whole length of a seam. For a count or the size of coloured parts, `blob` with a colour range; for a gray level, `brightness`.
+
+**Criteria** (give at least one):
+
+| Parameter | Reason code | Fails when |
+|---|---|---|
+| `min_fraction` | `color.min_fraction` | the share of the region in the colour is below it |
+| `max_fraction` | `color.max_fraction` | it is above it (the prohibit form) |
+| `axis` with `min_coverage` | `color.min_coverage` | the covered share of the length is below it |
+| `axis` with `max_gap` | `color.max_gap` | the longest uncovered stretch is longer than it |
+
+**Fields.** `{fraction}`, `{coverage}`, `{missing}` (1 - coverage), `{gap}`, the limits `{min_fraction}`, `{max_fraction}`, `{min_coverage}`, `{max_gap}`; fractions format with `:.0%`.
+
+**Limits.** The colour depends on the light: the job's exposure and white balance are fixed for this, and the supervisor's fine-tune moves the limits, never the range. Two colours with the same hue and different value need the value limits. An empty region gives a fraction of 0.
+
+**Marks.** The outline of each part of the region in the colour, the largest first (at most 16), simplified to at most 64 points: `found`, or `defect` when `max_fraction` failed. A region that fails by not having the colour has no outline to draw.
+
+**Examples of `reason_fail`.**
+
+- `Tampa ausente ({fraction:.0%} azul, mínimo {min_fraction:.0%})`
+- `Fita interrompida: trecho sem a cor de {gap:.0%} (máximo {max_gap:.0%})`
+- `Cor indevida na região ({fraction:.0%})`
+
+**Benchmark.** 60 ms (tier M) and 25 ms (tier R) at 1 MP, proposed until B-1; about 10 ms at 1 MP on a PC of tier R.
+
+## `code`
+
+**Measures.** The 1D bar codes and 2D codes (QR, Data Matrix, Code 128, EAN...) the region holds, read by zxing-cpp (Apache 2.0). It reports `found` (codes read), `matching` (the ones accepted: any, or those with the exact text `expect` or fully matching the regular expression `pattern`), their `texts`, and the position of each.
+
+**Use it to** read a lot code and compare it with the expected one, or to confirm a label is on the part. Grading the print quality (ISO 15415/15416) is out of scope.
+
+**Criteria.**
+
+| Parameter | Reason code | Fails when |
+|---|---|---|
+| `min_count` (default 1) | `code.min_count` | fewer codes are accepted than this |
+| `max_count` | `code.max_count` | more are accepted than this (a label stuck twice) |
+
+**Fields.** `{found}`, `{matching}`, `{min_count}`, `{expected}` (the `expect` text or the `pattern`), `{texts}` (the texts read, joined by ", ").
+
+**Limits.** `formats` (empty: every format) narrows what is tried and speeds it up; `try_rotate`, `try_downscale` and `try_invert` (light code on a dark background) widen it at a cost in time. A code partly outside the region is not read. An empty region reads nothing.
+
+**Marks.** The outline of each code read and its text, `found` when accepted and `defect` when read but not accepted (a wrong lot). A region where nothing is read has nothing to draw.
+
+**Examples of `reason_fail`.**
+
+- `Código não lido`
+- `Lote errado: lido "{texts}", esperado "{expected}"`
+- `Etiqueta duplicada: {matching} códigos`
+
+**Benchmark.** 250 ms (tier M) and 100 ms (tier R) at 1 MP, proposed until B-1.
+
+## `detect`
+
+**Measures.** What a model trained outside the station says about the region (ONNX Runtime on the CPU; the model and its card are files of the job, `models/<name>.onnx` and `models/<name>.card.yaml`, whose SHA-256 is checked; training stays out of the install, see `docs/models.md`). The card says the task:
+
+- **classifier**: the top class and its confidence. Fails when the class is in `fail_classes`, or not in `pass_classes` (when given), or the confidence is below `min_confidence` (unsure is a failure).
+- **detector**: boxes with a class and a confidence. Fails when any box has a class in `fail_classes`, when a class of `require_classes` has no box, or when the boxes of `count_class` are fewer than `min_count` or more than `max_count`.
+- **anomaly**: a score. Fails when it is above `threshold` (the tool's, else the card's).
+
+**Use it to** judge what cannot be said with a measure: a defect class, the right variant of a part, or a part that does not look normal. Without a trained model, `compare` finds differences from good parts with no training stack.
+
+**Criteria and reason codes.** `detect.class`, `detect.min_confidence` (classifier); `detect.fail_class`, `detect.require_classes`, `detect.min_count`, `detect.max_count` (detector); `detect.max_score` (anomaly).
+
+**Fields.** `{label}`, `{confidence}` (classifier), `{classes}` (the classes found, joined by ", "), `{count}` (of the counted class), `{score}`, `{threshold}` (anomaly).
+
+**Limits.** A model that is not the one of its card (the hash differs), a card with problems, an output that is not a number or is empty, or a number of classes different from the card's, is an error (E302), never a pass. The time is the model's, stated in its card; there is no benchmark workload for it (VIA-0112). Only the exports the runtime reads are accepted (`docs/models.md`).
+
+**Marks.** A detector: the box of each detection with its label and confidence, `defect` for a class in `fail_classes`. A classifier: the label and confidence at the corner of the region, `defect` when it fails. An anomaly above the limit: the whole region.
+
+**Examples of `reason_fail`.**
+
+- `Peça com risco ({confidence:.0%})`
+- `Falta a tampa (classes vistas: {classes})`
+- `Anomalia {score:.2f} acima de {threshold}`
+
+**Benchmark.** Not timed: the latency is the model's (VIA-0112).

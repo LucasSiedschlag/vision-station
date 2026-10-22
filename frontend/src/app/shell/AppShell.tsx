@@ -236,7 +236,13 @@ export function AppShell() {
               {text.live.offlineBanner}
             </p>
           ) : null}
-          <div id="content" tabIndex={-1} className="min-h-0 flex-1 overflow-auto outline-none">
+          <div
+            id="content"
+            // a region that scrolls must be reached by keyboard (WCAG 2.1.1, axe scrollable-region-focusable); the focus outline is the global one
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+            tabIndex={0}
+            className="min-h-0 flex-1 overflow-auto focus-visible:-outline-offset-2"
+          >
             <Outlet />
           </div>
           <footer className="border-t border-line bg-surface-1 px-4 py-1">

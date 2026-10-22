@@ -193,6 +193,8 @@ date: 2026-10-22                      # when it was made
 residual_mm: 0.04                     # optional: the worst miss of the known dimensions used (>= 0)
 ```
 
+A `compare` tool names its taught model, `models/<name>.var`, by its `model` parameter (VIA-0075 CP1): a file of the job like a model of `detect`, data and never code. It holds a header (JSON: format, width, height, channels, number of pictures, SHA-256 of the data), then the mean and the standard deviation of every pixel as 16-bit floats, compressed; the same pictures give the same bytes. The SHA-256 is checked when the model is read and a damaged file is refused; it is made by `vision_station.algorithms.variation.teach` (the script `scripts/teach_compare.py`).
+
 A tool parameter whose schema unit is `mm` or `mm2` and that has a value needs this file: the job is refused when it is loaded, and also at verification, which loads the same way. The scale is the same whatever the scale of a fixture, because a region is cut in the pixels of the frame.
 
 `camera/profile.yaml` in format 3 adds (the other settings are those of section 4):

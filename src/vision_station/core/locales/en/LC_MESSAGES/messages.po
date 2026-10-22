@@ -136,6 +136,9 @@ msgstr "Finds a taught picture of the object (or of a mark on it) in the image."
 msgid "Acha o objeto pelo contorno ensinado, girado e em outro tamanho; a âncora tem a posição, o ângulo e o tamanho dele."
 msgstr "Finds the object by its taught outline, turned and in another size; the anchor has its position, angle and size."
 
+msgid "Acha onde a peça é diferente do que as peças boas ensinadas mostraram."
+msgstr "Finds where the part differs from what the taught good parts showed."
+
 msgid "Aguardando objeto"
 msgstr "Waiting for a part"
 
@@ -153,6 +156,9 @@ msgstr "Anomaly"
 
 msgid "Arquivo .onnx dentro do job (treinado fora da estação)"
 msgstr ".onnx file inside the job (trained outside the station)"
+
+msgid "Arquivo .var dentro do job, ensinado com peças boas"
+msgstr "A .var file inside the job, taught with good parts"
 
 msgid "Arquivo grande demais"
 msgstr "File too large"
@@ -275,6 +281,9 @@ msgstr "Reference colour out of limit, check the lighting"
 msgid "Cor do objeto"
 msgstr "Object colour"
 
+msgid "Corrigir a luz"
+msgstr "Correct the light"
+
 msgid "Câmera desconectada"
 msgstr "Camera disconnected"
 
@@ -300,11 +309,29 @@ msgstr "Codes accepted to pass"
 msgid "Dados inválidos"
 msgstr "Invalid data"
 
+msgid "Defeito (mm²) maior que o máximo"
+msgstr "Defect (mm²) larger than the maximum"
+
+msgid "Defeito maior que o máximo"
+msgstr "Defect larger than the maximum"
+
+msgid "Defeitos"
+msgstr "Defects"
+
+msgid "Defeitos menores que isso são ignorados"
+msgstr "Defects smaller than this are ignored"
+
+msgid "Deslocamento máximo (px)"
+msgstr "Maximum shift (px)"
+
 msgid "Desvio padrão do brilho: baixo é uniforme, alto tem mancha ou degradê"
 msgstr "Standard deviation of the brightness: low is even, high has a stain or a gradient"
 
 msgid "Detecção de uma classe que reprova"
 msgstr "Detection of a class that fails"
+
+msgid "Diferença mínima"
+msgstr "Minimum difference"
 
 msgid "Diga o que foi ajustado e por quê"
 msgstr "Say what was adjusted and why"
@@ -344,6 +371,9 @@ msgstr "Minimum distance (mm)"
 
 msgid "Distância mínima (px)"
 msgstr "Minimum distance (px)"
+
+msgid "Divide a imagem por um ganho, para uma luz 15% mais fraca ou forte não ser defeito"
+msgstr "Divides the picture by a gain, so light 15% weaker or stronger is not a defect"
 
 msgid "Diâmetro: fração do alcance (do centro à borda da região) onde a busca começa"
 msgstr "Diameter: the fraction of the reach (from the centre to the edge of the region) where the search starts"
@@ -442,6 +472,9 @@ msgstr "Tool cannot run"
 
 msgid "Fim da busca"
 msgstr "End of the search"
+
+msgid "Folga nas bordas (px)"
+msgstr "Allowance at edges (px)"
 
 msgid "Formatos"
 msgstr "Formats"
@@ -550,6 +583,18 @@ msgstr "Locator cannot run: {exc}"
 msgid "Lê códigos de barras (1D) e códigos 2D (QR, Data Matrix...) numa região."
 msgstr "Reads bar codes (1D) and 2D codes (QR, Data Matrix...) in a region."
 
+msgid "Maior defeito"
+msgstr "Largest defect"
+
+msgid "Maior defeito (mm²)"
+msgstr "Largest defect (mm²)"
+
+msgid "Maior defeito, no máximo (mm²)"
+msgstr "Largest defect, at most (mm²)"
+
+msgid "Maior defeito, no máximo (px²)"
+msgstr "Largest defect, at most (px²)"
+
 msgid "Maior intervalo (passo)"
 msgstr "Largest gap (pitch)"
 
@@ -588,6 +633,9 @@ msgstr "More edges than the maximum"
 
 msgid "Mais códigos aceitos que o máximo"
 msgstr "More codes accepted than the maximum"
+
+msgid "Mais defeitos que o máximo"
+msgstr "More defects than the maximum"
 
 msgid "Mais detecções da classe contada que o máximo"
 msgstr "More detections of the counted class than the maximum"
@@ -631,6 +679,9 @@ msgstr "Measure"
 msgid "Medir ao longo de"
 msgstr "Measure along"
 
+msgid "Menor defeito que conta (px²)"
+msgstr "Smallest defect that counts (px²)"
+
 msgid "Menor intervalo (passo)"
 msgstr "Smallest gap (pitch)"
 
@@ -657,6 +708,9 @@ msgstr "Fewer occurrences of the pattern than the minimum"
 
 msgid "Modelo"
 msgstr "Model"
+
+msgid "Modelo ensinado"
+msgstr "Taught model"
 
 msgid "Modo"
 msgstr "Mode"
@@ -685,6 +739,9 @@ msgstr "Maximum number of edges"
 
 msgid "Máximo de códigos"
 msgstr "Maximum codes"
+
+msgid "Máximo de defeitos"
+msgstr "Maximum number of defects"
 
 msgid "Máximo de manchas"
 msgstr "Maximum number of blobs"
@@ -757,6 +814,9 @@ msgstr "There are no samples to validate: capture Good and Bad samples"
 
 msgid "Não há imagens coletadas para exportar"
 msgstr "There are no collected images to export"
+
+msgid "Níveis de cinza; abaixo disso nunca é defeito"
+msgstr "Gray levels; under this it is never a defect"
 
 msgid "Nível de comparação"
 msgstr "Comparison level"
@@ -934,11 +994,23 @@ msgstr "How many slices each give one point of the edge"
 msgid "Quantas precisam existir"
 msgstr "How many there must be"
 
+msgid "Quantas vezes o desvio das peças boas um pixel pode variar"
+msgstr "How many times the deviation of the good parts a pixel may vary"
+
 msgid "Quanto a cor pode diferir da referência; 10 a 30 é comum"
 msgstr "How much the colour may differ from the reference; 10 to 30 is common"
 
+msgid "Quanto a peça é movida para se alinhar ao modelo"
+msgstr "How far the part is moved to line up with the model"
+
 msgid "Quanto o perfil é suavizado antes de achar as bordas; pelo menos 0,5"
 msgstr "How much the profile is smoothed before the edges are found; at least 0.5"
+
+msgid "Quanto uma borda pode estar fora do lugar sem ser defeito"
+msgstr "How far out of place an edge may be without being a defect"
+
+msgid "Quantos desvios"
+msgstr "How many deviations"
 
 msgid "Raios"
 msgstr "Rays"
@@ -956,6 +1028,9 @@ msgstr "Region outside the image"
 
 msgid "Regiões maiores são reduzidas para comparar mais rápido"
 msgstr "Larger regions are scaled down to compare faster"
+
+msgid "Remove pontinhos de defeito; 0: mede a máscara como ela é"
+msgstr "Removes specks of defect; 0: measures the mask as it is"
 
 msgid "Remove pontinhos e fecha furos pequenos"
 msgstr "Removes specks and closes small holes"
@@ -990,6 +1065,9 @@ msgstr "Password not accepted: {why}"
 
 msgid "Soma das manchas que contam"
 msgstr "Sum of the blobs that count"
+
+msgid "Soma dos defeitos que contam; 0: nenhum pixel de defeito"
+msgstr "Sum of the defects that count; 0: no pixel of defect"
 
 msgid "Suavização (px)"
 msgstr "Smoothing (px)"
@@ -1038,6 +1116,9 @@ msgstr "A file of the job cannot change in a fine-tune"
 
 msgid "Um código só conta se tiver exatamente este texto"
 msgstr "A code only counts if it has exactly this text"
+
+msgid "Um defeito maior que isso reprova"
+msgstr "A defect larger than this fails"
 
 msgid "Uma amostra do job não pode mudar nem sair no ajuste fino"
 msgstr "A sample of the job cannot change or leave in a fine-tune"
@@ -1322,6 +1403,18 @@ msgstr "Area of the blobs above the maximum"
 
 msgid "Área de busca (x0, y0, x1, y1)"
 msgstr "Search area (x0, y0, x1, y1)"
+
+msgid "Área dos defeitos"
+msgstr "Area of the defects"
+
+msgid "Área dos defeitos (mm²)"
+msgstr "Area of the defects (mm²)"
+
+msgid "Área dos defeitos (mm²) acima do máximo"
+msgstr "Area of the defects (mm²) above the maximum"
+
+msgid "Área dos defeitos acima do máximo"
+msgstr "Area of the defects above the maximum"
 
 msgid "Área máxima"
 msgstr "Maximum area"

@@ -731,6 +731,11 @@ Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`), so 
 | `edge.max_distance` | Distância entre bordas acima do máximo |
 | `edge.min_distance_mm` | Distância entre bordas (mm) abaixo do mínimo |
 | `edge.max_distance_mm` | Distância entre bordas (mm) acima do máximo |
+| `compare.max_count` | Mais defeitos que o máximo |
+| `compare.max_area` | Área dos defeitos acima do máximo |
+| `compare.max_largest` | Defeito maior que o máximo |
+| `compare.max_area_mm2` | Área dos defeitos (mm²) acima do máximo |
+| `compare.max_largest_mm2` | Defeito (mm²) maior que o máximo |
 | `brightness.min_mean` | Brilho médio abaixo do mínimo |
 | `brightness.max_mean` | Brilho médio acima do máximo |
 | `brightness.max_std` | Variação do brilho acima do máximo |
@@ -877,13 +882,13 @@ The research compared the tool lists of a vision sensor (Keyence IV3: Learning, 
 
 | Need (what integrators look for) | Keyence IV3 | Cognex | Vision Station today | Target |
 |---|---|---|---|---|
-| Brightness level / prohibit | Brightness average, Brightness prohibit | Histogram | — | **`brightness` v1** (mean, std, min/max, fraction above/below a level) |
+| Brightness level / prohibit | Brightness average, Brightness prohibit | Histogram | **built** (`brightness` v1) | **`brightness` v1** (mean, std, min/max, fraction above/below a level) |
 | Color presence / prohibit / average | Color area, Color prohibit, Color average | Color | `color` v1 (area, coverage along an axis, reference-color distance) | `color` v1 + mean-color/ΔE mode (v2) |
-| Binarized area, blob count | Area, Blob count, Edge pixels | Blob | — (blob is only a locator) | **`blob` v1** (threshold / Otsu / color; count, area, sizes, filters; px or mm) |
-| Edges: presence, position, width, pitch, diameter | Edge presence, Width, Pitch, Diameter | Edge, InspectEdge | — | **`edge` v1** (calipers: line or arc; presence, count, position, width between pairs, pitch; subpixel; px or mm) |
-| Shape / outline match | Outline | Pattern Match | `pattern` v1 (correlation; no rotation; count and coverage) | **`pattern` v2** (shape-based, rotation and scale within range; keeps count and coverage) |
+| Binarized area, blob count | Area, Blob count, Edge pixels | Blob | **built** (`blob` v1 tool; the locator stays) | **`blob` v1** (threshold / Otsu / color; count, area, sizes, filters; px or mm) |
+| Edges: presence, position, width, pitch, diameter | Edge presence, Width, Pitch, Diameter | Edge, InspectEdge | **built** (`edge` v1; the `edges` locator) | **`edge` v1** (calipers: line or arc; presence, count, position, width between pairs, pitch; subpixel; px or mm) |
+| Shape / outline match | Outline | Pattern Match | **built** (`pattern` v2 and the `shape` locator); `pattern` v1 stays | **`pattern` v2** (shape-based, rotation and scale within range; keeps count and coverage) |
 | Codes 1D / 2D | (separate reader) | ID | `code` v1 (zxing-cpp) | keep; grading (ISO 15415/15416) out of scope |
-| "Different from the good ones", no training stack | Learning | Flaw Detection | — | **`compare` v1** (variation model: per-pixel mean and tolerance taught from good parts, after the fixture aligns them; reports defect area and size) |
+| "Different from the good ones", no training stack | Learning | Flaw Detection | **built** (`compare` v1) | **`compare` v1** (variation model: per-pixel mean and tolerance taught from good parts, after the fixture aligns them; reports defect area and size) |
 | Text | OCR | OCV/OCR | — | **`ocr` v1** (tier 2: read, or verify an expected text/pattern; TD-26) |
 | Learned good/bad | Learning | (ViDi, separate) | `detect` v1 (classifier / detector / anomaly from offline-trained ONNX) | keep; **`anomaly` v1** taught on station (tier 2, TD-27) |
 | Geometry between features | — | (measurement tools) | — | `measure` (tier 3: distance / angle between fixtures or tool results) |
@@ -926,12 +931,15 @@ A tool type version is released only when all of this exists and runs in CI (NFR
 
 | Type | V1 | V2 | V3 | V4 | V5 | V6 | V7 | V8 | V9 | V10 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | VIA-0075 |
-| `detect` v1 | ok | ok | ok | ok | ok | ok | ok | VIA-0112 (latency is the model's, in its card) | ok | VIA-0075 |
+| `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| `brightness` v1, `blob` v1, `edge` v1, `pattern` v2, `compare` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| `detect` v1 | ok | ok | ok | ok | ok | ok | ok | VIA-0112 (latency is the model's, in its card) | ok | ok |
 | locators `fixed` v1, `blob` v2, `edges` v1, `shape` v1 | ok | ok | ok | ok | n/a | n/a | n/a | ok | ok | n/a |
 | locators `template` v1, `blob` v1 | ok | ok | ok | no rotation: VIA-0123 | n/a | n/a | n/a | ok | ok | n/a |
 
 V3 found two defects that are fixed: `pattern` raised an OpenCV error on an empty region and the `template` locator divided by zero on an empty frame. V1 found an untranslated description leaking from a class docstring into the schema of the `blob` locator (`schema_labels.labels`).
+
+**As built (VIA-0075, CP1).** `algorithms/variation.py` is the variation model (per-pixel mean and sample deviation of at least 3 aligned good pictures, with the model of the file `models/<name>.var`) and `compare`; `pipeline/teach.py` teaches it from frames through the same fixtures and region cut as an inspection, listing the pictures it skipped; `tools/compare.py` is the tool. A part is moved to the model by phase correlation on pictures reduced to 256 pixels (`cv2.phaseCorrelate` on copies: it changes its inputs in place), the light is divided by one gain per channel fitted on a sparse grid of the reduced picture (robust least squares through the origin, clamped to 0.8 to 1.25), and the picture is compared with the mean on bytes against a tolerance kept in the model for the parameters (`max(abs_threshold, k * sigma + edge_px * range)`, with `range` the largest change to a neighbour). A good part has no outlines drawn. At 1 MP in colour it costs 1.3 to 1.8 times `color`.
 
 ### 15.4 Where the algorithms come from
 

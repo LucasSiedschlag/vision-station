@@ -612,24 +612,34 @@
               "M": {
                 "locator:blob:1": 60.0,
                 "locator:blob:2": 60.0,
+                "locator:edges:1": 30.0,
                 "locator:fixed:1": 1.0,
+                "locator:shape:1": 120.0,
                 "locator:template:1": 120.0,
                 "tool:blob:1": 60.0,
                 "tool:brightness:1": 30.0,
                 "tool:code:1": 250.0,
                 "tool:color:1": 60.0,
-                "tool:pattern:1": 120.0
+                "tool:compare:1": 60.0,
+                "tool:edge:1": 30.0,
+                "tool:pattern:1": 120.0,
+                "tool:pattern:2": 120.0
               },
               "R": {
                 "locator:blob:1": 25.0,
                 "locator:blob:2": 25.0,
+                "locator:edges:1": 12.0,
                 "locator:fixed:1": 1.0,
+                "locator:shape:1": 50.0,
                 "locator:template:1": 50.0,
                 "tool:blob:1": 25.0,
                 "tool:brightness:1": 12.0,
                 "tool:code:1": 100.0,
                 "tool:color:1": 25.0,
-                "tool:pattern:1": 50.0
+                "tool:compare:1": 25.0,
+                "tool:edge:1": 12.0,
+                "tool:pattern:1": 50.0,
+                "tool:pattern:2": 50.0
               }
             },
             "propertyNames": {
@@ -4287,24 +4297,34 @@
                 "M": {
                   "locator:blob:1": 60.0,
                   "locator:blob:2": 60.0,
+                  "locator:edges:1": 30.0,
                   "locator:fixed:1": 1.0,
+                  "locator:shape:1": 120.0,
                   "locator:template:1": 120.0,
                   "tool:blob:1": 60.0,
                   "tool:brightness:1": 30.0,
                   "tool:code:1": 250.0,
                   "tool:color:1": 60.0,
-                  "tool:pattern:1": 120.0
+                  "tool:compare:1": 60.0,
+                  "tool:edge:1": 30.0,
+                  "tool:pattern:1": 120.0,
+                  "tool:pattern:2": 120.0
                 },
                 "R": {
                   "locator:blob:1": 25.0,
                   "locator:blob:2": 25.0,
+                  "locator:edges:1": 12.0,
                   "locator:fixed:1": 1.0,
+                  "locator:shape:1": 50.0,
                   "locator:template:1": 50.0,
                   "tool:blob:1": 25.0,
                   "tool:brightness:1": 12.0,
                   "tool:code:1": 100.0,
                   "tool:color:1": 25.0,
-                  "tool:pattern:1": 50.0
+                  "tool:compare:1": 25.0,
+                  "tool:edge:1": 12.0,
+                  "tool:pattern:1": 50.0,
+                  "tool:pattern:2": 50.0
                 }
               },
               "megapixels": [0.25, 1.0, 4.0],
