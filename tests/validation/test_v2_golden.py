@@ -27,10 +27,12 @@ def test_the_known_answers_are_given(kind, name, version):
                 else:
                     assert result.values[key] == pytest.approx(expected, abs=g.tolerance), f"{g.id}: {key}"
             if g.marks is not None:
-                got = [(m.kind, m.role, _box(m)) for m in result.marks]
-                assert [(k, r) for k, r, _ in got] == [(k, r) for k, r, _ in g.marks], f"{g.id}: marks {got}"
-                for (_, _, box), (_, _, want) in zip(got, g.marks, strict=True):
-                    assert box == pytest.approx(want, abs=g.mark_tolerance), f"{g.id}: mark box"
+                # the tool gives them best first; a golden says which marks there are, not in what order
+                got = sorted(((m.kind, m.role, _box(m)) for m in result.marks), key=lambda t: (round(t[2][0]), round(t[2][1]), t[0], t[1]))
+                want = sorted(g.marks, key=lambda t: (round(t[2][0]), round(t[2][1]), t[0], t[1]))
+                assert [(k, r) for k, r, _ in got] == [(k, r) for k, r, _ in want], f"{g.id}: marks {got}"
+                for (_, _, box), (_, _, expected_box) in zip(got, want, strict=True):
+                    assert box == pytest.approx(expected_box, abs=g.mark_tolerance), f"{g.id}: mark box"
         else:
             fixture = run_locator(name, version, g.image, params, files)
             if g.rect is None:

@@ -65,6 +65,9 @@ msgstr "0 to 255. Empty: automatic"
 msgid "0 a 255: a referência de 'acima do nível' e 'abaixo do nível'"
 msgstr "0 to 255: the reference for 'above the level' and 'below the level'"
 
+msgid "1 é o tamanho ensinado; 0,9 a 1,1 aceita 10% menor ou maior"
+msgstr "1 is the taught size; 0.9 to 1.1 accepts 10% smaller or larger"
+
 msgid "1: o padrão precisa estar lá; 0: com máximo 0, confere que não está"
 msgstr "1: the pattern must be there; 0: with a maximum of 0, checks that it is not"
 
@@ -129,6 +132,9 @@ msgstr "Finds the edges (brightness steps) along a line, to a fraction of a pixe
 
 msgid "Acha na imagem uma foto ensinada do objeto (ou de uma marca nele)."
 msgstr "Finds a taught picture of the object (or of a mark on it) in the image."
+
+msgid "Acha o objeto pelo contorno ensinado, girado e em outro tamanho; a âncora tem a posição, o ângulo e o tamanho dele."
+msgstr "Finds the object by its taught outline, turned and in another size; the anchor has its position, angle and size."
 
 msgid "Aguardando objeto"
 msgstr "Waiting for a part"
@@ -202,6 +208,9 @@ msgstr "Taught corner (x, y)"
 
 msgid "Cartão do modelo"
 msgstr "Model card"
+
+msgid "Claro e escuro"
+msgstr "Light and dark"
 
 msgid "Classe contada (detector)"
 msgstr "Counted class (detector)"
@@ -464,11 +473,20 @@ msgstr "Fractions of the picture; along the edge and shorter than it"
 msgid "Frações da imagem; desenhe na imagem"
 msgstr "Fractions of the image; draw it on the image"
 
+msgid "Frações da imagem; o objeto inteiro precisa estar aqui"
+msgstr "Fractions of the picture; the whole object must be here"
+
 msgid "Frações da imagem; o objeto é procurado só aqui"
 msgstr "Fractions of the image; the object is looked for only here"
 
 msgid "Gabarito"
 msgstr "Template"
+
+msgid "Graus; quanto o objeto pode estar girado em relação ao ensinado. Quanto menor a faixa, mais rápido"
+msgstr "Degrees; how far the object may be turned from the taught one. The narrower the range, the faster"
+
+msgid "Graus; quanto o padrão pode estar girado em relação ao ensinado. Quanto menor a faixa, mais rápido"
+msgstr "Degrees; how far the pattern may be turned from the taught one. The narrower the range, the faster"
 
 msgid "Imagem anterior ao gatilho"
 msgstr "Image from before the trigger"
@@ -674,6 +692,9 @@ msgstr "Maximum number of blobs"
 msgid "Máximo de ocorrências"
 msgstr "Maximum occurrences"
 
+msgid "Máximo de ocorrências procuradas"
+msgstr "Most occurrences looked for"
+
 msgid "Mínimo da classe contada"
 msgstr "Minimum of the counted class"
 
@@ -845,6 +866,9 @@ msgstr "Text pattern"
 msgid "Para abrir a API na rede é preciso ter senha de Supervisor ou Mantenedor"
 msgstr "To open the API to the network, a Supervisor or Maintainer password is required"
 
+msgid "Para de procurar depois de tantas; contar mais que isso não é possível"
+msgstr "Stops looking after this many; counting more than that is not possible"
+
 msgid "Parte abaixo do nível"
 msgstr "Part below the level"
 
@@ -901,6 +925,9 @@ msgstr "Preparing…"
 msgid "Procura um padrão ensinado (um logotipo, uma marca, um detalhe) numa região e conta quantas vezes aparece."
 msgstr "Looks for a taught pattern (a logo, a mark, a detail) in a region and counts how many times it appears."
 
+msgid "Procura um padrão ensinado pelo contorno, girado e em outro tamanho, e conta quantas vezes aparece."
+msgstr "Looks for a taught pattern by its outline, turned and in another size, and counts how many times it appears."
+
 msgid "Quantas faixas dão um ponto da borda cada uma"
 msgstr "How many slices each give one point of the edge"
 
@@ -945,6 +972,12 @@ msgstr "Maximum saturation"
 msgid "Saturação mínima"
 msgstr "Minimum saturation"
 
+msgid "Se o objeto pode aparecer com o claro e o escuro trocados"
+msgstr "Whether the object may appear with its light and dark swapped"
+
+msgid "Se o padrão pode aparecer com o claro e o escuro trocados"
+msgstr "Whether the pattern may appear with its light and dark swapped"
+
 msgid "Sem imagem da câmera"
 msgstr "No image from the camera"
 
@@ -975,6 +1008,9 @@ msgstr "Only tolerance limits can change in a fine-tune"
 
 msgid "Tamanho ensinado (largura, altura em px)"
 msgstr "Taught size (width, height in px)"
+
+msgid "Tamanhos (de, até)"
+msgstr "Sizes (from, to)"
 
 msgid "Tentar girado"
 msgstr "Try rotated"
@@ -1069,6 +1105,9 @@ msgstr "the width (between two edges)"
 msgid "a posição da primeira borda"
 msgstr "the position of the first edge"
 
+msgid "aceitar trocados"
+msgstr "accept swapped"
+
 #, python-brace-format
 msgid "ajuste não aplicado ({detail})"
 msgstr "setting not applied ({detail})"
@@ -1096,6 +1135,9 @@ msgstr "boxes"
 
 msgid "classes"
 msgstr "classes"
+
+msgid "como ensinado"
+msgstr "as taught"
 
 msgid "cor de referência"
 msgstr "reference colour"
@@ -1301,6 +1343,9 @@ msgstr "Minimum total area (mm²)"
 
 msgid "Área total mínima (px²)"
 msgstr "Minimum total area (px²)"
+
+msgid "Ângulos (de, até)"
+msgstr "Angles (from, to)"
 
 msgid "É a câmera em uso pela estação e ela não está mandando imagem"
 msgstr "This is the camera the station is using and it is not sending an image"

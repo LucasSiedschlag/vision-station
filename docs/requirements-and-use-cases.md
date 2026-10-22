@@ -741,7 +741,7 @@ Each project that uses the platform sets these for its jobs and its own acceptan
 | Acknowledge mode and result-buffer depth | FR-INT-9 | acknowledge, 8 |
 | Heartbeat period / timeout | NFR-REL-8 | 500 ms / 1.5 s |
 | Benchmark: PC is tier R / tier M when the tools' sum at 1 MP is at most | FR-ADM-5, TD-28 | 120 ms / 400 ms (proposed until B-1) |
-| Benchmark: budget of a tool at 1 MP, tier M / tier R | FR-ADM-5, V8 | `blob` tool 60 / 25 ms, `brightness` 30 / 12 ms, `color` 60 / 25 ms, `edge` 30 / 12 ms, `pattern` 120 / 50 ms, `code` 250 / 100 ms; locators `edges` 30 / 12 ms, `template` 120 / 50 ms, `blob` 60 / 25 ms (proposed until B-1) |
+| Benchmark: budget of a tool at 1 MP, tier M / tier R | FR-ADM-5, V8 | `blob` tool 60 / 25 ms, `brightness` 30 / 12 ms, `color` 60 / 25 ms, `edge` 30 / 12 ms, `pattern` 120 / 50 ms (v1 and v2), `code` 250 / 100 ms; locators `edges` 30 / 12 ms, `shape` 120 / 50 ms, `template` 120 / 50 ms, `blob` 60 / 25 ms (proposed until B-1) |
 | Benchmark: thread cap, tier M / tier R | FR-ADM-5 | 2 / 4 |
 | Benchmark: sizes and repeats | FR-ADM-5, V8 | 0.25, 1 and 4 MP; median of 5 runs |
 | Job numbers and products | FR-INT-8 | none |

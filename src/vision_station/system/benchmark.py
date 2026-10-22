@@ -89,6 +89,11 @@ def _edge(mp: float) -> Workload:
     return Workload(image, {"mode": "width", "min_distance": cols // 10, "max_distance": cols})
 
 
+def _pattern_v2(mp: float) -> Workload:
+    image = _textured(mp)
+    return Workload(image, {"template": "t.png", "angles": [-20, 20], "scales": [0.9, 1.1]}, _template_of(image))
+
+
 def _pattern(mp: float) -> Workload:
     image = _textured(mp)
     return Workload(image, {"template": "t.png", "min_score": 0.7}, _template_of(image))
@@ -105,6 +110,11 @@ def _code(mp: float) -> Workload:
 def _locate_template(mp: float) -> Workload:
     image = _textured(mp)
     return Workload(image, {"template": "t.png"}, _template_of(image))
+
+
+def _locate_shape(mp: float) -> Workload:
+    image = _textured(mp)
+    return Workload(image, {"template": "t.png", "angles": [-20, 20], "scales": [0.9, 1.1]}, _template_of(image))
 
 
 def _dark_part(mp: float) -> Workload:
@@ -135,9 +145,11 @@ WORKLOADS: dict[str, Callable[[float], Workload]] = {
     key("tool", "color", 1): _color,
     key("tool", "edge", 1): _edge,
     key("tool", "pattern", 1): _pattern,
+    key("tool", "pattern", 2): _pattern_v2,
     key("tool", "code", 1): _code,
     key("locator", "edges", 1): _corner,
     key("locator", "fixed", 1): _fixed,
+    key("locator", "shape", 1): _locate_shape,
     key("locator", "template", 1): _locate_template,
     key("locator", "blob", 1): _dark_part,
     key("locator", "blob", 2): _dark_part,

@@ -134,8 +134,8 @@ class BenchmarkSettings(_Strict):
     tier_m_max_ms: Annotated[float, Field(gt=0)] = 400.0
     # per tier and per type (`tool:color:1`, `locator:blob:2`): the most one run may take on the reference size
     budgets_ms: dict[Tier, dict[str, Annotated[float, Field(gt=0)]]] = {
-        "M": {"tool:blob:1": 60.0, "tool:brightness:1": 30.0, "tool:color:1": 60.0, "tool:edge:1": 30.0, "tool:pattern:1": 120.0, "tool:code:1": 250.0, "locator:edges:1": 30.0, "locator:fixed:1": 1.0, "locator:template:1": 120.0, "locator:blob:1": 60.0, "locator:blob:2": 60.0},
-        "R": {"tool:blob:1": 25.0, "tool:brightness:1": 12.0, "tool:color:1": 25.0, "tool:edge:1": 12.0, "tool:pattern:1": 50.0, "tool:code:1": 100.0, "locator:edges:1": 12.0, "locator:fixed:1": 1.0, "locator:template:1": 50.0, "locator:blob:1": 25.0, "locator:blob:2": 25.0},
+        "M": {"tool:blob:1": 60.0, "tool:brightness:1": 30.0, "tool:color:1": 60.0, "tool:edge:1": 30.0, "tool:pattern:1": 120.0, "tool:pattern:2": 120.0, "tool:code:1": 250.0, "locator:edges:1": 30.0, "locator:fixed:1": 1.0, "locator:shape:1": 120.0, "locator:template:1": 120.0, "locator:blob:1": 60.0, "locator:blob:2": 60.0},
+        "R": {"tool:blob:1": 25.0, "tool:brightness:1": 12.0, "tool:color:1": 25.0, "tool:edge:1": 12.0, "tool:pattern:1": 50.0, "tool:pattern:2": 50.0, "tool:code:1": 100.0, "locator:edges:1": 12.0, "locator:fixed:1": 1.0, "locator:shape:1": 50.0, "locator:template:1": 50.0, "locator:blob:1": 25.0, "locator:blob:2": 25.0},
     }
     # threads the program may use, at most, per tier (the rest stays for the screen and the operating system)
     thread_caps: dict[Tier, Annotated[int, Field(ge=1)]] = {"M": 2, "R": 4}

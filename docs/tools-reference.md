@@ -106,3 +106,34 @@ How to read a section:
 - `Pino torto: diâmetro {distance:.1f} px, desvio {roundness:.1f} px`
 
 **Benchmark.** 30 ms (tier M) and 12 ms (tier R) at 1 MP, proposed until B-1.
+
+## `pattern`
+
+Two versions are saved in jobs: **v1**, which correlates gray levels (a pattern in the same pose and size as taught), and **v2**, which matches by the direction of the edges and finds the pattern turned and scaled. A job refers to a version and keeps running it; new jobs use v2. The criteria, the reason codes and the fields are the same.
+
+**Measures.** How many times a taught pattern (a logo, a mark, a screw head, a feature) is in the region, and, along an axis, how much of the length it covers. The template is a PNG of the job, cut from the reference image. v1 scores by normalised correlation (`min_score`, default 0.7; the region is reduced to `max_side` for speed) and finds the pattern as taught only. v2 scores by the agreement of the directions of the edges (`algorithms/shapematch.py`): it finds the pattern turned (`angles`, default ±20°) and larger or smaller (`scales`, default 0.9 to 1.1), whatever the brightness; a part of it hidden lowers the score by the share hidden; `polarity` `ignore` accepts light and dark swapped; `max_instances` (default 50) is how many it looks for.
+
+**Use it to** confirm a mark or a logo is printed, count the features of a part, or check that a pattern repeats along a seam. Use v2 when the part may arrive turned or at a different distance. For one object that anchors the regions, use the `shape` or `template` locator.
+
+**Criteria.**
+
+| Parameter | Reason code | Fails when |
+|---|---|---|
+| `min_count` (default 1) | `pattern.min_count` | fewer occurrences than this |
+| `max_count` | `pattern.max_count` | more than this (with 0: the pattern must not be there) |
+| `axis` with `min_coverage` | `pattern.min_coverage` | the matches cover less of the length of the strip than this (v2: the stretch their turned box spans) |
+| `axis` with `max_gap` | `pattern.max_gap` | the longest stretch with no match, ends included, is longer than this |
+
+**Fields.** `{count}`, `{best}` (best score), `{coverage}`, `{missing}` (1 - coverage), `{gap}`, the limits `{min_count}`, `{max_count}`, `{min_coverage}`, `{max_gap}`; fractions format with `:.0%`.
+
+**Limits.** The whole pattern must be inside the region; a template larger than the region is a refusal (E302), as is a flat template. Two matches closer than half the pattern count once. A pattern with few edges (a plain blob) cannot be matched by v2 (the template is refused as flat); v1 can. v2 follows the pattern to about 0.3 px and 0.3°; its time grows with the range of angles and scales (a full turn is a few times a ±20° search).
+
+**Marks.** The box of each occurrence, the best first (at most 64): `found`, or `defect` when there are more than `max_count`; v1 draws an upright box, v2 the box turned and scaled as the pattern was found.
+
+**Examples of `reason_fail`.**
+
+- `Logotipo ausente ou ilegível (melhor semelhança {best:.0%})`
+- `Faltam marcas na emenda: {count} de {min_count}`
+- `Trecho sem marca de {gap:.0%} da emenda (máximo {max_gap:.0%})`
+
+**Benchmark.** v1 and v2: 120 ms (tier M) and 50 ms (tier R) at 1 MP, proposed until B-1.
