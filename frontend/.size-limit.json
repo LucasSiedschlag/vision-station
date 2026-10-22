@@ -6,9 +6,18 @@
     "gzip": true
   },
   {
-    "name": "all JavaScript, including screens loaded on demand",
-    "path": "dist/assets/*.js",
+    "name": "all JavaScript of the product screens, including those loaded on demand",
+    "path": [
+      "dist/assets/*.js",
+      "!dist/assets/DesignPage-*.js"
+    ],
     "limit": "500 kB",
+    "gzip": true
+  },
+  {
+    "name": "the /design gallery (development reference, loaded only at /design)",
+    "path": "dist/assets/DesignPage-*.js",
+    "limit": "170 kB",
     "gzip": true
   },
   {

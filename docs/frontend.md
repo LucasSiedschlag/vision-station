@@ -147,7 +147,7 @@ frontend/
 /audit                 Auditoria                                         supervisor+
 /about                 Sobre                                             supervisor+
 /login                 Entrar (also a dialog from anywhere)              —
-/design                Galeria de componentes (development only)         —
+/design                Galeria de componentes (reference; its chunk has its own size budget, VIA-0125)  —
 ```
 
 ### 4.2 Shell
