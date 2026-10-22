@@ -29,12 +29,14 @@ Onde fica cada coisa:
 
 ## 3. Primeira configuração
 
-1. Abra **http://127.0.0.1:8765** (menu Iniciar → *Vision Station*). Aparece a tela do operador com "Nenhum job ativo".
-2. **Entrar** como **Mantenedor**.
-3. **Configurações → Câmera:** escolha *USB (UVC, ex. C920)* e o nome do dispositivo (`C920`), depois **Testar câmera**. Salve. A câmera só muda depois de reiniciar o programa: no Windows, *Serviços* → *Vision Station* → *Reiniciar* (ou reinicie o PC).
-4. **Configurações → Backup:** escolha a pasta (rede ou pen drive), **Testar pasta**, e a frequência. Salve.
-5. **Acessos:** defina a senha do **Supervisor**.
-6. **Jobs:** importe o job da estação (`.vjob`, ou o backup `.vbak` da instalação anterior) ou crie um em **Novo job** (editor). Depois **Ativar**: o sistema confere o job no conjunto de referência antes de usar.
+1. No PC da estação, abra **http://127.0.0.1:8765** (menu Iniciar → *Vision Station*). Na primeira vez a tela do operador mostra "Esta instalação ainda não foi configurada" e o botão **Configurar agora**; ele abre o **assistente de instalação** (`/setup`). Depois, ele fica em **Configurações → Assistente de instalação**.
+2. **Senha do Mantenedor:** crie a senha (pelo menos 8 caracteres). Esta é a única etapa sem login, e só funciona no próprio PC da estação, uma vez. Anote a senha: não há como recuperá-la sem acesso ao PC.
+3. **Câmera:** o assistente lista as câmeras USB ligadas. Cada uma aparece como *Validada* ou *Não validada* (modelo ainda sem ensaio de bancada). Escolha a câmera, **Testar câmera** e **Usar esta câmera**. A câmera só muda depois de reiniciar o programa: no Windows, *Serviços* → *Vision Station* → *Reiniciar* (ou reinicie o PC). O passo fica pronto quando a imagem chega.
+4. **Senha do Supervisor:** defina a senha do Supervisor.
+5. **Backup:** escolha a pasta (rede ou pen drive), **Testar pasta**, depois **Salvar a pasta de backup** e defina a frequência.
+6. **Primeiro job:** o botão abre o editor no primeiro passo. Você também pode importar o job da estação (`.vjob`, ou o backup `.vbak` da instalação anterior) em **Jobs**. Depois **Ativar**: o sistema confere o job no conjunto de referência antes de usar.
+
+Os passos *Desempenho do PC* e *Máquina* aparecem desligados, com o motivo: chegam em fases seguintes e não impedem a estação de trabalhar. Quando a senha, a câmera e o job estiverem prontos, o assistente mostra **Ir para a estação**.
 
 Se outro programa da estação (por exemplo o da estação de embalagem) vai usar o Vision Station pela tela dele, ponha o endereço da página dele em **Configurações → Rede → Páginas de outros programas** (documento 06).
 

@@ -2381,6 +2381,30 @@ export const text = {
     get done() {
       return t`Feito`
     },
+    get unavailable() {
+      return t`Ainda não disponível`
+    },
+    get unavailableHelp() {
+      return t`Este passo chega numa fase seguinte. Ele não impede a estação de trabalhar.`
+    },
+    get jobTodo() {
+      return t`Nenhum job criado ainda.`
+    },
+    get jobHelp() {
+      return t`O job guarda a câmera, a imagem de referência e as ferramentas que decidem Aprovado ou Reprovado. O editor abre no primeiro passo.`
+    },
+    get createJob() {
+      return t`Criar o primeiro job`
+    },
+    get jobDone() {
+      return t`Já existe um job.`
+    },
+    get jobDoneHelp() {
+      return t`Para ativá-lo ou criar outros, use a lista de jobs.`
+    },
+    get openJobs() {
+      return t`Abrir os jobs`
+    },
   },
   access: {
     get title() {

@@ -31,9 +31,9 @@ Every box is checked only when its tests pass and `uv run pytest` and `npm test`
   - Built: `cameras/discovery.py` (the list of validated models, today only the C920, which grows only after the bench trial), `GET /api/setup/cameras`, `CameraStep`. A PC that cannot list cameras (not Windows) says so and sends the person to *Configurações*; the list itself is to be confirmed on the bench PC (VIA-0118).
 - [x] **S5 (1.5 h) Passwords and backup steps:** Supervisor password; folder, *Testar pasta*, frequency.
   - Built: `PasswordForm` (one form for both passwords), `SupervisorStep`, `BackupStep`. The backup folder cannot be saved until *Testar pasta* has passed; what the step does not ask (how many to keep, which ones) goes back to the server as it was.
-- [ ] **S6 (1 h) First job step and the unavailable steps:** link to the editor, *Desempenho* and *Máquina* greyed with their reason.
-- [ ] **S7 (2 h) Tests:** server, Vitest, Playwright from a clean install to the first job, in Portuguese and English, axe.
-- [ ] **S8 (1.5 h) Texts and documents:** both catalogs, `frontend.md` §7.11 *As built*, `guias/instalacao.md` §3, `CLAUDE.md` if the code map changes.
+- [x] **S6 (1 h) First job step and the unavailable steps:** link to the editor, *Desempenho* and *Máquina* greyed with their reason.
+- [x] **S7 (2 h) Tests:** server, Vitest, Playwright from a clean install to the first job, in Portuguese and English, axe.
+- [x] **S8 (1.5 h) Texts and documents:** both catalogs, `frontend.md` §7.11 *As built*, `guias/instalacao.md` §3, `CLAUDE.md` if the code map changes.
 
 ## Edge cases to cover
 

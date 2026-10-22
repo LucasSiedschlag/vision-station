@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 // TD-30: every text a person reads comes from src/texts.ts, as a Lingui message in both languages. A Portuguese
 // literal anywhere else would stay Portuguese in English, so it fails here.
 
-const root = fileURLToPath(new URL('..', import.meta.url))
+const root = fileURLToPath(new URL('..', import.meta.url)).replaceAll('\\', '/')
 
 // the component gallery is for developers and stays Portuguese only (VIA-0060)
 // app/locale.tsx names each language in its own language (Português, English)
@@ -16,7 +16,7 @@ const ALLOWED = ['texts.ts', 'features/design/', 'api/schema.d.ts', 'locales/', 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
-    return statSync(path).isDirectory() ? files(path) : [path]
+    return statSync(path).isDirectory() ? files(path) : [path.replaceAll('\\', '/')] // Windows paths use a backslash
   })
 }
 

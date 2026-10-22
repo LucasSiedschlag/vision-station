@@ -182,7 +182,10 @@ describe('the wizard of an installation with a password', () => {
     renderApp('/setup')
     expect(await screen.findByRole('heading', { name: 'Primeiro job' })).toBeInTheDocument()
     expect(screen.getAllByText('falta: first_job')).toHaveLength(2) // under the step and in its panel
-    expect(screen.getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', '/jobs')
+    expect(screen.getByRole('link', { name: 'Criar o primeiro job' })).toHaveAttribute(
+      'href',
+      '/jobs/new/edit',
+    )
     expect(screen.getAllByText('performance ainda não existe').length).toBeGreaterThan(0) // an unavailable step says why
   })
 
@@ -195,9 +198,22 @@ describe('the wizard of an installation with a password', () => {
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: /Primeiro job/ }))
     expect(screen.getByRole('heading', { name: 'Primeiro job' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', '/jobs')
+    expect(screen.getByRole('link', { name: 'Criar o primeiro job' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Máquina/ }))
     expect(screen.getByRole('heading', { name: 'Máquina' })).toBeInTheDocument() // an unavailable step can be read too
+    expect(screen.getByText('Ainda não disponível')).toBeInTheDocument()
+    expect(screen.getAllByText('machine ainda não existe').length).toBeGreaterThan(0) // with its reason, and nothing to press
+    expect(screen.queryByRole('link', { name: 'Abrir' })).not.toBeInTheDocument()
+  })
+
+  it('points the first job step to the list of jobs once there is one', async () => {
+    as('maintainer')
+    server.use(http.get('*/api/setup/status', () => HttpResponse.json(status(['camera']))))
+    renderApp('/setup')
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /Primeiro job/ }))
+    expect(screen.getByText('Já existe um job.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Abrir os jobs' })).toHaveAttribute('href', '/jobs')
   })
 
   it('says it is ready when nothing is missing', async () => {

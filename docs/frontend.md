@@ -685,6 +685,16 @@ A full-page stepper (the 0.1 `Stepper`), each step with a clear *done* condition
 | 5 | **Backup:** choose the folder, *Testar pasta* | Tested |
 | 6 | **Primeiro job:** opens the editor at step 1 | — |
 
+**As built (VIA-0068).** The page is `features/setup/SetupPage.tsx`. What is done and what is not comes from `GET /api/setup/status`; nothing about the wizard is stored, so a restart of the program loses nothing and two open screens agree. The seven steps are shown in the order *Senha do Mantenedor, Câmera, Desempenho do PC, Senha do Supervisor, Máquina, Backup, Primeiro job* (the maintainer's password comes first because every other step needs a login), and the person may open any of them.
+
+- **Senha do Mantenedor** is the only step with no login. The page opens without one while the Maintainer has no password (`GET /api/setup/open` says so, and the operator screen shows a notice with *Configurar agora*), the password is created once, and the screen logs in with it. The server accepts it only while the password is missing and only when the API listens on this PC (`started_with.network.local_only`; an unknown system counts as not local); it is audited. Until it exists the other steps are blocked.
+- **Câmera** lists the USB cameras connected to this PC (`GET /api/setup/cameras`, driver and device are filled in by the choice) with only *Validada* or *Não validada*: a validated model shows its photo, any other a generic picture. A model joins the validated list (`cameras/discovery.py`) only after a bench trial. The step has *Testar câmera* (live image) and *Usar esta câmera*; the camera only changes after the program restarts, and the step is done when images arrive.
+- **Senha do Supervisor** and **Backup** are done on the page (the same password form; the folder is tested before it can be saved, and what the step does not ask for goes back to the server as it was).
+- **Desempenho do PC** (phase C) and **Máquina** (phase B) are readable and unavailable, with the reason and no button.
+- **Primeiro job** opens the editor on its first step (`/jobs/new/edit`); once a job exists it points to the list of jobs.
+
+The wizard finishes when the Maintainer has a password, the camera sends images and a job exists (`needs_setup`); then it offers *Ir para a estação*. It is reachable later from *Configurações › Assistente de instalação*. Tests: `features/setup/setup.test.tsx`, `tests/test_setup_api.py`, `tests/test_camera_discovery.py` and `e2e/setup.spec.ts` (a clean station, `scripts/e2e_station.py --fresh`, in Portuguese and English with axe).
+
 ### 7.12 Fine-tune (`/jobs/:id/tune`, supervisor+) — new
 
 **Purpose:** let the supervisor adjust **tolerances only** when the product or the light drifts, without the maintainer (FR-JOB-14).

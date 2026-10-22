@@ -722,6 +722,9 @@ msgstr "Clear samples ({included} included, {excluded} excluded)"
 msgid "É a câmera que a estação já usa."
 msgstr "This is the camera the station already uses."
 
+msgid "Criar o primeiro job"
+msgstr "Create the first job"
+
 msgid "Preparando…"
 msgstr "Preparing…"
 
@@ -1469,6 +1472,9 @@ msgstr "No range could be proposed from these samples."
 msgid "Restauração de backup"
 msgstr "Backup restored"
 
+msgid "Nenhum job criado ainda."
+msgstr "No job created yet."
+
 msgid "Criar senha e continuar"
 msgstr "Create password and continue"
 
@@ -2042,6 +2048,9 @@ msgstr "Expected"
 msgid "O rascunho fica guardado neste navegador e volta quando você abrir o editor de novo."
 msgstr "The draft is kept in this browser and comes back when you open the editor again."
 
+msgid "O job guarda a câmera, a imagem de referência e as ferramentas que decidem Aprovado ou Reprovado. O editor abre no primeiro passo."
+msgstr "The job holds the camera, the reference image and the tools that decide Pass or Fail. The editor opens on its first step."
+
 msgid "Auto uma vez"
 msgstr "Auto once"
 
@@ -2213,6 +2222,9 @@ msgstr "Download image"
 msgid "Imagem atual: brilho {b}, nitidez {s}."
 msgstr "Current image: brightness {b}, sharpness {s}."
 
+msgid "Ainda não disponível"
+msgstr "Not available yet"
+
 msgid "câmera"
 msgstr "camera"
 
@@ -2254,6 +2266,9 @@ msgstr "the pixels the colour range takes in"
 
 msgid "Conectando…"
 msgstr "Connecting…"
+
+msgid "Já existe um job."
+msgstr "A job already exists."
 
 msgid "Capture a referência e algumas amostras para ver onde a âncora cai em cada uma."
 msgstr "Capture the reference and a few samples to see where the anchor lands on each."
@@ -2573,8 +2588,14 @@ msgstr "Proposal: maximum limit {value}, midway between the good ones and the ba
 msgid "Validar tudo"
 msgstr "Validate all"
 
+msgid "Para ativá-lo ou criar outros, use a lista de jobs."
+msgstr "To activate it or create others, use the list of jobs."
+
 msgid "Captura {rate}/s"
 msgstr "Capture {rate}/s"
+
+msgid "Abrir os jobs"
+msgstr "Open the jobs"
 
 msgid "Nova região"
 msgstr "New region"
@@ -2638,6 +2659,9 @@ msgstr "Signal filter"
 
 msgid "Usar o limite mínimo"
 msgstr "Use the minimum limit"
+
+msgid "Este passo chega numa fase seguinte. Ele não impede a estação de trabalhar."
+msgstr "This step arrives in a later phase. It does not stop the station from working."
 
 msgid "Nenhuma amostra ainda."
 msgstr "No samples yet."

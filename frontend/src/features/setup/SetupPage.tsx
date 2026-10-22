@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { describeError } from '@/api/mutations'
 import { useCreateMaintainerPassword, useSetupStatus, type SetupStep } from '@/api/queries/setup'
+import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { BackupStep } from './BackupStep'
 import { CameraStep } from './CameraStep'
@@ -13,11 +14,6 @@ import { Stepper, type Step } from '@/components/ui/stepper'
 import { text } from '@/texts'
 
 const t = text.setup
-
-/** Where each step is done today. The steps of the wizard that do it on this screen replace these links (VIA-0068). */
-const WHERE: Partial<Record<SetupStep['id'], string>> = {
-  first_job: '/jobs',
-}
 
 /**
  * The commissioning wizard (docs/frontend.md §7.11, FR-ADM-8): a fresh installation taken to its first job, in
@@ -104,19 +100,42 @@ export function SetupPage() {
 }
 
 function StepBody({ step, locked }: { step: SetupStep; locked: boolean }) {
-  const where = WHERE[step.id]
+  if (locked) return <p role="status">{t.createFirst}</p>
+  if (step.state === 'unavailable') return <UnavailableStep step={step} />
+  if (step.id === 'first_job') return <FirstJobStep step={step} />
+  return <p role="status">{step.detail ?? (step.state === 'done' ? t.done : '')}</p>
+}
+
+/** A step of a later phase: readable, with the reason it cannot be done yet, and nothing to press. */
+function UnavailableStep({ step }: { step: SetupStep }) {
   return (
     <>
-      <p role="status">
-        {locked ? t.createFirst : (step.detail ?? (step.state === 'done' ? t.done : ''))}
+      <p>
+        <Badge>{t.unavailable}</Badge>
       </p>
-      {where && !locked && step.state === 'todo' ? (
-        <div>
-          <Link to={where} className={buttonVariants({ variant: 'primary' })}>
-            {t.openIn}
-          </Link>
-        </div>
-      ) : null}
+      <p role="status" className="text-fg-muted">
+        {step.detail}
+      </p>
+      <p className="text-sm text-fg-muted">{t.unavailableHelp}</p>
+    </>
+  )
+}
+
+/** The last step: the first job is made in the editor, which opens on its first step (docs/frontend.md §7.11). */
+function FirstJobStep({ step }: { step: SetupStep }) {
+  const done = step.state === 'done'
+  return (
+    <>
+      <p role="status">{done ? t.jobDone : (step.detail ?? t.jobTodo)}</p>
+      <p className="text-sm text-fg-muted">{done ? t.jobDoneHelp : t.jobHelp}</p>
+      <div>
+        <Link
+          to={done ? '/jobs' : '/jobs/new/edit'}
+          className={buttonVariants({ variant: done ? 'secondary' : 'primary' })}
+        >
+          {done ? t.openJobs : t.createJob}
+        </Link>
+      </div>
     </>
   )
 }

@@ -7,7 +7,10 @@ Besides the normal API it adds, on this machine only:
     POST /__e2e/object/{on|off}            put an object at the station, or take it away
     POST /__e2e/outcome/{PASS|FAIL|ERROR}  what the next inspections return
     POST /__e2e/reset                      empty table, outcome PASS
+    POST /__e2e/demo-job                   save the demo job, as the editor would (the wizard's last step)
 Logins: supervisor / supervisor-pass and maintainer / maintainer-pass. Data goes to a temporary folder.
+With `--fresh` the station is a clean installation instead: no passwords, no job, so the /setup wizard has all its
+steps to do (the camera already sends images). Data goes to a new temporary folder on every start.
 For `npm run dev` in frontend/, run it on port 8765.
 """
 
@@ -122,6 +125,7 @@ def demo_job(name: str = "Tampa azul — etiqueta de lote (demo)") -> JobBundle:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", type=int, default=8780)
+    parser.add_argument("--fresh", action="store_true", help="a clean installation: no passwords and no job")
     args = parser.parse_args()
 
     camera = ControlledCamera()
@@ -136,8 +140,9 @@ def main() -> int:
 
     data = Path(tempfile.mkdtemp(prefix="vision-station-e2e-"))
     auth = AuthService(data / "system" / "users.json")
-    auth.set_password("supervisor", "supervisor-pass")
-    auth.set_password("maintainer", "maintainer-pass")
+    if not args.fresh:
+        auth.set_password("supervisor", "supervisor-pass")
+        auth.set_password("maintainer", "maintainer-pass")
     results = ResultStore(data)
     acq = Acquisition(camera, {})
     controller = StationController(acq, inspect, absent_s=0.3)
@@ -179,11 +184,19 @@ def main() -> int:
         return {"ok": True}
 
     jobs = deps.jobs
-    ref = jobs.save(demo_job())  # in the store too, so the Jobs screen has something to list
-    jobs.set_active(ref)
-    controller.start(jobs.load(ref))
+
+    @app.post("/__e2e/demo-job")
+    def save_demo_job() -> dict[str, bool]:
+        jobs.save(demo_job())
+        return {"ok": True}
+
+    if not args.fresh:
+        ref = jobs.save(demo_job())  # in the store too, so the Jobs screen has something to list
+        jobs.set_active(ref)
+        controller.start(jobs.load(ref))
     acq.start()
-    threading.Thread(target=controller.run, daemon=True).start()
+    if not args.fresh:
+        threading.Thread(target=controller.run, daemon=True).start()
     try:
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
     finally:
