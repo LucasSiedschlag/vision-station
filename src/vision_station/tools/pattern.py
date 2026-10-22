@@ -104,6 +104,8 @@ def run(region: np.ndarray, params: PatternParams, files: JobFiles) -> ToolResul
     template = files.image(params.template, gray=True)
     if float(template.std()) < 1.0:
         raise ToolError(f"template {params.template} is flat: nothing to match")
+    if region.size == 0:
+        raise ToolError("the region is empty")
     gray = _gray(region)
     scale = min(1.0, params.max_side / max(gray.shape[:2] or (1,)))
     if scale < 1.0:

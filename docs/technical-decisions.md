@@ -758,6 +758,14 @@ Models are added only where the classical tools can't separate good objects from
 - The Intel integrated GPU may be used through OpenVINO only when the benchmark shows a gain, and never as a requirement (NFR-PERF-3).
 - Targets per tier are in document 02 (NFR-PERF-5) and stay *proposed* until **bench test B-1** (section 7) on one real unit of each tier.
 
+**As built (VIA-0074).**
+- The benchmark is `system/benchmark.py`; `vision-station --benchmark` and `POST /system/benchmark` run it, `GET /system/benchmark` and `system/benchmark.json` give the last report. It times each tool and locator on a synthetic workload that is the same on every PC, at 0.25, 1 and 4 MP, as the median of several runs.
+- The PC is classified by the **sum of the tools' times at 1 MP**: at most `tier_r_max_ms` is tier R, at most `tier_m_max_ms` is tier M, above that it is below M (no tier). Each type has a **budget per tier** at 1 MP; the report lists what is over it, judged by the budget of the tier found (tier M's when below M). The thread limit is the cap of the tier, never above the CPU count; it is **proposed in the report, not applied**.
+- Thresholds, budgets and caps are project values (document 02 §7): the `benchmark:` section of `system.yaml`, written only when changed. Their defaults are **proposed**, taken from no real unit, until B-1.
+- A type that needs a file of the job (`detect`, a model) is listed as not timed; its latency is the model card's (FR-MDL-6, VIA-0112).
+- It must not run while the station inspects: the API answers 409 until the station is paused. Running it at first start and from the wizard, and the report screens, are VIA-0073; idle CPU (NFR-PERF-7) is VIA-0108.
+- The validation bench that uses it as check V8 is in architecture §15.3.
+
 **Consequences.** Model cards state latency per tier (FR-MDL-6); the editor compares each job with its budget on the PC it runs on.
 
 **Revisit when:** B-1 results are in.

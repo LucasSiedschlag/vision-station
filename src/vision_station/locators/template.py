@@ -56,6 +56,8 @@ def locate(frame: np.ndarray, params: TemplateParams, files: JobFiles) -> Fixtur
     template = files.image(params.template, gray=True)
     if float(template.std()) < 1.0:
         raise LocatorError(f"template {params.template} is flat: nothing to match")
+    if frame.size == 0:
+        return None
     height, width = frame.shape[:2]
     scale = min(1.0, params.work_width / width)
     sx0, sy0, sx1, sy1 = (round(v * n) for v, n in zip(params.search, (width, height, width, height)))

@@ -581,6 +581,9 @@ msgstr "The result must be PASS, FAIL or ERROR"
 msgid "O tamanho do objeto na imagem de referência. Com ele o programa sabe qual lado é o comprido e mede a escala; vazio: só o ângulo menor"
 msgstr "The size of the object in the reference image. With it the program knows which side is the long one and measures the scale; empty: only the smallest angle"
 
+msgid "O teste de desempenho já está rodando"
+msgstr "The performance test is already running"
+
 #, python-brace-format
 msgid "Objeto '{name}' com tamanho {scale:.2f}× o ensinado (permitido {lo:g}× a {hi:g}×)"
 msgstr "Object '{name}' is {scale:.2f}× the taught size (allowed {lo:g}× to {hi:g}×)"
@@ -631,6 +634,9 @@ msgstr "Backup folder: {folder}"
 msgid "Pasta gravável, {free:.1f} GB livres"
 msgstr "Writable folder, {free:.1f} GB free"
 
+msgid "Pause a estação antes de medir o desempenho"
+msgstr "Pause the station before measuring performance"
+
 msgid "Perfil ou senha incorretos"
 msgstr "Wrong role or password"
 
@@ -642,6 +648,9 @@ msgstr "Object position (x0, y0, x1, y1)"
 
 msgid "Poucos pixels para propor uma cor: arraste sobre uma área maior"
 msgstr "Too few pixels to propose a colour: drag over a larger area"
+
+msgid "Precisa do modelo de um job: a latência está no cartão do modelo"
+msgstr "Needs the model of a job: the latency is in the model card"
 
 msgid "Precisa haver pelo menos uma de cada"
 msgstr "There must be at least one of each"

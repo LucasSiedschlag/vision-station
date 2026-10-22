@@ -717,7 +717,7 @@ Covers: FR-JOB-14, FR-UI-13/14, FR-LOG-5.
 
 ## 7. Project values
 
-Each project that uses the platform sets these for its jobs and its own acceptance. The platform keeps them as configuration (in the job or the system settings), never as constants in code.
+Each project that uses the platform sets these for its jobs and its own acceptance. The platform keeps them as configuration (in the job or the system settings), never as constants in code. Where the table says *proposed until B-1*, the value is a first guess in `system.yaml` → `benchmark:` that bench test B-1 on one real unit of each tier replaces.
 
 | Item | Where | Proposed default |
 |---|---|---|
@@ -740,6 +740,10 @@ Each project that uses the platform sets these for its jobs and its own acceptan
 | Machine connector | FR-INT-3..7 | none; S7, Modbus TCP server, remote I/O or OPC UA per project |
 | Acknowledge mode and result-buffer depth | FR-INT-9 | acknowledge, 8 |
 | Heartbeat period / timeout | NFR-REL-8 | 500 ms / 1.5 s |
+| Benchmark: PC is tier R / tier M when the tools' sum at 1 MP is at most | FR-ADM-5, TD-28 | 120 ms / 400 ms (proposed until B-1) |
+| Benchmark: budget of a tool at 1 MP, tier M / tier R | FR-ADM-5, V8 | `color` 60 / 25 ms, `pattern` 120 / 50 ms, `code` 250 / 100 ms; locators `template` 120 / 50 ms, `blob` 60 / 25 ms (proposed until B-1) |
+| Benchmark: thread cap, tier M / tier R | FR-ADM-5 | 2 / 4 |
+| Benchmark: sizes and repeats | FR-ADM-5, V8 | 0.25, 1 and 4 MP; median of 5 runs |
 | Job numbers and products | FR-INT-8 | none |
 | User values to the machine | FR-INT-11 | none |
 | What happens on FAIL beyond the screen | FR-INT-2 | screen only |

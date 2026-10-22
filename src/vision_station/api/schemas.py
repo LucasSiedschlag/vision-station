@@ -305,6 +305,52 @@ class SystemOut(BaseModel):
     can_pick_folder: bool = False  # this PC can open its own folder chooser (Windows, API on this PC)
 
 
+class BenchmarkHost(BaseModel):
+    cpus: int
+    machine: str
+    system: str
+    python: str
+    opencv: str
+
+
+class BenchmarkRunSettings(BaseModel):
+    megapixels: list[float]
+    repeats: int
+    reference_mp: float
+
+
+class BenchmarkMeasured(BaseModel):
+    type: str  # `tool:color:1`, `locator:blob:2`
+    ms: dict[str, float]  # the median time by megapixels
+    budget_ms: float | None  # on the reference size; None: no budget declared
+    within_budget: bool | None
+
+
+class BenchmarkUnmeasured(BaseModel):
+    type: str
+    reason: str  # a code, see `reason_text`
+    reason_text: str
+
+
+class BenchmarkReport(BaseModel):
+    """The last benchmark of this PC (FR-ADM-5, TD-28): times by tool, the tier and the proposed thread limit."""
+
+    format: int
+    at: str  # UTC, ISO 8601
+    host: BenchmarkHost
+    settings: BenchmarkRunSettings
+    reference_ms: float
+    tier: Literal["M", "R"] | None  # None: slower than tier M
+    thread_limit: int  # proposed, not applied
+    measured: list[BenchmarkMeasured]
+    unmeasured: list[BenchmarkUnmeasured]
+    over_budget: list[str]
+
+
+class BenchmarkOut(BaseModel):
+    report: BenchmarkReport | None  # None: this PC was never measured
+
+
 class SystemSaved(BaseModel):
     changed: list[str]
     restart_required: list[str]

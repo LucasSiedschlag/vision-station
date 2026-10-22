@@ -416,6 +416,296 @@
         "title": "BatchSampleOut",
         "type": "object"
       },
+      "BenchmarkHost": {
+        "properties": {
+          "cpus": {
+            "title": "Cpus",
+            "type": "integer"
+          },
+          "machine": {
+            "title": "Machine",
+            "type": "string"
+          },
+          "opencv": {
+            "title": "Opencv",
+            "type": "string"
+          },
+          "python": {
+            "title": "Python",
+            "type": "string"
+          },
+          "system": {
+            "title": "System",
+            "type": "string"
+          }
+        },
+        "required": ["cpus", "machine", "system", "python", "opencv"],
+        "title": "BenchmarkHost",
+        "type": "object"
+      },
+      "BenchmarkMeasured": {
+        "properties": {
+          "budget_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Ms"
+          },
+          "ms": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Ms",
+            "type": "object"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "within_budget": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Within Budget"
+          }
+        },
+        "required": ["type", "ms", "budget_ms", "within_budget"],
+        "title": "BenchmarkMeasured",
+        "type": "object"
+      },
+      "BenchmarkOut": {
+        "properties": {
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["report"],
+        "title": "BenchmarkOut",
+        "type": "object"
+      },
+      "BenchmarkReport": {
+        "description": "The last benchmark of this PC (FR-ADM-5, TD-28): times by tool, the tier and the proposed thread limit.",
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "integer"
+          },
+          "host": {
+            "$ref": "#/components/schemas/BenchmarkHost"
+          },
+          "measured": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkMeasured"
+            },
+            "title": "Measured",
+            "type": "array"
+          },
+          "over_budget": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Over Budget",
+            "type": "array"
+          },
+          "reference_ms": {
+            "title": "Reference Ms",
+            "type": "number"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/BenchmarkRunSettings"
+          },
+          "thread_limit": {
+            "title": "Thread Limit",
+            "type": "integer"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "enum": ["M", "R"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "unmeasured": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkUnmeasured"
+            },
+            "title": "Unmeasured",
+            "type": "array"
+          }
+        },
+        "required": [
+          "format",
+          "at",
+          "host",
+          "settings",
+          "reference_ms",
+          "tier",
+          "thread_limit",
+          "measured",
+          "unmeasured",
+          "over_budget"
+        ],
+        "title": "BenchmarkReport",
+        "type": "object"
+      },
+      "BenchmarkRunSettings": {
+        "properties": {
+          "megapixels": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Megapixels",
+            "type": "array"
+          },
+          "reference_mp": {
+            "title": "Reference Mp",
+            "type": "number"
+          },
+          "repeats": {
+            "title": "Repeats",
+            "type": "integer"
+          }
+        },
+        "required": ["megapixels", "repeats", "reference_mp"],
+        "title": "BenchmarkRunSettings",
+        "type": "object"
+      },
+      "BenchmarkSettings": {
+        "additionalProperties": false,
+        "description": "Project values (document 02 §7), proposed until B-1. Times are milliseconds on the reference size.",
+        "properties": {
+          "budgets_ms": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "default": {
+              "M": {
+                "locator:blob:1": 60.0,
+                "locator:blob:2": 60.0,
+                "locator:fixed:1": 1.0,
+                "locator:template:1": 120.0,
+                "tool:code:1": 250.0,
+                "tool:color:1": 60.0,
+                "tool:pattern:1": 120.0
+              },
+              "R": {
+                "locator:blob:1": 25.0,
+                "locator:blob:2": 25.0,
+                "locator:fixed:1": 1.0,
+                "locator:template:1": 50.0,
+                "tool:code:1": 100.0,
+                "tool:color:1": 25.0,
+                "tool:pattern:1": 50.0
+              }
+            },
+            "propertyNames": {
+              "enum": ["M", "R"]
+            },
+            "title": "Budgets Ms",
+            "type": "object"
+          },
+          "megapixels": {
+            "default": [0.25, 1.0, 4.0],
+            "items": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 16.0,
+              "type": "number"
+            },
+            "title": "Megapixels",
+            "type": "array"
+          },
+          "reference_mp": {
+            "default": 1.0,
+            "title": "Reference Mp",
+            "type": "number"
+          },
+          "repeats": {
+            "default": 5,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Repeats",
+            "type": "integer"
+          },
+          "thread_caps": {
+            "additionalProperties": {
+              "minimum": 1.0,
+              "type": "integer"
+            },
+            "default": {
+              "M": 2,
+              "R": 4
+            },
+            "propertyNames": {
+              "enum": ["M", "R"]
+            },
+            "title": "Thread Caps",
+            "type": "object"
+          },
+          "tier_m_max_ms": {
+            "default": 400.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tier M Max Ms",
+            "type": "number"
+          },
+          "tier_r_max_ms": {
+            "default": 120.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tier R Max Ms",
+            "type": "number"
+          }
+        },
+        "title": "BenchmarkSettings",
+        "type": "object"
+      },
+      "BenchmarkUnmeasured": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "reason_text": {
+            "title": "Reason Text",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": ["type", "reason", "reason_text"],
+        "title": "BenchmarkUnmeasured",
+        "type": "object"
+      },
       "CameraCheckBody": {
         "additionalProperties": false,
         "properties": {
@@ -3946,6 +4236,40 @@
               "every_hours": 24.0,
               "include": "all",
               "keep": 30
+            }
+          },
+          "benchmark": {
+            "$ref": "#/components/schemas/BenchmarkSettings",
+            "default": {
+              "budgets_ms": {
+                "M": {
+                  "locator:blob:1": 60.0,
+                  "locator:blob:2": 60.0,
+                  "locator:fixed:1": 1.0,
+                  "locator:template:1": 120.0,
+                  "tool:code:1": 250.0,
+                  "tool:color:1": 60.0,
+                  "tool:pattern:1": 120.0
+                },
+                "R": {
+                  "locator:blob:1": 25.0,
+                  "locator:blob:2": 25.0,
+                  "locator:fixed:1": 1.0,
+                  "locator:template:1": 50.0,
+                  "tool:code:1": 100.0,
+                  "tool:color:1": 25.0,
+                  "tool:pattern:1": 50.0
+                }
+              },
+              "megapixels": [0.25, 1.0, 4.0],
+              "reference_mp": 1.0,
+              "repeats": 5,
+              "thread_caps": {
+                "M": 2,
+                "R": 4
+              },
+              "tier_m_max_ms": 400.0,
+              "tier_r_max_ms": 120.0
             }
           },
           "camera": {
@@ -9450,6 +9774,168 @@
           }
         },
         "summary": "Put System"
+      }
+    },
+    "/api/system/benchmark": {
+      "get": {
+        "description": "The last benchmark report of this PC, or none.",
+        "operationId": "get_benchmark",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Benchmark"
+      },
+      "post": {
+        "description": "Run the benchmark now and keep its report. Refused while the station is inspecting or about to: the\nmeasure would be wrong and the inspections slower; pause the station first.",
+        "operationId": "run_benchmark",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Run Benchmark"
       }
     },
     "/api/system/pick-folder": {

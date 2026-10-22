@@ -351,3 +351,35 @@ def test_the_markings_of_the_operator_screen_are_written_only_when_changed():
     assert SystemConfig.model_validate(yaml.safe_load(text)) == changed
     with pytest.raises(ValueError):
         SystemConfig.model_validate({"station": {"markings": "sometimes"}})
+
+
+def test_benchmark_api(station):
+    client = TestClient(create_app(station.deps))
+    sup, mnt = login(client, "supervisor"), login(client, "maintainer")
+    assert client.get("/api/system/benchmark").status_code == 401
+    assert client.get("/api/system/benchmark", headers=sup).status_code == 403
+    assert client.post("/api/system/benchmark", headers=sup).status_code == 403
+    assert client.get("/api/system/benchmark", headers=mnt).json() == {"report": None}
+
+    station.controller.pause()  # a running station is not measured
+    ran = client.post("/api/system/benchmark", headers=mnt)
+    assert ran.status_code == 200, ran.text
+    report = ran.json()["report"]
+    assert report["tier"] in ("M", "R", None) and {m["type"] for m in report["measured"]} >= {"tool:color:1", "locator:blob:2"}
+    assert report["unmeasured"][0]["type"] == "tool:detect:1" and report["unmeasured"][0]["reason_text"].startswith("Precisa do modelo")
+    assert client.get("/api/system/benchmark", headers=mnt).json()["report"] == report  # kept
+    english = client.get("/api/system/benchmark", headers={**mnt, "Accept-Language": "en"}).json()["report"]
+    assert english["unmeasured"][0]["reason_text"].startswith("Needs the model")
+    assert any(entry["kind"] == "benchmark" for entry in station.jobs.read_audit())
+
+
+def test_the_benchmark_is_refused_while_the_station_is_inspecting(station):
+    client = TestClient(create_app(station.deps))
+    mnt = login(client, "maintainer")
+    ref = station.jobs.save(make_bundle())
+    activate(station.jobs, ref, verify_job(station.jobs.load(ref), inspect=inspect_job, parts="decision"))
+    station.start(maintenance_period_s=3600)
+    assert wait_for(lambda: station.controller.state is State.READY), station.controller.status()
+    refused = client.post("/api/system/benchmark", headers=mnt)
+    assert refused.status_code == 409 and refused.json()["code"] == "station_running"
+    assert client.get("/api/system/benchmark", headers=mnt).json() == {"report": None}

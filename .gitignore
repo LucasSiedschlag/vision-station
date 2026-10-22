@@ -25,3 +25,6 @@ bench_data/
 packaging/build_info.json
 packaging/winsw/VisionStation.exe
 THIRD_PARTY_LICENSES.md
+
+# plans, specs and handoffs of the working sessions stay local
+docs/superpowers/

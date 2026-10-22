@@ -1033,6 +1033,31 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/system/benchmark': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Benchmark
+     * @description The last benchmark report of this PC, or none.
+     */
+    get: operations['get_benchmark']
+    put?: never
+    /**
+     * Run Benchmark
+     * @description Run the benchmark now and keep its report. Refused while the station is inspecting or about to: the
+     *     measure would be wrong and the inspections slower; pause the station first.
+     */
+    post: operations['run_benchmark']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/system/pick-folder': {
     parameters: {
       query?: never
@@ -1401,6 +1426,151 @@ export interface components {
       /** Ok */
       ok: boolean
       result: components['schemas']['ResultOut'] | null
+    }
+    /** BenchmarkHost */
+    BenchmarkHost: {
+      /** Cpus */
+      cpus: number
+      /** Machine */
+      machine: string
+      /** Opencv */
+      opencv: string
+      /** Python */
+      python: string
+      /** System */
+      system: string
+    }
+    /** BenchmarkMeasured */
+    BenchmarkMeasured: {
+      /** Budget Ms */
+      budget_ms: number | null
+      /** Ms */
+      ms: {
+        [key: string]: number
+      }
+      /** Type */
+      type: string
+      /** Within Budget */
+      within_budget: boolean | null
+    }
+    /** BenchmarkOut */
+    BenchmarkOut: {
+      report: components['schemas']['BenchmarkReport'] | null
+    }
+    /**
+     * BenchmarkReport
+     * @description The last benchmark of this PC (FR-ADM-5, TD-28): times by tool, the tier and the proposed thread limit.
+     */
+    BenchmarkReport: {
+      /** At */
+      at: string
+      /** Format */
+      format: number
+      host: components['schemas']['BenchmarkHost']
+      /** Measured */
+      measured: components['schemas']['BenchmarkMeasured'][]
+      /** Over Budget */
+      over_budget: string[]
+      /** Reference Ms */
+      reference_ms: number
+      settings: components['schemas']['BenchmarkRunSettings']
+      /** Thread Limit */
+      thread_limit: number
+      /** Tier */
+      tier: ('M' | 'R') | null
+      /** Unmeasured */
+      unmeasured: components['schemas']['BenchmarkUnmeasured'][]
+    }
+    /** BenchmarkRunSettings */
+    BenchmarkRunSettings: {
+      /** Megapixels */
+      megapixels: number[]
+      /** Reference Mp */
+      reference_mp: number
+      /** Repeats */
+      repeats: number
+    }
+    /**
+     * BenchmarkSettings
+     * @description Project values (document 02 §7), proposed until B-1. Times are milliseconds on the reference size.
+     */
+    BenchmarkSettings: {
+      /**
+       * Budgets Ms
+       * @default {
+       *       "M": {
+       *         "locator:blob:1": 60,
+       *         "locator:blob:2": 60,
+       *         "locator:fixed:1": 1,
+       *         "locator:template:1": 120,
+       *         "tool:code:1": 250,
+       *         "tool:color:1": 60,
+       *         "tool:pattern:1": 120
+       *       },
+       *       "R": {
+       *         "locator:blob:1": 25,
+       *         "locator:blob:2": 25,
+       *         "locator:fixed:1": 1,
+       *         "locator:template:1": 50,
+       *         "tool:code:1": 100,
+       *         "tool:color:1": 25,
+       *         "tool:pattern:1": 50
+       *       }
+       *     }
+       */
+      budgets_ms: {
+        [key: string]: {
+          [key: string]: number
+        }
+      }
+      /**
+       * Megapixels
+       * @default [
+       *       0.25,
+       *       1,
+       *       4
+       *     ]
+       */
+      megapixels: number[]
+      /**
+       * Reference Mp
+       * @default 1
+       */
+      reference_mp: number
+      /**
+       * Repeats
+       * @default 5
+       */
+      repeats: number
+      /**
+       * Thread Caps
+       * @default {
+       *       "M": 2,
+       *       "R": 4
+       *     }
+       */
+      thread_caps: {
+        [key: string]: number
+      }
+      /**
+       * Tier M Max Ms
+       * @default 400
+       */
+      tier_m_max_ms: number
+      /**
+       * Tier R Max Ms
+       * @default 120
+       */
+      tier_r_max_ms: number
+    }
+    /** BenchmarkUnmeasured */
+    BenchmarkUnmeasured: {
+      /** Reason */
+      reason: string
+      /** Reason Text */
+      reason_text: string
+      /** Type */
+      type: string
     }
     /** CameraCheckBody */
     CameraCheckBody: {
@@ -2985,6 +3155,44 @@ export interface components {
        *     }
        */
       backup: components['schemas']['BackupSettings']
+      /**
+       * @default {
+       *       "budgets_ms": {
+       *         "M": {
+       *           "locator:blob:1": 60,
+       *           "locator:blob:2": 60,
+       *           "locator:fixed:1": 1,
+       *           "locator:template:1": 120,
+       *           "tool:code:1": 250,
+       *           "tool:color:1": 60,
+       *           "tool:pattern:1": 120
+       *         },
+       *         "R": {
+       *           "locator:blob:1": 25,
+       *           "locator:blob:2": 25,
+       *           "locator:fixed:1": 1,
+       *           "locator:template:1": 50,
+       *           "tool:code:1": 100,
+       *           "tool:color:1": 25,
+       *           "tool:pattern:1": 50
+       *         }
+       *       },
+       *       "megapixels": [
+       *         0.25,
+       *         1,
+       *         4
+       *       ],
+       *       "reference_mp": 1,
+       *       "repeats": 5,
+       *       "thread_caps": {
+       *         "M": 2,
+       *         "R": 4
+       *       },
+       *       "tier_m_max_ms": 400,
+       *       "tier_r_max_ms": 120
+       *     }
+       */
+      benchmark: components['schemas']['BenchmarkSettings']
       /**
        * @default {
        *       "connection": {},
@@ -6561,6 +6769,131 @@ export interface operations {
       }
       /** @description needs another role */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  get_benchmark: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BenchmarkOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+    }
+  }
+  run_benchmark: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BenchmarkOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Conflict */
+      409: {
         headers: {
           [name: string]: unknown
         }

@@ -119,6 +119,36 @@ class NetworkSettings(_Strict):
         return self.host in ("127.0.0.1", "localhost", "::1")
 
 
+Tier = Literal["M", "R"]
+
+
+class BenchmarkSettings(_Strict):
+    """Project values (document 02 §7), proposed until B-1. Times are milliseconds on the reference size."""
+
+    megapixels: list[Annotated[float, Field(gt=0, le=16)]] = [0.25, 1.0, 4.0]
+    repeats: Annotated[int, Field(ge=1, le=50)] = 5  # the median of this many runs
+    reference_mp: float = 1.0  # the size whose times classify the PC and are compared with the budgets
+    # the PC is tier R when the sum of the tools' times on the reference size is at most this, else tier M when at
+    # most the other, else it is below tier M
+    tier_r_max_ms: Annotated[float, Field(gt=0)] = 120.0
+    tier_m_max_ms: Annotated[float, Field(gt=0)] = 400.0
+    # per tier and per type (`tool:color:1`, `locator:blob:2`): the most one run may take on the reference size
+    budgets_ms: dict[Tier, dict[str, Annotated[float, Field(gt=0)]]] = {
+        "M": {"tool:color:1": 60.0, "tool:pattern:1": 120.0, "tool:code:1": 250.0, "locator:fixed:1": 1.0, "locator:template:1": 120.0, "locator:blob:1": 60.0, "locator:blob:2": 60.0},
+        "R": {"tool:color:1": 25.0, "tool:pattern:1": 50.0, "tool:code:1": 100.0, "locator:fixed:1": 1.0, "locator:template:1": 50.0, "locator:blob:1": 25.0, "locator:blob:2": 25.0},
+    }
+    # threads the program may use, at most, per tier (the rest stays for the screen and the operating system)
+    thread_caps: dict[Tier, Annotated[int, Field(ge=1)]] = {"M": 2, "R": 4}
+
+    @model_validator(mode="after")
+    def _consistent(self) -> Self:
+        if self.reference_mp not in self.megapixels:
+            raise ValueError("reference_mp must be one of megapixels")
+        if self.tier_r_max_ms > self.tier_m_max_ms:
+            raise ValueError("tier_r_max_ms must not be above tier_m_max_ms")
+        return self
+
+
 class SystemConfig(_Strict):
     format: Literal[1] = 1
     station: StationSettings = StationSettings()
@@ -126,6 +156,7 @@ class SystemConfig(_Strict):
     recording: RecordingSettings = RecordingSettings()
     backup: BackupSettings = BackupSettings()
     network: NetworkSettings = NetworkSettings()
+    benchmark: BenchmarkSettings = BenchmarkSettings()
 
     @model_validator(mode="after")
     def _no_secrets(self) -> Self:
@@ -141,6 +172,8 @@ def dump_config(config: SystemConfig) -> str:
     if data["station"]["language"] == "pt-BR":
         # written only when not Portuguese, so a backup of a station in Portuguese still restores on version 0.1
         del data["station"]["language"]
+    if data["benchmark"] == BenchmarkSettings().model_dump(mode="json"):
+        del data["benchmark"]  # the proposed values are not written until a project changes one
     # the same for the markings: written only when changed
     for key, default in (("markings", "on_fail"), ("operator_markings", True)):
         if data["station"][key] == default:

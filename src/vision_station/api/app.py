@@ -13,6 +13,7 @@ import hashlib
 import io
 import os
 import re
+import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -38,7 +39,7 @@ from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, AuthService, LockedOut, at_least
 from vision_station.api.hub import EventHub
 from vision_station.api.inspections import InspectionRegistry, Requested
-from vision_station.api.editor_session import SessionEnv, run as run_editor_session
+from vision_station.api.editor_session import PAUSABLE, SessionEnv, run as run_editor_session
 from vision_station.api.manage import add_management_routes
 from vision_station.api.setup import add_setup_routes
 from vision_station.cameras.discovery import Discovery, discover
@@ -48,7 +49,7 @@ from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import FormatError, JobRef, JobStore, StoreError
 from vision_station.store.archive import FORMAT, kind_of
 from vision_station.system import Maintenance, SystemConfig, SystemService, check_camera, check_folder, dump_config
-from vision_station.system import folder_picker
+from vision_station.system import benchmark, folder_picker
 from vision_station.system.config import CameraSettings
 from vision_station.tools import tool_types
 from vision_station.verification import VerificationFailed, activate, verify_stored_job
@@ -755,6 +756,35 @@ def create_app(deps: ApiDeps) -> FastAPI:
         if changed:
             deps.jobs.audit("settings", by=current, changed=changed)
         return m.SystemSaved(changed=changed, restart_required=[s for s in changed if s in svc.restart_pending])
+
+    benchmark_running = threading.Lock()
+
+    def benchmark_out(report: dict | None) -> m.BenchmarkOut:
+        if report is not None:
+            report = {**report, "unmeasured": [{**u, "reason_text": render(benchmark.REASONS[u["reason"]])} for u in report["unmeasured"]]}
+        return m.BenchmarkOut(report=None if report is None else m.BenchmarkReport.model_validate(report))
+
+    @api.get("/system/benchmark", response_model=m.BenchmarkOut, responses={503: {"model": m.Problem}})
+    def get_benchmark(_: str = Depends(need("maintainer"))) -> m.BenchmarkOut:
+        """The last benchmark report of this PC, or none."""
+        return benchmark_out(benchmark.load_report(system().root))
+
+    @api.post("/system/benchmark", response_model=m.BenchmarkOut, responses={409: {"model": m.Problem}, 503: {"model": m.Problem}})
+    def run_benchmark(current: str = Depends(need("maintainer"))) -> m.BenchmarkOut:
+        """Run the benchmark now and keep its report. Refused while the station is inspecting or about to: the
+        measure would be wrong and the inspections slower; pause the station first."""
+        svc = system()
+        if deps.controller.state.value in PAUSABLE:
+            raise Problem(409, "Pause a estação antes de medir o desempenho", "station_running", state=deps.controller.state.value)
+        if not benchmark_running.acquire(blocking=False):
+            raise Problem(409, "O teste de desempenho já está rodando", "benchmark_running")
+        try:
+            report = benchmark.run_benchmark(svc.config.benchmark)
+            benchmark.save_report(svc.root, report)
+        finally:
+            benchmark_running.release()
+        deps.jobs.audit("benchmark", by=current, tier=report["tier"])
+        return benchmark_out(report)
 
     @api.post("/system/pick-folder", response_model=m.FolderPickOut, responses={403: {"model": m.Problem}, 409: {"model": m.Problem}})
     def pick_folder(body: m.FolderPickBody, _: str = Depends(need("maintainer"))) -> m.FolderPickOut:

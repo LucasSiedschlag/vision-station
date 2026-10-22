@@ -338,7 +338,6 @@ backup_2026-10-02_1800.vbak
 │   ├── results.db
 │   └── images/2026/10/02/<inspection-id>.jpg
 ├── dataset/
-├── bench/                 # benchmark reports (FR-ADM-5)
 ├── backups/
 └── logs/
 ```
@@ -362,7 +361,7 @@ backup_2026-10-02_1800.vbak
 | **Products**: product name → job id, for OPC UA `PrepareProduct` | `system.yaml` → `machine.products:` |
 | **Remote I/O**: module address, the input list `{line, function, edge}` (trigger, clear error), the output list `{line, function, polarity}` (§16.7) | `system.yaml` → `machine.remote_io:` |
 | Challenge-test policy (when it is required) | `system.yaml` → `challenge:` |
-| Thread caps per PC tier, measured tier | `system.yaml` → `performance:` (written by the benchmark, editable) |
+| Benchmark thresholds, budgets per tool and thread caps per PC tier (project values, proposed until B-1) | `system.yaml` → `benchmark:` (written only when changed); the last report is `system/benchmark.json` |
 
 `system.yaml` is validated on load (a damaged file stops the program with the reason; a missing one means the defaults) and refused if any key looks like a secret. Recording limits, backups and the station's settings apply at once when changed; the camera, the network and the machine adapters after a restart, which the settings screen says. The file goes into every `.vbak`, so a restore brings the installation's settings back too.
 
@@ -656,7 +655,7 @@ All endpoints live under `/api` (the WebSocket is `/api/live`); every other path
 | `GET /results…` | Browse, filter (period, job, outcome, wrong, reason code), export CSV, mark incorrect; `GET /results/reason-codes` the codes the other filters leave (FR-INS-14) |
 | `GET /dataset/{job}/images…` | The dataset grid (Maintainer): a page of images with their labels, and one image reduced to a width |
 | `GET /machine` | Live view of the interface map: inputs, outputs, heartbeat ages, last errors (Maintainer) |
-| `POST /bench` | Run the benchmark (Maintainer) |
+| `GET/POST /system/benchmark` | The last benchmark report / run it now (Maintainer); refused with 409 while the station is inspecting (§15.3 V8) |
 | `POST /jobs/verify`, `POST /editor/batch`, `POST /editor/locate`, `POST /editor/suggest/limits`, `POST /editor/suggest/colour` | The editor (Maintainer): the draft on every sample, the same run as activation (Validar); the draft on its reference and samples with every tool's values (the dots of the gauges); the limits the samples suggest (FR-UI-14); a color range from the pixels dragged over on the image (FR-UI-13); where the fixtures of the draft are on its reference and samples (the anchor step) |
 | `POST /jobs/{id}/tune` | The Supervisor's fine-tune (FR-JOB-14, document 05 §7.12): the draft is compared with the newest version and only tolerance limits and new samples may differ; saves n+1 marked `tuned`, verifies it, audits it (`job_tune`), does not activate it |
 | `WS /editor/live` | The editor's live session (Maintainer or Supervisor, for the fine-tune): the draft measured on every new frame, with the station paused (FR-UI-12, document 05 §9.5); every frame also brings its sharpness, histogram and clipping, draft or not (document 05 §19.5) |
@@ -743,7 +742,7 @@ Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`), so 
 | Install | One installer: core service + screen + default data root |
 | Data root | A single folder outside the program folder, so reinstalling or updating the program never touches jobs or records |
 | Update | Replace the program files. The data root is untouched. On first start, jobs in older formats keep working through migrators (FR-ADM-4) |
-| First start | The benchmark runs once (about a minute), classifies the PC as tier M or R, sets thread caps, and stores the report (FR-ADM-5) |
+| First start | The benchmark runs once, classifies the PC as tier M or R, proposes thread caps and stores the report (FR-ADM-5). Today it runs by `vision-station --benchmark` or `POST /system/benchmark`; running it from the setup wizard is VIA-0073 |
 | Fresh install + restore | Install → set system config (camera address, password, backup folder, machine adapters) → import `.vbak` → verification → challenge test if required → production (UC-06, NFR-REL-4) |
 | Logs | Rotating text logs in `logs/`, plus a "collect support bundle" action that zips logs, system config without secrets, the last benchmark and the last N results |
 
@@ -890,15 +889,22 @@ A tool type version is released only when all of this exists and runs in CI (NFR
 | V9 | Determinism | Two runs, two processes, same results bit for bit (scores to 1e-9) |
 | V10 | Documentation | One section per tool in a tools document: what it measures, when to use it, limits, examples of `reason_fail` |
 
-**Status of today's tools against the checklist:**
+**The bench (VIA-0074).** `tests/validation/` runs the checks for every tool and locator type the program registers, in the same `pytest` run as everything else (Windows and Linux). It is test code because it is a release gate; the benchmark it uses ships in the program (`system/benchmark.py`).
 
-| Tool | Status | Gaps |
-|---|---|---|
-| `color` v1 | Usable | V4 (no invariance tests), V7 (overlay draws only the region), V8 (no benchmark), V6 (no reason codes yet) |
-| `pattern` v1 | Usable for shift-only | No rotation/scale (→ v2 on shape matching); V4, V7 (matches not drawn), V8, V6 |
-| `code` v1 | Usable | V4, V7 (code positions not drawn), V8, V6 |
-| `detect` v1 | Usable with offline models | V8 per tier in the card (FR-MDL-6), V7 (boxes / anomaly map), V6 |
-| locators `template`, `blob` v1 | Usable without rotation | Pose (R1), V4 for rotation, V8 |
+- **Coverage.** A test per registered `(type, version)` fails if the type has no case file `tests/validation/cases/<type>.py` (valid parameters, invalid combinations, a passing and a failing region, golden pictures). A new tool cannot be released without one.
+- **Tracked exceptions.** `tests/validation/registry.py` holds the table `(kind, type, version, check) → VIA task`. An entry is a strict expected failure: a check that fails and is not listed fails the suite, and a listed check that starts to pass fails it too, so the entry is removed. Only a failure that was seen goes in; "not applicable" is not an exception (a locator has no score, criteria or reason codes; a turn applies only to a locator, a tool is cut upright first).
+- **What each check asserts.** V1: every parameter has a title from `labels`, every text is in the English catalog, bad combinations and unknown keys are refused. V2: the known answers of the case's golden pictures. V3: ten strange pictures (empty, 1×1, one row, 8×8, black, white, noise, gray) give a valid result with finite numbers, or `ToolError`/`LocatorError`. V4: brightness ±15 %, noise σ = 2 and a shift of (4, −3) px keep the outcome of a tool and the place found by a locator; a turn of 10° must show in the angle of the pose of a locator (`V4.rotation`). V5: score and verdict agree, for the tool and for each criterion and its margin. V6: every criterion has a code in `REASON_CODES`, every key of `values` is in the "Fields for `reason_fail`" of the tool's module. V8: the type is timed at every size and has a budget for both tiers; **CI does not judge the time** (runners are noisy), `vision-station --benchmark` does, on the real PC. V9: two Python processes with different hash seeds answer the same pictures with scores equal to 1e-9; not compared between Windows and Linux.
+
+**Status of today's tools against the checklist** (VIA-0074; a cell is the task that closes the gap):
+
+| Type | V1 | V2 | V3 | V4 | V5 | V6 | V7 | V8 | V9 | V10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | VIA-0124 | ok | ok | VIA-0075 |
+| `detect` v1 | ok | ok | ok | ok | ok | ok | VIA-0124 | VIA-0112 (latency is the model's, in its card) | ok | VIA-0075 |
+| locators `fixed` v1, `blob` v2 | ok | ok | ok | ok | n/a | n/a | n/a | ok | ok | n/a |
+| locators `template` v1, `blob` v1 | ok | ok | ok | no rotation: VIA-0123 | n/a | n/a | n/a | ok | ok | n/a |
+
+V3 found two defects that are fixed: `pattern` raised an OpenCV error on an empty region and the `template` locator divided by zero on an empty frame. V1 found an untranslated description leaking from a class docstring into the schema of the `blob` locator (`schema_labels.labels`).
 
 ### 15.4 Where the algorithms come from
 

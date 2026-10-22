@@ -50,6 +50,8 @@ def labels(about: str = "", *, meta: dict[str, Meta] | None = None, **fields: La
     def extra(schema: dict[str, Any]) -> None:
         if about:
             schema["description"] = about
+        else:
+            schema.pop("description", None)  # pydantic takes the class docstring, which is English and not translated
         properties = schema.get("properties", {})
         for name, tags in (meta or {}).items():
             if name in properties:

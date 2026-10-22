@@ -44,7 +44,7 @@ class SessionEnv:
 
 
 # the states a pause takes the station out of: it is running, or about to run, an inspection
-_PAUSABLE = ("Ready", "WaitingStill", "ShowingResult", "Preparing", "Inspecting")
+PAUSABLE = ("Ready", "WaitingStill", "ShowingResult", "Preparing", "Inspecting")
 
 
 async def pause_station(controller: Any, loop: asyncio.AbstractEventLoop, wait_s: float = 3.0) -> bool:
@@ -57,7 +57,7 @@ async def pause_station(controller: Any, loop: asyncio.AbstractEventLoop, wait_s
         state = controller.state.value
         if state == "Paused":
             return True
-        if state not in _PAUSABLE:
+        if state not in PAUSABLE:
             return False
         controller.pause()
         await asyncio.sleep(0.05)

@@ -158,12 +158,27 @@ def _set_password(root: Path, role: str) -> int:
     return 0
 
 
+def _benchmark(root: Path) -> int:
+    from vision_station.system.benchmark import run_benchmark, save_report, summary
+
+    try:
+        report = run_benchmark(load_config(root).benchmark)
+    except ConfigError as exc:
+        print(f"system.yaml not valid: {exc}")
+        return 2
+    path = save_report(root, report)
+    print(summary(report))
+    print(f"Report saved in {path}.")
+    return 1 if report["tier"] is None or report["over_budget"] else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="vision-station", description="Vision Station: the inspection station and its web interface.")
     parser.add_argument("--data", type=Path, default=None, help=f"data folder (default: {default_data_root()})")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--version", action="store_true", help="print the version and exit")
     parser.add_argument("--set-password", choices=["supervisor", "maintainer"], metavar="ROLE", help="set the password of supervisor or maintainer and exit")
+    parser.add_argument("--benchmark", action="store_true", help="time the tools on this PC, classify it as tier M or R, save the report and exit (1: over budget or below tier M)")
     args = parser.parse_args(argv)
     if args.version:
         print(f"vision-station {describe().replace(' · ', ' / ')}")  # plain ASCII: any console code page
@@ -171,6 +186,8 @@ def main(argv: list[str] | None = None) -> int:
     root = args.data or default_data_root()
     if args.set_password:
         return _set_password(root, args.set_password)
+    if args.benchmark:
+        return _benchmark(root)
     _setup_logging(root, args.verbose)
     try:
         runtime = build_runtime(root)
