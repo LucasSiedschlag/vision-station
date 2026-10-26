@@ -1296,6 +1296,23 @@ export const text = {
         return t`Sem imagem ao vivo: a câmera não está entregando quadros.`
       },
     },
+    /** The gray threshold control (docs/frontend.md §19.5). */
+    threshold: {
+      get automatic() {
+        return t`Automático`
+      },
+      auto: (level: string) => t`automático: ${level}`,
+      get noImage() {
+        return t`Sem imagem para mostrar o histograma.`
+      },
+      get dark() {
+        return t`Em azul, o que vai ser objeto: os pixels até o limiar.`
+      },
+      get light() {
+        return t`Em azul, o que vai ser objeto: os pixels acima do limiar.`
+      },
+      objectShare: (share: string) => t`${share} % da região é objeto`,
+    },
     /** The colour picker (docs/frontend.md §19.4). */
     colour: {
       get title() {

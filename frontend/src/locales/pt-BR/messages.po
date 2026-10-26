@@ -37,6 +37,9 @@ msgstr "ajuste fino"
 msgid "No backup, a versão ativa era a v{v}: ative-a aqui depois de conferir."
 msgstr "No backup, a versão ativa era a v{v}: ative-a aqui depois de conferir."
 
+msgid "Sem imagem para mostrar o histograma."
+msgstr "Sem imagem para mostrar o histograma."
+
 msgid "Voltar para a estação"
 msgstr "Voltar para a estação"
 
@@ -458,6 +461,9 @@ msgstr "zoom"
 msgid "Pelo menos 8 caracteres. Ela não é mostrada de novo."
 msgstr "Pelo menos 8 caracteres. Ela não é mostrada de novo."
 
+msgid "Em azul, o que vai ser objeto: os pixels acima do limiar."
+msgstr "Em azul, o que vai ser objeto: os pixels acima do limiar."
+
 msgid "Salvar o job novo"
 msgstr "Salvar o job novo"
 
@@ -703,6 +709,9 @@ msgstr "Voltar para Jobs"
 
 msgid "Percentual de pixels saturados que a exposição deve alcançar na região medida"
 msgstr "Percentual de pixels saturados que a exposição deve alcançar na região medida"
+
+msgid "Automático"
+msgstr "Automático"
 
 msgid "Conferir campos"
 msgstr "Conferir campos"
@@ -1568,6 +1577,9 @@ msgstr "Job ativado"
 msgid "Ganho"
 msgstr "Ganho"
 
+msgid "{share} % da região é objeto"
+msgstr "{share} % da região é objeto"
+
 msgid "min"
 msgstr "min"
 
@@ -1867,6 +1879,9 @@ msgstr "O modelo é treinado fora da estação (docs/models.md) e vai dentro do 
 
 msgid "mínimo {value}"
 msgstr "mínimo {value}"
+
+msgid "Em azul, o que vai ser objeto: os pixels até o limiar."
+msgstr "Em azul, o que vai ser objeto: os pixels até o limiar."
 
 msgid "sinal de vida há {age} s"
 msgstr "sinal de vida há {age} s"
@@ -2353,6 +2368,9 @@ msgstr "Remover {image}"
 
 msgid "Backup {name} ({size}) gravado."
 msgstr "Backup {name} ({size}) gravado."
+
+msgid "automático: {level}"
+msgstr "automático: {level}"
 
 msgid "Sem conexão"
 msgstr "Sem conexão"
