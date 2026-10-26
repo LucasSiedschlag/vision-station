@@ -1,4 +1,5 @@
 import { Crop, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { useTypes, type LocateSample } from '@/api/queries/editor'
 import { useLevel } from '@/app/levels'
@@ -13,6 +14,7 @@ import { cn } from '@/lib/cn'
 import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { SchemaForm } from './SchemaForm'
+import { TemplateCheck, type ModelCheck } from './TemplateCheck'
 import { useDraft, type JobJson } from './draft'
 import { fixturesOf, freeName, isUpright, type FixtureShape } from './fixtures'
 import { cropPng } from './image'
@@ -59,6 +61,7 @@ export function AnchorStep({
   shownSample,
   showSample,
 }: StepProps) {
+  const [check, setCheck] = useState<ModelCheck | null>(null)
   const types = useTypes()
   const [level] = useLevel('editor')
   const fixtures = fixturesOf(draft.job)
@@ -108,7 +111,7 @@ export function AnchorStep({
     }, history)
 
   const applyCrop = async () => {
-    if (!image || image.source !== 'reference' || !crop) return
+    if (!image || image.source !== 'reference' || !crop || !check?.usable) return
     const path = 'locator/template.png'
     const png = await cropPng(image, crop)
     edit((d) => {
@@ -211,6 +214,9 @@ export function AnchorStep({
                 <p className="text-sm">
                   {image?.source === 'reference' ? t.cropHint : t.cropNeedsReference}
                 </p>
+                {image?.source === 'reference' && crop ? (
+                  <TemplateCheck image={image} crop={crop} shape={false} onResult={setCheck} />
+                ) : null}
                 <div className="flex flex-wrap gap-2">
                   <Button
                     disabled={image?.source !== 'reference'}
@@ -221,7 +227,7 @@ export function AnchorStep({
                     {t.drawCrop}
                   </Button>
                   <Button
-                    disabled={!crop || image?.source !== 'reference'}
+                    disabled={!crop || image?.source !== 'reference' || !check?.usable}
                     onClick={() => void applyCrop()}
                   >
                     {t.useCrop}

@@ -1,15 +1,27 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { http, HttpResponse } from 'msw'
 import { useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { Stepper } from '@/components/ui/stepper'
-import { mockApi } from '@/test/render'
-import type { Draft } from './draft'
+import { mockApi, server as apiServer } from '@/test/render'
+import { useDraft, type Draft } from './draft'
+import { AnchorStep } from './AnchorStep'
+import { PatternCrop, type StepProps } from './steps'
+import { cropPng, type EditorImage } from './image'
+import type * as ImageModule from './image'
+import type { Rect } from './geometry'
 import { Filmstrip } from './Filmstrip'
 import { ResultBar } from './ResultBar'
 import { AnchorNotFound, CameraLost } from './StateBanners'
 import { BilingualField } from './BilingualField'
 import { RegionCanvas } from './RegionCanvas'
+
+vi.mock('./image', async (orig) => ({
+  ...(await orig<typeof ImageModule>()),
+  cropPng: vi.fn(async () => 'AAAA'),
+}))
 
 mockApi()
 
@@ -295,5 +307,213 @@ describe('a text of the job in both languages', () => {
     render(<BilingualField label="Texto" value="Aguardando peça" onChange={() => {}} />)
     expect(screen.getByLabelText('Português')).toHaveValue('Aguardando peça')
     expect(screen.getByLabelText('Inglês')).toHaveValue('')
+  })
+})
+
+describe('checking a template before using the crop (VIA-0076)', () => {
+  const image: EditorImage = {
+    url: 'blob:reference',
+    width: 1000,
+    height: 500,
+    source: 'reference',
+  }
+  const answer = (body: Record<string, unknown> = {}) =>
+    apiServer.use(
+      http.post('*/api/editor/inspect/model', () =>
+        HttpResponse.json({
+          ok: true,
+          width: 90,
+          height: 60,
+          flat: false,
+          points: 412,
+          reason: null,
+          ...body,
+        }),
+      ),
+    )
+
+  function CropFlow({ anchor }: { anchor: boolean }) {
+    const current = useDraft((s) => s.draft)!
+    const [crop, setCrop] = useState<Rect | null>(null)
+    const [drawing, setDrawing] = useState<string | null>(null)
+    const props: StepProps = {
+      draft: current,
+      image,
+      crop,
+      setCrop,
+      drawing,
+      setDrawing,
+      fields: {},
+      selected: null,
+      setSelected: () => {},
+      test: null,
+      report: null,
+      verifying: false,
+      verify: async () => {},
+      openSave: () => {},
+      batch: { out: null, stale: false, loading: false, error: '' },
+      shownSample: null,
+      showSample: () => {},
+      metrics: null,
+      locating: { out: null, stale: false, loading: false, error: '' },
+    }
+    return (
+      <>
+        <RegionCanvas
+          image={image}
+          shapes={
+            crop
+              ? [{ id: 'crop', label: 'recorte', rect: crop, kind: 'presence', layer: null }]
+              : []
+          }
+          selected={null}
+          onSelect={() => {}}
+          onChange={(_, rect) => setCrop(rect)}
+          drawing={drawing}
+          onGestureEnd={() => setDrawing(null)}
+          emptyText=""
+        />
+        {anchor ? <AnchorStep {...props} /> : <PatternCrop {...props} />}
+      </>
+    )
+  }
+
+  function openCrop(anchor = false) {
+    vi.mocked(cropPng).mockClear()
+    useDraft.getState().load(
+      draft({
+        job: {
+          tools: [1, 2].map((version) => ({
+            id: `pattern${version}`,
+            type: 'pattern',
+            version,
+            params: { template: '' },
+          })),
+          geometry: {
+            rois: {},
+            fixtures: anchor
+              ? [{ name: 'anchor', locator: { type: 'template', version: 1, params: {} } }]
+              : [],
+          },
+        },
+      }),
+    )
+    apiServer.use(http.get('*/api/tools', () => HttpResponse.json({ tools: [], locators: [] })))
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <CropFlow anchor={anchor} />
+      </QueryClientProvider>,
+    )
+  }
+
+  async function drawCrop() {
+    await userEvent.click(screen.getByRole('button', { name: 'Desenhar recorte' }))
+    const canvas = screen.getByRole('group', { name: 'Regiões sobre a imagem' })
+    const bounds = vi.spyOn(canvas.parentElement!, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 1000,
+      bottom: 500,
+      width: 1000,
+      height: 500,
+      toJSON: () => ({}),
+    })
+    fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 100, clientY: 50 })
+    fireEvent.pointerMove(canvas, { pointerId: 1, clientX: 300, clientY: 200 })
+    fireEvent.pointerUp(canvas, { pointerId: 1 })
+    bounds.mockRestore()
+  }
+
+  it('blocks both pattern versions for a flat crop and shows the refusal reason', async () => {
+    answer({
+      flat: true,
+      points: null,
+      reason: 'O recorte é plano ou tem poucas bordas para casar por forma',
+    })
+    openCrop()
+    await drawCrop()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'O recorte é plano ou tem poucas bordas para casar por forma',
+    )
+    for (const version of [1, 2])
+      expect(
+        screen.getByRole('button', { name: `Usar como padrão de pattern${version}` }),
+      ).toBeDisabled()
+    expect(useDraft.getState().draft?.addFiles).toEqual({})
+  })
+
+  it('blocks a refused shape model only for v2, so a non-flat crop can still be saved for v1', async () => {
+    answer({ points: null, reason: 'O recorte tem menos de 12 pixels de lado' })
+    openCrop()
+    await drawCrop()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'O recorte tem menos de 12 pixels de lado',
+    )
+    expect(screen.getByRole('button', { name: 'Usar como padrão de pattern2' })).toBeDisabled()
+    const useV1 = screen.getByRole('button', { name: 'Usar como padrão de pattern1' })
+    expect(useV1).toBeEnabled()
+    await userEvent.click(useV1)
+    await waitFor(() =>
+      expect(useDraft.getState().draft?.addFiles).toEqual({ 'patterns/pattern1.png': 'AAAA' }),
+    )
+    expect(useDraft.getState().draft?.job.tools[0].params.template).toBe('patterns/pattern1.png')
+  })
+
+  it('waits for the check, then saves an accepted shape crop at the existing pattern path', async () => {
+    answer()
+    openCrop()
+    const useV2 = screen.getByRole('button', { name: 'Usar como padrão de pattern2' })
+    expect(useV2).toBeDisabled()
+    await drawCrop()
+    expect(useV2).toBeDisabled()
+    await screen.findByText('412 pontos de contorno')
+    expect(useV2).toBeEnabled()
+    await userEvent.click(useV2)
+    await waitFor(() =>
+      expect(useDraft.getState().draft?.addFiles).toEqual({ 'patterns/pattern2.png': 'AAAA' }),
+    )
+    expect(useDraft.getState().draft?.job.tools[1].params.template).toBe('patterns/pattern2.png')
+    expect(cropPng).toHaveBeenLastCalledWith(image, [0.1, 0.1, 0.3, 0.4])
+    expect(useV2).toBeDisabled()
+    expect(screen.queryByRole('img', { name: 'Recorte em tamanho real' })).toBeNull()
+  })
+
+  it('blocks applying a flat anchor template and shows why', async () => {
+    answer({
+      flat: true,
+      points: null,
+      reason: 'O recorte é plano ou tem poucas bordas para casar por forma',
+    })
+    openCrop(true)
+    await drawCrop()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'O recorte é plano ou tem poucas bordas para casar por forma',
+    )
+    expect(screen.getByRole('button', { name: 'Usar como gabarito' })).toBeDisabled()
+    expect(useDraft.getState().draft?.addFiles).toEqual({})
+  })
+
+  it('accepts a non-flat anchor crop without contour points and keeps the existing template path', async () => {
+    answer({ points: null, reason: 'sem bordas' })
+    openCrop(true)
+    const apply = screen.getByRole('button', { name: 'Usar como gabarito' })
+    expect(apply).toBeDisabled()
+    await drawCrop()
+    expect(apply).toBeDisabled()
+    await screen.findByText('90 × 60 px')
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByText(/pontos de contorno/)).toBeNull()
+    expect(apply).toBeEnabled()
+    await userEvent.click(apply)
+    await waitFor(() =>
+      expect(useDraft.getState().draft?.addFiles).toEqual({ 'locator/template.png': 'AAAA' }),
+    )
+    expect(useDraft.getState().draft?.job.geometry.fixtures[0].locator.params.template).toBe(
+      'locator/template.png',
+    )
+    expect(apply).toBeDisabled()
   })
 })

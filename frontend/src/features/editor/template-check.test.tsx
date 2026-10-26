@@ -75,7 +75,7 @@ describe('the template check', () => {
     const scroll = screen.getByRole('group', { name: 'Recorte em tamanho real' })
     expect(scroll).toHaveAttribute('tabindex', '0')
     expect(scroll).toHaveClass('max-h-48', 'overflow-auto')
-    await waitFor(() => expect(seen.at(-1)).toEqual({ usable: true, points: 412 }))
+    await waitFor(() => expect(seen.at(-1)).toEqual({ usable: true, flat: false, points: 412 }))
   })
 
   it('says why a shape model is refused and reports it as unusable', async () => {
@@ -85,7 +85,7 @@ describe('the template check', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'O recorte tem menos de 12 pixels de lado',
     )
-    expect(onResult).toHaveBeenLastCalledWith({ usable: false, points: null })
+    expect(onResult).toHaveBeenLastCalledWith({ usable: false, flat: false, points: null })
   })
 
   it('without a shape model accepts a non-flat crop even if it has no contour model', async () => {
@@ -97,7 +97,7 @@ describe('the template check', () => {
     expect(await screen.findByText('90 × 60 px')).toBeInTheDocument()
     expect(screen.queryByText(/pontos de contorno/)).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
-    expect(onResult).toHaveBeenLastCalledWith({ usable: true, points: null })
+    expect(onResult).toHaveBeenLastCalledWith({ usable: true, flat: false, points: null })
   })
 
   it.each([true, false])('refuses a flat crop with the fallback text (shape=%s)', async (shape) => {
@@ -109,7 +109,7 @@ describe('the template check', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'O recorte é plano: não há o que casar.',
     )
-    expect(onResult).toHaveBeenLastCalledWith({ usable: false, points: null })
+    expect(onResult).toHaveBeenLastCalledWith({ usable: false, flat: true, points: null })
   })
 
   it('reports nothing and does not crop when there is no crop or image', () => {

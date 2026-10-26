@@ -10,6 +10,7 @@ const t = text.editor.template
 
 export interface ModelCheck {
   usable: boolean
+  flat: boolean
   points: number | null
 }
 
@@ -53,6 +54,7 @@ export function TemplateCheck({ image, crop, shape, onResult }: Props) {
           setPreview({ image, crop, shape, png, answer })
           report({
             usable: answer.ok && !answer.flat && (!shape || answer.points !== null),
+            flat: answer.flat,
             points: answer.points,
           })
         } catch (error) {

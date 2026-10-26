@@ -21,6 +21,7 @@ import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { BilingualField } from './BilingualField'
+import { TemplateCheck, type ModelCheck } from './TemplateCheck'
 import { useDraft, toRequest, draftFiles, withText, type Draft, type JobJson } from './draft'
 import { type Rect } from './geometry'
 import { fixturesOf } from './fixtures'
@@ -1069,8 +1070,10 @@ export function ToolsStep({
 
 /** For the pattern tool: draw a crop on the reference image and keep it as the tool's template. */
 export function PatternCrop({ draft, image, crop, drawing, setDrawing, setCrop }: StepProps) {
+  const [check, setCheck] = useState<ModelCheck | null>(null)
   const tools: JobJson[] = draft.job.tools ?? []
   const patterns = tools.map((x, i) => [x, i] as const).filter(([x]) => x.type === 'pattern')
+  const anyV2 = patterns.some(([x]) => x.version === 2)
   if (patterns.length === 0) return null
   const save = async (i: number) => {
     if (!image || image.source !== 'reference' || !crop) return
@@ -1089,6 +1092,9 @@ export function PatternCrop({ draft, image, crop, drawing, setDrawing, setCrop }
       <p className="text-sm">
         {image?.source === 'reference' ? t.patternCropHint : t.cropNeedsReference}
       </p>
+      {image?.source === 'reference' && crop ? (
+        <TemplateCheck image={image} crop={crop} shape={anyV2} onResult={setCheck} />
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <Button
           disabled={image?.source !== 'reference'}
@@ -1099,7 +1105,11 @@ export function PatternCrop({ draft, image, crop, drawing, setDrawing, setCrop }
           {t.drawCrop}
         </Button>
         {patterns.map(([x, i]) => (
-          <Button key={x.id} disabled={!crop} onClick={() => void save(i)}>
+          <Button
+            key={x.id}
+            disabled={!crop || !check || check.flat || (x.version === 2 && check.points === null)}
+            onClick={() => void save(i)}
+          >
             {t.usePatternFor(x.id)}
           </Button>
         ))}
