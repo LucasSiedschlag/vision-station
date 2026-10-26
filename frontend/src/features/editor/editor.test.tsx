@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLive } from '@/api/live'
@@ -1434,9 +1434,16 @@ describe('the anchor step (docs/frontend.md §7.3, step 3)', () => {
   })
 
   it('teaches the size from what was found on the reference', async () => {
-    server.use(http.post('*/api/editor/locate', () => HttpResponse.json(located())))
+    // the region is on screen before the answer comes: a slow answer must not make the click come too early (VIA-0092)
+    server.use(
+      http.post('*/api/editor/locate', async () => {
+        await delay(700)
+        return HttpResponse.json(located())
+      }),
+    )
     await openAnchor(withBlob)
-    await screen.findByRole('region', { name: 'Resultado em cada amostra' })
+    const results = await screen.findByRole('region', { name: 'Resultado em cada amostra' })
+    await within(results).findByRole('button', { name: /^Referência:/ }, { timeout: 3000 }) // the answer is in
     await userEvent.click(screen.getByRole('button', { name: 'Ensinar o tamanho pela referência' }))
     expect(useDraft.getState().draft?.job.geometry.fixtures[0].locator.params.taught_size).toEqual([
       192, 144,
