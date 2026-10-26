@@ -34,7 +34,7 @@ Onde fica cada coisa:
 3. **Câmera:** o assistente lista as câmeras USB ligadas. Cada uma aparece como *Validada* ou *Não validada* (modelo ainda sem ensaio de bancada). Escolha a câmera, **Testar câmera** e **Usar esta câmera**. A câmera só muda depois de reiniciar o programa: no Windows, *Serviços* → *Vision Station* → *Reiniciar* (ou reinicie o PC). O passo fica pronto quando a imagem chega.
 4. **Senha do Supervisor:** defina a senha do Supervisor.
 5. **Backup:** a pasta já vem preenchida com a pasta de dados do programa. Para proteger os backups contra uma falha do disco, clique em **Escolher pasta…** e escolha um pen drive ou uma pasta de rede. Defina a frequência e clique em **Salvar a pasta de backup**; se o programa não conseguir gravar na pasta, ele avisa o motivo.
-6. **Primeiro job:** o botão abre o editor no primeiro passo. Você também pode importar o job da estação (`.vjob`, ou o backup `.vbak` da instalação anterior) em **Jobs**. Depois **Ativar**: o sistema confere o job no conjunto de referência antes de usar.
+6. **Primeiro job:** o botão abre o editor no primeiro passo. Você também pode importar o job da estação (`.vjob`, ou o backup `.vbak` da instalação anterior) em **Jobs**. Depois **Ativar**: o sistema exige uma imagem de referência legível e confere o job no conjunto de referência antes de usar. Se faltar qualquer uma dessas referências, a ativação é recusada e a tela mostra o motivo.
 
 Os passos *Desempenho do PC* e *Máquina* aparecem desligados, com o motivo: chegam em fases seguintes e não impedem a estação de trabalhar. Quando a senha, a câmera e o job estiverem prontos, o assistente mostra **Ir para a estação**.
 

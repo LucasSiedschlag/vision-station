@@ -125,7 +125,7 @@ class StationController:
         self,
         acquisition: Acquisition,
         inspect: Inspector,
-        verifier: Verifier = basic_verifier,
+        verifier: Verifier | None = None,
         clock: Callable[[], float] = time.monotonic,
         on_event: Callable[[StationEvent], Any] | None = None,
         hold_s: float = 2.0,
@@ -137,6 +137,11 @@ class StationController:
     ):
         self._acq = acquisition
         self._inspect = inspect
+        if verifier is None:
+            # FR-JOB-9: the default must verify both parts, including required references.
+            from vision_station.verification import JobVerifier
+
+            verifier = JobVerifier(inspect)
         self._verify = verifier
         self._clock = clock
         self._on_event = on_event

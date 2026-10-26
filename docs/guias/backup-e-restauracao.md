@@ -37,7 +37,7 @@ Guarde uma cópia fora do PC da estação (pen drive ou rede).
    - Aparece o que entrou: versões *adicionadas*, *já existiam*, ou *renumeradas* (quando uma versão com o mesmo número e conteúdo diferente já existia aqui).
    - **Importar nunca ativa nada sozinho.**
 4. Abra o job que estava ativo (o aviso diz qual) e clique **Ativar** na versão.
-   - O sistema confere o job no **conjunto de referência** (imagens com o resultado esperado). Se tudo bater, ele é ativado.
+   - O sistema exige uma **imagem de referência** legível e confere o job no **conjunto de referência** (imagens com o resultado esperado). Sem qualquer uma dessas referências, a ativação é recusada e a tela mostra o motivo. Se tudo bater, ele é ativado.
    - Ao ativar, a estação aplica os ajustes da câmera e compara a imagem ao vivo com a imagem de referência. Se a câmera estiver em outra posição ou fora de foco, a tela mostra *Falha na verificação — chamar manutenção*: ajuste a câmera e peça ao Mantenedor para entrar e tocar **Tentar de novo** na tela da estação.
 5. A configuração da instalação que veio no backup **não é aplicada sozinha**: confira **Configurações** (câmera, pasta de backup) e salve.
 6. Defina de novo as senhas em **Acessos**.

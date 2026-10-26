@@ -525,6 +525,8 @@ sequenceDiagram
 
 ### 7.3 Import and verification (UC-05, FR-JOB-9)
 
+The reference image and reference set are required (VIA-0090). A missing or unreadable `reference/reference.png` fails the camera/view check `reference_image`; a missing `tests/expected.yaml` fails the decision check `reference_set`. Stored verification checks these prerequisites before activation, even without a camera. The station then verifies the live view on preparation and reconnect. Activation refuses a failed report unless the Maintainer supplies an explicit reason; the override records every failed check in the audit and does not bypass the station's verification.
+
 ```mermaid
 flowchart TD
     A["Select .vjob / .vbak"] --> B{"Manifest + checksums OK?"}
@@ -554,7 +556,7 @@ flowchart TD
 
 Part 2 also runs in automated tests on every software build (NFR-MAI-3), using the file camera driver. This is how we prove that a restored job gives the same results (NFR-REL-5) and that the same job gives the same results on both PC tiers (NFR-POR-5).
 
-The same verification, without import, runs when a job is selected (UC-02, UC-12), when the camera reconnects (UC-09), and at start-up (UC-10). Part 2 is optional in those cases (proposed: on job selection and start-up only).
+The same verification, without import, runs when a job is selected (UC-02, UC-12), when the camera reconnects (UC-09), and at start-up (UC-10). Both parts are required; missing references fail verification (VIA-0090).
 
 ### 7.4 Camera loss and recovery (UC-09)
 

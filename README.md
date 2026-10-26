@@ -152,10 +152,10 @@ Format and rules: `docs/architecture.md` §4. A saved version is never changed, 
 ### Station controller (C920 bench run)
 
 ```bash
-uv run python scripts/run_station.py --name C920 --exposure-us 33000
+uv run python scripts/run_station.py --name C920 --reference reference.png --exposure-us 33000
 ```
 
-Starts the camera thread and the state machine with a stand-in inspection (reads a code in the picture). Put an object in the area, wait until it is still, and watch the states and the result; take it away to re-arm. Pictures go to `station_out/`.
+Starts the camera thread and the state machine with a stand-in inspection (reads a code in the picture). Supply a reference image with a readable code and start with that scene in view for verification (FR-JOB-9). Then empty the scene and press Enter to set the background. Put an object in the area, wait until it is still, and watch the states and the result; take it away to re-arm. Pictures go to `station_out/`.
 
 ### Verification and activation
 

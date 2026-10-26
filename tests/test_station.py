@@ -17,6 +17,7 @@ from vision_station.station import (
     VerifyResult,
 )
 from vision_station.store import JobBundle
+from vision_station.verification import EXPECTED_FILE, REFERENCE_IMAGE, JobVerifier, make_reference_files
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -112,7 +113,10 @@ def make_bundle(mode="image_presence", presence=True, waiting=None, interval_ms=
     elif "ui" in data:
         del data["ui"]
     profile = CameraProfile.model_validate(yaml.safe_load((FIXTURES / "profile.yaml").read_text()))
-    return JobBundle(job=Job.model_validate(data), profile=profile)
+    files = make_reference_files(empty_scene())
+    files["tests/images/ok.png"] = files[REFERENCE_IMAGE]
+    files[EXPECTED_FILE] = b"cases:\n- {image: tests/images/ok.png, outcome: PASS}\n"
+    return JobBundle(job=Job.model_validate(data), profile=profile, extra=files)
 
 
 class Rig:
@@ -125,6 +129,7 @@ class Rig:
         self.inspected = []
         self.outcome = outcome
         self.events = []
+        controller_args.setdefault("verifier", JobVerifier(lambda b, f: InspectionResult(Outcome.PASS)))
         self.controller = StationController(self.acq, self._inspect, clock=self.clock, on_event=self.events.append, **controller_args)
         self.bundle = make_bundle(mode, presence, interval_ms=interval_ms, external=external)
 
@@ -159,6 +164,18 @@ class Rig:
 
 
 # --- acquisition -------------------------------------------------------------
+
+
+@pytest.mark.parametrize("missing", ["reference/reference.png", "tests/expected.yaml"])
+def test_default_controller_refuses_jobs_without_references(missing):
+    rig = Rig()
+    rig.controller = StationController(rig.acq, lambda b, f: InspectionResult(Outcome.PASS), clock=rig.clock)
+    bundle = rig.bundle
+    rig.bundle = JobBundle(bundle.job, bundle.profile, extra={k: v for k, v in bundle.extra.items() if k != missing})
+    rig.controller.start(rig.bundle)
+    rig.tick(4)
+    assert rig.state is State.FAULT
+    assert "referência" in rig.controller.status().detail
 
 
 def test_acquisition_connects_applies_settings_and_keeps_only_the_latest_frame():
@@ -497,6 +514,7 @@ def test_a_setting_the_camera_refused_stops_in_fault_until_retry():
     rig.tick(20)
     assert rig.state is State.FAULT and rig.inspected == []  # no inspection while faulted
     rig.camera.status = {"exposure": SettingStatus.APPLIED}
+    rig.camera.scene = empty_scene()
     rig.controller.retry()
     rig.tick(4)
     assert rig.state is State.READY
@@ -619,6 +637,7 @@ def test_pause_and_resume():
     rig.camera.scene = scene_with_object()
     rig.tick(15)
     assert rig.inspected == []
+    rig.camera.scene = empty_scene()
     rig.controller.resume()
     rig.tick(4)
     assert rig.state is State.READY

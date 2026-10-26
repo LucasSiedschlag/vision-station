@@ -37,12 +37,10 @@ class JobVerifier:
         inspect: Inspector,
         locate: Locator | None = None,
         parts: Literal["both", "camera", "decision"] = "both",
-        require_reference_set: bool = False,
     ):
         self._inspect = inspect
         self._locate = locate
         self._parts = parts
-        self._require = require_reference_set
         self.last_report: VerificationReport | None = None
 
     def __call__(self, bundle: JobBundle, acquisition: Acquisition) -> VerifyResult:
@@ -53,16 +51,15 @@ class JobVerifier:
             frame=acquisition.latest(),
             parts=self._parts,
             locate=self._locate,
-            require_reference_set=self._require,
         )
         self.last_report = report
         return VerifyResult(report.ok, "" if report.ok else report.summary(), tuple(report.warnings))
 
 
-def verify_stored_job(store: JobStore, ref: JobRef, inspect: Inspector, require_reference_set: bool = False) -> VerificationReport:
-    """The decision-logic part only, from the stored reference set, no camera needed. This is how a
+def verify_stored_job(store: JobStore, ref: JobRef, inspect: Inspector) -> VerificationReport:
+    """Require the reference image and run the decision-logic part, no camera needed. This is how a
     restored job is proved to give the same results as the original (NFR-REL-5)."""
-    return verify_job(store.load(ref), inspect=inspect, parts="decision", require_reference_set=require_reference_set)
+    return verify_job(store.load(ref), inspect=inspect, parts="decision")
 
 
 def verify_live(
@@ -72,7 +69,6 @@ def verify_live(
     inspect: Inspector,
     *,
     locate: Locator | None = None,
-    require_reference_set: bool = False,
     timeout_s: float = 15.0,
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
@@ -99,7 +95,6 @@ def verify_live(
         apply_report=acquisition.last_apply,
         frame=acquisition.latest(),
         locate=locate,
-        require_reference_set=require_reference_set,
     )
 
 

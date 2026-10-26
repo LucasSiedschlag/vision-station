@@ -60,6 +60,14 @@ class VerificationReport:
         return join(c.message for c in self.failures())
 
 
+def check_reference_image(bundle: JobBundle) -> tuple[np.ndarray | None, list[Check]]:
+    """A readable reference is required even before live verification (FR-JOB-9, VIA-0090)."""
+    data = bundle.extra.get(REFERENCE_IMAGE)
+    image = decode_image(data) if data else None
+    checks = [] if image is not None else [Check("reference_image", False, tr("job sem imagem de referência: nitidez, semelhança e posição não conferidas"))]
+    return image, checks
+
+
 def check_camera_and_view(
     bundle: JobBundle,
     apply_report: ApplyReport | None,
@@ -67,7 +75,7 @@ def check_camera_and_view(
     locate: Locator | None = None,
 ) -> tuple[list[Check], list[str]]:
     """Steps 1 to 4: settings applied, a live frame, and the frame compared with the reference."""
-    checks: list[Check] = []
+    ref_image, checks = check_reference_image(bundle)
     warnings: list[str] = []
 
     if apply_report is None:
@@ -91,10 +99,7 @@ def check_camera_and_view(
     in_range = q.brightness.min <= bright <= q.brightness.max
     checks.append(Check("brightness", in_range, tr("brilho {value:.0f} (esperado {low:g} a {high:g})", value=bright, low=q.brightness.min, high=q.brightness.max) if not in_range else tr("brilho {value:.0f}", value=bright)))
 
-    ref_png = bundle.extra.get(REFERENCE_IMAGE)
-    ref_image = decode_image(ref_png) if ref_png else None
     if ref_image is None:
-        warnings.append(tr("job sem imagem de referência: nitidez, semelhança e posição não conferidas"))
         return checks, warnings
 
     meta = parse_meta(bundle.extra[REFERENCE_META]) if REFERENCE_META in bundle.extra else None
@@ -175,12 +180,10 @@ def run_reference_set(bundle: JobBundle, inspect: Inspector) -> list[CaseRun]:
     ]
 
 
-def check_decision_logic(bundle: JobBundle, inspect: Inspector, require_reference_set: bool = False) -> tuple[list[Check], list[str]]:
+def check_decision_logic(bundle: JobBundle, inspect: Inspector) -> tuple[list[Check], list[str]]:
     """Step 5: run the job on the stored reference images and compare with the expected results."""
     if EXPECTED_FILE not in bundle.extra:
-        if require_reference_set:
-            return [Check("reference_set", False, tr("job sem conjunto de referência (tests/expected.yaml)"))], []
-        return [], [tr("job sem conjunto de referência: lógica de decisão não conferida")]
+        return [Check("reference_set", False, tr("job sem conjunto de referência (tests/expected.yaml)"))], []
     return [Check(f"case:{run.image}", run.ok, run.message) for run in run_reference_set(bundle, inspect)], []
 
 
@@ -208,15 +211,17 @@ def verify_job(
     frame: Frame | None = None,
     parts: Literal["both", "camera", "decision"] = "both",
     locate: Locator | None = None,
-    require_reference_set: bool = False,
 ) -> VerificationReport:
+    """Select which verification to run; a readable reference image is always required (FR-JOB-9)."""
     camera: list[Check] = []
     decision: list[Check] = []
     warnings: list[str] = []
     if parts in ("both", "camera"):
         camera, w = check_camera_and_view(bundle, apply_report, frame, locate)
         warnings += w
+    else:
+        _, camera = check_reference_image(bundle)
     if parts in ("both", "decision"):
-        decision, w = check_decision_logic(bundle, inspect, require_reference_set)
+        decision, w = check_decision_logic(bundle, inspect)
         warnings += w
     return VerificationReport(tuple(camera), tuple(decision), tuple(warnings))

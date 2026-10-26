@@ -45,6 +45,7 @@ from vision_station.pipeline.inspect import outline
 from vision_station.pipeline import locate_fixtures
 from vision_station.verification import make_reference_files, run_cases, run_reference_set, verify_stored_job
 from vision_station.verification.reference import EXPECTED_FILE, REFERENCE_IMAGE, REFERENCE_META, decode_image, parse_expected
+from vision_station.verification.verify import check_reference_image
 
 MAX_IMAGE = 32 * 1024 * 1024
 
@@ -238,6 +239,9 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
             bundle = placeholder(draft, role)
         except Problem as exc:  # type: ignore[misc]
             return m.VerifyOut(ok=False, message=render(exc.detail), fields=exc.extra.get("fields", {}))
+        _, missing_reference = check_reference_image(bundle)
+        if missing_reference:
+            return m.VerifyOut(ok=False, message=render(missing_reference[0].message))
         runs = run_reference_set(bundle, deps.inspect)
         if not runs:
             return m.VerifyOut(ok=False, message=tr("Não há amostras para validar: capture amostras Boas e Ruins"))

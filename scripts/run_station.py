@@ -1,9 +1,10 @@
 """Run the station controller with the C920 and a stand-in inspection (Windows, camera plugged in).
 
-    uv run python scripts/run_station.py --name C920
-    uv run python scripts/run_station.py --name C920 --exposure-us 33000 --still-ms 800
+    uv run python scripts/run_station.py --name C920 --reference reference.png
+    uv run python scripts/run_station.py --name C920 --reference reference.png --exposure-us 33000 --still-ms 800
 
-With the scene empty, press Enter once to take it as the empty scene (or just leave it empty at start). Put an
+Start with the reference scene in view so verification can pass (FR-JOB-9). Then empty the scene and press Enter
+once to take it as the empty scene. Put an
 object in the area: the station waits until it is still, takes one picture, runs the stand-in
 inspection (PASS if a code is read in the picture, FAIL if not) and shows the result. Remove the object to
 re-arm. Every state change and result is printed; pictures of the results go to station_out/.
@@ -17,6 +18,7 @@ import time
 from pathlib import Path
 
 import cv2
+import numpy as np
 import yaml
 
 from vision_station.cameras import create_camera
@@ -26,11 +28,12 @@ from vision_station.station import Acquisition, StationController, StationEvent
 from vision_station.store import JobBundle
 from vision_station.system import SystemConfig
 from vision_station.tools import run_tool
+from vision_station.verification import EXPECTED_FILE, REFERENCE_IMAGE, make_reference_files
 
 DEFAULT_PROFILE = Path(__file__).parent.parent / "examples" / "c920-profile.yaml"
 
 
-def build_job(profile: CameraProfile, still_ms: int, min_area: float) -> JobBundle:
+def build_job(profile: CameraProfile, still_ms: int, min_area: float, reference: np.ndarray) -> JobBundle:
     data = {
         "format": 3,
         "job": {"id": "00000000-0000-4000-8000-000000000001", "name": "Teste da estação", "version": 1, "author": "bancada", "created_at": "2026-10-14T00:00:00-03:00"},
@@ -39,7 +42,10 @@ def build_job(profile: CameraProfile, still_ms: int, min_area: float) -> JobBund
         "geometry": {"rois": {"all": {"relative_to": "frame", "rect": [0, 0, 1, 1]}}},
         "tools": [{"id": "code", "type": "code", "version": 1, "roi": "all", "reason_fail": "Código não lido"}],
     }
-    return JobBundle(job=Job.model_validate(data), profile=profile)
+    files = make_reference_files(reference)
+    files["tests/images/ok.png"] = files[REFERENCE_IMAGE]
+    files[EXPECTED_FILE] = b"cases:\n- {image: tests/images/ok.png, outcome: PASS}\n"
+    return JobBundle(job=Job.model_validate(data), profile=profile, extra=files)
 
 
 def main() -> int:
@@ -48,6 +54,7 @@ def main() -> int:
     parser.add_argument("--path")
     parser.add_argument("--index", type=int)
     parser.add_argument("--profile", type=Path, default=DEFAULT_PROFILE)
+    parser.add_argument("--reference", type=Path, required=True, help="a reference image with a readable code (FR-JOB-9)")
     parser.add_argument("--exposure-us", type=float)
     parser.add_argument("--still-ms", type=int, default=800)
     parser.add_argument("--min-area", type=float, default=0.05, help="fraction of the area that must change to count as an object")
@@ -57,6 +64,9 @@ def main() -> int:
     connection = {"device_path": args.path} if args.path else {"device_name": args.name} if args.name else {"device_index": args.index}
     if args.path is None and args.name is None and args.index is None:
         parser.error("give --name, --path or --index")
+    reference = cv2.imread(str(args.reference))
+    if reference is None:
+        parser.error("reference image is missing or unreadable")
 
     profile = CameraProfile.model_validate(yaml.safe_load(args.profile.read_text(encoding="utf-8")))
     if args.exposure_us is not None:
@@ -84,7 +94,7 @@ def main() -> int:
 
     acq = Acquisition(create_camera("uvc"), connection, settle_s=args.settle_ms / 1000, dead_after_s=args.dead_after_s)
     controller = StationController(acq, inspect, on_event=show)
-    controller.start(build_job(profile, args.still_ms, args.min_area))
+    controller.start(build_job(profile, args.still_ms, args.min_area, reference))
     acq.start()
     runner = threading.Thread(target=controller.run, daemon=True)
     runner.start()

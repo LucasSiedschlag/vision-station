@@ -36,6 +36,7 @@ from vision_station.core.results import InspectionResult, Mark, Outcome, ToolRep
 from vision_station.station import Acquisition, StationController
 from vision_station.store import JobBundle, JobStore
 from vision_station.system import SystemConfig, SystemService
+from vision_station.verification import EXPECTED_FILE, REFERENCE_IMAGE, activate, make_reference_files, verify_stored_job
 
 
 def scene(object_x: int | None) -> np.ndarray:
@@ -119,7 +120,10 @@ def demo_job(name: str = "Tampa azul — etiqueta de lote (demo)") -> JobBundle:
             "orientation": "normal",
         }
     )
-    return JobBundle(job=Job.model_validate(data), profile=profile)
+    files = make_reference_files(scene(None))
+    files["tests/images/ok.png"] = files[REFERENCE_IMAGE]
+    files[EXPECTED_FILE] = b"cases:\n- {image: tests/images/ok.png, outcome: PASS}\n"
+    return JobBundle(job=Job.model_validate(data), profile=profile, extra=files)
 
 
 def main() -> int:
@@ -197,7 +201,7 @@ def main() -> int:
 
     if not args.fresh:
         ref = jobs.save(demo_job())  # in the store too, so the Jobs screen has something to list
-        jobs.set_active(ref)
+        activate(jobs, ref, verify_stored_job(jobs, ref, inspect))
         controller.start(jobs.load(ref))
     acq.start()
     if not args.fresh:

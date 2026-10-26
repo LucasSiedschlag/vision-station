@@ -1259,9 +1259,6 @@ msgstr "image received"
 msgid "job sem conjunto de referência (tests/expected.yaml)"
 msgstr "job without a reference set (tests/expected.yaml)"
 
-msgid "job sem conjunto de referência: lógica de decisão não conferida"
-msgstr "job without a reference set: decision logic not checked"
-
 msgid "job sem imagem de referência: nitidez, semelhança e posição não conferidas"
 msgstr "job without a reference image: sharpness, similarity and position not checked"
 

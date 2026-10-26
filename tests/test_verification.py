@@ -15,6 +15,7 @@ from vision_station.store import JobBundle, JobRef, JobStore
 from vision_station.tools import run_tool
 from vision_station.verification import (
     EXPECTED_FILE,
+    REFERENCE_IMAGE,
     JobVerifier,
     VerificationFailed,
     activate,
@@ -168,12 +169,34 @@ def test_anchor_position_is_checked_when_a_locator_is_given():
     assert not lost.ok and "não encontrado" in lost.summary()
 
 
-def test_a_job_without_reference_image_warns_instead_of_failing():
-    bundle = make_bundle(extra={})
+@pytest.mark.parametrize("reference", [None, b"unreadable"])
+def test_a_job_without_a_readable_reference_image_fails(reference):
+    files = dict(make_bundle().extra)
+    if reference is None:
+        del files[REFERENCE_IMAGE]
+    else:
+        files[REFERENCE_IMAGE] = reference
+    bundle = make_bundle(extra=files)
     report = verify_job(bundle, inspect=inspect_code, apply_report=OK_APPLY, frame=GOOD_FRAME)
-    assert report.ok
-    assert any("imagem de referência" in w for w in report.warnings) and any("conjunto de referência" in w for w in report.warnings)
-    assert not verify_job(bundle, inspect=inspect_code, apply_report=OK_APPLY, frame=GOOD_FRAME, require_reference_set=True).ok
+    assert not report.ok
+    assert names(report.camera_view)["reference_image"] is False
+    assert "imagem de referência" in report.summary()
+    assert not report.warnings
+
+
+def test_a_job_without_a_reference_set_fails():
+    files = {k: v for k, v in make_bundle().extra.items() if k != EXPECTED_FILE}
+    report = verify_job(make_bundle(extra=files), inspect=inspect_code, apply_report=OK_APPLY, frame=GOOD_FRAME)
+    assert not report.ok
+    assert names(report.decision)["reference_set"] is False
+    assert "conjunto de referência" in report.summary()
+    assert not report.warnings
+
+
+def test_a_complete_job_passes_both_parts():
+    report = verify_job(make_bundle(), inspect=inspect_code, apply_report=OK_APPLY, frame=GOOD_FRAME)
+    assert report.ok, report.failures()
+    assert report.camera_view and report.decision and not report.warnings
 
 
 # --- decision logic ----------------------------------------------------------
@@ -258,6 +281,31 @@ def test_activation_needs_a_passing_report_or_a_recorded_override(store):
 # --- with the live camera and the station ------------------------------------
 
 
+@pytest.mark.parametrize("missing,part,check", [(REFERENCE_IMAGE, "camera_view", "reference_image"), (EXPECTED_FILE, "decision", "reference_set")])
+def test_missing_references_are_refused_by_stored_live_and_station_verification(store, missing, part, check):
+    files = {k: v for k, v in make_bundle().extra.items() if k != missing}
+    bundle = make_bundle(extra=files)
+    ref = store.save(bundle)
+    stored = verify_stored_job(store, ref, inspect_code)
+    assert not stored.ok
+    assert names(getattr(stored, part))[check] is False
+    with pytest.raises(VerificationFailed):
+        activate(store, ref, stored)
+    assert store.get_active() is None
+
+    rig = Rig()
+    rig.camera.scene = GOOD_FRAME.image
+    live = verify_live(store, ref, rig.acq, inspect_code, drive_acquisition=True, clock=rig.clock, sleep=lambda s: rig.clock.advance(0.05))
+    assert not live.ok and names(getattr(live, part))[check] is False
+    rig.controller._verify = JobVerifier(inspect_code)
+    rig.controller.start(bundle)
+    rig.tick(4)
+    assert rig.state is State.FAULT
+    report = rig.controller._verify.last_report
+    assert not report.ok and names(getattr(report, part))[check] is False
+    assert report.summary() == rig.controller.status().detail
+
+
 def test_verify_live_applies_the_job_settings_and_runs_both_parts(store):
     ref = store.save(make_bundle())
     rig = Rig()
@@ -280,7 +328,7 @@ def test_the_station_uses_the_full_verification():
         rig = Rig()
         rig.camera.scene = scene
         bundle = station_bundle()
-        extra = make_reference_files(empty_scene())
+        extra = {**bundle.extra, **make_reference_files(empty_scene())}
         rig.bundle = JobBundle(bundle.job, bundle.profile, extra=extra)
         rig.verifier = JobVerifier(lambda b, f: InspectionResult(Outcome.PASS))
         rig.controller._verify = rig.verifier

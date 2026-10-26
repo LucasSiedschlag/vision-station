@@ -14,6 +14,7 @@ from vision_station.api import ApiDeps, AuthError, AuthService, LockedOut, creat
 from vision_station.records import RecordingConfig, ResultRecorder, ResultStore
 from vision_station.core.results import InspectionResult, Outcome
 from vision_station.store import JobRef, JobStore
+from vision_station.verification import EXPECTED_FILE, REFERENCE_IMAGE
 
 HOSTS = ("testserver", "localhost", "127.0.0.1")
 
@@ -253,6 +254,30 @@ def test_other_hosts_and_other_origins_are_refused(env):
 
 
 # --- jobs ----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("missing,message", [(REFERENCE_IMAGE, "imagem de referência"), (EXPECTED_FILE, "conjunto de referência")])
+def test_activation_without_references_is_refused_with_the_report(env, missing, message):
+    bundle = job_bundle()
+    ref = env.jobs.save(type(bundle)(bundle.job, bundle.profile, extra={k: v for k, v in bundle.extra.items() if k != missing}))
+    url = f"/api/jobs/{ref.job_id}/versions/{ref.version}/activate"
+    for body in ({}, {"override_reason": "   "}):
+        response = env.client.post(url, headers=login(env, "maintainer"), json=body)
+        assert response.status_code == 409
+        report = response.json()
+        assert report["code"] == "verification_failed" and report["verified"] is False
+        assert any(message in p for p in report["problems"])
+        assert env.jobs.get_active() is None
+    assert not env.jobs.read_audit()
+    response = env.client.post(url, headers=login(env), json={"override_reason": "conferido a olho"})
+    assert response.status_code == 403
+    response = env.client.post(url, headers=login(env, "maintainer"), json={"override_reason": "conferido a olho"})
+    assert response.status_code == 200
+    assert response.json()["override"] is True and response.json()["verified"] is False
+    assert env.jobs.get_active() == ref
+    audit = env.jobs.read_audit()[-1]
+    assert audit["kind"] == "activate_override" and audit["reason"] == "conferido a olho"
+    assert any(message in failure for failure in audit["failures"])
 
 
 def test_list_activate_export_and_import_jobs(env, tmp_path):

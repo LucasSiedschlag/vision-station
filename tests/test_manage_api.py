@@ -82,6 +82,17 @@ def test_verify_says_so_when_there_is_nothing_to_run_or_the_draft_is_refused(env
     assert env.client.post("/api/jobs/verify", json=draft()).status_code == 401
 
 
+def test_verify_refuses_a_draft_without_its_reference_image(env, mnt):
+    missing = draft()
+    del missing["add_files"]["reference/reference.png"]
+    for language, message in [("pt-BR", "imagem de referência"), ("en", "reference image")]:
+        response = env.client.post("/api/jobs/verify", headers={**mnt, "Accept-Language": language}, json=missing)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["ok"] is False and body["cases"] == []
+        assert message in body["message"]
+
+
 # --- jobs ----------------------------------------------------------------------------------------------
 
 
