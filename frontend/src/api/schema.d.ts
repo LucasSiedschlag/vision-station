@@ -265,6 +265,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/editor/inspect/model': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Inspect Model
+     * @description The size, the flatness and the shape model of a template crop, so the editor can say whether it is a good template before it
+     *     is saved (docs/frontend.md §19.5). Nothing is stored.
+     */
+    post: operations['inspect_model']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/editor/locate': {
     parameters: {
       query?: never
@@ -2482,6 +2503,41 @@ export interface components {
        */
       text: string
     }
+    /** ModelCheckBody */
+    ModelCheckBody: {
+      /** Image */
+      image: string
+    }
+    /**
+     * ModelCheckOut
+     * @description What a template crop would give (docs/frontend.md §19.5): its size, whether it is flat (no gray variation), the contour points of its
+     *     shape model, or why the model is refused. `ok` False: the image itself was not usable (`message`).
+     */
+    ModelCheckOut: {
+      /**
+       * Flat
+       * @default false
+       */
+      flat: boolean
+      /**
+       * Height
+       * @default 0
+       */
+      height: number
+      /** Message */
+      message: string | null
+      /** Ok */
+      ok: boolean
+      /** Points */
+      points: number | null
+      /** Reason */
+      reason: string | null
+      /**
+       * Width
+       * @default 0
+       */
+      width: number
+    }
     /** NetworkSettings */
     NetworkSettings: {
       /**
@@ -4370,6 +4426,59 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BatchOut']
+        }
+      }
+      /** @description needs a login */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description needs another role */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Problem']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  inspect_model: {
+    parameters: {
+      query?: never
+      header?: {
+        authorization?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ModelCheckBody']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ModelCheckOut']
         }
       }
       /** @description needs a login */

@@ -2737,6 +2737,77 @@
         "title": "MarkOut",
         "type": "object"
       },
+      "ModelCheckBody": {
+        "properties": {
+          "image": {
+            "title": "Image",
+            "type": "string"
+          }
+        },
+        "required": ["image"],
+        "title": "ModelCheckBody",
+        "type": "object"
+      },
+      "ModelCheckOut": {
+        "description": "What a template crop would give (docs/frontend.md §19.5): its size, whether it is flat (no gray variation), the contour points of its\nshape model, or why the model is refused. `ok` False: the image itself was not usable (`message`).",
+        "properties": {
+          "flat": {
+            "default": false,
+            "title": "Flat",
+            "type": "boolean"
+          },
+          "height": {
+            "default": 0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "width": {
+            "default": 0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": ["ok", "message", "width", "height", "flat", "points", "reason"],
+        "title": "ModelCheckOut",
+        "type": "object"
+      },
       "NetworkSettings": {
         "additionalProperties": false,
         "properties": {
@@ -6207,6 +6278,83 @@
           }
         },
         "summary": "Editor Batch"
+      }
+    },
+    "/api/editor/inspect/model": {
+      "post": {
+        "description": "The size, the flatness and the shape model of a template crop, so the editor can say whether it is a good template before it\nis saved (docs/frontend.md §19.5). Nothing is stored.",
+        "operationId": "inspect_model",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelCheckBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelCheckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs a login"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "needs another role"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspect Model"
       }
     },
     "/api/editor/locate": {

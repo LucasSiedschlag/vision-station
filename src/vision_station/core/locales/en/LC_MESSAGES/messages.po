@@ -869,6 +869,13 @@ msgstr "The object is the largest region of a colour, or darker or lighter than 
 msgid "O objeto é o canto de duas bordas retas; a âncora tem a posição e o ângulo dele."
 msgstr "The object is the corner of two straight edges; the anchor has its position and angle."
 
+#, python-brace-format
+msgid "O recorte tem menos de {side} pixels de lado"
+msgstr "The crop has a side smaller than {side} pixels"
+
+msgid "O recorte é plano ou tem poucas bordas para casar por forma"
+msgstr "The crop is flat or has too few edges for shape matching"
+
 msgid "O resultado deve ser PASS, FAIL ou ERROR"
 msgstr "The result must be PASS, FAIL or ERROR"
 

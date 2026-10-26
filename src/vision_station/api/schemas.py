@@ -737,6 +737,23 @@ class ColourProposalOut(BaseModel):
     leak: float | None = None  # share of the excluded pixels inside it; None: nothing was excluded
 
 
+class ModelCheckBody(BaseModel):
+    image: str  # base64 PNG or JPEG of the crop
+
+
+class ModelCheckOut(BaseModel):
+    """What a template crop would give (docs/frontend.md §19.5): its size, whether it is flat (no gray variation), the contour points of its
+    shape model, or why the model is refused. `ok` False: the image itself was not usable (`message`)."""
+
+    ok: bool
+    message: str | None = None
+    width: int = 0
+    height: int = 0
+    flat: bool = False
+    points: int | None = None  # contour points of the full-resolution model; None: no model
+    reason: str | None = None  # why there is no model
+
+
 class ExposureStepOut(BaseModel):
     exposure_us: float
     saturated_percent: float

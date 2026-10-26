@@ -28,6 +28,7 @@ from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, LockedOut
 from vision_station.cameras import Frame
 from vision_station.algorithms.color_range import propose_range
+from vision_station.algorithms.shapematch import MIN_SIDE, build_model
 from vision_station.core.i18n import render, render_schema, text_of, tr
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs import tuning
@@ -351,6 +352,28 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         if found is None:
             return m.ColourProposalOut(ok=False, message=render("Poucos pixels para propor uma cor: arraste sobre uma área maior"))
         return m.ColourProposalOut(ok=True, **{k: getattr(found, k) for k in ("hue", "s_min", "s_max", "v_min", "v_max", "pixels", "kept", "leak")})
+
+    @api.post("/editor/inspect/model", response_model=m.ModelCheckOut)
+    def inspect_model(body: m.ModelCheckBody, _: str = Depends(need("maintainer"))) -> m.ModelCheckOut:
+        """The size, the flatness and the shape model of a template crop, so the editor can say whether it is a good template before it
+        is saved (docs/frontend.md §19.5). Nothing is stored."""
+        try:
+            image = _decode_image(body.image)
+        except ValueError as exc:
+            return m.ModelCheckOut(ok=False, message=render(text_of(exc)))
+        height, width = image.shape[:2]
+        flat = float(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).std()) < 1.0
+        try:
+            points = len(build_model(image).levels[0].points)
+            reason = None
+        except ValueError:
+            points = None
+            reason = (
+                render(tr("O recorte tem menos de {side} pixels de lado", side=MIN_SIDE))
+                if min(height, width) < MIN_SIDE
+                else render("O recorte é plano ou tem poucas bordas para casar por forma")
+            )
+        return m.ModelCheckOut(ok=True, width=width, height=height, flat=flat, points=points, reason=reason)
 
     @api.post("/jobs", status_code=201, response_model=m.SavedVersion, responses={409: {"model": m.Problem}, 422: {"model": m.Problem}})
     def create_job(draft: m.JobDraft, role: str = Depends(need("maintainer"))) -> m.SavedVersion:
