@@ -737,6 +737,9 @@ msgstr "Clear samples ({included} included, {excluded} excluded)"
 msgid "É a câmera que a estação já usa."
 msgstr "This is the camera the station already uses."
 
+msgid "Recorte em tamanho real"
+msgstr "Crop at full size"
+
 msgid "Criar o primeiro job"
 msgstr "Create the first job"
 
@@ -1453,6 +1456,9 @@ msgstr "Sound on fail"
 
 msgid "Versão {version} ativada."
 msgstr "Version {version} activated."
+
+msgid "{n} pontos de contorno"
+msgstr "{n} contour points"
 
 msgid "âncora"
 msgstr "anchor"
@@ -2578,6 +2584,9 @@ msgstr "Added to the job: {paths}"
 
 msgid "Campos com problema"
 msgstr "Fields with problems"
+
+msgid "O recorte é plano: não há o que casar."
+msgstr "The crop is flat: there is nothing to match."
 
 msgid "Marcado como incorreto. A imagem vai para o treinamento."
 msgstr "Marked as incorrect. The image goes to training."

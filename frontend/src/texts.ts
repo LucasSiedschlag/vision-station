@@ -1296,6 +1296,16 @@ export const text = {
         return t`Sem imagem ao vivo: a câmera não está entregando quadros.`
       },
     },
+    /** The template crop check (VIA-0076, docs/frontend.md §19.5). */
+    template: {
+      get preview() {
+        return t`Recorte em tamanho real`
+      },
+      points: (n: number) => t`${n} pontos de contorno`,
+      get flat() {
+        return t`O recorte é plano: não há o que casar.`
+      },
+    },
     /** The gray threshold control (docs/frontend.md §19.5). */
     threshold: {
       get automatic() {

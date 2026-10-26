@@ -737,6 +737,9 @@ msgstr "Limpar amostras ({included} incluídas, {excluded} excluídas)"
 msgid "É a câmera que a estação já usa."
 msgstr "É a câmera que a estação já usa."
 
+msgid "Recorte em tamanho real"
+msgstr "Recorte em tamanho real"
+
 msgid "Criar o primeiro job"
 msgstr "Criar o primeiro job"
 
@@ -1453,6 +1456,9 @@ msgstr "Som na reprovação"
 
 msgid "Versão {version} ativada."
 msgstr "Versão {version} ativada."
+
+msgid "{n} pontos de contorno"
+msgstr "{n} pontos de contorno"
 
 msgid "âncora"
 msgstr "âncora"
@@ -2578,6 +2584,9 @@ msgstr "Adicionado ao job: {paths}"
 
 msgid "Campos com problema"
 msgstr "Campos com problema"
+
+msgid "O recorte é plano: não há o que casar."
+msgstr "O recorte é plano: não há o que casar."
 
 msgid "Marcado como incorreto. A imagem vai para o treinamento."
 msgstr "Marcado como incorreto. A imagem vai para o treinamento."
