@@ -52,9 +52,10 @@ def color_mask(image: np.ndarray, color: ColorRange) -> np.ndarray:
         ref = cv2.cvtColor(np.array([[[b, g, r]]], np.float32) / 255.0, cv2.COLOR_BGR2Lab)[0, 0]
         return np.linalg.norm(lab - ref, axis=2) <= color.max_distance
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-    h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
-    mask = (s >= color.s_min) & (s <= color.s_max) & (v >= color.v_min) & (v <= color.v_max)
-    if color.hue is not None:
-        lo, hi = color.hue
-        mask &= ((h >= lo) & (h <= hi)) if lo <= hi else ((h >= lo) | (h <= hi))
-    return mask
+    if color.hue is None or color.hue[0] <= color.hue[1]:
+        lo, hi = color.hue if color.hue is not None else (0, 179)
+        return cv2.inRange(hsv, (lo, color.s_min, color.v_min), (hi, color.s_max, color.v_max)) > 0
+    lo, hi = color.hue  # wraps through red: [lo, 179] or [0, hi]
+    upper = cv2.inRange(hsv, (lo, color.s_min, color.v_min), (179, color.s_max, color.v_max))
+    lower = cv2.inRange(hsv, (0, color.s_min, color.v_min), (hi, color.s_max, color.v_max))
+    return cv2.bitwise_or(upper, lower) > 0
