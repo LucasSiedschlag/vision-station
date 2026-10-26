@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import { GrayThresholdPicker } from './GrayThresholdPicker'
 import { HsvRangePicker } from './HsvRangePicker'
 
 /** What a graphical control gets for the parameter that names it in `x-widget` (docs/frontend.md §19.2). */
@@ -27,6 +28,7 @@ export interface WidgetProps {
  */
 export const widgets: Record<string, ComponentType<WidgetProps>> = {
   'hsv-range': HsvRangePicker,
+  'gray-threshold': GrayThresholdPicker,
 }
 
 /**
