@@ -1200,10 +1200,6 @@ msgstr "accept swapped"
 msgid "ajuste não aplicado ({detail})"
 msgstr "setting not applied ({detail})"
 
-#, python-brace-format
-msgid "ajuste não aplicado: {settings}"
-msgstr "setting not applied: {settings}"
-
 msgid "ajustes da câmera aplicados"
 msgstr "camera settings applied"
 

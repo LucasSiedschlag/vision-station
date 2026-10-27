@@ -5,7 +5,6 @@ from vision_station.station.controller import (
     StationEvent,
     Status,
     VerifyResult,
-    basic_verifier,
 )
 from vision_station.station.trigger import Presence, PresenceDetector
 
@@ -18,5 +17,4 @@ __all__ = [
     "StationEvent",
     "Status",
     "VerifyResult",
-    "basic_verifier",
 ]

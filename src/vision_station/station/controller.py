@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any
 
-from vision_station.cameras import Frame, SettingStatus
+from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
 from vision_station.core.i18n import tr
 from vision_station.core.results import InspectionResult, Outcome, ResultJob, TriggerInfo, TriggerSource
@@ -67,19 +67,6 @@ class VerifyResult:
 
 Verifier = Callable[[JobBundle, Acquisition], VerifyResult]
 Inspector = Callable[[JobBundle, Frame], InspectionResult]
-
-
-def basic_verifier(bundle: JobBundle, acquisition: Acquisition) -> VerifyResult:
-    """Camera settings: every one the camera has must be applied. (The full verification, with the
-    reference image and reference set, replaces this one: FR-JOB-9.)"""
-    report = acquisition.last_apply
-    if report is None:
-        return VerifyResult(False, tr("ajustes da câmera não aplicados"))
-    rejected = sorted(k for k, s in report.status.items() if s is SettingStatus.REJECTED)
-    if rejected:
-        return VerifyResult(False, tr("ajuste não aplicado: {settings}", settings=", ".join(rejected)))
-    unsupported = tuple(sorted(tr("{setting}: {detail}", setting=k, detail=report.detail.get(k) or tr("não suportado")) for k, s in report.status.items() if s is SettingStatus.NOT_SUPPORTED))
-    return VerifyResult(True, warnings=unsupported)
 
 
 @dataclass(frozen=True)
