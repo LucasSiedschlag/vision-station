@@ -174,6 +174,7 @@ class StationController:
         self._shown_at = float("-inf")
         self._showing = False  # what the screens were last told about showing the verdict
         self._last_frame_ts = -1.0
+        self._prepare_began = float("-inf")  # when the last preparation began; -inf until one has: no open grace (VIA-0093)
         self._line_active_since: float | None = None  # when the trigger input went active; None while it is not
         self._line_counted = False  # this activation already caused its trigger
         self._stop = threading.Event()
