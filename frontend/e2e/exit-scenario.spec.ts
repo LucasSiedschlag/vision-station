@@ -10,6 +10,7 @@ import { expect, signInAs, test, watchTheBrowser } from './fixtures'
 // own tests. What needs the real bench (backup on another PC, a shift, a restart) is the checklist of docs/guias/.
 const CLEAN = 'http://127.0.0.1:8782'
 // unique on every run: the first station may be one left running, with the job of an earlier run in it
+const JOB_DEMO = 'Tampa azul — etiqueta de lote (demo)'
 const NAME = `Cenário de saída ${Date.now().toString(36)}`
 
 test('a job made on the screen is exported, imported into a clean installation, activated, and gives PASS and FAIL', async ({
@@ -131,4 +132,45 @@ test('a job made on the screen is exported, imported into a clean installation, 
     await other.close()
   }
   expect(problems).toEqual([])
+})
+
+test('a job without a reference image or a reference set is refused at activation, and the screen says why (rule 4, VIA-0090)', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  test.setTimeout(90_000)
+  const name = `Sem referência ${Date.now().toString(36)}`
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs/new/edit')
+  const step = (label: RegExp) => page.getByRole('navigation', { name: 'Passos do job' }).getByRole('button', { name: label })
+  await step(/^Ferramentas/).click()
+  await page.getByRole('combobox', { name: 'Adicionar ferramenta' }).click()
+  await page.getByRole('option', { name: /\(brightness\)/ }).click()
+  await page.getByRole('button', { name: 'Adicionar', exact: true }).last().click()
+  await step(/^Salvar/).click()
+  await page.getByLabel('Nome do job').fill(name)
+  await page.getByRole('button', { name: 'Salvar…' }).last().click()
+  const dialog = page.getByRole('dialog', { name: 'Salvar o job novo' })
+  await dialog.getByLabel('O que mudou').fill('sem referência, de propósito')
+  await dialog.getByRole('button', { name: 'Salvar…' }).click()
+  await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()
+  await page.goto('/jobs')
+
+  // the job is saved (a saved version is never changed), but it cannot be the active one
+  await page.getByRole('row').filter({ hasText: name }).getByRole('link', { name }).click()
+  await page.getByRole('list', { name: 'Versões' }).getByRole('listitem').first().getByRole('button', { name: 'Ativar' }).click()
+  await page.getByRole('alertdialog', { name: `Ativar versão 1 de ${name}?` }).getByRole('button', { name: 'Verificar e ativar' }).click()
+  const refusal = page.getByRole('dialog', { name: `Ativar versão 1 de ${name}?` })
+  await expect(refusal.getByRole('alert')).toContainText('O job não passou na verificação')
+  await expect(refusal.getByRole('alert')).toContainText('imagem de referência')
+  await expect(refusal.getByRole('alert')).toContainText('conjunto de referência')
+  // only the Maintainer may go on, and only with a reason (it is recorded in the audit): none given, none activated
+  await expect(refusal.getByRole('button', { name: 'Ativar mesmo assim' })).toBeDisabled()
+  await expect(page.getByText(`Versão 1 de ${name} ativada.`)).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await page.goto('/jobs')
+  await expect(page.getByRole('row').filter({ hasText: name })).not.toContainText('ativo: v1')
+  await expect(page.getByRole('row').filter({ hasText: JOB_DEMO })).toContainText('ativo: v1') // the one that was active still is
 })
