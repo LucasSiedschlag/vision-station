@@ -14,9 +14,11 @@ test('the editor: live image, draw a region, test the draft and save it as the n
   await page.getByRole('menuitem', { name: 'Editar' }).click()
   await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
 
-  // the job has no reference yet: the live view is shown
+  // the job has a reference image (rule 4 asks for one to be active): the editor opens on it, and the live view is a click away
   const canvas = page.getByRole('group', { name: 'Regiões sobre a imagem' })
   await expect(canvas).toBeVisible()
+  await expect(page.getByText(/imagem de referência/).first()).toBeVisible()
+  await page.getByRole('radiogroup', { name: 'Imagem mostrada' }).getByRole('radio', { name: 'Ao vivo' }).click()
   await expect(page.getByText(/imagem ao vivo \(reduzida\)/)).toBeVisible()
   expect(await accessibilityProblems(page)).toEqual([])
 
@@ -203,9 +205,10 @@ test('the anchor step: kinds as cards, the allowed turn on a dial, the result on
   await page.getByRole('menuitem', { name: 'Editar' }).click()
   await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
 
-  // the anchor needs the reference picture: take it from the camera
+  // the anchor needs the reference picture: the job has one (rule 4), and it is taken again from the camera
   await page.getByRole('button', { name: /^Amostras/ }).click()
-  await page.getByRole('button', { name: /^Capturar a imagem de referência/ }).click()
+  await page.getByRole('button', { name: /^Capturar de novo/ }).click()
+  await expect(page.getByText(/^Imagem de referência capturada/).first()).toBeVisible()
   await expect(page.getByRole('button', { name: /^Capturar de novo/ })).toBeVisible() // it was taken
   await page.getByRole('button', { name: /^Âncora/ }).click()
 
