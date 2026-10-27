@@ -46,16 +46,16 @@ cd frontend && npm ci && npm run build && cd ..     # the web interface, into fr
 **2. Prepare a data folder (once)**
 
 ```bash
-# with the C920 (Windows):
-uv run python scripts/setup_bench.py --name C920 --exposure-us 33000
-# without a camera (any OS): a folder with a few PNG/JPG pictures plays as the camera
+# with the C920 (Windows): reference.png is a picture of the bench with a readable code
+uv run python scripts/setup_bench.py --name C920 --reference reference.png --exposure-us 33000
+# without a camera (any OS): a folder with a few PNG/JPG pictures plays as the camera (the first is the reference)
 uv run python scripts/setup_bench.py --folder path/to/pictures
 
 uv run python scripts/set_password.py maintainer      # asks for the password (8+ characters)
 uv run python scripts/set_password.py supervisor
 ```
 
-`setup_bench.py` writes `bench_data/system/system.yaml` (the camera) and creates and activates a code-reading job. Use `--data <folder>` on both scripts for another folder.
+`setup_bench.py` writes `bench_data/system/system.yaml` (the camera) and creates and activates a code-reading job, with the reference image and the reference set every job needs (FR-JOB-9); it refuses a reference picture the job cannot read. Use `--data <folder>` on both scripts for another folder.
 
 **3. Run**
 
@@ -231,7 +231,7 @@ No password ever goes in it (a camera names an OS secret store entry in `keyring
 On the bench, with the C920:
 
 ```bash
-uv run python scripts/setup_bench.py --name C920 --exposure-us 33000   # system.yaml + a code-reading job, active
+uv run python scripts/setup_bench.py --name C920 --reference reference.png --exposure-us 33000   # system.yaml + a code-reading job, active
 uv run python scripts/set_password.py maintainer                       # once per role (supervisor, maintainer)
 uv run vision-station --data bench_data
 ```
