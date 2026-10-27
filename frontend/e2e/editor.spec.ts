@@ -231,3 +231,101 @@ test('the anchor step: kinds as cards, the allowed turn on a dial, the result on
   expect(await accessibilityProblems(page)).toEqual([])
   await page.goto('/')
 })
+
+test('the gray threshold: a histogram of the image, the level Otsu finds, a line moved with the keys, and Automático takes it out (VIA-0076)', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+  await page.getByRole('button', { name: /Ferramentas/ }).click()
+  await page.getByRole('combobox', { name: 'Adicionar ferramenta' }).click()
+  await page.getByRole('option', { name: /\(blob\)/ }).click()
+  await page.getByRole('button', { name: 'Adicionar', exact: true }).last().click()
+
+  // the tool looks at the whole picture: its histogram has the bench and the darker band (a flat patch has one level, and Otsu finds none)
+  await page.getByRole('combobox', { name: 'Região', exact: true }).click()
+  await page.getByRole('option', { name: 'all' }).click()
+
+  // the threshold is an Avançado setting, in the section that opens with that name
+  await expect(page.getByRole('slider', { name: 'Limiar de cinza' })).toHaveCount(0)
+  await page.getByRole('radio', { name: 'Avançado' }).click()
+  await page.getByRole('button', { name: 'Avançado', exact: true }).click()
+  const line = page.getByRole('slider', { name: 'Limiar de cinza' })
+  await expect(line).toBeVisible()
+  await expect(page.getByText(/^automático: \d+$/)).toBeVisible() // empty means Otsu: the dashed line says where it is
+  const otsu = Number(await line.getAttribute('aria-valuenow'))
+  expect(otsu).toBeGreaterThan(0)
+  expect(await accessibilityProblems(page)).toEqual([])
+
+  // moving the line makes it a chosen level, written in the number field beside it
+  await line.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(line).toHaveAttribute('aria-valuenow', String(otsu + 1))
+  await expect(page.getByText(/^automático: /)).toBeHidden()
+  await expect(page.getByRole('textbox', { name: 'Limiar de cinza' })).toHaveValue(String(otsu + 1))
+  await expect(page.getByText(/% da imagem é objeto|% da região é objeto/)).toBeVisible()
+
+  // Automático gives the choice back to Otsu
+  await page.getByRole('button', { name: 'Automático' }).click()
+  await expect(page.getByText(`automático: ${otsu}`)).toBeVisible()
+  await page.goto('/') // leaving the editor ends its session
+})
+
+test('the template check: the crop at full size, its size and the contour points of the model, and a flat crop cannot become the template (VIA-0076)', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await page.setViewportSize({ width: 1600, height: 1100 }) // the whole picture in view, so a crop can be dragged anywhere on it
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+  await page.getByRole('button', { name: /Ferramentas/ }).click()
+  await page.getByRole('combobox', { name: 'Adicionar ferramenta' }).click()
+  await page.getByRole('option', { name: /\(pattern\)/ }).last().click() // pattern v2: matches by the shape of the edges
+  await page.getByRole('button', { name: 'Adicionar', exact: true }).last().click()
+  await page.getByRole('radiogroup', { name: 'Imagem mostrada' }).getByRole('radio', { name: 'Referência' }).click()
+
+  const canvas = page.getByRole('group', { name: 'Regiões sobre a imagem' })
+  const drag = async (from: [number, number], to: [number, number]) => {
+    const box = (await canvas.boundingBox())!
+    await page.mouse.move(box.x + box.width * from[0], box.y + box.height * from[1])
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * to[0], box.y + box.height * to[1], { steps: 5 })
+    await page.mouse.up()
+  }
+  const use = page.getByRole('button', { name: 'Usar como padrão de pattern1' })
+  await expect(use).toBeDisabled() // no crop yet
+  await page.getByRole('button', { name: 'Desenhar recorte' }).click()
+
+  // the title written on the bench has edges: the model has contour points, and the crop can be used
+  // (the drag starts well inside the picture: near its border it would take the handles of the region)
+  await drag([0.12, 0.055], [0.45, 0.13])
+  await expect(page.getByText(/^\d+ pontos de contorno$/)).toBeVisible()
+  await expect(page.getByText(/^\d+ × \d+ px$/)).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Recorte em tamanho real' })).toBeVisible()
+  await expect(use).toBeEnabled()
+  expect(await accessibilityProblems(page)).toEqual([])
+
+  // a patch of the empty bench has nothing to match by: the reason shows and the button stays off
+  // (the drawing stays on after a crop: a new drag replaces it)
+  await drag([0.6, 0.25], [0.9, 0.5])
+  await expect(page.getByRole('alert').filter({ hasText: /plano|poucas bordas/ })).toBeVisible()
+  await expect(use).toBeDisabled()
+
+  // back to the good crop: the template is kept in the job
+  await drag([0.12, 0.055], [0.45, 0.13])
+  await expect(use).toBeEnabled()
+  await use.click()
+  await expect(page.getByText('Gabarito guardado no job.')).toBeVisible()
+  await page.goto('/')
+})
