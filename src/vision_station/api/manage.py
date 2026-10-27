@@ -28,7 +28,7 @@ from vision_station.api import schemas as m
 from vision_station.api.auth import AuthError, LockedOut
 from vision_station.cameras import Frame
 from vision_station.algorithms.color_range import propose_range
-from vision_station.algorithms.shapematch import MIN_SIDE, build_model
+from vision_station.algorithms.shapematch import MIN_SIDE, model_from_png
 from vision_station.core.i18n import render, render_schema, text_of, tr
 from vision_station.jobs import CameraProfile, Job
 from vision_station.jobs import tuning
@@ -366,9 +366,11 @@ def add_management_routes(api: APIRouter, deps: Any, need: Callable[[str], Calla
         except ValueError as exc:
             return m.ModelCheckOut(ok=False, message=render(text_of(exc)))
         height, width = image.shape[:2]
-        flat = float(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).std()) < 1.0
+        raw = base64.b64decode(body.image)  # the bytes the job would keep: the model is built the way the tools build it (grayscale)
+        gray = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_GRAYSCALE)
+        flat = float(gray.std()) < 1.0
         try:
-            points = len(build_model(image).levels[0].points)
+            points = len(model_from_png(raw).levels[0].points)
             reason = None
         except ValueError:
             points = None
