@@ -134,6 +134,7 @@ class StationController:
         wall: Callable[[], float] = time.time,
         first_sequence: int = 0,
         save_sequence: Callable[[int], Any] | None = None,
+        open_grace_s: float = 15.0,
     ):
         self._acq = acquisition
         self._inspect = inspect
@@ -148,6 +149,7 @@ class StationController:
         self._hold_s = hold_s
         self._absent_s = absent_s
         self._inspect_timeout_s = inspect_timeout_s
+        self._open_grace_s = open_grace_s
         self._wall = wall  # wall-clock time for the result; `clock` is monotonic, like the frames' timestamps
         self._sequence = first_sequence % 2**32  # the next result's number: seeded from the records (R2)
         self._save_sequence = save_sequence  # remembers each number given, recorded or not
@@ -295,7 +297,13 @@ class StationController:
         if state in (State.STARTING, State.FAULT, State.PAUSED):
             return
         self._count_line()
-        if state is not State.CAMERA_LOST and self._acq.stalled():
+        # VIA-0093: allow the first camera open; a loss after connecting has no grace (UC-09).
+        opening = (
+            state is State.PREPARING
+            and self._acq.generation == 0
+            and self._clock() - self._prepare_began < self._open_grace_s
+        )
+        if state is not State.CAMERA_LOST and not opening and self._acq.stalled():
             self._camera_lost()
             return
         handler = {
@@ -349,6 +357,7 @@ class StationController:
 
     def _prepare(self) -> None:
         assert self._bundle is not None
+        self._prepare_began = self._clock()
         self._trigger_requested = False
         self._trigger_reference = ""
         self._pending_trigger = None

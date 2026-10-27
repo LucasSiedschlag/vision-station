@@ -560,7 +560,7 @@ The same verification, without import, runs when a job is selected (UC-02, UC-12
 
 ### 7.4 Camera loss and recovery (UC-09)
 
-- **Detection:** the acquisition thread marks the camera lost when the last frame is older than a timeout (proposed: 3 s), or when the driver reports an error.
+- **Detection:** the acquisition thread marks the camera lost when the last frame is older than a timeout (proposed: 3 s), or when the driver reports an error. Before acquisition has ever connected (`generation == 0`), the controller stays in `Preparing` ("Preparando…") for up to `open_grace_s` (default 15 s from preparation, a technical timeout with no `system.yaml` field); once this grace expires or a connection has occurred, normal loss detection applies immediately (VIA-0093).
 - **During the outage:** the controller moves to `CameraLost`. An inspection in progress ends as ERROR (E401). The machine interface drops TriggerReady and raises Error.
 - **Reconnecting:** acquisition retries with increasing delay (1 s → 10 s max).
 - **Recovery:** once frames return, the controller goes through `Preparing`: reapply settings, read back, compare with reference. Only then does it go back to `Ready`.

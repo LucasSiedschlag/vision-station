@@ -481,9 +481,10 @@ def test_camera_lost_and_recovered_goes_back_through_preparing():
     rig.boot()
     applied_before = len(rig.camera.applied)
     rig.camera.fail_read = True
-    rig.tick(2)
+    rig.tick(1)
     assert rig.state is State.CAMERA_LOST
     assert rig.controller.status().message == "Câmera desconectada"
+    assert rig.controller.status().detail == rig.acq.last_error
     rig.camera.fail_read = False
     rig.tick(40, dt=0.1)
     assert rig.state is State.READY
@@ -491,11 +492,78 @@ def test_camera_lost_and_recovered_goes_back_through_preparing():
     assert State.PREPARING in rig.states()[rig.states().index(State.CAMERA_LOST) :]
 
 
+def test_a_slow_first_camera_open_stays_preparing_until_ready():
+    rig = Rig()
+    rig.camera.fail_open = True
+    rig.controller.start(rig.bundle)
+    rig.controller.step()
+    assert rig.acq.generation == 0
+    for _ in range(50):
+        rig.tick()
+        status = rig.controller.status()
+        assert status.state is State.PREPARING
+        assert status.message == "Preparando…"
+        assert status.detail == ""
+    rig.camera.fail_open = False
+    rig.tick(5)
+    assert rig.acq.generation == 1
+    assert rig.state is State.READY
+    assert rig.states() == [State.PREPARING, State.READY]
+    assert rig.results() == []
+
+
+@pytest.mark.parametrize("controller_args, grace_s", [({}, 15.0), ({"open_grace_s": 2.0}, 2.0)])
+def test_a_camera_that_never_opens_is_lost_at_the_open_grace_deadline(controller_args, grace_s):
+    rig = Rig(**controller_args)
+    rig.camera.fail_open = True
+    rig.controller.start(rig.bundle)
+    rig.acq.step()
+    rig.controller.step()
+    assert rig.state is State.PREPARING
+    for _ in range(int(grace_s * 4) - 1):
+        rig.tick(dt=0.25)
+        assert rig.state is State.PREPARING
+    assert rig.acq.generation == 0
+    assert rig.controller.status().message == "Preparando…"
+    rig.tick(dt=0.25)
+    assert rig.state is State.CAMERA_LOST
+    assert rig.controller.status().message == "Câmera desconectada"
+    assert rig.controller.status().detail == rig.acq.last_error == "CameraError: camera not found"
+    assert rig.results() == []
+
+
+def test_a_connected_camera_stalling_during_preparing_has_no_open_grace():
+    rig = Rig()
+    rig.boot()
+    rig.controller.switch_job(rig.bundle)
+    rig.controller.step()
+    assert rig.state is State.PREPARING
+    rig.clock.advance(rig.acq.stall_timeout_s + 0.1)
+    assert rig.acq.connected and rig.acq.stalled()
+    rig.controller.step()
+    assert rig.state is State.CAMERA_LOST
+
+
+def test_a_loss_during_preparing_after_reconnection_has_no_open_grace():
+    rig = Rig()
+    rig.boot()
+    rig.camera.fail_read = True
+    rig.tick()
+    assert rig.state is State.CAMERA_LOST
+    rig.camera.fail_read = False
+    rig.tick(dt=1.0)
+    assert rig.state is State.PREPARING
+    assert rig.acq.generation == 2
+    rig.camera.fail_read = True
+    rig.tick()
+    assert rig.state is State.CAMERA_LOST
+
+
 def test_starting_with_the_camera_unplugged_waits_then_continues():
     rig = Rig()
     rig.camera.fail_open = True
     rig.controller.start(rig.bundle)
-    rig.tick(5)
+    rig.tick(16, dt=1.0)
     assert rig.state is State.CAMERA_LOST
     rig.camera.fail_open = False
     rig.tick(60)
