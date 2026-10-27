@@ -13,6 +13,7 @@ import numpy as np
 from vision_station.jobs.job import PresenceTrigger
 
 BACKGROUND_RATE = 0.05  # how fast the empty-scene background follows slow light changes
+WORK_SIDE = 320  # at most this many pixels on the longer side of the picture the area is compared on (VIA-0108, NFR-PERF-7)
 
 
 @dataclass(frozen=True)
@@ -44,11 +45,18 @@ class PresenceDetector:
         self._present = False
 
     def _crop(self, image: np.ndarray) -> np.ndarray:
+        """The area as a small gray picture: the comparison costs what the pixels cost, and it runs on every frame while
+        the station waits. The areas are fractions of the region and the threshold is a gray level, so shrinking it (by the
+        mean of the pixels it covers, which also smooths the noise) keeps what is decided (VIA-0108)."""
         h, w = image.shape[:2]
         x0, y0, x1, y1 = self._roi
         region = image[int(y0 * h) : max(int(y1 * h), int(y0 * h) + 1), int(x0 * w) : max(int(x1 * w), int(x0 * w) + 1)]
+        k = -(-max(region.shape[:2]) // WORK_SIDE)  # a whole number of pixels per working pixel: OpenCV's fast path for the mean
+        if k > 1:  # a region already small is not enlarged
+            rows, cols = region.shape[0] // k, region.shape[1] // k
+            region = cv2.resize(region[: rows * k, : cols * k], (cols, rows), interpolation=cv2.INTER_AREA)
         gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY) if region.ndim == 3 else region
-        return cv2.GaussianBlur(gray, (5, 5), 0).astype(np.float32)
+        return cv2.GaussianBlur(gray, (3, 3), 0).astype(np.float32)
 
     def update(self, image: np.ndarray, t: float) -> Presence:
         roi = self._crop(image)
