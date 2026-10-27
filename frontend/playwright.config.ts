@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test'
 // that the tests control. Build the interface first (`npm run build`).
 const port = 8780
 const freshPort = 8781 // a clean installation, for the commissioning wizard (e2e/setup.spec.ts)
+const cleanPort = 8782 // another clean installation, where the exit scenario imports a job (e2e/exit-scenario.spec.ts)
 
 export default defineConfig({
   testDir: 'e2e',
@@ -34,6 +35,14 @@ export default defineConfig({
       command: `uv run python scripts/e2e_station.py --port ${freshPort} --fresh`,
       cwd: '..',
       url: `http://127.0.0.1:${freshPort}/api/state`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      // the "other PC" of the exit scenario: its own empty data folder on every run
+      command: `uv run python scripts/e2e_station.py --port ${cleanPort} --fresh --run`,
+      cwd: '..',
+      url: `http://127.0.0.1:${cleanPort}/api/state`,
       reuseExistingServer: false,
       timeout: 60_000,
     },

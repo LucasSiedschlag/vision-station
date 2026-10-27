@@ -10,7 +10,9 @@ Besides the normal API it adds, on this machine only:
     POST /__e2e/demo-job                   save the demo job, as the editor would (the wizard's last step)
 Logins: supervisor / supervisor-pass and maintainer / maintainer-pass. Data goes to a temporary folder.
 With `--fresh` the station is a clean installation instead: no passwords, no job, so the /setup wizard has all its
-steps to do (the camera already sends images). Data goes to a new temporary folder on every start.
+steps to do (the camera already sends images). Data goes to a new temporary folder on every start. A clean station
+does not run its state machine until a job is activated unless `--run` is also given (the exit scenario, which
+activates an imported job and watches the station inspect, e2e/exit-scenario.spec.ts).
 For `npm run dev` in frontend/, run it on port 8765.
 """
 
@@ -130,6 +132,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port", type=int, default=8780)
     parser.add_argument("--fresh", action="store_true", help="a clean installation: no passwords and no job")
+    parser.add_argument("--run", action="store_true", help="with --fresh: run the state machine, which waits for a job to be activated")
     args = parser.parse_args()
 
     camera = ControlledCamera()
@@ -204,7 +207,7 @@ def main() -> int:
         activate(jobs, ref, verify_stored_job(jobs, ref, inspect))
         controller.start(jobs.load(ref))
     acq.start()
-    if not args.fresh:
+    if not args.fresh or args.run:
         threading.Thread(target=controller.run, daemon=True).start()
     try:
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
