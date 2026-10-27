@@ -1461,6 +1461,28 @@ export interface components {
       /** System */
       system: string
     }
+    /**
+     * BenchmarkIdleTrigger
+     * @description The image trigger while it waits for an object (NFR-PERF-7, VIA-0108): its own CPU, not the camera driver's.
+     */
+    BenchmarkIdleTrigger: {
+      /** Cpu Pct */
+      cpu_pct: number
+      /** Cpu Pct Core */
+      cpu_pct_core: number
+      /** Fps */
+      fps: number
+      /** Frames */
+      frames: number
+      /** Limit Pct */
+      limit_pct: number
+      /** Megapixels */
+      megapixels: number
+      /** Ms Per Frame */
+      ms_per_frame: number
+      /** Within Limit */
+      within_limit: boolean
+    }
     /** BenchmarkMeasured */
     BenchmarkMeasured: {
       /** Budget Ms */
@@ -1488,6 +1510,7 @@ export interface components {
       /** Format */
       format: number
       host: components['schemas']['BenchmarkHost']
+      idle_trigger: components['schemas']['BenchmarkIdleTrigger'] | null
       /** Measured */
       measured: components['schemas']['BenchmarkMeasured'][]
       /** Over Budget */
@@ -1558,6 +1581,31 @@ export interface components {
           [key: string]: number
         }
       }
+      /**
+       * Idle Cpu Max Pct
+       * @default {
+       *       "M": 35,
+       *       "R": 15
+       *     }
+       */
+      idle_cpu_max_pct: {
+        [key: string]: number
+      }
+      /**
+       * Idle Fps
+       * @default 30
+       */
+      idle_fps: number
+      /**
+       * Idle Frames
+       * @default 40
+       */
+      idle_frames: number
+      /**
+       * Idle Megapixels
+       * @default 2
+       */
+      idle_megapixels: number
       /**
        * Megapixels
        * @default [
@@ -3289,6 +3337,13 @@ export interface components {
        *           "tool:pattern:2": 50
        *         }
        *       },
+       *       "idle_cpu_max_pct": {
+       *         "M": 35,
+       *         "R": 15
+       *       },
+       *       "idle_fps": 30,
+       *       "idle_frames": 40,
+       *       "idle_megapixels": 2,
        *       "megapixels": [
        *         0.25,
        *         1,

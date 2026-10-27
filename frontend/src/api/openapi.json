@@ -443,6 +443,55 @@
         "title": "BenchmarkHost",
         "type": "object"
       },
+      "BenchmarkIdleTrigger": {
+        "description": "The image trigger while it waits for an object (NFR-PERF-7, VIA-0108): its own CPU, not the camera driver's.",
+        "properties": {
+          "cpu_pct": {
+            "title": "Cpu Pct",
+            "type": "number"
+          },
+          "cpu_pct_core": {
+            "title": "Cpu Pct Core",
+            "type": "number"
+          },
+          "fps": {
+            "title": "Fps",
+            "type": "number"
+          },
+          "frames": {
+            "title": "Frames",
+            "type": "integer"
+          },
+          "limit_pct": {
+            "title": "Limit Pct",
+            "type": "number"
+          },
+          "megapixels": {
+            "title": "Megapixels",
+            "type": "number"
+          },
+          "ms_per_frame": {
+            "title": "Ms Per Frame",
+            "type": "number"
+          },
+          "within_limit": {
+            "title": "Within Limit",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "megapixels",
+          "fps",
+          "frames",
+          "ms_per_frame",
+          "cpu_pct_core",
+          "cpu_pct",
+          "limit_pct",
+          "within_limit"
+        ],
+        "title": "BenchmarkIdleTrigger",
+        "type": "object"
+      },
       "BenchmarkMeasured": {
         "properties": {
           "budget_ms": {
@@ -514,6 +563,16 @@
           "host": {
             "$ref": "#/components/schemas/BenchmarkHost"
           },
+          "idle_trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkIdleTrigger"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "measured": {
             "items": {
               "$ref": "#/components/schemas/BenchmarkMeasured"
@@ -569,7 +628,8 @@
           "thread_limit",
           "measured",
           "unmeasured",
-          "over_budget"
+          "over_budget",
+          "idle_trigger"
         ],
         "title": "BenchmarkReport",
         "type": "object"
@@ -647,6 +707,43 @@
             },
             "title": "Budgets Ms",
             "type": "object"
+          },
+          "idle_cpu_max_pct": {
+            "additionalProperties": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 100.0,
+              "type": "number"
+            },
+            "default": {
+              "M": 35.0,
+              "R": 15.0
+            },
+            "propertyNames": {
+              "enum": ["M", "R"]
+            },
+            "title": "Idle Cpu Max Pct",
+            "type": "object"
+          },
+          "idle_fps": {
+            "default": 30.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 120.0,
+            "title": "Idle Fps",
+            "type": "number"
+          },
+          "idle_frames": {
+            "default": 40,
+            "maximum": 300.0,
+            "minimum": 5.0,
+            "title": "Idle Frames",
+            "type": "integer"
+          },
+          "idle_megapixels": {
+            "default": 2.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 16.0,
+            "title": "Idle Megapixels",
+            "type": "number"
           },
           "megapixels": {
             "default": [0.25, 1.0, 4.0],
@@ -4398,6 +4495,13 @@
                   "tool:pattern:2": 50.0
                 }
               },
+              "idle_cpu_max_pct": {
+                "M": 35.0,
+                "R": 15.0
+              },
+              "idle_fps": 30.0,
+              "idle_frames": 40,
+              "idle_megapixels": 2.0,
               "megapixels": [0.25, 1.0, 4.0],
               "reference_mp": 1.0,
               "repeats": 5,

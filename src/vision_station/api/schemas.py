@@ -337,6 +337,19 @@ class BenchmarkMeasured(BaseModel):
     within_budget: bool | None
 
 
+class BenchmarkIdleTrigger(BaseModel):
+    """The image trigger while it waits for an object (NFR-PERF-7, VIA-0108): its own CPU, not the camera driver's."""
+
+    megapixels: float
+    fps: float
+    frames: int
+    ms_per_frame: float
+    cpu_pct_core: float  # of one core
+    cpu_pct: float  # of the whole PC: what the limit is for
+    limit_pct: float
+    within_limit: bool
+
+
 class BenchmarkUnmeasured(BaseModel):
     type: str
     reason: str  # a code, see `reason_text`
@@ -356,6 +369,7 @@ class BenchmarkReport(BaseModel):
     measured: list[BenchmarkMeasured]
     unmeasured: list[BenchmarkUnmeasured]
     over_budget: list[str]
+    idle_trigger: BenchmarkIdleTrigger | None = None  # None: this report did not time it
 
 
 class BenchmarkOut(BaseModel):

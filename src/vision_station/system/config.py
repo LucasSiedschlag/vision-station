@@ -139,6 +139,12 @@ class BenchmarkSettings(_Strict):
     }
     # threads the program may use, at most, per tier (the rest stays for the screen and the operating system)
     thread_caps: dict[Tier, Annotated[int, Field(ge=1)]] = {"M": 2, "R": 4}
+    # the image trigger while it waits for an object (NFR-PERF-7, VIA-0108): the picture it works on, the camera rate it
+    # has to keep up with, how many frames are timed, and the most CPU it may use per tier, in percent of the whole PC
+    idle_megapixels: Annotated[float, Field(gt=0, le=16)] = 2.0
+    idle_fps: Annotated[float, Field(gt=0, le=120)] = 30.0
+    idle_frames: Annotated[int, Field(ge=5, le=300)] = 40
+    idle_cpu_max_pct: dict[Tier, Annotated[float, Field(gt=0, le=100)]] = {"M": 35.0, "R": 15.0}
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:

@@ -29,6 +29,8 @@ import zxingcpp
 
 from vision_station.locators import locator_types, run_locator
 from vision_station.core.i18n import Msg, render, tr
+from vision_station.jobs.job import PresenceTrigger
+from vision_station.station.trigger import PresenceDetector
 from vision_station.system.config import SYSTEM_DIR, BenchmarkSettings, Tier
 from vision_station.tools import run_tool, tool_types
 
@@ -193,14 +195,52 @@ def _time(kind: str, name: str, version: int, load: Workload, repeats: int, cloc
     return statistics.median(times)
 
 
+def _idle_trigger(settings: BenchmarkSettings, tier: Tier | None, cpus: int, cpu_clock: Callable[[], float]) -> dict[str, Any]:
+    """The image trigger while it waits for an object (NFR-PERF-7): the CPU time `PresenceDetector.update` takes per frame, on a
+    picture of `idle_megapixels` with the region over the whole picture (the worst case), as a share of the whole PC at the camera
+    rate. It is the trigger's own work: the camera driver's decoding needs the real camera and is not in it. CPU time (of every
+    thread) is what counts, not the clock on the wall."""
+    rows, cols = _size(settings.idle_megapixels)
+    empty = _textured(settings.idle_megapixels)
+    busy = empty.copy()
+    busy[rows // 4 : rows // 2, cols // 4 : cols // 2] = 250  # an object in the area, so the motion and presence paths both run
+    detector = PresenceDetector(PresenceTrigger(roi=(0, 0, 1, 1), still_ms=500, rearm="object_absent", diff_threshold=25, min_area=0.05, motion_area=0.01))
+    detector.update(empty, 0.0)  # the first frame is the empty scene and warms the caches
+    start = cpu_clock()
+    for i in range(settings.idle_frames):
+        detector.update(busy if (i // 4) % 2 else empty, (i + 1) / settings.idle_fps)
+    ms = (cpu_clock() - start) * 1000.0 / settings.idle_frames
+    limit = settings.idle_cpu_max_pct[tier or "M"]
+    of_core = ms * settings.idle_fps / 10.0  # ms per frame x frames per second / 1000 x 100
+    of_pc = of_core / cpus
+    return {
+        "megapixels": settings.idle_megapixels,
+        "fps": settings.idle_fps,
+        "frames": settings.idle_frames,
+        "ms_per_frame": round(ms, 3),
+        "cpu_pct_core": round(of_core, 2),  # of one core
+        "cpu_pct": round(of_pc, 2),  # of the whole PC: what the limit is for
+        "limit_pct": limit,
+        "within_limit": of_pc <= limit,
+    }
+
+
 def classify(reference_ms: float, settings: BenchmarkSettings) -> Tier | None:
     if reference_ms <= settings.tier_r_max_ms:
         return "R"
     return "M" if reference_ms <= settings.tier_m_max_ms else None
 
 
-def run_benchmark(settings: BenchmarkSettings | None = None, *, types: list[str] | None = None, clock: Callable[[], float] = time.perf_counter) -> dict[str, Any]:
-    """Time the types (default: every registered one) at each size and build the report."""
+def run_benchmark(
+    settings: BenchmarkSettings | None = None,
+    *,
+    types: list[str] | None = None,
+    clock: Callable[[], float] = time.perf_counter,
+    cpu_clock: Callable[[], float] = time.process_time,
+    idle: bool | None = None,
+) -> dict[str, Any]:
+    """Time the types (default: every registered one) at each size and build the report. The idle image trigger is timed with
+    the full run, or when `idle` says so."""
     settings = settings or BenchmarkSettings()
     wanted = types if types is not None else registered()
     measured: list[dict[str, Any]] = []
@@ -233,6 +273,7 @@ def run_benchmark(settings: BenchmarkSettings | None = None, *, types: list[str]
         "measured": measured,
         "unmeasured": [{"type": k, "reason": r} for k, r in UNMEASURED.items() if k in wanted],
         "over_budget": [m["type"] for m in measured if m["within_budget"] is False],
+        "idle_trigger": _idle_trigger(settings, tier, cpus, cpu_clock) if (types is None if idle is None else idle) else None,
     }
 
 
@@ -262,5 +303,9 @@ def summary(report: dict[str, Any]) -> str:
         times = "  ".join(f"{mp} MP {ms:7.1f} ms" for mp, ms in m["ms"].items())
         flag = "" if m["within_budget"] is not False else f"  OVER BUDGET ({m['budget_ms']} ms)"
         lines.append(f"  {m['type']:<22}{times}{flag}")
+    idle = report.get("idle_trigger")
+    if idle:
+        verdict = "ok" if idle["within_limit"] else f"OVER THE LIMIT ({idle['limit_pct']:g} %)"
+        lines.append(f"  image trigger waiting: {idle['ms_per_frame']:.1f} ms/frame at {idle['fps']:g} fps = {idle['cpu_pct']:.1f} % of the PC ({idle['cpu_pct_core']:.0f} % of a core), limit {idle['limit_pct']:g} %: {verdict}")
     lines += [f"  {u['type']:<22}not timed: {render(REASONS[u['reason']], 'en')}" for u in report["unmeasured"]]
     return "\n".join(lines)
