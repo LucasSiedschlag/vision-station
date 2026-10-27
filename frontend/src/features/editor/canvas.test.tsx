@@ -126,6 +126,45 @@ describe('Medições: what the tools measured (VIA-0124)', () => {
   })
 })
 
+describe('drawing over a region (the crop of a template, VIA-0066)', () => {
+  /** The picture with the region `roi:tampa` over a good part of it; a drag from the middle of the region to another point. */
+  const dragOverTheRegion = (drawing: string | null) => {
+    const changes: [string, number[], boolean][] = []
+    const { container } = render(
+      <RegionCanvas
+        image={image}
+        shapes={shapes}
+        selected={null}
+        onSelect={() => {}}
+        onChange={(id, rect, first) => changes.push([id, rect, first])}
+        drawing={drawing}
+        emptyText="sem imagem"
+        layers={drawn({ master: true, on: DEFAULT_LAYERS })}
+        marks={[]}
+        caption="Ao vivo"
+      />,
+    )
+    const svg = container.querySelector('svg')!
+    svg.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1000, height: 562, right: 1000, bottom: 562, x: 0, y: 0, toJSON: () => ({}) })
+    const region = container.querySelector('[data-shape="roi:tampa"]')!
+    fireEvent.pointerDown(region, { clientX: 200, clientY: 100, button: 0, pointerId: 1 })
+    fireEvent.pointerMove(svg, { clientX: 600, clientY: 300, pointerId: 1 })
+    fireEvent.pointerUp(svg, { clientX: 600, clientY: 300, pointerId: 1 })
+    return changes
+  }
+
+  it('a crop is drawn over a region, as a sample of colour is: the drag never moves the region', () => {
+    const changes = dragOverTheRegion('crop')
+    expect(changes.length).toBeGreaterThan(0)
+    expect(changes.every(([id]) => id === 'crop')).toBe(true) // nothing was said of the region
+  })
+
+  it('without a drawing in progress the same drag moves the region', () => {
+    const changes = dragOverTheRegion(null)
+    expect(changes.some(([id]) => id === 'roi:tampa')).toBe(true)
+  })
+})
+
 describe('Marcações: the split button and its menu', () => {
   it('the button turns everything off and on, the menu has a check per layer, and the choice is kept', async () => {
     render(<LayerMenu />)

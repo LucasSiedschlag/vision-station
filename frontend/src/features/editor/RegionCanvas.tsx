@@ -217,8 +217,8 @@ export function RegionCanvas({
     const target = (e.target as Element).closest('[data-shape],[data-handle]')
     const id = target?.getAttribute('data-shape') ?? target?.getAttribute('data-for') ?? null
     const handle = target?.getAttribute('data-handle') as Handle | null
-    // a drag that samples colours draws over whatever region is under it: it never moves one
-    const shape = drawing === 'sample' ? undefined : shapes.find((s) => s.id === id && s.editable)
+    // a drag that samples colours, or cuts a crop for a template, draws over whatever region is under it: it never moves one
+    const shape = drawing === 'sample' || drawing === 'crop' ? undefined : shapes.find((s) => s.id === id && s.editable)
     ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
     if (shape && handle) {
       setDrag({ kind: 'resize', id: shape.id, handle, start: shape.rect })
