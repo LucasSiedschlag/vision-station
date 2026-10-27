@@ -1505,6 +1505,9 @@ msgstr "Create password and continue"
 msgid "Senha do Supervisor"
 msgstr "Supervisor's password"
 
+msgid "{share} % da imagem é objeto"
+msgstr "{share}% of the image is object"
+
 msgid "recorte"
 msgstr "crop"
 

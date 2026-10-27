@@ -12,8 +12,11 @@ const t = text.editor.threshold
 
 /**
  * The gray level that separates the object from the background, drawn on the histogram of the tool's region
- * (docs/frontend.md §19.5). `threshold` empty means automatic (Otsu): the dashed line then shows the level the
- * server will use. For an object of a colour there is no gray threshold, and the control is left out.
+ * (docs/frontend.md §19.5). `threshold` empty means automatic (Otsu): the dashed line then shows the level Otsu finds
+ * on the histogram on show. That histogram is of the tool's region when it is drawn on the frame; for a region
+ * relative to a fixture, and for a locator's search area, it is of the whole image, so the server's own level on the
+ * real area can differ (the text says "da imagem" then). For an object of a colour there is no gray threshold, and
+ * the control is left out.
  */
 export function GrayThresholdPicker({ value, onChange, label, hint, error, values }: WidgetProps) {
   const aids = useImageAids()
@@ -67,7 +70,7 @@ export function GrayThresholdPicker({ value, onChange, label, hint, error, value
         </Button>
         {share !== null ? (
           <span className="text-xs tabular-nums text-fg-muted">
-            {t.objectShare(formatNumber(share * 100, 1))}
+            {(region ? t.objectShare : t.objectShareImage)(formatNumber(share * 100, 1))}
           </span>
         ) : null}
       </div>

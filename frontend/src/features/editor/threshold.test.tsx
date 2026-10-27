@@ -95,4 +95,17 @@ describe('the gray threshold control', () => {
       '0',
     )
   })
+
+  it('says whose pixels the share is of: the tool\'s region when it is known, else the whole image', () => {
+    const { unmount } = render(<Form initial={{ mode: 'dark', threshold: 100 }} aids={aidsWith()} />)
+    expect(screen.getByText(/% da imagem é objeto/)).toBeInTheDocument()
+    unmount()
+    render(
+      <Form
+        initial={{ mode: 'dark', threshold: 100 }}
+        aids={aidsWith({ region: [0, 0, 0.5, 1] })}
+      />,
+    )
+    expect(screen.getByText(/% da região é objeto/)).toBeInTheDocument()
+  })
 })

@@ -1322,6 +1322,7 @@ export const text = {
         return t`Em azul, o que vai ser objeto: os pixels acima do limiar.`
       },
       objectShare: (share: string) => t`${share} % da região é objeto`,
+      objectShareImage: (share: string) => t`${share} % da imagem é objeto`,
     },
     /** The colour picker (docs/frontend.md §19.4). */
     colour: {
