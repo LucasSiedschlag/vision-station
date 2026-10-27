@@ -12,9 +12,11 @@ export function useJobs() {
   return useQuery({ queryKey: ['jobs'], queryFn: () => call(api.GET('/api/jobs')) })
 }
 
+/** One job with its versions. An empty id is a job that does not exist yet (the editor on "Novo job"): nothing is asked. */
 export function useJob(id: string) {
   return useQuery({
     queryKey: ['jobs', id],
+    enabled: id !== '',
     queryFn: () => call(api.GET('/api/jobs/{job_id}', { params: { path: { job_id: id } } })),
   })
 }
