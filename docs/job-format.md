@@ -102,6 +102,11 @@ tools:
     roi: cap                                 # a name of geometry.rois, or frame, or anchor
     params: {hue: [100, 130], s_min: 100, min_fraction: 0.4}
     reason_fail: {pt-BR: 'Tampa ausente ({fraction:.0%} azul)', en: 'Cap missing ({fraction:.0%} blue)'}
+  # Two tools of which one is enough (TD-33): both name the same group; `groups` and `group` are written only when used
+  - {id: logo_h, type: pattern, version: 2, roi: label, group: marca_h, params: {template: patterns/logo.png}, reason_fail: {pt-BR: 'Logo ausente', en: 'Logo missing'}}
+  - {id: texto_h, type: pattern, version: 2, roi: label, group: marca_h, params: {template: patterns/texto.png}, reason_fail: {pt-BR: 'Texto ausente', en: 'Text missing'}}
+groups:
+  marca_h: {reason_fail: {pt-BR: 'Fita horizontal sem logo nem texto', en: 'Horizontal tape with no logo or text'}}
 decision: all_pass
 ui:
   waiting: {pt-BR: Aguardando peça, en: Waiting for part}   # the operator screen's waiting text
@@ -114,6 +119,7 @@ Rules (checked on load, `jobs/job.py`):
 - At least one tool; tool ids unique; every tool's region exists.
 - Each tool and locator `type` + `version` must be one this software runs, and its `params` must validate. The parameters of each type, with titles and limits, are served as JSON Schema by `GET /api/tools`; their meaning is in the module of each type (`tools/*.py`, `locators/*.py`). A version that is no longer supported refuses the job instead of running different logic.
 - `reason_fail` holds both languages, `{pt-BR: …, en: …}` (TD-30, FR-JOB-15); a bare text is read as Portuguese, an empty language falls back to the other and *Validar* says so; `{field}` placeholders take the tool's values (listed in each tool's module). A wrong placeholder leaves the text as written.
+- `group` (optional on a tool; FR-INS-17, TD-33): the name of a group declared in `groups`. **A group passes when any of its members passes**; a tool with no group must pass by itself, and the job passes when every one of them and every group passes (`decision: all_pass` over those units). Refused on load: a `group` that is not declared in `groups`; a declared group no tool uses or with fewer than two members; a member with `affects_result: false`. A member that cannot run (E301–E304) makes the result ERROR even if another member passed. A failed group gives **its own** `reason_fail` (both languages, no `{field}`s: its members measure different things) instead of its members' texts, and the reason codes of every failing criterion of every member are kept. Every member runs and is recorded. `groups` and `group` are written only when used, so a job without them is the same file as before; a program older than TD-33 refuses a job with a group.
 - `affects_result` (optional, default `true`; FR-INS-13): `false` makes the tool **informative**: it runs, its values and verdict are recorded and shown, but it never decides the result. It does not make the result FAIL, its failure is not in the reason or the reason codes, and an informative tool that cannot run is noted on its own entry instead of turning the result into ERROR. A job needs at least one tool that decides. The field is written only when `false`, so a job that does not use it stays readable by programs older than 0.2.
 
 ## 4. `camera/profile.yaml`

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 04 — Technical Decisions |
-| Version | 0.11 — TD-32: the job's acquisition block and the two layers, job and station (document 09 v0.3); TD-31 and TD-19 item 4 amended. 0.10 — TD-31: trigger timing and remote I/O outputs, decided from the market reference (document 09). 0.9 — TD-29 revised: shadcn/ui + Tailwind kept, React Aria added (the Mantine plan of 0.8 reverted); TD-30: interface in Portuguese and English. 0.7 — TD-21..TD-28: pose-based fixtures, result contract, machine interface, OPC UA, algorithms, OCR, teaching from good parts, CPU-only PC tiers; TD-18 amended |
+| Version | 0.12 — TD-33: groups of tools in which one is enough (OR), written as data in the job. 0.11 — TD-32: the job's acquisition block and the two layers, job and station (document 09 v0.3); TD-31 and TD-19 item 4 amended. 0.10 — TD-31: trigger timing and remote I/O outputs, decided from the market reference (document 09). 0.9 — TD-29 revised: shadcn/ui + Tailwind kept, React Aria added (the Mantine plan of 0.8 reverted); TD-30: interface in Portuguese and English. 0.7 — TD-21..TD-28: pose-based fixtures, result contract, machine interface, OPC UA, algorithms, OCR, teaching from good parts, CPU-only PC tiers; TD-18 amended |
 | Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Draft for internal review |
@@ -52,6 +52,7 @@ Each decision follows the same format: **context → options → decision → co
 | TD-30 | Interface languages | **Portuguese (pt-BR) and English**; **Lingui** with PO catalogs in the interface, gettext/Babel PO catalogs on the server; job texts in both languages (format 2). Supersedes the pt-BR-only rule of TD-20/document 05 0.1. |
 | TD-31 | Trigger timing and remote I/O outputs | Trigger delay 0–1 000 ms per job; continuous interval 500 ms; refused triggers counted and assignable to an output; Error output stays normal; delayed reject in inspections or ms with a queue; low-margin PASS images kept; output polarity per line. From document 09 (market reference). Amended by TD-32: the fields live in the trigger type's sub-block, and jobs are written in full instead of relying on defaults. |
 | TD-32 | Acquisition block and the two layers | **One `acquisition` block in the job** (trigger type with its own timing, image settings, calibration), **written in full**; debounce in the job, input-line edge in the station; trigger moves to step 1 of the editor; rule: job = follows the product and the view, station = follows the installation. From document 09 v0.3. |
+| TD-33 | OR between tools | **A `group` of tools in the job**: the group passes when **any** member passes; tools outside a group are still all required. A member that cannot run makes the result ERROR. Data, not code (design rule 10). |
 
 ---
 
@@ -889,6 +890,32 @@ Models are added only where the classical tools can't separate good objects from
 - The editor changes its steps (document 05 §4.3): the trigger leaves step 5.
 
 **Revisit when:** a GenICam camera with a hardware trigger input is used (phase F: debounce then belongs to the camera, and the question of layer 1 returns for it), or a second installation of the same job shows that debounce depends on the wiring.
+
+---
+
+### TD-33 — OR between tools: a group in which one passing tool is enough
+
+**Context.** The job decides by `all_pass`: every tool that affects the result must pass (FR-INS-13). A seal of two tapes (a horizontal and a vertical one) carries a logo and the text "CUIDADO FRÁGIL" in a mix that varies with the length of the tape: two texts and one logo, or two logos and one text. The station must accept the tape if it shows **the logo or the text**, with a wide margin, because the failures it has to catch (an open box, a closed box with no tape) differ from a sealed one by far. One tool (`pattern`) takes one template, and a count with `max_count` does not express "either". The market reference (document 09) says nothing about an OR between tools, so this decision is our own and takes nothing from it.
+
+**Decisions.**
+
+| # | Topic | Decision |
+|---|---|---|
+| 1 | Where the OR lives | In the **job**, as data: `tools[].group` names a group, and the job's `groups` holds, for each group, its failure text `reason_fail` in both languages. No expressions, no formulas, no code (design rule 10, FR-PLT-12) |
+| 2 | The rule | **A group passes when at least one of its members passes.** A tool with no group is required by itself, as today. The job passes when every tool with no group and every group pass: `decision` stays `all_pass`, over *units* (a tool or a group) instead of over tools. Groups do not nest, and there is no "k of n": YAGNI |
+| 3 | Doubt is ERROR | **A member that cannot run (E301, E302, E303, E304) makes the whole result ERROR**, even when another member passed. An OR must never hide a tool that did not run: the group would pass on the strength of the member that happened to work (design rule 5). Only a tool that ran and did not match counts as a failure |
+| 4 | Who may be a member | Only tools with `affects_result: true`. An informative tool in a group is refused on load. A group has **at least two members**, and a group no tool uses is refused |
+| 5 | What a failed group says | The reason of a failed group is **its own text** (`groups.<id>.reason_fail`), which replaces the texts of the members: "no logo or text on the horizontal tape" says more than two lines of "logo missing", "text missing". The **reason codes** of every failing criterion of every member stay, so a count by cause across jobs still works (FR-INS-14). A group has no `{field}` placeholders: its members measure different things |
+| 6 | What every tool still reports | Each member keeps its own report, marks and values (passed or not), and the report carries the name of its group. The overlay draws every member; the one that did not match is drawn as it is today |
+| 7 | Format | **Job format stays 3.** `groups` and `tools[].group` are written only when used (as `affects_result`), so a job that does not use them is the same file as before. A program older than this decision refuses a job with a group (the model is strict): it does not run it as an `all_pass`, which would be a different logic. No migrator, because nothing is deployed |
+| 8 | Order of the tools | Unchanged: every tool runs, in the job's order, and the members of a group are not skipped once one passes. The record then has the numbers of all of them, which the tolerance tuning and the reference set need |
+
+**Consequences.**
+- `jobs/job.py` gets `groups` and `Tool.group` with the rules above; `pipeline/inspect.py` decides by units; the result contract gets the group of each tool report and the failed groups (document 03 §10.3); the editor gets a *Grupo* control on the tool and a field for the text of the group (document 05 §7.3, VIA-0138).
+- `tests/validation` gets cases for the OR: only the logo, only the text, both, neither, and a background with no box (never PASS). A group is not a new tool type, so no `cases/<type>.py` is needed.
+- Documents changed with this decision: 02 (FR-INS-17), 03 (§4.1, §7.1, §10.3), 08 (§3 rules), 10 (how to read).
+
+**Revisit when:** a job needs "at least two of three" (add `min_pass` to the group), a group inside a group, or an OR between tools of different jobs (never: a job is one unit).
 
 ---
 

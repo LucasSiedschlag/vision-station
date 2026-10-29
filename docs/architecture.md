@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 03 — Architecture |
-| Version | 0.6 — the job's acquisition block and the two layers, job and station (§4.1, §4.2, §4.5, §4.6, TD-32). 0.5 — remote I/O outputs, delayed reject and trigger timing (§16.7, TD-31). 0.4 — robust core: pose-based fixtures, result contract, machine connectors, validated tool catalog, CPU-only tiers |
+| Version | 0.7 — groups of tools with an OR (§4.1, §7.1, §10.3, TD-33). 0.6 — the job's acquisition block and the two layers, job and station (§4.1, §4.2, §4.5, §4.6, TD-32). 0.5 — remote I/O outputs, delayed reject and trigger timing (§16.7, TD-31). 0.4 — robust core: pose-based fixtures, result contract, machine connectors, validated tool catalog, CPU-only tiers |
 | Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform architecture. Sections 1–13 describe the system; sections 14–19 are new in 0.4 and describe the target the refactors (§18) lead to. Where the code is not there yet, the text says so. |
@@ -215,7 +215,7 @@ Since R0 (2026-10-17) the packages `core/`, `algorithms/`, `geometry/`, `pipelin
 | Camera raw settings | The driver's own full settings dump (e.g. the Hikvision image-settings XML), including what a driver offers beyond the normalized settings (gain offset, HDR) | Restores settings we don't model by name |
 | Geometry | Fixtures (an ordered list of locators, each optionally inside another fixture), and ROIs relative to a fixture or to the frame | Tolerates object placement, including rotation (NFR-ACC-4, §14) |
 | Tools | Ordered list: tool type, type version, ROI, parameters, thresholds, reason message, whether it affects the result | Same decision logic |
-| Decision rule | How tool results combine into PASS / FAIL (`all_pass` of the tools that affect the result) | Same final result |
+| Decision rule | How tool results combine into PASS / FAIL (`all_pass` over *units*: each tool that affects the result and is in no group, and each **group** of tools, which passes when any member passes; TD-33) | Same final result |
 | Image-quality limits (`quality`; no equivalent in the reference products) | Expected brightness and sharpness ranges vs. reference; optional color-reference patch with a drift limit | Detect drift (FR-ACQ-7, FR-INS-16) |
 | Outputs (optional, format 3) | Which tool values are published to the machine interface as user values, with units | Same data to the PLC (FR-INT-11) |
 | Model(s) | ONNX / OpenVINO files, checksum, model card (task, classes, input size, training data, metrics, latency per PC tier) | Same model, traceable |
@@ -511,7 +511,7 @@ sequenceDiagram
   4. **Sharpness gate** against the reference (E104). It runs after the first fixture because an empty station also looks "not sharp"; when the object is not found and the image is not sharp, the reason says both (E203).
   5. **Regions:** each ROI is mapped from its fixture to the frame, then cut as an **upright** image (rotation removed), so tools never deal with rotation (§14.3). A region outside the image → E301.
   6. **Tools** in job order. A tool that cannot run → E302; a tool that breaks → E303; an invalid score → E304.
-  7. **Decision:** `all_pass` over the tools with `affects_result: true`. Every failing tool adds its reason text and reason code.
+  7. **Decision:** `all_pass` over the tools with `affects_result: true` that are in no group, and over the **groups** (TD-33). A group passes when at least one member passes; a member that did not run is an ERROR before this stage, so an OR never hides it. Every failing tool outside a group adds its reason text and reason code; a failed group adds the group's own text and the reason codes of all its members.
 - The pipeline stops at the first ERROR and runs all tools otherwise, so the reason lists every failing tool.
 - **Timing budget:** each stage records its duration in the result (§10.3); the editor compares the total with the job's budget on this PC (FR-ADM-5).
 
@@ -683,9 +683,10 @@ One result structure is used by the pipeline, the records, the API, the machine 
 | `outcome` | PASS / FAIL / ERROR | The verdict |
 | `error_code` | int, 0 when not ERROR | Stable code from the catalog below |
 | `reason` | string, in the station language (pt-BR or en, TD-30) | For the operator, from the job's texts or the catalog; screens may re-render it in the viewer's language from `error_code` / `reason_codes` and the job's texts |
-| `reason_codes` | list of {tool, code} | Which tools failed and why, machine-readable |
-| `tools` | list of {id, type, version, passed, score, margin, values{name: number}, units{name: fraction / count / score}, criteria, affects_result} | Per-tool results. Each criterion is {code, kind: min / max / rule, measure, value, limit, passed, margin}; `margin` is how far the value is inside the limit in the value's unit (negative: outside). The tool's `margin` is the one of its decisive criterion: on a failure the lowest score, when all pass the one closest to its limit relative to the limit, so the near miss shows; a rule has none. The `sequence` is kept in the records' `meta` table each time a number is given, recorded or not, so a restart never gives a number again. Fractions are 0..1 |
+| `reason_codes` | list of {tool, code} | Which tools failed and why, machine-readable. A failed group lists the failing criteria of every member |
+| `tools` | list of {id, type, version, passed, score, margin, values{name: number}, units{name: fraction / count / score}, criteria, affects_result, group} | Per-tool results (`group` is the name of its group, or `null`; TD-33). Each criterion is {code, kind: min / max / rule, measure, value, limit, passed, margin}; `margin` is how far the value is inside the limit in the value's unit (negative: outside). The tool's `margin` is the one of its decisive criterion: on a failure the lowest score, when all pass the one closest to its limit relative to the limit, so the near miss shows; a rule has none. The `sequence` is kept in the records' `meta` table each time a number is given, recorded or not, so a restart never gives a number again. Fractions are 0..1 |
 | `tools[].marks` | list of {kind: rect / poly / point / text, role: found / expected / defect, points, closed, text} | What the tool measured, as **fractions of the frame**, in `ToolReport.marks`, PASS results included so a past result can be redrawn (VIA-0124). `rect` has two corners (in a turned region it arrives as a closed `poly` of its four corners), `poly` the outline (`closed: false` for a line), `point` and `text` one point. At most 64 marks per tool and 64 points per poly, 4 decimals (`core/results.py`); an invalid mark is dropped and logged, never a reason to change the verdict (`pipeline/marks.py`) |
+| `groups` | list of {id, passed, members} | One entry per group of the job, with the ids of its tools (TD-33); empty for a job with no group |
 | `fixtures` | list of {name, x, y, angle, scale, score} | Poses found; `x`, `y` are the centre as fractions of the frame. `angle` and `scale` are `null` until the locators measure them (R1): never reported as 0 and 1 |
 | `timings` | {stage: seconds} | Per stage and per tool |
 | `simulated` | bool | From a camera whose capabilities say its pictures are not the real station (the file camera), the editor, the A/B replay or the benchmark (FR-INT-12); never settable by a caller |

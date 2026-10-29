@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Document | 02 — Functional Requirements, Non-Functional Requirements and Use Cases |
-| Version | 0.8 — no migrator while nothing is deployed (FR-JOB-13 suspended, FR-JOB-16 is format 3). 0.7 — the job's acquisition block and the two layers, job and station (document 09 v0.3, TD-32): FR-TRG-8, FR-ACQ-10/11, FR-INT-17, FR-JOB-16 new; FR-PLT-3, FR-TRG-6/7, FR-INT-6, FR-UI-11 changed. 0.6 — trigger timing and remote I/O outputs from the market reference (document 09, TD-31): FR-TRG-6/7, FR-INT-14..16, FR-LOG-9 new; FR-INT-6 changed. 0.5 — interface in Portuguese and English (FR-UI-5, FR-INS-7 changed; FR-JOB-15 new; TD-30). 0.4 — interface requirements of document 05 v0.2 (FR-UI-9..14, FR-JOB-14, FR-ADM-8). 0.3 — robust core, machine connectors, minimum tool set, CPU-only PC tiers |
+| Version | 0.9 — OR between tools: FR-INS-17 new (TD-33). 0.8 — no migrator while nothing is deployed (FR-JOB-13 suspended, FR-JOB-16 is format 3). 0.7 — the job's acquisition block and the two layers, job and station (document 09 v0.3, TD-32): FR-TRG-8, FR-ACQ-10/11, FR-INT-17, FR-JOB-16 new; FR-PLT-3, FR-TRG-6/7, FR-INT-6, FR-UI-11 changed. 0.6 — trigger timing and remote I/O outputs from the market reference (document 09, TD-31): FR-TRG-6/7, FR-INT-14..16, FR-LOG-9 new; FR-INT-6 changed. 0.5 — interface in Portuguese and English (FR-UI-5, FR-INS-7 changed; FR-JOB-15 new; TD-30). 0.4 — interface requirements of document 05 v0.2 (FR-UI-9..14, FR-JOB-14, FR-ADM-8). 0.3 — robust core, machine connectors, minimum tool set, CPU-only PC tiers |
 | Date | 2026-10-18 |
 | Author | Lucas (developer and maintainer) |
 | Status | Platform requirements (TD-19). New and changed items are marked **(new 0.3)** / **(changed 0.3)**. |
@@ -108,6 +108,7 @@ Related documents: 01 — Project Scope · 03 — Architecture ("job" model) · 
 | FR-INS-14 | **(new 0.3)** Every ERROR shall carry a stable numeric code from a documented catalog, and every failing tool a stable reason code (`<tool type>.<criterion>`), in addition to the Portuguese text. Codes keep their meaning across software versions. | M |
 | FR-INS-15 | **(new 0.3)** A job may hold a calibration (millimetres per pixel). Measurement tools shall then report and judge in millimetres. A job with millimetre thresholds and no calibration shall be refused on load. | S (C) |
 | FR-INS-16 | **(new 0.3)** A job may name a color-reference patch (e.g. a white target fixed in the field of view) with a drift limit. A drift beyond the limit shall give ERROR, so a lighting change is never judged as a product defect. | S (C) |
+| FR-INS-17 | **(new 0.9)** A job shall be able to group tools so that the group passes when **any** member passes (OR), while tools outside a group stay all required. A member that cannot run shall make the result ERROR, never a pass by another member. A failed group shall give its own reason text, in both languages, and keep the reason codes of its members. A group shall have at least two members, all of them deciding the result. (TD-33) | S |
 
 ### 3.4 Jobs (JOB)
 
