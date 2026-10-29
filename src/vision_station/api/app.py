@@ -170,6 +170,7 @@ def _contract(c: Mapping[str, Any], *, sequence: int | None, error_code: int | N
         error_code=error_code,
         reason_codes=list(c.get("reason_codes", ())),
         tools=[{**t, "error": render(t["error"])} if t.get("error") else t for t in c.get("tools", ())],
+        groups=list(c.get("groups", ())),
         fixtures=list(c.get("fixtures", ())),
         trigger=None if trigger is None else {**trigger, "at": _iso(trigger.get("at"))},
         acquired_at=_iso(c.get("acquired_at")),
@@ -277,7 +278,7 @@ def status_json(deps: ApiDeps, language: Language | None = None) -> dict[str, An
 
 def _record(r: InspectionRecord) -> m.RecordOut:
     contract = _contract(
-        {"reason_codes": r.reason_codes, "tools": r.tools, "fixtures": r.fixtures, "trigger": r.trigger, "acquired_at": r.acquired_at, "decided_at": r.decided_at},
+        {"reason_codes": r.reason_codes, "tools": r.tools, "groups": r.groups, "fixtures": r.fixtures, "trigger": r.trigger, "acquired_at": r.acquired_at, "decided_at": r.decided_at},
         sequence=r.sequence, error_code=r.error_code, simulated=r.simulated,
     )
     plain = {k: getattr(r, k) for k in m.RecordOut.model_fields if k not in contract}

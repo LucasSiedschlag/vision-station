@@ -8,6 +8,7 @@ const contract = {
   error_code: 0,
   reason_codes: [],
   tools: [],
+  groups: [],
   fixtures: [],
   trigger: null,
   acquired_at: null,

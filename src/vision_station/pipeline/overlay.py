@@ -19,10 +19,13 @@ def draw_overlay(image: np.ndarray, result: InspectionResult) -> np.ndarray:
         else:
             x0, y0, x1, y1 = fixture["rect"]
             cv2.rectangle(out, (round(x0 * w), round(y0 * h)), (round(x1 * w), round(y1 * h)), _YELLOW, thick)
+    passed_groups = {g.id for g in result.groups if g.passed}
     for region in result.details.get("regions", []):
         x0, y0, x1, y1 = region["rect"]
-        # an informative tool that fails is marked, but not in the colour of a failure (it decides nothing)
-        color = _GREEN if region["passed"] else _RED if region.get("affects_result", True) else _YELLOW
+        # an informative tool that fails is marked, but not in the colour of a failure (it decides nothing); nor is a
+        # member of a group that passed (one was enough, TD-33)
+        decides = region.get("affects_result", True) and region.get("group") not in passed_groups
+        color = _GREEN if region["passed"] else _RED if decides else _YELLOW
         if "corners" in region:
             cv2.polylines(out, [np.round(np.array(region["corners"])).astype(np.int32)], True, color, thick)
         else:
@@ -30,18 +33,19 @@ def draw_overlay(image: np.ndarray, result: InspectionResult) -> np.ndarray:
         cv2.putText(out, region["tool"], (x0 + 4, y0 + 8 + 10 * thick), cv2.FONT_HERSHEY_SIMPLEX, 0.3 * thick, color, thick)
     for tool in result.tools:
         for mark in tool.marks:
-            _draw_mark(out, mark, tool, thick)
+            _draw_mark(out, mark, tool, thick, decides=tool.affects_result and tool.group not in passed_groups)
     return out
 
 
-def _draw_mark(out: np.ndarray, mark: Mark, tool: ToolReport, thick: int) -> None:
+def _draw_mark(out: np.ndarray, mark: Mark, tool: ToolReport, thick: int, *, decides: bool) -> None:
     """One mark of a tool, whose points are fractions of the frame: the colour comes from its role, and what a tool found
     takes the verdict of the tool (the same rule as the screen, docs/frontend.md §18)."""
     h, w = out.shape[:2]
     points = np.round(np.array([[x * w, y * h] for x, y in mark.points])).astype(np.int32)
     failed = mark.role == "defect" or (mark.role == "found" and not tool.passed)
-    # an informative tool never decides, so what makes it fail is not drawn as the failure of the part (FR-INS-13)
-    color = _GRAY if mark.role == "expected" else (_RED if tool.affects_result else _YELLOW) if failed else _GREEN
+    # an informative tool never decides, and a member of a group that passed did not either, so what makes it fail is not
+    # drawn as the failure of the part (FR-INS-13, TD-33)
+    color = _GRAY if mark.role == "expected" else (_RED if decides else _YELLOW) if failed else _GREEN
     if mark.kind == "rect":
         cv2.rectangle(out, tuple(points[0]), tuple(points[1]), color, thick)
     elif mark.kind == "poly":

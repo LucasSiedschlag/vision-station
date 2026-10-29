@@ -439,3 +439,20 @@ def test_the_marks_of_a_pass_are_recorded_and_read_back(tmp_path, clock):
         r = store.get(store.record(res(Outcome.PASS, tools=(tool,)), None, **JOB).id)
     assert r.tools[0]["marks"][0] == {"kind": "poly", "role": "found", "points": [[0.1, 0.2], [0.3, 0.2], [0.3, 0.4]], "closed": False, "text": ""}
     assert r.tools[0]["marks"][1]["text"] == "A1"
+
+
+def test_the_groups_of_a_result_are_recorded_and_read_back(tmp_path, clock):
+    """TD-33: which group each tool belongs to, and whether the group passed, survive in the record."""
+    from vision_station.core.results import GroupReport, ReasonCode, ToolReport
+
+    tools = (ToolReport("a", "code", 1, False, 0.0, group="marca"), ToolReport("b", "code", 1, False, 0.0, group="marca"), ToolReport("c", "code", 1, True, 1.0))
+    result = res(
+        Outcome.FAIL, "Sem lote", reason_codes=(ReasonCode("a", "code.min_count"), ReasonCode("b", "code.min_count")), tools=tools,
+        groups=(GroupReport("marca", False, ("a", "b")),),
+    )
+    with ResultStore(tmp_path, clock=clock) as store:
+        r = store.get(store.record(result, None, **JOB).id)
+        assert r.groups == ({"id": "marca", "passed": False, "members": ["a", "b"]},)
+        assert [t["group"] for t in r.tools] == ["marca", "marca", None]
+        plain = store.get(store.record(res(Outcome.PASS), None, **JOB).id)
+        assert plain.groups == ()  # a job with no group, and every record from before

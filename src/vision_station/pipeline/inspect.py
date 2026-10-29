@@ -158,7 +158,7 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         per_tool[tool.id] = elapsed
         scores[tool.id] = score
         tool_details[tool.id] = dict(result.details)
-        entry = {"tool": tool.id, "roi": tool.roi, "rect": list(region.px), "passed": bool(result.passed), "affects_result": tool.affects_result}
+        entry = {"tool": tool.id, "roi": tool.roi, "rect": list(region.px), "passed": bool(result.passed), "affects_result": tool.affects_result, "group": tool.group}
         if not np.array_equal(region.to_frame[:, :2], np.eye(2)):  # turned: the outline, for the overlay
             entry["corners"] = [[round(x, 1), round(y, 1)] for x, y in region.corners]
         regions.append(entry)

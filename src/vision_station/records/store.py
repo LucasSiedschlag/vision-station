@@ -131,6 +131,7 @@ class InspectionRecord:
     job_hash: str | None = None
     reason_codes: tuple[Mapping[str, str], ...] = ()
     tools: tuple[Mapping[str, Any], ...] = ()
+    groups: tuple[Mapping[str, Any], ...] = ()  # TD-33; empty on a record of a job with no group and on one from before
     fixtures: tuple[Mapping[str, Any], ...] = ()
     trigger: Mapping[str, Any] | None = None
     acquired_at: float | None = None
@@ -174,7 +175,7 @@ def _row(r: sqlite3.Row | tuple) -> InspectionRecord:
         overlay_path=r[11], sampled=bool(r[12]), correct_outcome=r[13], corrected_at=r[14], corrected_by=r[15],
         sequence=r[16], error_code=r[17], simulated=None if r[20] is None else bool(r[18]), job_hash=r[19],
         reason_codes=tuple(contract.get("reason_codes", ())), tools=tuple(contract.get("tools", ())),
-        fixtures=tuple(contract.get("fixtures", ())), trigger=contract.get("trigger"),
+        groups=tuple(contract.get("groups", ())), fixtures=tuple(contract.get("fixtures", ())), trigger=contract.get("trigger"),
         acquired_at=contract.get("acquired_at"), decided_at=contract.get("decided_at"),
     )
 

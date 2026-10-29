@@ -2126,6 +2126,15 @@ export interface components {
       /** Path */
       path: string | null
     }
+    /** GroupOut */
+    GroupOut: {
+      /** Id */
+      id: string
+      /** Members */
+      members: string[]
+      /** Passed */
+      passed: boolean
+    }
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -2345,6 +2354,11 @@ export interface components {
        * @default []
        */
       fixtures: components['schemas']['FixtureOut'][]
+      /**
+       * Groups
+       * @default []
+       */
+      groups: components['schemas']['GroupOut'][]
       job: components['schemas']['JobRefOut'] | null
       /**
        * Outcome
@@ -2698,6 +2712,11 @@ export interface components {
        * @default []
        */
       fixtures: components['schemas']['FixtureOut'][]
+      /**
+       * Groups
+       * @default []
+       */
+      groups: components['schemas']['GroupOut'][]
       /** Id */
       id: string
       /** Image Path */
@@ -2814,6 +2833,8 @@ export interface components {
       affects_result: boolean
       /** Corners */
       corners: number[][] | null
+      /** Group */
+      group: string | null
       /** Passed */
       passed: boolean
       /** Rect */
@@ -2852,6 +2873,11 @@ export interface components {
        * @default []
        */
       fixtures: components['schemas']['FixtureOut'][]
+      /**
+       * Groups
+       * @default []
+       */
+      groups: components['schemas']['GroupOut'][]
       job: components['schemas']['JobRefOut']
       /**
        * Outcome
@@ -2926,6 +2952,11 @@ export interface components {
        * @default []
        */
       fixtures: components['schemas']['FixtureOut'][]
+      /**
+       * Groups
+       * @default []
+       */
+      groups: components['schemas']['GroupOut'][]
       /** @default null */
       job: components['schemas']['JobRefOut'] | null
       /**
@@ -3464,6 +3495,11 @@ export interface components {
        * @default 0
        */
       error_code: number
+      /**
+       * Group
+       * @default null
+       */
+      group: string | null
       /** Id */
       id: string
       /**

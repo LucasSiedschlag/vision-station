@@ -95,6 +95,13 @@ class ToolResultOut(BaseModel):
     error_code: int = 0  # and its code (E301..E304)
     region: list[float] | None = None  # where the tool looked: x0, y0, x1, y1 as fractions of the frame
     marks: list[MarkOut] = []  # what it measured, passed results included (VIA-0124)
+    group: str | None = None  # the group of the job it belongs to, where one passing member is enough (TD-33)
+
+
+class GroupOut(BaseModel):
+    id: str
+    passed: bool  # a group passes when any of its members does
+    members: list[str]  # the ids of its tools
 
 
 class ReasonCodeOut(BaseModel):
@@ -125,6 +132,7 @@ class ResultContract(BaseModel):
     error_code: int | None = None  # ERROR: a code of the catalog; 0 otherwise; None on records from before the contract
     reason_codes: list[ReasonCodeOut] = []
     tools: list[ToolResultOut] = []
+    groups: list[GroupOut] = []  # empty for a job with no group, and for records from before TD-33
     fixtures: list[FixtureOut] = []
     trigger: TriggerOut | None = None
     acquired_at: str | None = None
@@ -572,6 +580,7 @@ class RegionOut(BaseModel):
     rect: list[int]  # x0, y0, x1, y1 in pixels of the frame
     passed: bool
     affects_result: bool = True
+    group: str | None = None  # TD-33: a member that did not match is not a failure when its group passed
     corners: list[list[float]] | None = None  # the outline in pixels, when the region is turned
 
 

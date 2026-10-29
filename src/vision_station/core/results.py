@@ -181,7 +181,7 @@ def tool_dict(t: ToolReport) -> dict[str, Any]:
         "values": dict(t.values), "units": dict(t.units), "criteria": [_criterion(c) for c in t.criteria],
         "affects_result": t.affects_result, "error": t.error, "error_code": t.error_code,
         "region": None if t.region is None else list(t.region),
-        "marks": [_mark(m) for m in t.marks],
+        "marks": [_mark(m) for m in t.marks], "group": t.group,
     }
 
 
@@ -190,6 +190,7 @@ def contract_dict(r: InspectionResult) -> dict[str, Any]:
     return {
         "reason_codes": [{"tool": c.tool, "code": c.code} for c in r.reason_codes],
         "tools": [tool_dict(t) for t in r.tools],
+        "groups": [{"id": g.id, "passed": g.passed, "members": list(g.members)} for g in r.groups],
         "fixtures": [{"name": f.name, "x": f.x, "y": f.y, "angle": f.angle, "scale": f.scale, "score": f.score} for f in r.fixtures],
         "trigger": None if r.trigger is None else {"source": r.trigger.source, "reference": r.trigger.reference, "part_id": r.trigger.part_id, "at": r.trigger.at},
         "job": None if r.job is None else {"id": r.job.id, "name": r.job.name, "version": r.job.version, "number": r.job.number, "content_hash": r.job.content_hash},

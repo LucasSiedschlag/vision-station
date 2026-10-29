@@ -1844,6 +1844,28 @@
         "title": "FolderPickOut",
         "type": "object"
       },
+      "GroupOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "members": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "passed", "members"],
+        "title": "GroupOut",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2372,6 +2394,14 @@
             "title": "Fixtures",
             "type": "array"
           },
+          "groups": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GroupOut"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
           "job": {
             "anyOf": [
               {
@@ -2457,6 +2487,7 @@
           "error_code",
           "reason_codes",
           "tools",
+          "groups",
           "fixtures",
           "trigger",
           "acquired_at",
@@ -3191,6 +3222,14 @@
             "title": "Fixtures",
             "type": "array"
           },
+          "groups": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GroupOut"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -3330,6 +3369,7 @@
           "error_code",
           "reason_codes",
           "tools",
+          "groups",
           "fixtures",
           "trigger",
           "acquired_at",
@@ -3523,6 +3563,17 @@
             ],
             "title": "Corners"
           },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
           "passed": {
             "title": "Passed",
             "type": "boolean"
@@ -3543,7 +3594,7 @@
             "type": "string"
           }
         },
-        "required": ["tool", "roi", "rect", "passed", "affects_result", "corners"],
+        "required": ["tool", "roi", "rect", "passed", "affects_result", "group", "corners"],
         "title": "RegionOut",
         "type": "object"
       },
@@ -3607,6 +3658,14 @@
               "$ref": "#/components/schemas/FixtureOut"
             },
             "title": "Fixtures",
+            "type": "array"
+          },
+          "groups": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GroupOut"
+            },
+            "title": "Groups",
             "type": "array"
           },
           "job": {
@@ -3755,6 +3814,14 @@
               "$ref": "#/components/schemas/FixtureOut"
             },
             "title": "Fixtures",
+            "type": "array"
+          },
+          "groups": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GroupOut"
+            },
+            "title": "Groups",
             "type": "array"
           },
           "job": {
@@ -4677,6 +4744,18 @@
             "default": 0,
             "title": "Error Code",
             "type": "integer"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Group"
           },
           "id": {
             "title": "Id",
