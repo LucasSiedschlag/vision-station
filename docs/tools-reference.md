@@ -139,6 +139,8 @@ Two versions are saved in jobs: **v1**, which correlates gray levels (a pattern 
 - `Faltam marcas na emenda: {count} de {min_count}`
 - `Trecho sem marca de {gap:.0%} da emenda (máximo {max_gap:.0%})`
 
+**In a group (OR).** When a tape may show a logo or a text block, and how many of each varies, give one `pattern` per mark with `min_count` 1 and no `max_count`, put both in a group and write the text of the group (`Fita sem logo nem texto`). The tape passes with either mark, any number of times, and fails only with neither. A tape with no marks, a box with no tape and a background with no box are not a PASS (`tests/test_or_bench.py`).
+
 **Benchmark.** v1 and v2: 120 ms (tier M) and 50 ms (tier R) at 1 MP, proposed until B-1.
 
 ## `compare`
