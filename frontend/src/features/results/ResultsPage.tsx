@@ -254,9 +254,18 @@ function Tools({ record }: { record: RecordOut }) {
           <div key={tool.id} className="flex flex-col gap-2">
             <p className="flex items-center gap-2 text-sm font-medium">
               {tool.id}
-              <Badge tone={tool.passed ? 'ok' : 'fail'}>
+              <Badge
+                tone={
+                  tool.passed
+                    ? 'ok'
+                    : record.groups?.some((x) => x.id === tool.group && x.passed)
+                      ? 'neutral' // one member of its group was enough: not the failure of the part (TD-33)
+                      : 'fail'
+                }
+              >
                 {tool.passed ? text.operator.outcome.PASS : text.operator.outcome.FAIL}
               </Badge>
+              {tool.group ? <Badge tone="neutral">{tool.group}</Badge> : null}
               {tool.affects_result ? null : <Badge tone="neutral">{g.informative}</Badge>}
             </p>
             {tool.criteria.map((c) => {

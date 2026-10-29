@@ -528,6 +528,23 @@ export const text = {
     get decidesHint() {
       return t`Desligada, a ferramenta é medida e gravada, mas nunca reprova a peça.`
     },
+    group: (id: string) => t`Grupo: ${id}`,
+    get groupNone() {
+      return t`Nenhum`
+    },
+    get groupNew() {
+      return t`Novo grupo`
+    },
+    get groupHint() {
+      return t`Num grupo basta uma ferramenta passar (uma ou outra). As que ficam fora do grupo continuam obrigatórias.`
+    },
+    groupText: (id: string) => t`Quando nenhuma passa: ${id}`,
+    get groupTextHint() {
+      return t`O que a tela do operador diz quando nenhuma ferramenta do grupo passou, no lugar dos textos de cada uma.`
+    },
+    get groupNeedsTwo() {
+      return t`O grupo precisa de pelo menos duas ferramentas.`
+    },
     get machineOutputs() {
       return t`As saídas para a máquina vêm com a interface da máquina (fase B).`
     },
@@ -646,6 +663,10 @@ export const text = {
       toolInformative: (id: string) => t`${id} passou a só informar, sem reprovar`,
       toolDecides: (id: string) => t`${id} passou a decidir o resultado`,
       toolReason: (id: string) => t`${id}: o texto de reprovação mudou`,
+      toolJoined: (id: string, group: string) =>
+        t`${id} entrou no grupo ${group}: basta uma do grupo passar`,
+      toolLeft: (id: string, group: string) => t`${id} saiu do grupo ${group}`,
+      groupReason: (group: string) => t`${group}: o texto de reprovação do grupo mudou`,
       get trigger() {
         return t`O disparo mudou`
       },

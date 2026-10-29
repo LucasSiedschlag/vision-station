@@ -23,6 +23,7 @@ import {
   clockTime,
   connectionOf,
   markingsOn,
+  memberOfPassedGroup,
   percent,
   toolRows,
   verdictOf,
@@ -279,7 +280,15 @@ export function OperatorPage() {
     markingsOn(status?.markings ?? 'on_fail', status?.operator_markings ?? true, chosen, shown)
       ? (shown.tools ?? []).flatMap((t) =>
           t.region
-            ? [{ id: t.id, rect: t.region, passed: t.passed, informative: !t.affects_result, marks: t.marks }]
+            ? [
+                {
+                  id: t.id,
+                  rect: t.region,
+                  passed: t.passed,
+                  informative: !t.affects_result || memberOfPassedGroup(shown, t),
+                  marks: t.marks,
+                },
+              ]
             : [],
         )
       : []

@@ -827,6 +827,66 @@ describe('the job editor', () => {
     expect(useDraft.getState().draft?.job.tools[0]).not.toHaveProperty('affects_result')
   })
 
+  describe('groups of tools, where one passing tool is enough (TD-33)', () => {
+    const twoTools = () =>
+      server.use(
+        http.get(`*/api/jobs/${JOB}/versions/2`, () =>
+          HttpResponse.json({
+            ...version,
+            job: {
+              ...version.job,
+              tools: [
+                version.job.tools[0],
+                { ...version.job.tools[0], id: 'tampa2', reason_fail: 'Tampa 2 ausente' },
+              ],
+            },
+          }),
+        ),
+      )
+    const openOutputs = async () => {
+      twoTools()
+      await openEditor()
+      await userEvent.click(screen.getByRole('button', { name: /Resultado e saídas/ }))
+    }
+    const pick = async (tool: string, option: string) => {
+      await userEvent.click(screen.getByRole('combobox', { name: `Grupo: ${tool}` }))
+      await userEvent.click(screen.getByRole('option', { name: option }))
+    }
+
+    it('two tools are put in a group of their own, with the text it says when none passes', async () => {
+      await openOutputs()
+      await pick('tampa', 'Novo grupo')
+      expect(useDraft.getState().draft?.job.tools[0].group).toBe('grupo_1')
+      expect(useDraft.getState().draft?.job.groups.grupo_1.reason_fail['pt-BR']).not.toBe('')
+      await pick('tampa2', 'grupo_1')
+      expect(useDraft.getState().draft?.job.tools[1].group).toBe('grupo_1')
+      const group = screen.getByRole('group', { name: /grupo_1/ })
+      const pt = within(group).getAllByRole('textbox')[0]!
+      await userEvent.clear(pt)
+      await userEvent.type(pt, 'Sem tampa')
+      await userEvent.tab()
+      expect(useDraft.getState().draft?.job.groups.grupo_1.reason_fail['pt-BR']).toBe('Sem tampa')
+    })
+
+    it('a group with one tool says it needs two; one with none is gone', async () => {
+      await openOutputs()
+      await pick('tampa', 'Novo grupo')
+      expect(screen.getByText(/O grupo precisa de pelo menos duas ferramentas/)).toBeInTheDocument()
+      await pick('tampa', 'Nenhum')
+      expect(useDraft.getState().draft?.job.tools[0]).not.toHaveProperty('group')
+      expect(useDraft.getState().draft?.job).not.toHaveProperty('groups')
+    })
+
+    it('a tool that only informs cannot be in a group, and leaves it when it stops deciding', async () => {
+      await openOutputs()
+      await pick('tampa', 'Novo grupo')
+      await pick('tampa2', 'grupo_1')
+      await userEvent.click(screen.getByRole('switch', { name: /Decide o resultado: tampa2/ }))
+      expect(useDraft.getState().draft?.job.tools[1]).not.toHaveProperty('group')
+      expect(screen.getByRole('combobox', { name: 'Grupo: tampa2' })).toBeDisabled()
+    })
+  })
+
   it('the level is chosen in the top bar, kept per role, and shows the deeper settings', async () => {
     await openEditor()
     await userEvent.click(screen.getByRole('button', { name: /Ferramentas/ }))

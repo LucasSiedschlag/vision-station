@@ -707,6 +707,9 @@ msgstr "Para a ferramenta de padrão: desenhe um recorte do logo ou marca na ima
 msgid "Voltar para Jobs"
 msgstr "Voltar para Jobs"
 
+msgid "Num grupo basta uma ferramenta passar (uma ou outra). As que ficam fora do grupo continuam obrigatórias."
+msgstr "Num grupo basta uma ferramenta passar (uma ou outra). As que ficam fora do grupo continuam obrigatórias."
+
 msgid "Percentual de pixels saturados que a exposição deve alcançar na região medida"
 msgstr "Percentual de pixels saturados que a exposição deve alcançar na região medida"
 
@@ -937,6 +940,9 @@ msgstr "Nenhuma região. Uma ferramenta pode olhar a imagem toda."
 
 msgid "à imagem"
 msgstr "à imagem"
+
+msgid "Nenhum"
+msgstr "Nenhum"
 
 msgid "Brilho"
 msgstr "Brilho"
@@ -1364,6 +1370,9 @@ msgstr "Resultado do rascunho"
 msgid "Arraste sobre a cor na imagem"
 msgstr "Arraste sobre a cor na imagem"
 
+msgid "{group}: o texto de reprovação do grupo mudou"
+msgstr "{group}: o texto de reprovação do grupo mudou"
+
 msgid "Este job não tem ferramenta com tolerância para ajustar."
 msgstr "Este job não tem ferramenta com tolerância para ajustar."
 
@@ -1438,6 +1447,9 @@ msgstr "Máscara na imagem"
 
 msgid "Capture a imagem de referência (passo Referência) para recortar um gabarito."
 msgstr "Capture a imagem de referência (passo Referência) para recortar um gabarito."
+
+msgid "Novo grupo"
+msgstr "Novo grupo"
 
 msgid "Câmera desconectada"
 msgstr "Câmera desconectada"
@@ -1739,6 +1751,9 @@ msgstr "Imagem de referência capturada ({w} × {h})."
 msgid "Contínuo"
 msgstr "Contínuo"
 
+msgid "Grupo: {id}"
+msgstr "Grupo: {id}"
+
 msgid "Desfazer"
 msgstr "Desfazer"
 
@@ -1777,6 +1792,9 @@ msgstr "Imagem guardada por amostragem."
 
 msgid "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} other {# sessões encerradas.}}"
 msgstr "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} other {# sessões encerradas.}}"
+
+msgid "O que a tela do operador diz quando nenhuma ferramenta do grupo passou, no lugar dos textos de cada uma."
+msgstr "O que a tela do operador diz quando nenhuma ferramenta do grupo passou, no lugar dos textos de cada uma."
 
 msgid "Todos"
 msgstr "Todos"
@@ -1913,6 +1931,9 @@ msgstr "Em graus, no sentido anti-horário na imagem; 0° é como foi ensinado."
 msgid "não suportado"
 msgstr "não suportado"
 
+msgid "Quando nenhuma passa: {id}"
+msgstr "Quando nenhuma passa: {id}"
+
 msgid "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha)."
 msgstr "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha)."
 
@@ -1939,6 +1960,9 @@ msgstr "Versão {v} de {name} ativada."
 
 msgid "Mais lenta: {ms} ms"
 msgstr "Mais lenta: {ms} ms"
+
+msgid "O grupo precisa de pelo menos duas ferramentas."
+msgstr "O grupo precisa de pelo menos duas ferramentas."
 
 msgid "Mede a imagem toda"
 msgstr "Mede a imagem toda"
@@ -2240,6 +2264,9 @@ msgstr "Aguardando objeto"
 msgid "A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair."
 msgstr "A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair."
 
+msgid "{id} saiu do grupo {group}"
+msgstr "{id} saiu do grupo {group}"
+
 msgid "Sem imagem ao vivo: a câmera não está entregando quadros."
 msgstr "Sem imagem ao vivo: a câmera não está entregando quadros."
 
@@ -2356,6 +2383,9 @@ msgstr "Aparece nas pontuações e no registro."
 
 msgid "Comparar com…"
 msgstr "Comparar com…"
+
+msgid "{id} entrou no grupo {group}: basta uma do grupo passar"
+msgstr "{id} entrou no grupo {group}: basta uma do grupo passar"
 
 msgid "{n, plural, one {# amostra removida} other {# amostras removidas}}"
 msgstr "{n, plural, one {# amostra removida} other {# amostras removidas}}"

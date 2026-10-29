@@ -707,6 +707,9 @@ msgstr "For the pattern tool: draw a crop of the logo or mark on the reference i
 msgid "Voltar para Jobs"
 msgstr "Back to Jobs"
 
+msgid "Num grupo basta uma ferramenta passar (uma ou outra). As que ficam fora do grupo continuam obrigatórias."
+msgstr "In a group one passing tool is enough (one or the other). The tools outside a group are still all required."
+
 msgid "Percentual de pixels saturados que a exposição deve alcançar na região medida"
 msgstr "Percentage of saturated pixels the exposure should reach in the measured region"
 
@@ -937,6 +940,9 @@ msgstr "No regions. A tool can look at the whole image."
 
 msgid "à imagem"
 msgstr "to the image"
+
+msgid "Nenhum"
+msgstr "None"
 
 msgid "Brilho"
 msgstr "Brightness"
@@ -1364,6 +1370,9 @@ msgstr "Result of the draft"
 msgid "Arraste sobre a cor na imagem"
 msgstr "Drag over the colour on the image"
 
+msgid "{group}: o texto de reprovação do grupo mudou"
+msgstr "{group}: the failure text of the group changed"
+
 msgid "Este job não tem ferramenta com tolerância para ajustar."
 msgstr "This job has no tool with a tolerance to adjust."
 
@@ -1438,6 +1447,9 @@ msgstr "Mask on the image"
 
 msgid "Capture a imagem de referência (passo Referência) para recortar um gabarito."
 msgstr "Capture the reference image (Reference step) to crop a template."
+
+msgid "Novo grupo"
+msgstr "New group"
 
 msgid "Câmera desconectada"
 msgstr "Camera disconnected"
@@ -1739,6 +1751,9 @@ msgstr "Reference image captured ({w} × {h})."
 msgid "Contínuo"
 msgstr "Continuous"
 
+msgid "Grupo: {id}"
+msgstr "Group: {id}"
+
 msgid "Desfazer"
 msgstr "Undo"
 
@@ -1777,6 +1792,9 @@ msgstr "Image kept by sampling."
 
 msgid "{n, plural, =0 {Nenhuma sessão encerrada.} one {# sessão encerrada.} other {# sessões encerradas.}}"
 msgstr "{n, plural, =0 {No sessions ended.} one {# session ended.} other {# sessions ended.}}"
+
+msgid "O que a tela do operador diz quando nenhuma ferramenta do grupo passou, no lugar dos textos de cada uma."
+msgstr "What the operator screen says when no tool of the group passed, instead of the text of each one."
 
 msgid "Todos"
 msgstr "All"
@@ -1913,6 +1931,9 @@ msgstr "In degrees, counter-clockwise on the image; 0° is as taught."
 msgid "não suportado"
 msgstr "not supported"
 
+msgid "Quando nenhuma passa: {id}"
+msgstr "When none passes: {id}"
+
 msgid "127.0.0.1: só este PC. Outro valor abre para a rede (precisa de senha)."
 msgstr "127.0.0.1: this PC only. Another value opens it to the network (needs a password)."
 
@@ -1939,6 +1960,9 @@ msgstr "Version {v} of {name} activated."
 
 msgid "Mais lenta: {ms} ms"
 msgstr "Slowest: {ms} ms"
+
+msgid "O grupo precisa de pelo menos duas ferramentas."
+msgstr "A group needs at least two tools."
 
 msgid "Mede a imagem toda"
 msgstr "Measures the whole picture"
@@ -2240,6 +2264,9 @@ msgstr "Waiting for a part"
 msgid "A estação está pausada enquanto o editor mede ao vivo; volta sozinha quando você sair."
 msgstr "The station is paused while the editor measures live; it comes back by itself when you leave."
 
+msgid "{id} saiu do grupo {group}"
+msgstr "{id} left group {group}"
+
 msgid "Sem imagem ao vivo: a câmera não está entregando quadros."
 msgstr "No live image: the camera is not delivering frames."
 
@@ -2356,6 +2383,9 @@ msgstr "Shown in the scores and in the records."
 
 msgid "Comparar com…"
 msgstr "Compare with…"
+
+msgid "{id} entrou no grupo {group}: basta uma do grupo passar"
+msgstr "{id} joined group {group}: one of the group passing is enough"
 
 msgid "{n, plural, one {# amostra removida} other {# amostras removidas}}"
 msgstr "{n, plural, one {# sample removed} other {# samples removed}}"

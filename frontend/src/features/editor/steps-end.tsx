@@ -7,6 +7,7 @@ import { StatusIndicator } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input, Textarea } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { text } from '@/texts'
@@ -20,6 +21,27 @@ const edit = (change: (d: Draft) => void, history = true) =>
   useDraft.getState().edit(change, history)
 
 // --- 6. result and outputs -----------------------------------------------------------------------------
+
+const NONE = '__none__'
+const NEW = '__new__'
+// what a new group says when none of its tools passed, in both languages: the maintainer rewrites it (TD-33)
+const GROUP_TEXT = {
+  'pt-BR': 'Nenhuma ferramenta do grupo passou',
+  en: 'None of the tools of the group passed',
+}
+
+/** A group no tool uses is not kept: the server refuses it, and the editor has nothing to show for it (TD-33). */
+function dropEmptyGroups(d: Draft) {
+  const used = new Set((d.job.tools as JobJson[]).map((tool) => tool.group))
+  for (const id of Object.keys(d.job.groups ?? {})) if (!used.has(id)) delete d.job.groups[id]
+  if (d.job.groups && !Object.keys(d.job.groups).length) delete d.job.groups
+}
+
+function nextGroupId(groups: Record<string, unknown>): string {
+  let n = 1
+  while (`grupo_${n}` in groups) n++
+  return `grupo_${n}`
+}
 
 /** Which tools decide the result, and what the operator screen says while it waits (docs/frontend.md §7.3 step 6). */
 export function OutputsStep({ draft }: StepProps) {
@@ -35,15 +57,63 @@ export function OutputsStep({ draft }: StepProps) {
               onCheckedChange={(on) =>
                 edit((d) => {
                   if (on) delete d.job.tools[i].affects_result
-                  else d.job.tools[i].affects_result = false
+                  else {
+                    d.job.tools[i].affects_result = false
+                    delete d.job.tools[i].group // an informative tool cannot be in a group (TD-33)
+                    dropEmptyGroups(d)
+                  }
                 })
               }
               label={`${t.decides}: ${tool.id}`}
               hint={t.decidesHint}
             />
+            <Field label={t.group(tool.id)} hint={t.groupHint}>
+              {(props) => (
+                <Select
+                  {...props}
+                  value={tool.group ?? NONE}
+                  disabled={tool.affects_result === false}
+                  onValueChange={(value) =>
+                    edit((d) => {
+                      if (value === NONE) delete d.job.tools[i].group
+                      else if (value === NEW) {
+                        const id = nextGroupId(d.job.groups ?? {})
+                        ;(d.job.groups ??= {})[id] = { reason_fail: { ...GROUP_TEXT } }
+                        d.job.tools[i].group = id
+                      } else d.job.tools[i].group = value
+                      dropEmptyGroups(d)
+                    })
+                  }
+                  options={[
+                    { value: NONE, label: t.groupNone },
+                    ...Object.keys(draft.job.groups ?? {}).map((id) => ({ value: id, label: id })),
+                    { value: NEW, label: t.groupNew },
+                  ]}
+                />
+              )}
+            </Field>
           </li>
         ))}
       </ul>
+      {Object.entries(draft.job.groups ?? {}).map(([id, group]) => (
+        <div key={id} className="flex flex-col gap-2">
+          <BilingualField
+            label={t.groupText(id)}
+            hint={t.groupTextHint}
+            value={(group as JobJson).reason_fail}
+            onChange={(next) =>
+              edit((d) => {
+                d.job.groups[id].reason_fail = next
+              }, false)
+            }
+          />
+          {tools.filter((tool) => tool.group === id).length < 2 ? (
+            <p role="status" className="text-xs text-warn-text">
+              {t.groupNeedsTwo}
+            </p>
+          ) : null}
+        </div>
+      ))}
       <BilingualField
         label={t.waiting}
         hint={t.waitingHint}

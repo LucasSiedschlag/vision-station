@@ -187,8 +187,8 @@ const tool = (id: string, passed: boolean, over: Record<string, unknown> = {}) =
   region: [0.1, 0.1, 0.3, 0.3],
   ...over,
 })
-const resultWith = (tools: unknown[], outcome: 'PASS' | 'FAIL' = 'FAIL') =>
-  ({ outcome, reason: '', scores: {}, duration_ms: 1, tools }) as unknown as ResultOut
+const resultWith = (tools: unknown[], outcome: 'PASS' | 'FAIL' = 'FAIL', groups?: unknown[]) =>
+  ({ outcome, reason: '', scores: {}, duration_ms: 1, tools, groups }) as unknown as ResultOut
 
 describe('toolRows', () => {
   it('lists the deciding tools with the value that decided each, in the language of the interface', () => {
@@ -209,6 +209,42 @@ describe('toolRows', () => {
       { id: 'lote', passed: true, value: '1' },
     ])
     expect(more).toBe(0)
+  })
+
+  it('a group is one line (any member is enough), not one line per member', () => {
+    const { rows } = toolRows(
+      resultWith(
+        [
+          tool('logo', false, { group: 'marca' }),
+          tool('texto', true, { group: 'marca' }),
+          tool('tampa', true),
+        ],
+        'PASS',
+        [{ id: 'marca', passed: true, members: ['logo', 'texto'] }],
+      ),
+    )
+    expect(rows).toEqual([
+      { id: 'logo / texto', passed: true, value: '1/2' }, // at its first member, like the reasons
+      { id: 'tampa', passed: true, value: '12%' },
+    ])
+  })
+
+  it('a failed group comes first, like any failing line', () => {
+    const { rows } = toolRows(
+      resultWith(
+        [
+          tool('tampa', true),
+          tool('logo', false, { group: 'marca' }),
+          tool('texto', false, { group: 'marca' }),
+        ],
+        'FAIL',
+        [{ id: 'marca', passed: false, members: ['logo', 'texto'] }],
+      ),
+    )
+    expect(rows.map((r) => [r.id, r.passed])).toEqual([
+      ['logo / texto', false],
+      ['tampa', true],
+    ])
   })
 
   it('shows at most six, the failing ones first, and counts the others', () => {

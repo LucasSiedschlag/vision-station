@@ -130,9 +130,18 @@ export function summarizeChanges(
     if ((tool.affects_result ?? true) !== (was.affects_result ?? true))
       out.push(tool.affects_result === false ? c.toolInformative(tool.id) : c.toolDecides(tool.id))
     if (!same(tool.reason_fail ?? '', was.reason_fail ?? '')) out.push(c.toolReason(tool.id))
+    if (tool.group !== was.group) {
+      if (tool.group) out.push(c.toolJoined(tool.id, tool.group))
+      else out.push(c.toolLeft(tool.id, was.group))
+    }
   }
   for (const was of wasTools)
     if (!tools.some((x) => x.id === was.id)) out.push(c.toolRemoved(was.id))
+
+  const groups = (job.groups ?? {}) as Record<string, unknown>
+  const wasGroups = (baseJob.groups ?? {}) as Record<string, unknown>
+  for (const name of Object.keys(groups))
+    if (name in wasGroups && !same(groups[name], wasGroups[name])) out.push(c.groupReason(name))
 
   if (!same(job.acquisition?.trigger, baseJob.acquisition?.trigger)) out.push(c.trigger)
   if (!same(job.quality, baseJob.quality)) out.push(c.quality)

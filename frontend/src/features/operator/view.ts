@@ -199,13 +199,34 @@ export function toolRows(result: ResultOut | null | undefined): {
   more: number
 } {
   const deciding = (result?.tools ?? []).filter((t) => t.affects_result)
-  const ordered = [...deciding.filter((t) => !t.passed), ...deciding.filter((t) => t.passed)]
+  const groups = new Map((result?.groups ?? []).map((g) => [g.id, g]))
+  const seen = new Set<string>()
+  const lines: ToolRow[] = []
+  for (const t of deciding) {
+    if (!t.group) {
+      lines.push({ id: t.id, passed: t.passed, value: valueOf(t) })
+      continue
+    }
+    if (seen.has(t.group)) continue // a group is one line: any member is enough (TD-33)
+    seen.add(t.group)
+    const members = deciding.filter((x) => x.group === t.group)
+    const matching = members.filter((x) => x.passed).length
+    lines.push({
+      id: members.map((x) => x.id).join(' / '),
+      passed: groups.get(t.group)?.passed ?? matching > 0,
+      value: `${matching}/${members.length}`,
+    })
+  }
+  const ordered = [...lines.filter((l) => !l.passed), ...lines.filter((l) => l.passed)]
   return {
-    rows: ordered
-      .slice(0, MAX_TOOL_ROWS)
-      .map((t) => ({ id: t.id, passed: t.passed, value: valueOf(t) })),
+    rows: ordered.slice(0, MAX_TOOL_ROWS),
     more: Math.max(0, ordered.length - MAX_TOOL_ROWS),
   }
+}
+
+/** A member that did not match is no failure when its group passed: one was enough, so it is drawn as a warning (TD-33). */
+export function memberOfPassedGroup(result: ResultOut, tool: Tool): boolean {
+  return !!tool.group && (result.groups ?? []).some((g) => g.id === tool.group && g.passed)
 }
 
 export type Markings = 'always' | 'on_fail' | 'never'

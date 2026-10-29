@@ -89,6 +89,28 @@ describe('what changed, in words', () => {
     )
   })
 
+  it('groups of tools: a tool joining or leaving one, and the text of the group', () => {
+    const two = [tool({}), tool({}, { id: 'lote', type: 'code' })]
+    const grouped = (text: string) =>
+      job(
+        two.map((x) => ({ ...x, group: 'grupo_1' })),
+        { groups: { grupo_1: { reason_fail: { 'pt-BR': text, en: 'x' } } } },
+      )
+    const lines = summarizeChanges(from(job(two), grouped('Sem lote')), types)
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        'tampa entrou no grupo grupo_1: basta uma do grupo passar',
+        'lote entrou no grupo grupo_1: basta uma do grupo passar',
+      ]),
+    )
+    expect(
+      summarizeChanges(from(grouped('Sem lote'), grouped('Sem logo nem texto')), types),
+    ).toEqual(['grupo_1: o texto de reprovação do grupo mudou'])
+    expect(summarizeChanges(from(grouped('Sem lote'), job(two)), types)).toEqual(
+      expect.arrayContaining(['tampa saiu do grupo grupo_1']),
+    )
+  })
+
   it('the camera, the reference image and the samples', () => {
     const j = job([tool({})])
     const draft = from(j, j, {

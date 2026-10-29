@@ -329,3 +329,57 @@ test('the template check: the crop at full size, its size and the contour points
   await expect(page.getByText('Gabarito guardado no job.')).toBeVisible()
   await page.goto('/')
 })
+
+test('groups of tools: two tools of which one is enough are grouped, saved, and the group comes back when the job is opened again (TD-33)', async ({
+  page,
+  request,
+  station,
+}) => {
+  void station
+  await signInAs(page, request, 'maintainer')
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+
+  // a second tool of the same kind, so there are two to group
+  await page.getByRole('button', { name: /Ferramentas/ }).click()
+  await page.getByRole('combobox', { name: 'Adicionar ferramenta' }).click()
+  await page.getByRole('option', { name: /Código de barras/ }).click()
+  await page.getByRole('button', { name: 'Adicionar', exact: true }).last().click()
+
+  await page.getByRole('button', { name: /Resultado e saídas/ }).click()
+  await page.getByRole('combobox', { name: 'Grupo: code', exact: true }).click()
+  await page.getByRole('option', { name: 'Novo grupo' }).click()
+  await expect(page.getByText('O grupo precisa de pelo menos duas ferramentas.')).toBeVisible()
+  await page.getByRole('combobox', { name: 'Grupo: code1' }).click()
+  await page.getByRole('option', { name: 'grupo_1' }).click()
+  await expect(page.getByText('O grupo precisa de pelo menos duas ferramentas.')).toBeHidden()
+  const text = page.getByRole('group', { name: /Quando nenhuma passa: grupo_1/ })
+  await text.getByRole('textbox').first().fill('Sem código nenhum')
+  expect(await accessibilityProblems(page)).toEqual([])
+
+  // the server takes the job with the group (its model is strict) and writes it as a new version
+  await page.getByRole('button', { name: 'Salvar…' }).click()
+  const dialog = page.getByRole('dialog', { name: /Salvar como versão \d+/ })
+  await expect(
+    dialog.getByText('code entrou no grupo grupo_1: basta uma do grupo passar'),
+  ).toBeVisible()
+  await dialog.getByLabel('O que mudou').fill('grupo de códigos')
+  await dialog.getByRole('button', { name: 'Salvar…' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: JOB })).toBeVisible()
+  await expect(
+    page.getByRole('list', { name: 'Versões' }).getByRole('listitem').first(),
+  ).toContainText('grupo de códigos')
+
+  // open again: the group is there, read back from the saved version
+  await page.goto('/jobs')
+  await page.getByRole('button', { name: `Ações de ${JOB}` }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
+  await page.getByRole('button', { name: /Resultado e saídas/ }).click()
+  await expect(page.getByRole('combobox', { name: 'Grupo: code', exact: true })).toContainText(
+    'grupo_1',
+  )
+  await expect(page.getByRole('combobox', { name: 'Grupo: code1' })).toContainText('grupo_1')
+  await page.goto('/') // leaves the editor, which holds the station paused
+})
