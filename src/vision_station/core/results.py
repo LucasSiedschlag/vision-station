@@ -58,6 +58,15 @@ class Criterion:
 
 
 @dataclass(frozen=True)
+class GroupReport:
+    """A group of tools of which one passing is enough (TD-33): it passed when any of its members did."""
+
+    id: str
+    passed: bool
+    members: tuple[str, ...]  # the ids of its tools, in the order of the job
+
+
+@dataclass(frozen=True)
 class ToolReport:
     """One tool's part of a result: what it measured and why it passed or failed."""
 
@@ -74,6 +83,7 @@ class ToolReport:
     error_code: int = 0  # and its code of the catalog (E301..E304)
     region: tuple[float, float, float, float] | None = None  # x0, y0, x1, y1 as fractions of the frame: where it looked
     marks: tuple[Mark, ...] = ()  # what it measured, as fractions of the frame, passed results included (VIA-0124)
+    group: str | None = None  # the group of the job it belongs to, where one passing member is enough (TD-33)
 
     @property
     def decisive(self) -> Criterion | None:
@@ -147,6 +157,7 @@ class InspectionResult:
     reason_codes: tuple[ReasonCode, ...] = ()  # FAIL: which deciding tools failed and why
     tools: tuple[ToolReport, ...] = ()
     fixtures: tuple[FixturePose, ...] = ()
+    groups: tuple[GroupReport, ...] = ()  # one per group of the job; empty for a job with none (TD-33)
     # set by the station controller, not by the pipeline
     sequence: int | None = None  # +1 per inspection, wraps at 2**32: how a PLC sees a missed result
     job: ResultJob | None = None

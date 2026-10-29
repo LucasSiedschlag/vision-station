@@ -206,3 +206,75 @@ def test_verification_does_not_ask_for_the_score_of_an_informative_tool_that_cou
     case = type("Case", (), {"outcome": "PASS", "scores": {"lote": 1.0, "info": 1.0}, "reason_contains": ""})()
     assert _compare(case, result, 0.05, {"info"}) == []
     assert _compare(case, result, 0.05) == ["nota de 'info' ausente"]
+
+
+# --- groups of tools: one passing member is enough (TD-33, FR-INS-17) -------------------------------------------------
+
+
+def _group_text():
+    return {"pt-BR": "Sem o lote 1 nem o lote 2", "en": "Neither lot 1 nor lot 2"}
+
+
+def _grouped_bundle(*, ungrouped=None, b_changes=None):
+    """Two `code` tools of which one is enough: `a` wants LOTE-1, `b` wants LOTE-2. `ungrouped` is a third tool that must pass by itself."""
+    data = make_bundle().job.model_dump(mode="json")
+    base = data["tools"][0]
+    tools = [
+        {**base, "id": "a", "params": {"expect": "LOTE-1"}, "reason_fail": "Falta o lote 1", "group": "marca"},
+        {**base, "id": "b", "params": {"expect": "LOTE-2"}, "reason_fail": "Falta o lote 2", "group": "marca", **(b_changes or {})},
+    ]
+    if ungrouped:
+        tools.append({**base, "id": "c", "reason_fail": "Falta o código c", **ungrouped})
+    data["tools"] = tools
+    data["groups"] = {"marca": {"reason_fail": _group_text()}}
+    return JobBundle(Job.model_validate(data), make_bundle().profile, make_bundle().extra)
+
+
+@pytest.mark.parametrize("lot", ["LOTE-1", "LOTE-2"])
+def test_a_group_passes_when_either_member_passes(lot):
+    r = inspect_job(_grouped_bundle(), frame(qr_scene(lot)))
+    assert r.outcome is Outcome.PASS and r.reason == "" and r.reason_codes == ()
+    assert {t.id: t.passed for t in r.tools} == {"a": lot == "LOTE-1", "b": lot == "LOTE-2"}  # every member runs and is recorded
+    assert set(r.scores) == {"a", "b"}
+    assert {t.id: t.group for t in r.tools} == {"a": "marca", "b": "marca"}
+    assert [(g.id, g.passed, g.members) for g in r.groups] == [("marca", True, ("a", "b"))]
+
+
+@pytest.mark.parametrize("scene", [no_code_scene(), qr_scene("LOTE-3")])
+def test_a_group_with_no_passing_member_fails_with_its_own_text_and_the_codes_of_every_member(scene):
+    r = inspect_job(_grouped_bundle(), frame(scene))
+    assert r.outcome is Outcome.FAIL
+    assert r.reason == "Sem o lote 1 nem o lote 2"  # not "Falta o lote 1; Falta o lote 2"
+    assert {c.tool for c in r.reason_codes} == {"a", "b"} and all(c.code.startswith("code.") for c in r.reason_codes)
+    assert [(g.id, g.passed) for g in r.groups] == [("marca", False)]
+
+
+def test_a_member_that_cannot_run_is_an_error_even_when_the_other_one_passes():
+    """Rule 5: an OR must not hide a tool that did not run."""
+    r = inspect_job(_grouped_bundle(b_changes={"version": 99}), frame(qr_scene("LOTE-1")))
+    assert r.outcome is Outcome.ERROR and "não pode rodar" in r.reason
+    r = inspect_job(_grouped_bundle(b_changes={"version": 99}), frame(no_code_scene()))
+    assert r.outcome is Outcome.ERROR
+
+
+def test_tools_outside_the_group_are_still_all_required():
+    ok = inspect_job(_grouped_bundle(ungrouped={"params": {"expect": "LOTE-1"}}), frame(qr_scene("LOTE-1")))
+    assert ok.outcome is Outcome.PASS
+    only_ungrouped = inspect_job(_grouped_bundle(ungrouped={"params": {"expect": "LOTE-3"}}), frame(qr_scene("LOTE-1")))
+    assert only_ungrouped.outcome is Outcome.FAIL and only_ungrouped.reason == "Falta o código c"  # the group passed: no text of it
+    both = inspect_job(_grouped_bundle(ungrouped={"params": {"expect": "LOTE-3"}}), frame(no_code_scene()))
+    assert both.outcome is Outcome.FAIL
+    assert both.reason == "Sem o lote 1 nem o lote 2; Falta o código c"  # in the order of the tools: the group at its first member
+
+
+def test_a_job_without_groups_has_no_group_in_its_result():
+    r = inspect_job(make_bundle(), frame(qr_scene("LOTE-1")))
+    assert r.groups == () and r.tools[0].group is None
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_garbage_frames_never_pass_with_a_group(seed):
+    rng = np.random.default_rng(seed)
+    img = rng.integers(0, 256, [(1, 1, 3), (240, 320), (50, 50, 3), (0, 5, 3)][seed % 4], dtype=np.uint8)
+    assert inspect_job(_grouped_bundle(), frame(img)).outcome is not Outcome.PASS
+    assert inspect_job(_grouped_bundle(), frame(None)).outcome is Outcome.ERROR

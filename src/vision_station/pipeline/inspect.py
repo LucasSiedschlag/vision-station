@@ -18,7 +18,7 @@ from vision_station.cameras import Frame
 from vision_station.core.errors import CATALOG, ErrorCode
 from vision_station.core.i18n import join, tr
 from vision_station.core.jobfiles import JobFileError, JobFiles
-from vision_station.core.results import FixturePose, InspectionResult, Outcome, ReasonCode, ToolReport
+from vision_station.core.results import FixturePose, GroupReport, InspectionResult, Outcome, ReasonCode, ToolReport
 from vision_station.geometry.regions import RegionError, cut_region
 from vision_station.geometry.pose import PixelRect
 from vision_station.jobs import Job
@@ -143,6 +143,9 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     per_tool: dict[str, float] = {}
     reports: list[ToolReport] = []
     reason_codes: list[ReasonCode] = []
+    group_passed: dict[str, bool] = {name: False for name in job.groups}  # a group passes when one member does (TD-33)
+    own_failures: dict[str, tuple[str, list[ReasonCode]]] = {}  # a failed tool outside a group: its text and codes
+    member_codes: dict[str, list[ReasonCode]] = {name: [] for name in job.groups}  # the failing criteria of a group's members
     for tool in job.tools:
         try:
             region, result, score, elapsed = _run(tool, job, fixtures, image, files)
@@ -161,11 +164,27 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
         regions.append(entry)
         report = _report(tool, result, score, region, image.shape)
         reports.append(report)
-        if not result.passed and tool.affects_result:
-            failures.append(tool.reason_fail.filled(result.values))
-            reason_codes.extend(ReasonCode(tool.id, f"{tool.type}.{c.code}") for c in report.criteria if not c.passed)
+        if tool.group is not None:  # a member never fails the result by itself: the group says it
+            group_passed[tool.group] |= bool(result.passed)
+            member_codes[tool.group].extend(ReasonCode(tool.id, f"{tool.type}.{c.code}") for c in report.criteria if not c.passed)
+        elif not result.passed and tool.affects_result:
+            own_failures[tool.id] = (tool.reason_fail.filled(result.values), [ReasonCode(tool.id, f"{tool.type}.{c.code}") for c in report.criteria if not c.passed])
     timings["tools"] = time.perf_counter() - t_tools
     timings["per_tool"] = per_tool
+
+    # The reasons in the order of the tools; a failed group speaks at its first member, with its own text (TD-33).
+    spoken: set[str] = set()
+    for tool in job.tools:
+        if tool.group is None and tool.id in own_failures:
+            text, codes = own_failures[tool.id]
+            failures.append(text)
+            reason_codes.extend(codes)
+        elif tool.group is not None and tool.group not in spoken:
+            spoken.add(tool.group)
+            if not group_passed[tool.group]:
+                failures.append(job.groups[tool.group].reason_fail.filled(None))
+                reason_codes.extend(member_codes[tool.group])
+    groups = tuple(GroupReport(name, group_passed[name], tuple(t.id for t in job.tools if t.group == name)) for name in job.groups)
 
     total = time.perf_counter() - started
     timings["total"] = total
@@ -181,9 +200,9 @@ def _inspect(bundle: JobBundle, image: Any, started: float, timings: dict[str, A
     if failures:
         return InspectionResult(
             Outcome.FAIL, join(failures), scores=scores, details=details, duration_s=total,
-            reason_codes=tuple(reason_codes), tools=tuple(reports), fixtures=poses,
+            reason_codes=tuple(reason_codes), tools=tuple(reports), fixtures=poses, groups=groups,
         )
-    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports), fixtures=poses)
+    return InspectionResult(Outcome.PASS, scores=scores, details=details, duration_s=total, tools=tuple(reports), fixtures=poses, groups=groups)
 
 
 def _pose(fixture: Fixture) -> FixturePose:
@@ -235,4 +254,4 @@ def _report(tool: Tool, result: ToolResult, score: float, region: Cut, shape: tu
         if isinstance(result.values.get(name), int | float) and not isinstance(result.values.get(name), bool)
     }
     units = {name: unit for name, unit in result.units.items() if name in values}
-    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result, region=_fractions(region.px, shape), marks=to_frame_marks(result.marks, region, shape))
+    return ToolReport(tool.id, tool.type, tool.version, bool(result.passed), score, values, units, tuple(result.criteria), tool.affects_result, region=_fractions(region.px, shape), marks=to_frame_marks(result.marks, region, shape), group=tool.group)
