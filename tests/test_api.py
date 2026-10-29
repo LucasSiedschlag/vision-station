@@ -407,6 +407,9 @@ def test_the_content_policy_allows_scripts_only_from_this_server(env):
     assert "script-src 'self';" in csp and "unsafe-eval" not in csp and "unsafe-inline'; style" not in csp.split("script-src")[1][:30]
     assert "default-src 'self'" in csp and "frame-ancestors 'none'" in csp
     assert "[::1]" not in csp  # an IPv6 source in connect-src is invalid CSP syntax and the browser reports it as an error
+    docs = env.client.get("/api/docs")  # Swagger UI needs its CDN and an inline script; only this page
+    assert docs.status_code == 200 and "cdn.jsdelivr.net" in docs.headers["content-security-policy"]
+    assert "cdn.jsdelivr.net" not in csp
 
 
 def test_without_a_build_the_page_says_how_to_build_it_and_the_api_works(env):

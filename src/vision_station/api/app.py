@@ -304,6 +304,15 @@ def content_security_policy() -> str:
     )
 
 
+def docs_content_security_policy() -> str:
+    """Only for /api/docs: the Swagger UI of FastAPI loads its bundle from a CDN and starts with an inline script."""
+    cdn = "https://cdn.jsdelivr.net"
+    return (
+        f"default-src 'self'; script-src 'self' 'unsafe-inline' {cdn}; style-src 'self' 'unsafe-inline' {cdn}; "
+        "img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    )
+
+
 NO_BUILD_PAGE = (
     '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Vision Station</title>'
     "<body style=\"font-family:system-ui;max-width:40rem;margin:4rem auto;padding:0 1rem\">"
@@ -853,12 +862,13 @@ def create_app(deps: ApiDeps) -> FastAPI:
     dist = deps.web_dist
     built = (dist / "index.html").is_file()
     csp = content_security_policy()
+    docs_csp = docs_content_security_policy()
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
         response = await call_next(request)
         path = request.url.path
-        response.headers.setdefault("Content-Security-Policy", csp)
+        response.headers.setdefault("Content-Security-Policy", docs_csp if path == "/api/docs" else csp)
         if path.startswith("/assets/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"  # hashed file names
         elif not path.startswith("/api"):
