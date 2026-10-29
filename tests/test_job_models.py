@@ -135,3 +135,48 @@ def test_the_blocks_are_written_in_full_and_their_limits_are_checked():
         with pytest.raises(ValidationError):
             Job.model_validate(broken)
     assert acquisition_block("manual")["trigger"] == {"type": "manual"}
+
+
+def _grouped(data: dict, members=("tampa", "defeitos")) -> dict:
+    """The sample job with `members` in one group of which one passing tool is enough (TD-33)."""
+    data["groups"] = {"marca": {"reason_fail": {"pt-BR": "Sem tampa nem defeito lido", "en": "No cap and no defect read"}}}
+    for tool in data["tools"]:
+        if tool["id"] in members:
+            tool["group"] = "marca"
+    return data
+
+
+def test_a_group_of_tools_is_read_and_round_trips():
+    job = Job.model_validate(_grouped(load_job_data()))
+    assert [t.group for t in job.tools] == ["marca", "marca"]
+    assert job.groups["marca"].reason_fail.get("en") == "No cap and no defect read"
+    assert parse_job(dump_job(job)) == job
+
+
+def test_groups_are_written_only_when_used():
+    """TD-33: a job without a group is the same file as before, so a program that does not know groups still reads it."""
+    written = yaml.safe_load(dump_job(Job.model_validate(load_job_data())))
+    assert "groups" not in written and all("group" not in tool for tool in written["tools"])
+    grouped = yaml.safe_load(dump_job(Job.model_validate(_grouped(load_job_data()))))
+    assert list(grouped["groups"]) == ["marca"] and grouped["tools"][0]["group"] == "marca"
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda d: d["tools"][0].update(group="marca"),  # a group nobody declared
+        lambda d: d.update(groups={"marca": {"reason_fail": "x"}}),  # a group no tool uses
+        lambda d: _grouped(d, members=("tampa",)),  # a group of one is not an OR
+        lambda d: (_grouped(d), d["tools"][1].update(affects_result=False)),  # an informative tool never decides
+        lambda d: (_grouped(d), d["groups"]["marca"].pop("reason_fail")),  # a failed group says its own text
+        lambda d: (_grouped(d), d["groups"].update(outra={"reason_fail": "x"})),  # a second group no tool uses
+        lambda d: (_grouped(d), d["groups"].update({"": {"reason_fail": "x"}})),
+        lambda d: (_grouped(d), d["groups"]["marca"].update(surprise=1)),
+        lambda d: (_grouped(d), d["tools"][0].update(group="")),
+    ],
+)
+def test_invalid_groups_are_rejected(change):
+    data = load_job_data()
+    change(data)
+    with pytest.raises(ValidationError):
+        Job.model_validate(data)

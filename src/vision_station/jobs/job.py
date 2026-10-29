@@ -258,6 +258,16 @@ class Tool(_Strict):
     # False: informative, run and recorded but never deciding the result (FR-INS-13). Written only when
     # False, so a job that does not use it stays readable by older versions of the program.
     affects_result: bool = Field(default=True, exclude_if=lambda v: v is True)
+    # The name of a group in `Job.groups`: of the members of a group one passing tool is enough (TD-33, FR-INS-17).
+    # Written only when set, like `affects_result`, so a job that does not use it is the same file as before.
+    group: Annotated[str, Field(min_length=1)] | None = Field(default=None, exclude_if=lambda v: v is None)
+
+
+class Group(_Strict):
+    """A set of tools that pass together when any of them passes (an OR; TD-33). A failed group says this text instead of
+    the texts of its members; it has no `{fields}`, since its members measure different things."""
+
+    reason_fail: Text
 
 
 class Job(_Strict):
@@ -267,7 +277,8 @@ class Job(_Strict):
     quality: Quality
     geometry: Geometry
     tools: Annotated[list[Tool], Field(min_length=1)]
-    decision: Literal["all_pass"] = "all_pass"
+    groups: dict[Annotated[str, Field(min_length=1)], Group] = Field(default={}, exclude_if=lambda v: not v)
+    decision: Literal["all_pass"] = "all_pass"  # over the tools with no group and over the groups (TD-33)
     ui: Ui = Ui()
 
     @model_validator(mode="after")
@@ -281,7 +292,24 @@ class Job(_Strict):
                 raise ValueError(f"tool '{tool.id}' uses unknown region '{tool.roi}'")
         if not any(t.affects_result for t in self.tools):
             raise ValueError("at least one tool must decide the result: with only informative tools every part would pass")
+        self._check_groups()
         return self
+
+    def _check_groups(self) -> None:
+        """TD-33: every group is declared and has two members that decide the result. An OR over a tool that does not
+        decide, or over one tool, would be a trap: the editor shows a group that does nothing."""
+        members: dict[str, list[Tool]] = {name: [] for name in self.groups}
+        for tool in self.tools:
+            if tool.group is None:
+                continue
+            if tool.group not in members:
+                raise ValueError(f"tool '{tool.id}' is in group '{tool.group}', which is not declared in groups")
+            if not tool.affects_result:
+                raise ValueError(f"tool '{tool.id}' is in group '{tool.group}' but does not decide the result")
+            members[tool.group].append(tool)
+        for name, tools in members.items():
+            if len(tools) < 2:
+                raise ValueError(f"group '{name}' needs at least two tools: it has {len(tools)}")
 
 
 def parse_job(text: str) -> Job:
