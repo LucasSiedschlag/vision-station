@@ -253,6 +253,21 @@ export function setLocator(geometry: JobJson, locator: JobJson | null) {
   geometry.fixtures = [{ ...(first ?? { name: 'anchor' }), locator }, ...rest]
 }
 
+/**
+ * After a tool is taken out: a group left with fewer than two tools is no OR any more, and the server refuses it
+ * (TD-33). The group is dissolved, so a tool left alone is required by itself, as a tool with no group is.
+ */
+export function dissolveSmallGroups(d: Draft) {
+  const tools = (d.job.tools ?? []) as JobJson[]
+  for (const id of Object.keys(d.job.groups ?? {})) {
+    const members = tools.filter((tool) => tool.group === id)
+    if (members.length >= 2) continue
+    for (const tool of members) delete tool.group
+    delete d.job.groups[id]
+  }
+  if (d.job.groups && !Object.keys(d.job.groups).length) delete d.job.groups
+}
+
 /** The text of a job in a language: `{pt-BR, en}`, or a bare text (Portuguese). An empty one falls back to the other language. */
 export function textIn(value: unknown, language: 'pt-BR' | 'en'): string {
   if (typeof value === 'string') return value

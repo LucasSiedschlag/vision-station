@@ -7,7 +7,7 @@ How to read a section:
 - **Region.** Every tool looks at the region the user draws, cut upright from the frame or from a fixture (architecture §14). Sizes in pixels are pixels of the frame; sizes in millimetres need a calibration of the job (FR-INS-15, architecture §14.4).
 - **Fields.** The names a `reason_fail` text can use, written `{name}`; fractions are 0 to 1 (format them with `:.0%`).
 - **Reason codes.** `<tool>.<criterion>`, the same list as architecture §10.3; a failing tool names the criteria that failed.
-- **Groups.** Tools can be put in a *group* in which one passing tool is enough (OR; TD-33, job-format §3). The criteria, reason codes and fields below are the tool's own and do not change in a group; a failed group says its own text instead of its members', and a member that cannot run is still an ERROR.
+- **Groups.** Tools can be put in a *group* in which one passing tool is enough (OR; TD-33, job-format §3). The criteria, reason codes and fields below are the tool's own and do not change in a group; a failed group says its own text instead of its members', and a member that cannot run is still an ERROR. The limits proposed from the samples (*Ajustar pelas amostras*) for a member count as good only the *Boa* pictures that member passed itself: a picture another member carried says nothing about it.
 - **Marks.** What the tool draws over the picture (the *Medições* layer, VIA-0124), or why it draws nothing.
 
 Index: [`brightness`](#brightness), [`blob`](#blob), [`edge`](#edge), [`pattern`](#pattern), [`compare`](#compare), [`color`](#color), [`code`](#code), [`detect`](#detect). The locators (`fixed`, `template`, `blob`, `edges`, `shape`) are described in `docs/architecture.md` §14.

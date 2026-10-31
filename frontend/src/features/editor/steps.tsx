@@ -22,7 +22,15 @@ import { formatNumber } from '@/lib/number'
 import { text } from '@/texts'
 import { BilingualField } from './BilingualField'
 import { TemplateCheck, type ModelCheck } from './TemplateCheck'
-import { useDraft, toRequest, draftFiles, withText, type Draft, type JobJson } from './draft'
+import {
+  useDraft,
+  toRequest,
+  draftFiles,
+  withText,
+  dissolveSmallGroups,
+  type Draft,
+  type JobJson,
+} from './draft'
 import { type Rect } from './geometry'
 import { fixturesOf } from './fixtures'
 import { blobToBase64, cropPng, type EditorImage } from './image'
@@ -925,7 +933,12 @@ export function ToolsStep({
                 <Button
                   variant="ghost"
                   aria-label={t.removeTool(tool.id)}
-                  onClick={() => setTools((list) => list.splice(i, 1))}
+                  onClick={() =>
+                    edit((d) => {
+                      d.job.tools.splice(i, 1)
+                      dissolveSmallGroups(d)
+                    })
+                  }
                 >
                   <Trash2 aria-hidden className="size-4" />
                 </Button>

@@ -136,3 +136,44 @@ def test_a_bad_sample_that_another_tool_catches_does_not_make_this_gauge_overlap
     out = env.client.post("/api/editor/suggest/limits", headers=mnt, json={"draft": body, "tool": "extra"}).json()
     low = [p for p in out["proposals"] if p["side"] == "min"][0]
     assert low["reason"] != "overlap"
+
+
+# --- a member of a group (TD-33): another member may carry a good sample -----------------------------------------------
+
+
+def _rows(counts_good: list[tuple[int, bool]], counts_bad: list[int], group: str | None):
+    """Rows of the batch test for one `pattern` tool whose measure is `count`: (count, passed) on each good picture."""
+    from types import SimpleNamespace as NS
+
+    def row(kind: str, count: int, passed: bool):
+        report = NS(id="texto", values={"count": count}, passed=passed, affects_result=True, group=group)
+        return ("img", kind, "PASS" if kind == "good" else "FAIL", True, NS(tools=[report]), "")
+
+    return [row("good", c, p) for c, p in counts_good] + [row("bad", c, False) for c in counts_bad]
+
+
+def _count_proposal(group: str | None):
+    from types import SimpleNamespace as NS
+
+    from vision_station.tools import get_tool
+    from vision_station.tools.limits import propose_for_criterion
+
+    entry = get_tool("pattern", 2)
+    spec = next(s for s in entry.criteria if s.value == "count")
+    tool = NS(id="texto", params={"template": "patterns/text.png", "min_count": 1}, group=group)
+    good = [(0, False), (0, False), (0, False), (2, True), (3, True), (2, True)]  # three tapes carried by the logo alone
+    rows = _rows(good, [0, 0], group)
+    return next(p for p in propose_for_criterion(tool, entry, spec, rows) if p["side"] == "min")
+
+
+def test_a_tool_outside_a_group_is_kept_apart_from_a_good_picture_it_does_not_match():
+    """The rule as it was: a good picture with no match puts the worst good value at 0, level with the bad ones."""
+    assert _count_proposal(None)["reason"] == "overlap"
+
+
+def test_a_member_of_a_group_is_judged_on_the_good_pictures_it_carried_itself():
+    """A good picture that another member passed says nothing about this member's limit: with it counted the limit could
+    only be dropped to 0, a member that always matches, and the group would pass on any picture (TD-33)."""
+    found = _count_proposal("marca")
+    assert found["reason"] == "" and found["proposed"] == 1
+    assert found["good_n"] == 3 and found["worst_good"] == 2

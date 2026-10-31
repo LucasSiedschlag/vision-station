@@ -114,7 +114,9 @@ def _bounds(entry: Any, param: str) -> tuple[float | None, float | None]:
 def propose_for_criterion(tool: Any, entry: Any, spec: Any, rows: list[tuple[Any, ...]], margin: float = MARGIN) -> list[dict[str, Any]]:
     """The proposals for one criterion of one tool of a job, from the rows of the batch test (image, kind, expected,
     ok, result, message). A bad sample that another deciding tool fails and this one passes is left out for this
-    tool: that defect is somebody else's to catch, and counting it would call a good gauge "overlapping"."""
+    tool: that defect is somebody else's to catch, and counting it would call a good gauge "overlapping". For a member
+    of a group (an OR, TD-33) a good picture it did not match is left out too: another member passed it, and counting its
+    value would drag the limit to a member that always matches, so the group would pass on any picture."""
     good: list[float] = []
     bad: list[float] = []
     for _image, kind, _expected, _ok, result, _message in rows:
@@ -125,6 +127,8 @@ def propose_for_criterion(tool: Any, entry: Any, spec: Any, rows: list[tuple[Any
         if value is None:
             continue
         if kind == "good":
+            if tool.group is not None and not report.passed:
+                continue  # another member of the group carried this picture: it says nothing about this member's limit (TD-33)
             good.append(float(value))
         elif not (report.passed and any(not t.passed for t in result.tools if t.id != tool.id and t.affects_result)):
             bad.append(float(value))
