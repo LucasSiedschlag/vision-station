@@ -1,9 +1,15 @@
 name: tests
 
-# On demand while the repository is private (private repositories spend a limited monthly quota of
-# Actions minutes, Windows counts double). Public repositories run on the free standard runners:
-# when this one is public, replace `workflow_dispatch:` with the push and pull_request triggers.
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
 
 concurrency:
