@@ -29,3 +29,23 @@ THIRD_PARTY_LICENSES.md
 # plans, specs and handoffs of the working sessions stay local
 docs/superpowers/
 docs/handoff/
+
+# caches and coverage
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# logs, temporary and editor files
+*.log
+*.tmp
+*.swp
+Thumbs.db
+.idea/
+.vscode/
+
+# environment files and local assistant settings
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
