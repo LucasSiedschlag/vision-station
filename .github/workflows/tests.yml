@@ -1,6 +1,14 @@
 name: tests
 
-on: [push, pull_request]
+# On demand while the repository is private (private repositories spend a limited monthly quota of
+# Actions minutes, Windows counts double). Public repositories run on the free standard runners:
+# when this one is public, replace `workflow_dispatch:` with the push and pull_request triggers.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pytest:
