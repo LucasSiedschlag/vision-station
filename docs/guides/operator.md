@@ -1,42 +1,42 @@
-# Guia do operador — Vision Station
+# Operator guide: Vision Station
 
-Uma página. A tela mostra se a peça está boa e, se não estiver, por quê.
+One page. The screen shows whether the part is good and, if it is not, why.
 
-## A tela
+## The screen
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Nome do job  v7                                    Entrar    │
+│ Job name  v7                                        Log in   │
 │                                    │      ✔                  │
-│        IMAGEM DA CÂMERA            │   APROVADO              │
-│                                    │   motivo, quando falha  │
-│                                    │ Últimos: ✔ ✔ ✘ ✔        │
-│                                    │ Hoje: total · ✔ · ✘ · ! │
-│                                    │ [Inspecionar agora]     │
-│ ● Sistema  ● Câmera  ● Registro             Aguardando peça  │
+│        CAMERA IMAGE                │     PASS                │
+│                                    │   reason, when it fails │
+│                                    │ Last: ✔ ✔ ✘ ✔           │
+│                                    │ Today: total · ✔ · ✘ · !│
+│                                    │ [Inspect now]           │
+│ ● System  ● Camera  ● Recording            Waiting for part  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## O que cada resultado quer dizer
+## What each result means
 
-| Na tela | Cor | O que fazer |
+| On screen | Color | What to do |
 |---|---|---|
-| **Aguardando…** | cinza | Coloque a peça no lugar e deixe parada. A foto é tirada sozinha |
-| **Inspecionando…** | azul | Não mexa na peça |
-| **APROVADO** | verde | Pode seguir |
-| **REPROVADO** + motivo | vermelho | Corrija o que o motivo diz (ex.: "Tampa ausente") e coloque a peça de novo. Ela é inspecionada outra vez |
-| **ERRO** + motivo | amarelo | O sistema **não conseguiu** conferir (imagem escura, peça fora do lugar, câmera). **Não é aprovado.** Ajuste e tente de novo; se repetir, chame a manutenção |
-| **Câmera desconectada** | amarelo | Chame a manutenção. Nada é aprovado enquanto isso |
+| **Waiting for a part** | grey | Put the part in place and keep it still. The photo is taken automatically |
+| **Inspecting…** | blue | Do not touch the part |
+| **PASS** | green | Go ahead |
+| **FAIL** + reason | red | Fix what the reason says (e.g. "Cap missing") and place the part again. It is inspected again |
+| **ERROR** + reason | yellow | The system **could not** check the part (dark image, part out of position, camera). **It is not a pass.** Adjust and try again; if it repeats, call maintenance |
+| **Camera disconnected** | yellow | Call maintenance. Nothing is passed while this shows |
 
-A palavra (APROVADO, REPROVADO, ERRO) vem sempre junto da cor.
+The word (PASS, FAIL, ERROR) always comes together with the color.
 
-## Botões
+## Buttons
 
-- **Inspecionar agora:** tira a foto na hora, sem esperar a peça ficar parada. Só funciona quando a tela diz *Aguardando*.
-- **Resultado incorreto?:** se o sistema errou (disse REPROVADO para uma peça boa, ou o contrário), toque aqui e diga qual era o certo. A imagem vai para melhorar o sistema. Não muda o que já aconteceu.
-- **Entrar:** só para Supervisor e Mantenedor.
+- **Inspect now:** takes the photo right away, without waiting for the part to be still. It only works while the screen says *Waiting for a part*.
+- **Incorrect result?:** if the system got it wrong (said FAIL for a good part, or the other way round), tap here and say what the right answer was. The image is kept to improve the system. It does not change what already happened.
+- **Log in:** only for the Supervisor and the Maintainer.
 
-## Os pontos no rodapé
+## The dots at the bottom
 
-- **Sistema**, **Câmera**, **Registro**: verde está tudo bem. Amarelo ou vermelho: avise a manutenção.
-- **Hoje:** quantas peças, aprovadas, reprovadas e erros desde o início do turno.
+- **System**, **Camera**, **Recording**: green means all is well. Yellow or red: tell maintenance.
+- **Today:** how many parts, passes, fails and errors since the start of the shift.

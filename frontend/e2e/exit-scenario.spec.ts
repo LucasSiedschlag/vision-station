@@ -7,7 +7,7 @@ import { expect, signInAs, test, watchTheBrowser } from './fixtures'
 // screen is exported, imported into a clean installation, activated there (rule 4: it is verified first), and the station
 // gives PASS and FAIL. The first station is the shared one of playwright.config.ts, the clean one is the third (--fresh).
 // The inspection is the simulated station's, which the test controls: this checks the path, not the vision, which has its
-// own tests. What needs the real bench (backup on another PC, a shift, a restart) is the checklist of docs/guias/.
+// own tests. What needs the real bench (backup on another PC, a shift, a restart) is the checklist of docs/guides/bench-checklist.md.
 const CLEAN = 'http://127.0.0.1:8782'
 // unique on every run: the first station may be one left running, with the job of an earlier run in it
 const JOB_DEMO = 'Tampa azul — etiqueta de lote (demo)'

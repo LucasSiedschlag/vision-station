@@ -1,64 +1,64 @@
-# Lista de conferência da bancada — saída da Fase 1
+# Bench checklist: Phase 1 exit
 
-Para o Mantenedor (VIA-0117, que cumpre a VIA-0016). Serve para **mostrar** que a Fase 1 está pronta, e não para supor. Critério de saída (documento 01 §7): *um job feito na tela, exportado, restaurado em outro PC e verificado; PASS/FAIL ao vivo na bancada*, com a C920.
+For the Maintainer (VIA-0117, which fulfils VIA-0016). It is meant to **show** that Phase 1 is ready, not to assume it. Exit criterion (document 01 §7): *a job made on screen, exported, restored on another PC and verified; live PASS/FAIL on the bench*, with the C920.
 
-Marque cada item, anote a data, o PC e o que viu. Um item sem marca não foi conferido.
+Tick each item, note the date, the PC and what you saw. An item without a tick was not checked.
 
-## O que já é conferido sozinho
+## What is already checked automatically
 
-O cenário `frontend/e2e/exit-scenario.spec.ts` (`npm run e2e`) faz, numa estação simulada, a parte que **não precisa de um segundo PC**: cria um job no editor (referência, ferramenta, amostra boa, validação), salva, exporta o `.vjob`, importa numa instalação limpa, ativa (com a verificação da regra 4) e vê **APROVADO** e **REPROVADO** na tela do operador, cada objeto contado uma vez.
+The scenario `frontend/e2e/exit-scenario.spec.ts` (`npm run e2e`) does, on a simulated station, the part that **does not need a second PC**: it creates a job in the editor (reference, tool, good sample, validation), saves, exports the `.vjob`, imports it into a clean installation, activates it (with the rule 4 verification) and sees **PASS** and **FAIL** on the operator screen, each object counted once.
 
-Ele **não** prova a visão nem a câmera: o resultado vem de uma inspeção simulada que o teste controla. Tudo que depende do PC real, da C920 e do tempo está abaixo.
+It does **not** prove the vision or the camera: the result comes from a simulated inspection that the test controls. Everything that depends on the real PC, the C920 and time is below.
 
-## 0. Antes de começar
+## 0. Before starting
 
-- [ ] PC da estação com o instalador da versão a conferir (`docs/guias/instalacao.md`); anote a versão em **Sobre**.
-- [ ] Segundo PC (ou uma pasta de dados vazia no mesmo PC, em outra porta) para a restauração.
-- [ ] C920 ligada, iluminação da bancada ligada, a peça de teste à mão.
-- [ ] **Configurações → Desempenho → Rodar teste de desempenho** (ou `vision-station --benchmark`): anote o nível (M ou R) e se o disparo ocioso ficou dentro do limite.
+- [ ] Station PC with the installer of the version to check (`docs/guides/installation.md`); note the version under **About**.
+- [ ] A second PC (or an empty data folder on the same PC, on another port) for the restore.
+- [ ] C920 connected, bench lighting on, the test part at hand.
+- [ ] **Settings → PC performance** (run the performance test, or `vision-station --benchmark`): note the level (M or R) and whether the idle trigger stayed within the limit.
 
-## 1. Um job feito na tela (FR-JOB, UC-01)
+## 1. A job made on screen (FR-JOB, UC-01)
 
-- [ ] **Jobs → Novo job**: câmera aplicada, disparo escolhido, **imagem de referência** capturada, ao menos uma ferramenta, **amostra Boa** e **amostra Ruim** capturadas.
-- [ ] **Validar tudo**: todas as amostras com o resultado esperado.
-- [ ] **Salvar**: a versão 1 aparece em **Jobs**.
-- [ ] **Ativar**: a verificação passa. *Sem imagem de referência ou sem conjunto de referência a ativação é recusada* (regra 4): confira que a recusa mostra o motivo.
+- [ ] **Jobs → New job**: camera applied, trigger chosen, **reference image** captured, at least one tool, **Good** sample and **Bad** sample captured.
+- [ ] **Validate all**: all samples with the expected result.
+- [ ] **Save**: version 1 appears under **Jobs**.
+- [ ] **Activate**: the verification passes. *Without a reference image or a reference set, activation is refused* (rule 4): check that the refusal shows the reason.
 
-## 2. PASS e FAIL ao vivo na bancada (UC-02, UC-03)
+## 2. Live PASS and FAIL on the bench (UC-02, UC-03)
 
-- [ ] Peça boa na área: **APROVADO**, contada **uma vez** (não uma por imagem).
-- [ ] Tire a peça: a tela volta a aguardar sozinha.
-- [ ] Peça com defeito conhecido: **REPROVADO** com o motivo e as marcações sobre a imagem.
-- [ ] Cubra a câmera ou tire a luz: **ERRO**, nunca aprovado.
-- [ ] Anote o tempo por inspeção (coluna **Duração** em **Resultados**): mediana e pior caso.
+- [ ] Good part in the area: **PASS**, counted **once** (not once per image).
+- [ ] Remove the part: the screen goes back to waiting by itself.
+- [ ] Part with a known defect: **FAIL** with the reason and the marks over the image.
+- [ ] Cover the camera or turn off the light: **ERROR**, never a pass.
+- [ ] Note the time per inspection (**Duration** column under **Results**): median and worst case.
 
-## 3. Exportar e restaurar em outro PC (UC-05, NFR-REL-4, NFR-REL-5)
+## 3. Export and restore on another PC (UC-05, NFR-REL-4, NFR-REL-5)
 
-- [ ] No PC da estação: **Jobs → ⋯ → Exportar .vjob** e **Fazer backup** (`docs/guias/backup-e-restauracao.md`); copie os arquivos para fora do PC.
-- [ ] No outro PC (instalação nova): importe o `.vjob` e restaure o `.vbak`; defina as senhas de novo (o backup não as guarda).
-- [ ] **Ativar** o job lá: a verificação passa **sem ajuste manual**, com a mesma imagem de referência e o mesmo conjunto de referência.
-- [ ] Os resultados nas imagens do conjunto de referência são **os mesmos** do PC original (NFR-REL-5).
-- [ ] Cronometre: da instalação nova até o job ativo e verificado, **no máximo 1 hora** (NFR-REL-4). Tempo: ______
+- [ ] On the station PC: **Jobs → ⋯ → Export .vjob** and **Back up now** (`docs/guides/backup-and-restore.md`); copy the files out of the PC.
+- [ ] On the other PC (new installation): import the `.vjob` and restore the `.vbak`; set the passwords again (the backup does not hold them).
+- [ ] **Activate** the job there: the verification passes **without manual adjustment**, with the same reference image and the same reference set.
+- [ ] The results on the images of the reference set are **the same** as on the original PC (NFR-REL-5).
+- [ ] Time it: from the new installation to the job active and verified, **at most 1 hour** (NFR-REL-4). Time: ______
 
-## 4. Câmera desligada e religada (UC-09, NFR-REL-3)
+## 4. Camera unplugged and plugged back in (UC-09, NFR-REL-3)
 
-- [ ] Com a estação inspecionando, **tire o cabo USB**: aparece *Câmera desconectada*, e nenhuma inspeção é dada como boa.
-- [ ] Religue: a estação volta a inspecionar **sozinha em até 30 s** (NFR-REL-3). Tempo: ______
-- [ ] Ao abrir a estação com a câmera já ligada, a tela mostra **Preparando…** (e não *câmera perdida*) até a câmera abrir.
+- [ ] With the station inspecting, **pull the USB cable**: *Camera disconnected* appears, and no inspection is given as good.
+- [ ] Plug it back in: the station inspects again **by itself within 30 s** (NFR-REL-3). Time: ______
+- [ ] When opening the station with the camera already connected, the screen shows **Preparing…** (and not *camera lost*) until the camera opens.
 
-## 5. Reiniciar o PC com o serviço (UC-10, NFR-REL-2)
+## 5. Restart the PC with the service (UC-10, NFR-REL-2)
 
-- [ ] Com um job ativo, reinicie o PC (ou tire a energia) **sem entrar no Windows**.
-- [ ] A estação volta a inspecionar com o **último job ativo**, sem ninguém tocar, **em até 2 min** (NFR-REL-2). Tempo: ______
-- [ ] A tela mostra o job certo e os contadores do dia continuam.
+- [ ] With a job active, restart the PC (or cut the power) **without logging in to Windows**.
+- [ ] The station inspects again with the **last active job**, with nobody touching it, **within 2 min** (NFR-REL-2). Time: ______
+- [ ] The screen shows the right job and the day's counters continue.
 
-## 6. Um turno sem parar (NFR-REL-1)
+## 6. A shift without stopping (NFR-REL-1)
 
-- [ ] Deixe a estação inspecionando por **um turno inteiro (proposta: 10 h)**, com peças reais ou repetindo a mesma.
-- [ ] Sem reiniciar, sem erro de gravação, sem travar a tela; a pasta de dados não encheu o disco.
-- [ ] Os resultados do turno estão em **Resultados**; o tempo por inspeção no fim é parecido com o do começo.
-- [ ] Nenhum PASS contado para uma peça que não estava lá.
+- [ ] Leave the station inspecting for **a whole shift (proposed: 10 h)**, with real parts or repeating the same one.
+- [ ] No restart, no write error, no frozen screen; the data folder did not fill the disk.
+- [ ] The shift's results are under **Results**; the time per inspection at the end is similar to the start.
+- [ ] No PASS counted for a part that was not there.
 
-## Quando terminar
+## When finished
 
-Guarde esta lista preenchida com o relatório do teste de desempenho (`system/benchmark.json`) e o resultado do `npm run e2e`. Cada item **não** marcado vira uma tarefa, com o motivo.
+Keep this filled-in list together with the performance test report (`system/benchmark.json`) and the result of `npm run e2e`. Each item that is **not** ticked becomes a task, with the reason.

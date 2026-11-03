@@ -1,5 +1,5 @@
 @echo off
-rem Builds the program and the installer (docs/guias/gerar-instalador.md).
+rem Builds the program and the installer (docs/guides/building-the-installer.md).
 rem Double-click it, or from a terminal:  packaging\gerar-instalador.cmd [-NoInstaller]
 setlocal
 cd /d "%~dp0.."

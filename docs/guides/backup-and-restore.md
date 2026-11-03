@@ -1,48 +1,48 @@
-# Guia de backup e restauração — Vision Station
+# Backup and restore guide: Vision Station
 
-Para o Supervisor (NFR-USA-3): dá para fazer sem o Mantenedor.
+For the Supervisor (NFR-USA-3): it can be done without the Maintainer.
 
-## O que o backup guarda
+## What the backup holds
 
-Um arquivo `.vbak` com:
+A `.vbak` file with:
 
-- **todos os jobs**, com todas as versões (ou só a última de cada, se configurado);
-- **qual versão estava ativa**;
-- **a configuração da instalação** (`system.yaml`): câmera, backup, gravação, rede.
+- **all the jobs**, with all their versions (or only the latest of each, if configured);
+- **which version was active**;
+- **the installation configuration** (`system.yaml`): camera, backup, recording, network.
 
-**Não** guarda: os resultados e as imagens das inspeções (são registros, não configuração; exporte em **Resultados → Exportar CSV**) e **as senhas** (por segurança; defina de novo depois de restaurar).
+It does **not** hold: the inspection results and images (they are records, not configuration; export them with **Results → Export CSV**) and **the passwords** (for security; set them again after restoring).
 
-## Backup automático
+## Automatic backup
 
-Em **Configurações → Backup** (Mantenedor): a pasta (de rede ou pen drive), a frequência (padrão: a cada 24 h) e quantos guardar (padrão: 30; os mais antigos são apagados). Se o backup automático falhar, **Configurações** mostra o aviso e a **Auditoria** registra *Backup falhou*.
+Under **Settings → Backup** (Maintainer): the folder (network or USB drive), the frequency (default: every 24 h) and how many to keep (default: 30; the oldest are deleted). If the automatic backup fails, **Settings** shows the warning and **Audit** records *Backup failed*.
 
-## Fazer um backup agora
+## Make a backup now
 
-1. **Entrar** como Supervisor.
-2. **Jobs → Fazer backup.** Aparece o nome e o tamanho do arquivo, ex.: `backup_2026-10-15_1432.vbak (2,4 MB)`.
-3. Para copiar para outro lugar: **Jobs → Backups…** → **Baixar** ao lado do arquivo.
+1. **Log in** as Supervisor.
+2. **Jobs → Back up now.** The file name and size appear, e.g. `backup_2026-10-15_1432.vbak (2.4 MB)`.
+3. To copy it elsewhere: **Jobs → Backups…** → **Download** next to the file.
 
-Guarde uma cópia fora do PC da estação (pen drive ou rede).
+Keep a copy outside the station PC (USB drive or network).
 
-## Exportar um job só
+## Export a single job
 
-**Jobs → ⋯ → Exportar .vjob** (a última versão), ou na página do job, **Exportar .vjob** na versão desejada. Serve para levar um job para outra estação.
+**Jobs → ⋯ → Export .vjob** (the latest version), or on the job page, **Export .vjob** on the version you want. Use it to take a job to another station.
 
-## Restaurar num PC novo (ou depois de uma pane)
+## Restore on a new PC (or after a failure)
 
-1. Instale o Vision Station (guia de instalação) e defina a senha do Mantenedor.
-2. Ligue a câmera **na mesma posição** de antes.
-3. **Entrar → Jobs → Importar arquivo** e escolha o `.vbak`.
-   - O sistema confere o arquivo inteiro antes: se estiver danificado, recusa e não muda nada.
-   - Aparece o que entrou: versões *adicionadas*, *já existiam*, ou *renumeradas* (quando uma versão com o mesmo número e conteúdo diferente já existia aqui).
-   - **Importar nunca ativa nada sozinho.**
-4. Abra o job que estava ativo (o aviso diz qual) e clique **Ativar** na versão.
-   - O sistema exige uma **imagem de referência** legível e confere o job no **conjunto de referência** (imagens com o resultado esperado). Sem qualquer uma dessas referências, a ativação é recusada e a tela mostra o motivo. Se tudo bater, ele é ativado.
-   - Ao ativar, a estação aplica os ajustes da câmera e compara a imagem ao vivo com a imagem de referência. Se a câmera estiver em outra posição ou fora de foco, a tela mostra *Falha na verificação — chamar manutenção*: ajuste a câmera e peça ao Mantenedor para entrar e tocar **Tentar de novo** na tela da estação.
-5. A configuração da instalação que veio no backup **não é aplicada sozinha**: confira **Configurações** (câmera, pasta de backup) e salve.
-6. Defina de novo as senhas em **Acessos**.
-7. Passe algumas peças boas e ruins conhecidas para confirmar.
+1. Install Vision Station (installation guide) and set the Maintainer password.
+2. Connect the camera **in the same position** as before.
+3. **Log in → Jobs → Import file** and choose the `.vbak`.
+   - The system checks the whole file first: if it is damaged, it refuses and changes nothing.
+   - It shows what came in: versions *added*, *already there*, or *renumbered* (when a version with the same number and different content already existed here).
+   - **Importing never activates anything by itself.**
+4. Open the job that was active (the notice says which) and click **Activate** on the version.
+   - The system requires a readable **reference image** and checks the job against the **reference set** (images with the expected result). Without either reference, activation is refused and the screen shows the reason. If everything matches, it is activated.
+   - On activation, the station applies the camera settings and compares the live image with the reference image. If the camera is in another position or out of focus, the screen shows *Verification failed — call maintenance*: adjust the camera and ask the Maintainer to log in and tap **Try again** on the station screen.
+5. The installation configuration that came in the backup is **not applied by itself**: check **Settings** (camera, backup folder) and save.
+6. Set the passwords again under **Access**.
+7. Run a few known good and bad parts to confirm.
 
-## Quando a verificação não passa
+## When the verification does not pass
 
-Na ativação, o sistema mostra o que não bateu (ex.: *caso ok2.png: resultado FAIL, esperado PASS*). Só o **Mantenedor** pode **Ativar mesmo assim**, escrevendo o motivo; isso fica na **Auditoria**.
+On activation, the system shows what did not match (e.g. *case ok2.png: result FAIL, expected PASS*). Only the **Maintainer** can **Activate anyway**, by writing the reason; this goes in the **Audit**.
