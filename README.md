@@ -252,6 +252,10 @@ Every path is under `/api`; the full list is in `/api/docs` and [docs/frontend.m
 3. Production camera (Hikvision)
 4. First customer project on site (owned by that project)
 
+## Trademarks
+
+Cognex, In-Sight, Keyence, MVTec, MERLIC, Hikvision, Logitech, Siemens, Intel, OpenVINO, Microsoft and Windows, and any other product or company names mentioned in this repository, are trademarks or registered trademarks of their respective owners. They are used only to identify products for comparison and compatibility. Vision Station is an independent project and is not affiliated with, endorsed by, or sponsored by any of them.
+
 ## Author
 
 Lucas Siedschlag.
