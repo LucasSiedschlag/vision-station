@@ -1057,15 +1057,17 @@ export function ToolsStep({
                       ? { min_mean: 80 }
                       : type === 'blob'
                         ? { mode: 'dark', min_count: 1 }
-                        : type === 'compare'
-                          ? { model: '', max_area: 50 }
-                          : type === 'edge'
-                            ? { mode: 'presence', min_count: 1 }
-                            : type === 'pattern'
-                              ? { template: '' }
-                              : type === 'detect'
-                                ? { model: '' }
-                                : {},
+                        : type === 'circles'
+                          ? { radius_min: 20, radius_max: 40, min_count: 1 }
+                          : type === 'compare'
+                            ? { model: '', max_area: 50 }
+                            : type === 'edge'
+                              ? { mode: 'presence', min_count: 1 }
+                              : type === 'pattern'
+                                ? { template: '' }
+                                : type === 'detect'
+                                  ? { model: '' }
+                                  : {},
                 reason_fail: withText(null, currentLocale(), t.defaultReason),
               }),
             )
