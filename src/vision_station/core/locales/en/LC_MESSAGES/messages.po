@@ -1484,8 +1484,8 @@ msgstr "Empty: twice the smallest radius. The two edges of one ring count as a s
 msgid "Circularidade mínima"
 msgstr "Minimum roundness"
 
-msgid "0 a 1: quanto mais perto de 1, só círculos bem redondos; mais baixo acha mais, e acha o que não é círculo"
-msgstr "0 to 1: the nearer 1, the rounder a circle must be; lower finds more, including things that are not circles"
+msgid "Acima de 0 e abaixo de 1: quanto mais perto de 1, só círculos bem redondos; mais baixo acha mais, e acha o que não é círculo"
+msgstr "Above 0 and below 1: the nearer 1, the rounder a circle must be; lower finds more, including things that are not circles"
 
 msgid "Mínimo de peças"
 msgstr "Minimum parts"

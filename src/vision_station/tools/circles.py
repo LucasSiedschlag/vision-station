@@ -3,14 +3,14 @@
 Use it when what matters is **how many** round parts there are and the parts do not look the same to a template (a metal ring
 catches the light differently at each angle), or their colour depends on the light. A circle is found by its edge: the region's
 gray levels are equalised in small tiles, so the count means the same under a dimmer or a harsher light, and the circles of a
-radius from `radius_min` to `radius_max` pixels that are round enough (`min_roundness`) are counted. Two circles never stand
+radius from `radius_min` to `radius_max` pixels that are round enough (`min_roundness`, above 0 and below 1) are counted. Two circles never stand
 closer than `min_distance` (default: twice `radius_min`), so the inner and the outer edge of one ring are one circle.
 
 What fails, each when it is given:
 
 - the **count** below `min_count` or above `max_count`.
 
-The count is exact on clean, evenly lit parts and can be one or two off on a harder picture (glare, a part half in shadow, shapes
+More than 200 circles in the region is an error (the count is never cut short). The count is exact on clean, evenly lit parts and can be one or two off on a harder picture (glare, a part half in shadow, shapes
 that look round, like a letter O). Where "one more is a defect", leave a margin in the limit and check it with real parts.
 
 Fields for `reason_fail`: {count} (the circles found), {radius} (their mean radius in pixels, 0 with none), the limits
@@ -23,7 +23,7 @@ from typing import Annotated, Self
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from vision_station.algorithms.circles import Circle, find_circles
+from vision_station.algorithms.circles import Circle, TooManyCircles, find_circles
 from vision_station.core.i18n import tr
 from vision_station.core.jobfiles import JobFiles
 from vision_station.core.results import MAX_MARKS, Criterion, Mark, Unit
@@ -49,7 +49,7 @@ class CirclesToolParams(BaseModel):
         radius_min=("Menor raio (px)", "Raio da menor peça, em pixels da imagem; com folga para o que varia"),
         radius_max=("Maior raio (px)", "Raio da maior peça, em pixels da imagem"),
         min_distance=("Distância mínima entre centros (px)", "Vazio: o dobro do menor raio. Duas bordas de uma mesma argola contam como uma peça só"),
-        min_roundness=("Circularidade mínima", "0 a 1: quanto mais perto de 1, só círculos bem redondos; mais baixo acha mais, e acha o que não é círculo"),
+        min_roundness=("Circularidade mínima", "Acima de 0 e abaixo de 1: quanto mais perto de 1, só círculos bem redondos; mais baixo acha mais, e acha o que não é círculo"),
         min_count=("Mínimo de peças", "Quantas precisam existir"),
         max_count=("Máximo de peças", "Mais que isso reprova"),
     ))
@@ -57,7 +57,7 @@ class CirclesToolParams(BaseModel):
     radius_min: Radius
     radius_max: Radius
     min_distance: Annotated[float, Field(gt=0, allow_inf_nan=False)] | None = None
-    min_roundness: Annotated[float, Field(gt=0, le=1)] = 0.7
+    min_roundness: Annotated[float, Field(gt=0, lt=1)] = 0.7  # the circle search needs a score below 1: 1 itself cannot run
     min_count: Annotated[int, Field(ge=0)] | None = None
     max_count: Annotated[int, Field(ge=0)] | None = None
 
@@ -83,7 +83,10 @@ def run(region: np.ndarray, params: CirclesToolParams, files: JobFiles) -> ToolR
     if region.size == 0:
         raise ToolError("the region is empty")
     distance = params.min_distance if params.min_distance is not None else 2.0 * params.radius_min
-    circles = find_circles(region, params.radius_min, params.radius_max, distance, params.min_roundness)
+    try:
+        circles = find_circles(region, params.radius_min, params.radius_max, distance, params.min_roundness)
+    except TooManyCircles as exc:  # a count cut at the cap could pass a limit it breaks: an error, never a verdict
+        raise ToolError(f"more than {exc.args[0]} circles in the region: too many to count, check the radius range or the region") from exc
     count = len(circles)
     radius = float(np.mean([c.r for c in circles])) if circles else 0.0
     values: dict = {"count": count, "radius": radius, "min_count": params.min_count, "max_count": params.max_count}

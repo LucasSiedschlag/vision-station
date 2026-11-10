@@ -36,6 +36,7 @@ TOOLS = {1: Case(
         {"radius_min": 1, "radius_max": 10, "min_count": 1},  # too small to be a circle
         {"radius_min": 10, "radius_max": 20, "min_count": 3, "max_count": 1},
         {"radius_min": 10, "radius_max": 20, "min_count": 1, "min_roundness": 0},
+        {"radius_min": 10, "radius_max": 20, "min_count": 1, "min_roundness": 1},  # the circle search cannot run at 1
         {"radius_min": 10, "radius_max": 20, "min_count": 1, "min_roundness": 1.5},
         {"radius_min": 10, "radius_max": 20, "min_count": 1, "min_distance": 0},
         {"radius_min": 10, "radius_max": 20, "min_count": 1, "unknown": 1},

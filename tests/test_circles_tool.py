@@ -54,3 +54,25 @@ def test_the_parameters_that_cannot_work_are_refused(params):
 def test_a_colour_picture_is_read_by_its_gray_levels():
     bgr = cv2.cvtColor(rings((60, 60), (150, 60)), cv2.COLOR_GRAY2BGR)
     assert run_tool("circles", 1, bgr, {"radius_min": 18, "radius_max": 32, "min_count": 2, "max_count": 2}).passed
+
+
+def test_more_circles_than_the_tool_counts_is_an_error_not_a_truncated_count():
+    # 224 separated rings: judging a count cut at 200 would pass min_count 200 and max_count 200 (never a false PASS)
+    image = np.full((720, 800), 110, np.uint8)
+    for row in range(14):
+        for col in range(16):
+            cv2.circle(image, (30 + col * 50, 30 + row * 50), 18, 210, 3, cv2.LINE_AA)
+    with pytest.raises(ToolError):
+        run_tool("circles", 1, image, {"radius_min": 14, "radius_max": 22, "min_count": 200, "max_count": 200})
+
+
+@pytest.mark.parametrize("roundness", (1, 1.0, 1.5))
+def test_a_roundness_of_one_or_more_is_refused(roundness):
+    # the circle search (HOUGH_GRADIENT_ALT) needs a score below 1: a setting it cannot run must not pass validation
+    with pytest.raises(ToolError):
+        validate_params("circles", 1, {"radius_min": 10, "radius_max": 20, "min_count": 1, "min_roundness": roundness})
+
+
+def test_a_roundness_just_below_one_is_accepted_and_runs():
+    result = run_tool("circles", 1, rings((60, 60), (150, 60)), {"radius_min": 18, "radius_max": 32, "min_count": 0, "min_roundness": 0.99})
+    assert result.values["count"] >= 0

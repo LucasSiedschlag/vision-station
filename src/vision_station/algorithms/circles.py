@@ -11,12 +11,16 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-MAX_CIRCLES = 200  # a region with more than this is not a region of rings
+MAX_CIRCLES = 200  # more than this is not a region of parts to count: it is refused (TooManyCircles), never counted short
 CLAHE_CLIP = 3.0  # fixed: it is what makes the score mean the same under each light, so it is not a job's business
 CLAHE_TILES = 8
 BLUR_PX = 5  # a blur of the region's gray levels before the votes
 EDGE_STRENGTH = 300.0  # the strongest edge (the upper Canny threshold) that makes a vote, after the equalisation
 ACCUMULATOR_STEP = 1.5  # the votes are counted on a grid 1.5 times coarser than the picture
+
+
+class TooManyCircles(Exception):
+    """More than `MAX_CIRCLES` circles: a count cut at the cap would be a wrong measure, so the caller must refuse the region."""
 
 
 @dataclass(frozen=True)
@@ -32,8 +36,8 @@ def gray_of(image: np.ndarray) -> np.ndarray:
 
 def find_circles(image: np.ndarray, radius_min: int, radius_max: int, min_distance: float, min_roundness: float) -> list[Circle]:
     """The circles of a radius from `radius_min` to `radius_max` pixels, best first, no two with centres closer than
-    `min_distance`. `min_roundness` is 0 to 1: how perfect a circle must be (1 is a perfect one, lower finds more, and more that
-    are not circles). A region too small to hold a circle of `radius_min` has none."""
+    `min_distance`. `min_roundness` is above 0 and below 1 (the circle search cannot run at 1): how perfect a circle must be (nearer 1 is rounder, lower finds more, and more that
+    are not circles). A region too small to hold a circle of `radius_min` has none. More than `MAX_CIRCLES` raises `TooManyCircles`."""
     height, width = image.shape[:2]
     if min(height, width) < 2 * radius_min or radius_max < radius_min:
         return []
@@ -48,7 +52,7 @@ def find_circles(image: np.ndarray, radius_min: int, radius_max: int, min_distan
     kept: list[Circle] = []
     for x, y, r in found[0].tolist():  # best first: a worse circle on a better one's ground is dropped
         if all((x - c.x) ** 2 + (y - c.y) ** 2 >= min_distance**2 for c in kept):
-            kept.append(Circle(x, y, r))
             if len(kept) == MAX_CIRCLES:
-                break
+                raise TooManyCircles(MAX_CIRCLES)
+            kept.append(Circle(x, y, r))
     return kept
