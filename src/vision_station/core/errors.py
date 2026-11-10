@@ -81,6 +81,8 @@ REASON_CODES: dict[str, str] = {
     "blob.min_area_mm2": tr("Área das manchas (mm²) abaixo do mínimo"),
     "blob.max_area_mm2": tr("Área das manchas (mm²) acima do máximo"),
     "blob.max_largest_mm2": tr("Mancha (mm²) maior que o máximo"),
+    "circles.min_count": tr("Menos peças redondas que o mínimo"),
+    "circles.max_count": tr("Mais peças redondas que o máximo"),
     "edge.found": tr("Bordas necessárias não encontradas"),
     "edge.min_count": tr("Menos bordas que o mínimo"),
     "edge.max_count": tr("Mais bordas que o máximo"),

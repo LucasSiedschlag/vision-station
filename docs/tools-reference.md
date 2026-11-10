@@ -10,7 +10,7 @@ How to read a section:
 - **Groups.** Tools can be put in a *group* in which one passing tool is enough (OR; TD-33, job-format §3). The criteria, reason codes and fields below are the tool's own and do not change in a group; a failed group says its own text instead of its members', and a member that cannot run is still an ERROR. The limits proposed from the samples (*Ajustar pelas amostras*) for a member count as good only the *Boa* pictures that member passed itself: a picture another member carried says nothing about it.
 - **Marks.** What the tool draws over the picture (the *Medições* layer, VIA-0124), or why it draws nothing.
 
-Index: [`brightness`](#brightness), [`blob`](#blob), [`edge`](#edge), [`pattern`](#pattern), [`compare`](#compare), [`color`](#color), [`code`](#code), [`detect`](#detect). The locators (`fixed`, `template`, `blob`, `edges`, `shape`) are described in `docs/architecture.md` §14.
+Index: [`brightness`](#brightness), [`blob`](#blob), [`circles`](#circles), [`edge`](#edge), [`pattern`](#pattern), [`compare`](#compare), [`color`](#color), [`code`](#code), [`detect`](#detect). The locators (`fixed`, `template`, `blob`, `edges`, `shape`) are described in `docs/architecture.md` §14.
 
 ## `brightness`
 
@@ -71,6 +71,32 @@ Index: [`brightness`](#brightness), [`blob`](#blob), [`edge`](#edge), [`pattern`
 - `Cola demais: {area:.0f} px² (máximo {max_area:.0f})`
 
 **Benchmark.** 60 ms (tier M) and 25 ms (tier R) at 1 MP, proposed until B-1.
+
+## `circles`
+
+**Measures.** The round parts of the region: rings, washers, caps, holes. A circle is found by its edge, not by its colour or a template, so it does not matter that a metal ring catches the light differently at each angle. The region's gray levels are first equalised in small tiles (CLAHE), so the same edge votes the same under a dimmer or a harsher light; the circles whose radius is from `radius_min` to `radius_max` pixels and that are round enough (`min_roundness`, 0 to 1; default 0.7) are counted. Two circles never stand closer than `min_distance` (default: twice `radius_min`), so the inner and the outer edge of one ring are one circle. It reports the **count** and the mean **radius**.
+
+**Use it to** count parts that look different to a template at each pose, or whose colour changes with the light (brass rings on cardboard). For parts that all look alike, `pattern` also gives where each one is; for a colour that is stable, `blob` is simpler. To measure the diameter of one round feature, use `edge` with `mode: diameter`.
+
+**Criteria** (give at least one):
+
+| Parameter | Reason code | Fails when |
+|---|---|---|
+| `min_count` | `circles.min_count` | fewer circles are found than this |
+| `max_count` | `circles.max_count` | more are found than this |
+
+**Fields.** `{count}`, `{radius}` (px, 0 with none), the limits `{min_count}` and `{max_count}`.
+
+**Limits.** The radius is in pixels of the frame, so `radius_min` and `radius_max` must leave room for the size and the distance to vary (a part that is 10 % nearer is 10 % larger). The count is exact on clean, evenly lit parts and can be **one or two off** on a harder picture: glare, a part half in shadow, a shape that looks round (a letter "O" on a tape has the radius of a small ring), two rings that touch. Where "one more is a defect", check the limits with real parts and keep the region clear of printed text. A region too small to hold a circle of `radius_min` has none. A size in millimetres is not offered. An empty region is an error (E302).
+
+**Marks.** The outline of each circle found, as a closed polygon of 24 points (at most 64 circles): `found`, or `defect` when `max_count` failed.
+
+**Examples of `reason_fail`.**
+
+- `Argolas: {count} (precisa de {min_count} a {max_count})`
+- `Faltam tampas: {count} de {min_count}`
+
+**Benchmark.** 60 ms (tier M) and 30 ms (tier R) at 1 MP, proposed until B-1; 22 ms measured at 1 MP.
 
 ## `edge`
 

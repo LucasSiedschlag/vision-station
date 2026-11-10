@@ -1460,3 +1460,44 @@ msgstr "You need to log in as Supervisor"
 msgid "área toda"
 msgstr "whole area"
 
+msgid "Conta as peças redondas de uma região (argolas, arruelas, tampas, furos) pela borda, sem depender da cor nem de um gabarito."
+msgstr "Counts the round parts of a region (rings, washers, caps, holes) by their edge, with no dependence on colour or a template."
+
+msgid "Menor raio (px)"
+msgstr "Smallest radius (px)"
+
+msgid "Raio da menor peça, em pixels da imagem; com folga para o que varia"
+msgstr "Radius of the smallest part, in image pixels; leave room for what varies"
+
+msgid "Maior raio (px)"
+msgstr "Largest radius (px)"
+
+msgid "Raio da maior peça, em pixels da imagem"
+msgstr "Radius of the largest part, in image pixels"
+
+msgid "Distância mínima entre centros (px)"
+msgstr "Smallest distance between centres (px)"
+
+msgid "Vazio: o dobro do menor raio. Duas bordas de uma mesma argola contam como uma peça só"
+msgstr "Empty: twice the smallest radius. The two edges of one ring count as a single part"
+
+msgid "Circularidade mínima"
+msgstr "Minimum roundness"
+
+msgid "0 a 1: quanto mais perto de 1, só círculos bem redondos; mais baixo acha mais, e acha o que não é círculo"
+msgstr "0 to 1: the nearer 1, the rounder a circle must be; lower finds more, including things that are not circles"
+
+msgid "Mínimo de peças"
+msgstr "Minimum parts"
+
+msgid "Máximo de peças"
+msgstr "Maximum parts"
+
+msgid "Peças redondas"
+msgstr "Round parts"
+
+msgid "Menos peças redondas que o mínimo"
+msgstr "Fewer round parts than the minimum"
+
+msgid "Mais peças redondas que o máximo"
+msgstr "More round parts than the maximum"

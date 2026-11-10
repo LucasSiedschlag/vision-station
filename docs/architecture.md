@@ -191,7 +191,7 @@ src/vision_station/
 ├── geometry/        # fixtures, region mapping, calibration px→mm
 ├── algorithms/      # pure vision functions: matching, shape, calipers, blobs, color, variation model
 ├── locators/        # registry + fixed, template, blob, shape, edges
-├── tools/           # registry + brightness, color, blob, edge, pattern, code, compare, detect (+ ocr, anomaly)
+├── tools/           # registry + brightness, color, blob, circles, edge, pattern, code, compare, detect (+ ocr, anomaly)
 ├── models/          # model runtime, model cards, on-station anomaly memory bank
 ├── machine/         # handshake engine + interface map; adapters: s7, modbus_server, remote_io, opcua
 ├── verification/    # verification, A/B replay
@@ -727,6 +727,8 @@ Tool reason codes are `<tool type>.<criterion>` (e.g. `color.min_fraction`), so 
 | `blob.min_area_mm2` | Área das manchas (mm²) abaixo do mínimo |
 | `blob.max_area_mm2` | Área das manchas (mm²) acima do máximo |
 | `blob.max_largest_mm2` | Mancha (mm²) maior que o máximo |
+| `circles.min_count` | Menos peças redondas que o mínimo |
+| `circles.max_count` | Mais peças redondas que o máximo |
 | `edge.found` | Bordas necessárias não encontradas |
 | `edge.min_count` | Menos bordas que o mínimo |
 | `edge.max_count` | Mais bordas que o máximo |
@@ -896,7 +898,7 @@ The research compared the tool lists of a vision sensor (Keyence IV3: Learning, 
 | Learned good/bad | Learning | (ViDi, separate) | `detect` v1 (classifier / detector / anomaly from offline-trained ONNX) | keep; **`anomaly` v1** taught on station (tier 2, TD-27) |
 | Geometry between features | — | (measurement tools) | — | `measure` (tier 3: distance / angle between fixtures or tool results) |
 
-**Tier 1 (minimum set):** `brightness`, `color`, `blob`, `edge`, `pattern` v2, `code`, `compare`, `detect`, and the locators `blob` v2, `shape`, `edges`. **Tier 2:** `ocr`, `anomaly` (taught on station), calibration with distortion. **Tier 3:** `measure`, mean-color `color` v2, tools that output fixtures.
+**Tier 1 (minimum set):** `brightness`, `color`, `blob`, `circles`, `edge`, `pattern` v2, `code`, `compare`, `detect`, and the locators `blob` v2, `shape`, `edges`. **Tier 2:** `ocr`, `anomaly` (taught on station), calibration with distortion. **Tier 3:** `measure`, mean-color `color` v2, tools that output fixtures.
 
 ### 15.2 Contract (unchanged, made explicit)
 
@@ -937,7 +939,7 @@ A tool type version is released only when all of this exists and runs in CI (NFR
 | Type | V1 | V2 | V3 | V4 | V5 | V6 | V7 | V8 | V9 | V10 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `color` v1, `pattern` v1, `code` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| `brightness` v1, `blob` v1, `edge` v1, `pattern` v2, `compare` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| `brightness` v1, `blob` v1, `circles` v1, `edge` v1, `pattern` v2, `compare` v1 | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | `detect` v1 | ok | ok | ok | ok | ok | ok | ok | VIA-0112 (latency is the model's, in its card) | ok | ok |
 | locators `fixed` v1, `blob` v2, `edges` v1, `shape` v1 | ok | ok | ok | ok | n/a | n/a | n/a | ok | ok | n/a |
 | locators `template` v1, `blob` v1 | ok | ok | ok | no rotation: VIA-0123 | n/a | n/a | n/a | ok | ok | n/a |

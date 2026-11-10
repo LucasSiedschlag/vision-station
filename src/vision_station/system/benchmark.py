@@ -84,6 +84,18 @@ def _blob_tool(mp: float) -> Workload:
     return Workload(image, {"mode": "light", "min_count": 1, "max_count": 10, "max_largest": rows * cols})
 
 
+def _circles(mp: float) -> Workload:
+    """Six rings on a flat gray region, each a twelfth of the height across."""
+    import cv2
+
+    image = np.full(_size(mp), 120, np.uint8)
+    rows, cols = image.shape
+    radius = max(8, rows // 24)
+    for i in range(6):
+        cv2.circle(image, ((i % 3 + 1) * cols // 4, (i // 3 + 1) * rows // 3), radius, 220, max(2, radius // 5), cv2.LINE_AA)
+    return Workload(image, {"radius_min": int(radius * 0.8), "radius_max": int(radius * 1.25), "min_count": 1, "max_count": 10})
+
+
 def _edge(mp: float) -> Workload:
     image = np.full(_size(mp), 40, np.uint8)
     cols = image.shape[1]
@@ -157,6 +169,7 @@ def _fixed(mp: float) -> Workload:
 WORKLOADS: dict[str, Callable[[float], Workload]] = {
     key("tool", "blob", 1): _blob_tool,
     key("tool", "brightness", 1): _brightness,
+    key("tool", "circles", 1): _circles,
     key("tool", "color", 1): _color,
     key("tool", "compare", 1): _compare,
     key("tool", "edge", 1): _edge,
